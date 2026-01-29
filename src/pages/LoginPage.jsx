@@ -42,7 +42,7 @@ const LoginPage = () => {
         <div className="min-h-screen pt-24 pb-16 flex items-center justify-center">
             <div className="w-full max-w-md px-4">
                 {/* Logo */}
-                <div className="text-center mb-8">
+                <div className="op text-center mb-8 zt">
                     <Link to="/" className="inline-flex items-center gap-3 mb-6">
                         <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
                             <Gamepad2 className="w-7 h-7 text-white" />
@@ -51,12 +51,12 @@ const LoginPage = () => {
                             wibestore.com
                         </span>
                     </Link>
-                    <h1 className="text-2xl font-bold text-white mb-2">Xush kelibsiz!</h1>
+                    <h1 className="op text-2xl font-bold text-white mb-2">Xush kelibsiz!</h1>
                     <p className="text-gray-400">Hisobingizga kiring</p>
                 </div>
 
                 {/* Login Form */}
-                <div className="bg-[#1e1e32] rounded-2xl p-8 border border-white/5">
+                <div className="zt bg-[#1e1e32] rounded-2xl p-8 border border-white/5">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Error Message */}
                         {error && (
@@ -66,26 +66,19 @@ const LoginPage = () => {
                             </div>
                         )}
 
-                        {/* Demo Credentials */}
-                        <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
-                            <p className="text-sm text-purple-300 font-medium mb-2">Demo kirish:</p>
-                            <p className="text-xs text-gray-400">Email: <span className="text-white">aziz@email.com</span></p>
-                            <p className="text-xs text-gray-400">Parol: <span className="text-white">123456</span></p>
-                        </div>
-
                         {/* Email */}
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
                                 Email
                             </label>
                             <div className="relative">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                <Mail className="absolute left-93 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                 <input
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     placeholder="email@example.com"
-                                    className="w-full pl-12 pr-4 py-3 bg-[#25253a] border border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
+                                    className="pad lk w-full pl-14 pr-4 py-4 bg-[#25253a] border border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
                                     required
                                 />
                             </div>
@@ -97,13 +90,13 @@ const LoginPage = () => {
                                 Parol
                             </label>
                             <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                <Lock className="absolute left-85 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     placeholder="Parolingiz"
-                                    className="w-full pl-12 pr-12 py-3 bg-[#25253a] border border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
+                                    className="pad lk w-full pl-14 pr-14 py-4 bg-[#25253a] border border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
                                     required
                                 />
                                 <button
@@ -134,7 +127,7 @@ const LoginPage = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="pad w-full py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? 'Kirish...' : 'Kirish'}
                         </button>
@@ -154,7 +147,7 @@ const LoginPage = () => {
                     <div className="space-y-3">
                         <button
                             onClick={handleGoogleLogin}
-                            className="w-full flex items-center justify-center gap-3 py-3 bg-[#25253a] border border-white/10 rounded-xl text-white hover:bg-[#2a2a45] transition-colors"
+                            className="pad ls w-full flex items-center justify-center gap-3 py-3 bg-[#25253a] border border-white/10 rounded-xl text-white hover:bg-[#2a2a45] transition-colors"
                         >
                             <svg className="w-5 h-5" viewBox="0 0 24 24">
                                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -164,7 +157,7 @@ const LoginPage = () => {
                             </svg>
                             Google bilan kirish
                         </button>
-                        <button className="w-full flex items-center justify-center gap-3 py-3 bg-[#0088cc] rounded-xl text-white hover:bg-[#0077b5] transition-colors">
+                        <button className="pad w-full flex items-center justify-center gap-3 py-3 bg-[#0088cc] rounded-xl text-white hover:bg-[#0077b5] transition-colors">
                             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
                             </svg>

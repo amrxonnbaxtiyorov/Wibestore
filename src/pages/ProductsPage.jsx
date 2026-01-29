@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, ChevronDown, Grid, List } from 'lucide-react';
 import GameCard from '../components/GameCard';
@@ -10,6 +10,37 @@ const ProductsPage = () => {
     const [selectedGame, setSelectedGame] = useState('all');
     const [sortBy, setSortBy] = useState('newest');
     const [searchQuery, setSearchQuery] = useState('');
+    const [userListings, setUserListings] = useState([]);
+
+    // Load approved listings from localStorage
+    useEffect(() => {
+        const savedListings = localStorage.getItem('wibeListings');
+        if (savedListings) {
+            const allListings = JSON.parse(savedListings);
+            // Only show active (approved) listings
+            const approvedListings = allListings
+                .filter(l => l.status === 'active')
+                .map(l => ({
+                    id: `user-${l.id}`,
+                    title: l.title,
+                    description: l.description,
+                    gameId: l.gameId,
+                    price: Number(l.price),
+                    level: l.level,
+                    rank: l.rank,
+                    isPremium: false,
+                    images: l.images || [],
+                    features: l.features || [],
+                    seller: {
+                        name: l.sellerName,
+                        rating: 5.0,
+                        sales: 0
+                    },
+                    createdAt: l.createdAt
+                }));
+            setUserListings(approvedListings);
+        }
+    }, []);
 
     // Other games (additional games can be added here)
     const otherGames = [
@@ -23,8 +54,11 @@ const ProductsPage = () => {
 
     const allGames = [...games, ...otherGames];
 
+    // Combine mock accounts with user listings
+    const allAccounts = [...accounts, ...userListings];
+
     // Filter and sort accounts
-    let filteredAccounts = [...accounts];
+    let filteredAccounts = [...allAccounts];
 
     if (selectedGame !== 'all') {
         filteredAccounts = filteredAccounts.filter(acc => acc.gameId === selectedGame);

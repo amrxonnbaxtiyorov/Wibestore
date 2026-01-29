@@ -25,7 +25,7 @@ const HomePage = () => {
 
                     <div className="text-center cons">
                         {/* Badge */}
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-cyan-400 text-sm font-medium mb-6 animate-fadeInUp">
+                        <div className="za inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full text-cyan-400 text-sm font-medium mb-6 animate-fadeInUp">
                             <Shield className="w-4 h-4" />
                             100% xavfsiz savdo kafolati
                         </div>

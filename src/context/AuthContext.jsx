@@ -2,34 +2,6 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
-// Mock users database
-const MOCK_USERS = [
-    {
-        id: 1,
-        name: 'Aziz Karimov',
-        email: 'aziz@email.com',
-        phone: '+998901234567',
-        password: '123456',
-        avatar: null,
-        rating: 4.8,
-        sales: 45,
-        purchases: 12,
-        createdAt: '2024-01-01'
-    },
-    {
-        id: 2,
-        name: 'Jasur Rahimov',
-        email: 'jasur@email.com',
-        phone: '+998909876543',
-        password: '123456',
-        avatar: null,
-        rating: 4.9,
-        sales: 156,
-        purchases: 5,
-        createdAt: '2023-06-15'
-    }
-];
-
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -47,13 +19,18 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(false);
     }, []);
 
+    // Get all registered users
+    const getRegisteredUsers = () => {
+        return JSON.parse(localStorage.getItem('wibeRegisteredUsers') || '[]');
+    };
+
     // Login function
     const login = (email, password) => {
         return new Promise((resolve, reject) => {
             setTimeout(() => {
-                // Check mock users
-                const foundUser = MOCK_USERS.find(
-                    u => u.email === email && u.password === password
+                const registeredUsers = getRegisteredUsers();
+                const foundUser = registeredUsers.find(
+                    u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
                 );
 
                 if (foundUser) {
@@ -63,23 +40,9 @@ export const AuthProvider = ({ children }) => {
                     localStorage.setItem('wibeUser', JSON.stringify(userData));
                     resolve(userData);
                 } else {
-                    // Check localStorage for registered users
-                    const registeredUsers = JSON.parse(localStorage.getItem('wibeRegisteredUsers') || '[]');
-                    const regUser = registeredUsers.find(
-                        u => u.email === email && u.password === password
-                    );
-
-                    if (regUser) {
-                        const userData = { ...regUser };
-                        delete userData.password;
-                        setUser(userData);
-                        localStorage.setItem('wibeUser', JSON.stringify(userData));
-                        resolve(userData);
-                    } else {
-                        reject(new Error('Email yoki parol noto\'g\'ri'));
-                    }
+                    reject(new Error('Email yoki parol noto\'g\'ri'));
                 }
-            }, 800);
+            }, 500);
         });
     };
 
@@ -87,11 +50,10 @@ export const AuthProvider = ({ children }) => {
     const register = (userData) => {
         return new Promise((resolve, reject) => {
             setTimeout(() => {
-                const registeredUsers = JSON.parse(localStorage.getItem('wibeRegisteredUsers') || '[]');
+                const registeredUsers = getRegisteredUsers();
 
                 // Check if email already exists
-                if (registeredUsers.some(u => u.email === userData.email) ||
-                    MOCK_USERS.some(u => u.email === userData.email)) {
+                if (registeredUsers.some(u => u.email.toLowerCase() === userData.email.toLowerCase())) {
                     reject(new Error('Bu email allaqachon ro\'yxatdan o\'tgan'));
                     return;
                 }
@@ -106,11 +68,26 @@ export const AuthProvider = ({ children }) => {
                     rating: 5.0,
                     sales: 0,
                     purchases: 0,
+                    isPremium: false,
+                    premiumType: null,
+                    premiumExpiry: null,
                     createdAt: new Date().toISOString().split('T')[0]
                 };
 
                 registeredUsers.push(newUser);
                 localStorage.setItem('wibeRegisteredUsers', JSON.stringify(registeredUsers));
+
+                // Also update wibeUsers for admin panel
+                const wibeUsers = JSON.parse(localStorage.getItem('wibeUsers') || '[]');
+                wibeUsers.push({
+                    id: String(newUser.id),
+                    name: newUser.name,
+                    email: newUser.email,
+                    isPremium: false,
+                    premiumType: null,
+                    premiumExpiry: null
+                });
+                localStorage.setItem('wibeUsers', JSON.stringify(wibeUsers));
 
                 const userDataWithoutPassword = { ...newUser };
                 delete userDataWithoutPassword.password;
@@ -118,7 +95,7 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('wibeUser', JSON.stringify(userDataWithoutPassword));
 
                 resolve(userDataWithoutPassword);
-            }, 800);
+            }, 500);
         });
     };
 
@@ -133,6 +110,15 @@ export const AuthProvider = ({ children }) => {
         const updatedUser = { ...user, ...updates };
         setUser(updatedUser);
         localStorage.setItem('wibeUser', JSON.stringify(updatedUser));
+
+        // Also update in registered users
+        const registeredUsers = getRegisteredUsers();
+        const userIndex = registeredUsers.findIndex(u => u.id === user.id);
+        if (userIndex !== -1) {
+            registeredUsers[userIndex] = { ...registeredUsers[userIndex], ...updates };
+            localStorage.setItem('wibeRegisteredUsers', JSON.stringify(registeredUsers));
+        }
+
         return updatedUser;
     };
 

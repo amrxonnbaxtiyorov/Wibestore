@@ -222,12 +222,25 @@ body::before {
     padding: 10px;
   }
 }
+.op{
+  margin-top: 20px;
+}
+.lk{
+  padding-left: 30px;
+}
+.zt{
+  margin-bottom: 20px;
+  padding: 20px;
+}
 
 .text1 {
   display: flex;
   align-items: center;
   justify-content: center;
   padding-top: 20px;
+}
+.ls{
+  margin-bottom: 20px;
 }
 
 .bs {

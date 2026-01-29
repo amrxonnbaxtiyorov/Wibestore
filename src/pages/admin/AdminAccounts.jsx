@@ -1,27 +1,33 @@
-import { useState } from 'react';
-import { Search, Filter, ChevronDown, Eye, Ban, Check, X, Crown, Star, MoreVertical } from 'lucide-react';
-import { formatPrice } from '../../data/mockData';
+import { useState, useEffect } from 'react';
+import { Search, Eye, EyeOff, Check, X, Crown, Ban, MoreVertical, Key, AlertCircle, RefreshCw } from 'lucide-react';
+import { formatPrice, games } from '../../data/mockData';
 
 const AdminAccounts = () => {
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [listings, setListings] = useState([]);
+    const [selectedListing, setSelectedListing] = useState(null);
+    const [showCredentials, setShowCredentials] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [message, setMessage] = useState({ type: '', text: '' });
 
-    const accounts = [
-        { id: 1, title: 'PUBG Mobile Conqueror', game: 'PUBG Mobile', price: 2500000, status: 'pending', seller: { name: 'ProGamer_UZ', isPremium: true }, createdAt: '2024-01-28' },
-        { id: 2, title: 'Steam 150+ Games', game: 'Steam', price: 3800000, status: 'active', seller: { name: 'GameStore_TJ', isPremium: true }, createdAt: '2024-01-27' },
-        { id: 3, title: 'Free Fire Heroic', game: 'Free Fire', price: 1200000, status: 'pending', seller: { name: 'FFKing_UZ', isPremium: false }, createdAt: '2024-01-28' },
-        { id: 4, title: 'Standoff 2 Elite', game: 'Standoff 2', price: 1800000, status: 'blocked', seller: { name: 'SO2Master', isPremium: false }, createdAt: '2024-01-26' },
-        { id: 5, title: 'Mobile Legends Mythic', game: 'Mobile Legends', price: 2100000, status: 'active', seller: { name: 'MLBB_Pro', isPremium: true }, createdAt: '2024-01-28' },
-        { id: 6, title: 'CoC TH14 Max', game: 'Clash of Clans', price: 4500000, status: 'active', seller: { name: 'ClashKing', isPremium: false }, createdAt: '2024-01-25' },
-        { id: 7, title: 'CODM Legendary', game: 'Call of Duty Mobile', price: 1900000, status: 'sold', seller: { name: 'ProGamer_UZ', isPremium: true }, createdAt: '2024-01-24' },
-        { id: 8, title: 'Roblox Rich Account', game: 'Roblox', price: 850000, status: 'pending', seller: { name: 'RobloxMaster', isPremium: false }, createdAt: '2024-01-27' },
-    ];
+    // Load listings from localStorage
+    useEffect(() => {
+        loadListings();
+    }, []);
+
+    const loadListings = () => {
+        const savedListings = localStorage.getItem('wibeListings');
+        if (savedListings) {
+            setListings(JSON.parse(savedListings));
+        }
+    };
 
     const statusFilters = [
         { value: 'all', label: 'Barchasi' },
         { value: 'pending', label: 'Kutilmoqda' },
         { value: 'active', label: 'Faol' },
-        { value: 'blocked', label: 'Bloklangan' },
+        { value: 'rejected', label: 'Rad etilgan' },
         { value: 'sold', label: 'Sotilgan' },
     ];
 
@@ -29,42 +35,111 @@ const AdminAccounts = () => {
         const styles = {
             active: 'bg-green-500/20 text-green-400',
             pending: 'bg-yellow-500/20 text-yellow-400',
-            blocked: 'bg-red-500/20 text-red-400',
+            rejected: 'bg-red-500/20 text-red-400',
             sold: 'bg-blue-500/20 text-blue-400'
         };
         const labels = {
             active: 'Faol',
             pending: 'Kutilmoqda',
-            blocked: 'Bloklangan',
+            rejected: 'Rad etilgan',
             sold: 'Sotilgan'
         };
         return (
-            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
-                {labels[status]}
+            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-500/20 text-gray-400'}`}>
+                {labels[status] || status}
             </span>
         );
     };
 
-    const filteredAccounts = accounts.filter(acc => {
-        const matchesStatus = selectedStatus === 'all' || acc.status === selectedStatus;
-        const matchesSearch = acc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            acc.seller.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const getGameName = (gameId) => {
+        const game = games.find(g => g.id === gameId);
+        return game?.name || gameId;
+    };
+
+    const handleApprove = (listing) => {
+        const updatedListings = listings.map(l => {
+            if (l.id === listing.id) {
+                return { ...l, status: 'active', approvedAt: new Date().toISOString() };
+            }
+            return l;
+        });
+        localStorage.setItem('wibeListings', JSON.stringify(updatedListings));
+        setListings(updatedListings);
+        setMessage({ type: 'success', text: `"${listing.title}" tasdiqlandi!` });
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    };
+
+    const handleReject = (listing) => {
+        if (!window.confirm(`"${listing.title}" ni rad etmoqchimisiz?`)) return;
+
+        const updatedListings = listings.map(l => {
+            if (l.id === listing.id) {
+                return { ...l, status: 'rejected', rejectedAt: new Date().toISOString() };
+            }
+            return l;
+        });
+        localStorage.setItem('wibeListings', JSON.stringify(updatedListings));
+        setListings(updatedListings);
+        setMessage({ type: 'success', text: `"${listing.title}" rad etildi!` });
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    };
+
+    const handleDelete = (listing) => {
+        if (!window.confirm(`"${listing.title}" ni o'chirmoqchimisiz?`)) return;
+
+        const updatedListings = listings.filter(l => l.id !== listing.id);
+        localStorage.setItem('wibeListings', JSON.stringify(updatedListings));
+        setListings(updatedListings);
+        setMessage({ type: 'success', text: `E'lon o'chirildi!` });
+        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    };
+
+    const viewCredentials = (listing) => {
+        setSelectedListing(listing);
+        setShowCredentials(true);
+        setShowPassword(false);
+    };
+
+    const filteredListings = listings.filter(listing => {
+        const matchesStatus = selectedStatus === 'all' || listing.status === selectedStatus;
+        const matchesSearch = listing.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            listing.sellerName?.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesStatus && matchesSearch;
     });
+
+    const pendingCount = listings.filter(l => l.status === 'pending').length;
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-white mb-1">Akkauntlar</h1>
-                    <p className="text-gray-400 text-sm">Barcha akkauntlarni boshqaring</p>
+                    <p className="text-gray-400 text-sm">Foydalanuvchi e'lonlarini boshqaring</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="px-3 py-1.5 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-medium">
-                        {accounts.filter(a => a.status === 'pending').length} ta kutilmoqda
-                    </span>
+                    <button
+                        onClick={loadListings}
+                        className="p-2 bg-[#1e1e32] text-gray-400 hover:text-white rounded-lg transition-colors"
+                        title="Yangilash"
+                    >
+                        <RefreshCw className="w-5 h-5" />
+                    </button>
+                    {pendingCount > 0 && (
+                        <span className="px-3 py-1.5 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-medium">
+                            {pendingCount} ta kutilmoqda
+                        </span>
+                    )}
                 </div>
             </div>
+
+            {/* Success/Error Message */}
+            {message.text && (
+                <div className={`p-4 rounded-xl flex items-center gap-3 ${message.type === 'success' ? 'bg-green-500/10 border border-green-500/30 text-green-400' : 'bg-red-500/10 border border-red-500/30 text-red-400'
+                    }`}>
+                    <Check className="w-5 h-5" />
+                    {message.text}
+                </div>
+            )}
 
             {/* Filters */}
             <div className="flex flex-col lg:flex-row gap-4">
@@ -85,8 +160,8 @@ const AdminAccounts = () => {
                             key={filter.value}
                             onClick={() => setSelectedStatus(filter.value)}
                             className={`px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${selectedStatus === filter.value
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                                    : 'bg-[#1e1e32] text-gray-300 hover:bg-[#25253a]'
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                                : 'bg-[#1e1e32] text-gray-300 hover:bg-[#25253a]'
                                 }`}
                         >
                             {filter.label}
@@ -112,80 +187,217 @@ const AdminAccounts = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredAccounts.map((account) => (
-                                <tr key={account.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
-                                    <td className="p-4 text-gray-500 text-sm">#{account.id}</td>
-                                    <td className="p-4">
-                                        <div className="font-medium text-white text-sm">{account.title}</div>
-                                    </td>
-                                    <td className="p-4 text-gray-400 text-sm">{account.game}</td>
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-white">{account.seller.name}</span>
-                                            {account.seller.isPremium && (
-                                                <Crown className="w-4 h-4 text-yellow-400" />
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-cyan-400 text-sm font-medium">
-                                        {formatPrice(account.price)}
-                                    </td>
-                                    <td className="p-4">
-                                        {getStatusBadge(account.status)}
-                                    </td>
-                                    <td className="p-4 text-gray-500 text-sm">{account.createdAt}</td>
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-1">
-                                            <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors" title="Ko'rish">
-                                                <Eye className="w-4 h-4" />
-                                            </button>
-                                            {account.status === 'pending' && (
-                                                <>
-                                                    <button className="p-2 text-green-400 hover:bg-green-500/20 rounded-lg transition-colors" title="Tasdiqlash">
-                                                        <Check className="w-4 h-4" />
-                                                    </button>
-                                                    <button className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors" title="Rad etish">
-                                                        <X className="w-4 h-4" />
-                                                    </button>
-                                                </>
-                                            )}
-                                            {account.status === 'active' && (
-                                                <button className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors" title="Bloklash">
-                                                    <Ban className="w-4 h-4" />
+                            {filteredListings.length > 0 ? (
+                                filteredListings.map((listing) => (
+                                    <tr key={listing.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02]">
+                                        <td className="p-4 text-gray-500 text-sm">#{listing.id}</td>
+                                        <td className="p-4">
+                                            <div className="font-medium text-white text-sm">{listing.title}</div>
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                Level: {listing.level || '-'} | Rank: {listing.rank || '-'}
+                                            </div>
+                                        </td>
+                                        <td className="p-4 text-gray-400 text-sm">{getGameName(listing.gameId)}</td>
+                                        <td className="p-4">
+                                            <span className="text-sm text-white">{listing.sellerName}</span>
+                                        </td>
+                                        <td className="p-4 text-cyan-400 text-sm font-medium">
+                                            {formatPrice(Number(listing.price))}
+                                        </td>
+                                        <td className="p-4">
+                                            {getStatusBadge(listing.status)}
+                                        </td>
+                                        <td className="p-4 text-gray-500 text-sm">
+                                            {new Date(listing.createdAt).toLocaleDateString('uz-UZ')}
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-1">
+                                                {/* View Credentials */}
+                                                <button
+                                                    onClick={() => viewCredentials(listing)}
+                                                    className="p-2 text-purple-400 hover:bg-purple-500/20 rounded-lg transition-colors"
+                                                    title="Login/Parol ko'rish"
+                                                >
+                                                    <Key className="w-4 h-4" />
                                                 </button>
-                                            )}
-                                            <button className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-                                                <MoreVertical className="w-4 h-4" />
-                                            </button>
-                                        </div>
+
+                                                {listing.status === 'pending' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => handleApprove(listing)}
+                                                            className="p-2 text-green-400 hover:bg-green-500/20 rounded-lg transition-colors"
+                                                            title="Tasdiqlash"
+                                                        >
+                                                            <Check className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleReject(listing)}
+                                                            className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                                            title="Rad etish"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {listing.status === 'active' && (
+                                                    <button
+                                                        onClick={() => handleReject(listing)}
+                                                        className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                                        title="Bloklash"
+                                                    >
+                                                        <Ban className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleDelete(listing)}
+                                                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                    title="O'chirish"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="8" className="p-12 text-center">
+                                        <AlertCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                                        <p className="text-gray-400">Hech qanday e'lon topilmadi</p>
+                                        <p className="text-gray-500 text-sm mt-1">Foydalanuvchilar e'lon qo'shganda bu yerda ko'rinadi</p>
                                     </td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </div>
 
-                {/* Pagination */}
+                {/* Footer */}
                 <div className="flex items-center justify-between p-4 border-t border-white/5">
                     <div className="text-sm text-gray-500">
-                        {filteredAccounts.length} ta akkaunt topildi
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button className="px-4 py-2 bg-[#25253a] text-gray-400 rounded-lg hover:text-white transition-colors">
-                            Oldingi
-                        </button>
-                        <button className="px-4 py-2 bg-purple-500 text-white rounded-lg">
-                            1
-                        </button>
-                        <button className="px-4 py-2 bg-[#25253a] text-gray-400 rounded-lg hover:text-white transition-colors">
-                            2
-                        </button>
-                        <button className="px-4 py-2 bg-[#25253a] text-gray-400 rounded-lg hover:text-white transition-colors">
-                            Keyingi
-                        </button>
+                        {filteredListings.length} ta akkaunt topildi
                     </div>
                 </div>
             </div>
+
+            {/* Credentials Modal */}
+            {showCredentials && selectedListing && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#1e1e32] rounded-2xl p-6 w-full max-w-md border border-white/10">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                                    <Key className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">Akkaunt ma'lumotlari</h3>
+                                    <p className="text-gray-400 text-sm">{selectedListing.title}</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowCredentials(false)}
+                                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            {/* Login Method */}
+                            <div className="p-4 bg-[#25253a] rounded-xl">
+                                <label className="text-xs text-gray-500 block mb-1">Kirish usuli</label>
+                                <p className="text-white font-medium">{selectedListing.loginMethod || 'Email'}</p>
+                            </div>
+
+                            {/* Email/Login */}
+                            <div className="p-4 bg-[#25253a] rounded-xl">
+                                <label className="text-xs text-gray-500 block mb-1">Email / Login</label>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-white font-medium font-mono">{selectedListing.accountEmail}</p>
+                                    <button
+                                        onClick={() => navigator.clipboard.writeText(selectedListing.accountEmail)}
+                                        className="text-purple-400 text-sm hover:underline"
+                                    >
+                                        Nusxalash
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Password */}
+                            <div className="p-4 bg-[#25253a] rounded-xl">
+                                <label className="text-xs text-gray-500 block mb-1">Parol</label>
+                                <div className="flex items-center justify-between">
+                                    <p className="text-white font-medium font-mono">
+                                        {showPassword ? selectedListing.accountPassword : '••••••••••'}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="text-gray-400 hover:text-white"
+                                        >
+                                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                        <button
+                                            onClick={() => navigator.clipboard.writeText(selectedListing.accountPassword)}
+                                            className="text-purple-400 text-sm hover:underline"
+                                        >
+                                            Nusxalash
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Additional Info */}
+                            {selectedListing.additionalInfo && (
+                                <div className="p-4 bg-[#25253a] rounded-xl">
+                                    <label className="text-xs text-gray-500 block mb-1">Qo'shimcha ma'lumot</label>
+                                    <p className="text-white text-sm">{selectedListing.additionalInfo}</p>
+                                </div>
+                            )}
+
+                            {/* Seller Info */}
+                            <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+                                <label className="text-xs text-purple-400 block mb-1">Sotuvchi</label>
+                                <p className="text-white font-medium">{selectedListing.sellerName}</p>
+                                <p className="text-gray-400 text-sm">ID: {selectedListing.sellerId}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            {selectedListing.status === 'pending' && (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            handleApprove(selectedListing);
+                                            setShowCredentials(false);
+                                        }}
+                                        className="flex-1 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Check className="w-5 h-5" />
+                                        Tasdiqlash
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            handleReject(selectedListing);
+                                            setShowCredentials(false);
+                                        }}
+                                        className="flex-1 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <X className="w-5 h-5" />
+                                        Rad etish
+                                    </button>
+                                </>
+                            )}
+                            <button
+                                onClick={() => setShowCredentials(false)}
+                                className="flex-1 py-3 bg-white/5 text-gray-300 rounded-xl hover:bg-white/10 transition-colors"
+                            >
+                                Yopish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
