@@ -71,20 +71,23 @@ const PremiumPage = () => {
     ];
 
     return (
-        <div className="min-h-screen pt-24 pb-16">
+        <div className="bt min-h-screen pt-24 pb-16">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="text-center mb-16">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-400/10 border border-yellow-400/30 rounded-full text-yellow-400 text-sm font-medium mb-6">
-                        <Crown className="w-4 h-4" />
+                <div className="bs text-center mb-16">
+                    <div className="za inline-flex items-center gap-2 px-4 py-2 bg-yellow-400/10 border border-yellow-400/30 rounded-full text-yellow-400 text-sm font-medium mb-6">
+                        <Crown className="w-4 h-8 " />
                         Premium obuna
                     </div>
                     <h1 className="text-4xl lg:text-5xl font-bold text-white mb-6">
                         Sotuvlaringizni <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">oshiring</span>
                     </h1>
+                    <div className='text1'>
                     <p className="text-lg text-gray-400 max-w-2xl mx-auto">
                         Premium obuna bilan akkauntlaringiz ko'proq ko'rinadi, tezroq sotiladi va ko'proq daromad keltiradi
                     </p>
+
+                    </div>
                 </div>
 
                 {/* Pricing Cards */}

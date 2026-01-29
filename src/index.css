@@ -183,6 +183,27 @@ body::before {
     background-position: 200% 0;
   }
 }
+.za{
+  height: 30px;
+  padding: 5px;
+  
+}
+.height-w{
+  height: 130px;
+  padding: 10px;
+}
+.text1{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 20px;
+}
+.bs{
+  padding-bottom: 50px;
+}
+.bt{
+  padding-top: 100px;
+}
 .st{
   margin-bottom: 20px;
  
