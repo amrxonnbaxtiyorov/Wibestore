@@ -5,6 +5,7 @@ import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ChatWidget from './components/ChatWidget';
+import ScrollToTop from './components/ScrollToTop';
 import HomePage from './pages/HomePage';
 import GamePage from './pages/GamePage';
 import AccountDetailPage from './pages/AccountDetailPage';
@@ -19,6 +20,7 @@ import SellPage from './pages/SellPage';
 import FAQPage from './pages/FAQPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import SettingsPage from './pages/SettingsPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 // Admin pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -50,6 +52,7 @@ function App() {
               {/* Public Routes */}
               <Route path="/*" element={
                 <div className="min-h-screen bg-[#0f0f1a]">
+                  <ScrollToTop />
                   <Navbar />
                   <main>
                     <Routes>
@@ -67,6 +70,7 @@ function App() {
                       <Route path="/faq" element={<FAQPage />} />
                       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                       <Route path="/settings" element={<SettingsPage />} />
+                      <Route path="*" element={<NotFoundPage />} />
                     </Routes>
                   </main>
                   <Footer />
