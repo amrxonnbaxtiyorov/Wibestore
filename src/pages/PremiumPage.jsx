@@ -93,8 +93,8 @@ const PremiumPage = () => {
                         <div
                             key={plan.id}
                             className={`relative bg-[#1e1e32] rounded-3xl p-8 border transition-all duration-300 hover:-translate-y-2 ${plan.popular
-                                    ? 'border-yellow-400/50 shadow-xl shadow-yellow-500/10'
-                                    : 'border-white/5 hover:border-purple-500/30'
+                                ? 'border-yellow-400/50 shadow-xl shadow-yellow-500/10'
+                                : 'border-white/5 hover:border-purple-500/30'
                                 }`}
                         >
                             {/* Popular Badge */}
@@ -201,24 +201,50 @@ const PremiumPage = () => {
                 {/* Payment Methods */}
                 <div className="text-center">
                     <h3 className="text-xl font-semibold text-white mb-6">To'lov usullari</h3>
-                    <div className="flex items-center justify-center gap-4">
-                        <div className="px-6 py-3 bg-[#1e1e32] rounded-xl">
-                            <div className="w-20 h-8 bg-[#00CCCC] rounded flex items-center justify-center text-white font-bold text-sm">
-                                Payme
-                            </div>
+                    <div className="flex items-center justify-center gap-6 flex-wrap">
+                        {/* Payme */}
+                        <div className="px-6 py-4 bg-[#1e1e32] rounded-xl hover:bg-[#25253a] transition-colors">
+                            <svg className="h-8 w-auto" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="120" height="40" rx="8" fill="#00CCCC" />
+                                <text x="60" y="26" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold" fontFamily="Arial, sans-serif">payme</text>
+                            </svg>
                         </div>
-                        <div className="px-6 py-3 bg-[#1e1e32] rounded-xl">
-                            <div className="w-20 h-8 bg-[#0095FF] rounded flex items-center justify-center text-white font-bold text-sm">
-                                Click
-                            </div>
+
+                        {/* Click */}
+                        <div className="px-6 py-4 bg-[#1e1e32] rounded-xl hover:bg-[#25253a] transition-colors">
+                            <svg className="h-8 w-auto" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="120" height="40" rx="8" fill="#0095FF" />
+                                <circle cx="25" cy="20" r="8" fill="white" />
+                                <circle cx="25" cy="20" r="4" fill="#0095FF" />
+                                <text x="72" y="26" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold" fontFamily="Arial, sans-serif">Click</text>
+                            </svg>
                         </div>
-                        <div className="px-6 py-3 bg-[#1e1e32] rounded-xl">
-                            <div className="w-20 h-8 bg-[#FFC107] rounded flex items-center justify-center text-black font-bold text-sm">
-                                Paynet
-                            </div>
+
+                        {/* Paynet */}
+                        <div className="px-6 py-4 bg-[#1e1e32] rounded-xl hover:bg-[#25253a] transition-colors">
+                            <svg className="h-8 w-auto" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="120" height="40" rx="8" fill="#FFB800" />
+                                <text x="60" y="26" textAnchor="middle" fill="#1a1a2e" fontSize="14" fontWeight="bold" fontFamily="Arial, sans-serif">PAYNET</text>
+                            </svg>
+                        </div>
+
+                        {/* Uzcard */}
+                        <div className="px-6 py-4 bg-[#1e1e32] rounded-xl hover:bg-[#25253a] transition-colors">
+                            <svg className="h-8 w-auto" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="120" height="40" rx="8" fill="#00B140" />
+                                <text x="60" y="26" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="Arial, sans-serif">UZCARD</text>
+                            </svg>
+                        </div>
+
+                        {/* Humo */}
+                        <div className="px-6 py-4 bg-[#1e1e32] rounded-xl hover:bg-[#25253a] transition-colors">
+                            <svg className="h-8 w-auto" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="120" height="40" rx="8" fill="#E31E24" />
+                                <text x="60" y="26" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold" fontFamily="Arial, sans-serif">HUMO</text>
+                            </svg>
                         </div>
                     </div>
-                    <p className="text-gray-500 text-sm mt-4">Obuna har oy avtomatik uzaytiriladi. Istalgan vaqt bekor qilish mumkin.</p>
+                    <p className="text-gray-500 text-sm mt-6">Obuna har oy avtomatik uzaytiriladi. Istalgan vaqt bekor qilish mumkin.</p>
                 </div>
             </div>
         </div>
