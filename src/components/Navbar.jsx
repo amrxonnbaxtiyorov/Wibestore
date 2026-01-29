@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Gamepad2, Flame, Star, LogIn, UserPlus, Package, User, LogOut, ChevronDown } from 'lucide-react';
+import { Menu, X, Gamepad2, Flame, Star, LogIn, UserPlus, Package, User, LogOut, ChevronDown, Settings, PlusCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import NotificationWidget from './NotificationWidget';
 
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -74,44 +75,65 @@ const Navbar = () => {
                     {/* Auth Section */}
                     <div className="hidden lg:flex items-center gap-3">
                         {isAuthenticated && user ? (
-                            <div className="relative">
-                                <button
-                                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                                    className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                            <>
+                                {/* Sell Button */}
+                                <Link
+                                    to="/sell"
+                                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90 transition-opacity"
                                 >
-                                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-sm font-bold text-white">
-                                        {user.name?.charAt(0) || 'U'}
-                                    </div>
-                                    <span className="text-white text-sm font-medium">{user.name?.split(' ')[0] || 'User'}</span>
-                                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
-                                </button>
+                                    <PlusCircle className="w-4 h-4" />
+                                    Sotish
+                                </Link>
 
-                                {/* Dropdown Menu */}
-                                {isUserMenuOpen && (
-                                    <div className="absolute top-full right-0 mt-2 w-56 bg-[#1e1e32] rounded-xl border border-white/10 shadow-xl overflow-hidden">
-                                        <div className="p-4 border-b border-white/10">
-                                            <p className="text-white font-medium">{user.name}</p>
-                                            <p className="text-sm text-gray-400">{user.email}</p>
+                                {/* Notifications */}
+                                <NotificationWidget />
+
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                                        className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                                    >
+                                        <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-sm font-bold text-white">
+                                            {user.name?.charAt(0) || 'U'}
                                         </div>
-                                        <div className="p-2">
-                                            <Link
-                                                to="/profile"
-                                                className="flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
-                                            >
-                                                <User className="w-4 h-4" />
-                                                Mening profilim
-                                            </Link>
-                                            <button
-                                                onClick={handleLogout}
-                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors"
-                                            >
-                                                <LogOut className="w-4 h-4" />
-                                                Chiqish
-                                            </button>
+                                        <span className="text-white text-sm font-medium">{user.name?.split(' ')[0] || 'User'}</span>
+                                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    {/* Dropdown Menu */}
+                                    {isUserMenuOpen && (
+                                        <div className="absolute top-full right-0 mt-2 w-56 bg-[#1e1e32] rounded-xl border border-white/10 shadow-xl overflow-hidden">
+                                            <div className="p-4 border-b border-white/10">
+                                                <p className="text-white font-medium">{user.name}</p>
+                                                <p className="text-sm text-gray-400">{user.email}</p>
+                                            </div>
+                                            <div className="p-2">
+                                                <Link
+                                                    to="/profile"
+                                                    className="flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
+                                                >
+                                                    <User className="w-4 h-4" />
+                                                    Mening profilim
+                                                </Link>
+                                                <Link
+                                                    to="/settings"
+                                                    className="flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
+                                                >
+                                                    <Settings className="w-4 h-4" />
+                                                    Sozlamalar
+                                                </Link>
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors"
+                                                >
+                                                    <LogOut className="w-4 h-4" />
+                                                    Chiqish
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            </>
                         ) : (
                             <>
                                 <Link
