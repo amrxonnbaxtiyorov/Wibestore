@@ -176,8 +176,8 @@ const SellPage = () => {
                     {[1, 2, 3].map((s, i) => (
                         <div key={s} className="flex items-center">
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${step >= s
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                                    : 'bg-[#25253a] text-gray-500'
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                                : 'bg-[#25253a] text-gray-500'
                                 }`}>
                                 {s}
                             </div>
@@ -208,8 +208,8 @@ const SellPage = () => {
                                             type="button"
                                             onClick={() => setFormData({ ...formData, gameId: game.id })}
                                             className={`p-3 rounded-xl border-2 transition-all ${formData.gameId === game.id
-                                                    ? 'border-purple-500 bg-purple-500/10'
-                                                    : 'border-white/10 hover:border-white/20'
+                                                ? 'border-purple-500 bg-purple-500/10'
+                                                : 'border-white/10 hover:border-white/20'
                                                 }`}
                                         >
                                             <img src={game.image} alt={game.name} className="w-12 h-12 rounded-lg mx-auto mb-2 object-cover" />
@@ -307,8 +307,8 @@ const SellPage = () => {
                                             type="button"
                                             onClick={() => toggleFeature(feature)}
                                             className={`px-4 py-2 rounded-full text-sm transition-all ${formData.features.includes(feature)
-                                                    ? 'bg-purple-500 text-white'
-                                                    : 'bg-[#25253a] text-gray-400 hover:bg-[#2a2a45]'
+                                                ? 'bg-purple-500 text-white'
+                                                : 'bg-[#25253a] text-gray-400 hover:bg-[#2a2a45]'
                                                 }`}
                                         >
                                             {feature}
@@ -329,14 +329,74 @@ const SellPage = () => {
                                 />
                             </div>
 
-                            {/* Images placeholder */}
+                            {/* Images upload */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Rasmlar</label>
-                                <div className="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-purple-500/50 transition-colors cursor-pointer">
-                                    <Image className="w-10 h-10 text-gray-500 mx-auto mb-3" />
-                                    <p className="text-gray-400">Rasmlarni yuklash uchun bosing</p>
-                                    <p className="text-sm text-gray-500 mt-1">PNG, JPG (max 5MB)</p>
-                                </div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Rasmlar (max 5 ta)</label>
+
+                                {/* Image previews */}
+                                {formData.images.length > 0 && (
+                                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-4">
+                                        {formData.images.map((img, index) => (
+                                            <div key={index} className="relative group aspect-square">
+                                                <img
+                                                    src={img}
+                                                    alt={`Preview ${index + 1}`}
+                                                    className="w-full h-full object-cover rounded-xl border border-white/10"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            images: prev.images.filter((_, i) => i !== index)
+                                                        }));
+                                                    }}
+                                                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Upload button */}
+                                {formData.images.length < 5 && (
+                                    <label className="block border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-purple-500/50 transition-colors cursor-pointer">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const files = Array.from(e.target.files);
+                                                const remainingSlots = 5 - formData.images.length;
+                                                const filesToAdd = files.slice(0, remainingSlots);
+
+                                                filesToAdd.forEach(file => {
+                                                    if (file.size > 5 * 1024 * 1024) {
+                                                        alert('Rasm hajmi 5MB dan oshmasligi kerak');
+                                                        return;
+                                                    }
+
+                                                    const reader = new FileReader();
+                                                    reader.onload = (event) => {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            images: [...prev.images, event.target.result]
+                                                        }));
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                });
+
+                                                e.target.value = '';
+                                            }}
+                                        />
+                                        <Upload className="w-10 h-10 text-gray-500 mx-auto mb-3" />
+                                        <p className="text-gray-400">Rasmlarni yuklash uchun bosing</p>
+                                        <p className="text-sm text-gray-500 mt-1">PNG, JPG (max 5MB, {5 - formData.images.length} ta qoldi)</p>
+                                    </label>
+                                )}
                             </div>
                         </div>
                     )}
@@ -369,8 +429,8 @@ const SellPage = () => {
                                             type="button"
                                             onClick={() => setFormData({ ...formData, loginMethod: method })}
                                             className={`p-3 rounded-xl border-2 transition-all capitalize ${formData.loginMethod === method
-                                                    ? 'border-purple-500 bg-purple-500/10 text-white'
-                                                    : 'border-white/10 text-gray-400 hover:border-white/20'
+                                                ? 'border-purple-500 bg-purple-500/10 text-white'
+                                                : 'border-white/10 text-gray-400 hover:border-white/20'
                                                 }`}
                                         >
                                             {method}
