@@ -223,15 +223,15 @@ const PremiumPage = () => {
                         {/* Paynet */}
                         <div className="px-6 py-4 bg-[#1e1e32] rounded-xl hover:bg-[#25253a] transition-colors">
                             <svg className="h-8 w-auto" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
-                                <rect width="120" height="40" rx="8" fill="#FFB800" />
-                                <text x="60" y="26" textAnchor="middle" fill="#1a1a2e" fontSize="14" fontWeight="bold" fontFamily="Arial, sans-serif">PAYNET</text>
+                                <rect width="120" height="40" rx="8" fill="#FFFFFF" />
+                                <text x="60" y="26" textAnchor="middle" fill="#00A651" fontSize="14" fontWeight="bold" fontFamily="Arial, sans-serif">PAYNET</text>
                             </svg>
                         </div>
 
                         {/* Uzcard */}
                         <div className="px-6 py-4 bg-[#1e1e32] rounded-xl hover:bg-[#25253a] transition-colors">
                             <svg className="h-8 w-auto" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
-                                <rect width="120" height="40" rx="8" fill="#00B140" />
+                                <rect width="120" height="40" rx="8" fill="#0066B3" />
                                 <text x="60" y="26" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="Arial, sans-serif">UZCARD</text>
                             </svg>
                         </div>
@@ -239,8 +239,8 @@ const PremiumPage = () => {
                         {/* Humo */}
                         <div className="px-6 py-4 bg-[#1e1e32] rounded-xl hover:bg-[#25253a] transition-colors">
                             <svg className="h-8 w-auto" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
-                                <rect width="120" height="40" rx="8" fill="#E31E24" />
-                                <text x="60" y="26" textAnchor="middle" fill="white" fontSize="16" fontWeight="bold" fontFamily="Arial, sans-serif">HUMO</text>
+                                <rect width="120" height="40" rx="8" fill="#FFFFFF" />
+                                <text x="60" y="26" textAnchor="middle" fill="#B8860B" fontSize="16" fontWeight="bold" fontFamily="Arial, sans-serif">HUMO</text>
                             </svg>
                         </div>
                     </div>
