@@ -187,8 +187,8 @@ const PremiumPage = () => {
                                 color: 'from-yellow-400 to-orange-500'
                             }
                         ].map((benefit, index) => (
-                            <div key={index} className="text-center p-6">
-                                <div className={`w-14 h-14 mx-auto mb-4 bg-gradient-to-br ${benefit.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                            <div key={index} className="flex flex-col items-center text-center p-6">
+                                <div className={`w-14 h-14 mb-4 bg-gradient-to-br ${benefit.color} rounded-2xl flex items-center justify-center shadow-lg`}>
                                     <benefit.icon className="w-7 h-7 text-white" />
                                 </div>
                                 <h3 className="text-lg font-semibold text-white mb-2">{benefit.title}</h3>
