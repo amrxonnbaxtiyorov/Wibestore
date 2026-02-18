@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WibeStore{% endblock %}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .email-header {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            padding: 30px 40px;
+            text-align: center;
+        }
+
+        .email-header h1 {
+            color: #ffffff;
+            font-size: 28px;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .email-header p {
+            color: rgba(255, 255, 255, 0.85);
+            margin: 5px 0 0;
+            font-size: 14px;
+        }
+
+        .email-body {
+            padding: 40px;
+        }
+
+        .email-body h2 {
+            color: #1e293b;
+            font-size: 22px;
+            margin-top: 0;
+        }
+
+        .email-body p {
+            color: #475569;
+            font-size: 15px;
+            margin: 0 0 16px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 16px 0;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+        }
+
+        .info-box {
+            background-color: #f0f9ff;
+            border-left: 4px solid #3B82F6;
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+        }
+
+        .info-box p {
+            margin: 0;
+            color: #1e40af;
+        }
+
+        .email-footer {
+            background-color: #f8fafc;
+            padding: 24px 40px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .email-footer p {
+            color: #94a3b8;
+            font-size: 13px;
+            margin: 0 0 4px;
+        }
+
+        .email-footer a {
+            color: #3B82F6;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>🎮 WibeStore</h1>
+            <p>Marketplace for Gaming Accounts</p>
+        </div>
+
+        <div class="email-body">
+            {% block content %}{% endblock %}
+        </div>
+
+        <div class="email-footer">
+            <p>© 2024 WibeStore. All rights reserved.</p>
+            <p><a href="https://wibestore.uz">wibestore.uz</a> | <a
+                    href="mailto:support@wibestore.uz">support@wibestore.uz</a></p>
+            <p style="margin-top: 8px;">This email was sent automatically. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+
+</html>
