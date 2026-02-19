@@ -8,7 +8,7 @@ import { useLanguage } from '../context/LanguageContext';
 
 const LoginModal = ({ isOpen, onClose, onSuccess, message }) => {
     const { t } = useLanguage();
-    const { login } = useAuth();
+    const { login, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
 
     const [email, setEmail] = useState('');
@@ -29,7 +29,12 @@ const LoginModal = ({ isOpen, onClose, onSuccess, message }) => {
                     headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
                 });
                 const data = await res.json();
-                // Close the modal and trigger success
+                await loginWithGoogle({
+                    id: data.sub,
+                    email: data.email,
+                    name: data.name,
+                    avatar: data.picture,
+                });
                 handleCloseImmediate();
                 if (onSuccess) onSuccess();
             } catch {

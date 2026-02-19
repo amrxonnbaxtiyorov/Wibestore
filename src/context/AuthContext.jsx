@@ -116,6 +116,73 @@ export const AuthProvider = ({ children }) => {
         });
     };
 
+    // Google OAuth login/register
+    const loginWithGoogle = (googleData) => {
+        return new Promise((resolve) => {
+            const registeredUsers = getRegisteredUsers();
+
+            // Check if user with this email already exists
+            const existingUser = registeredUsers.find(
+                u => u.email.toLowerCase() === googleData.email.toLowerCase()
+            );
+
+            if (existingUser) {
+                // User exists — update avatar from Google and log in
+                existingUser.avatar = googleData.avatar || existingUser.avatar;
+                existingUser.googleId = googleData.id;
+                const idx = registeredUsers.findIndex(u => u.id === existingUser.id);
+                if (idx !== -1) registeredUsers[idx] = existingUser;
+                localStorage.setItem('wibeRegisteredUsers', JSON.stringify(registeredUsers));
+
+                const userData = { ...existingUser };
+                delete userData.password;
+                setUser(userData);
+                localStorage.setItem('wibeUser', JSON.stringify(userData));
+                resolve(userData);
+            } else {
+                // New user — auto-register with Google data
+                const newUser = {
+                    id: crypto.randomUUID(),
+                    googleId: googleData.id,
+                    name: googleData.name,
+                    email: googleData.email,
+                    phone: '',
+                    password: null, // Google users have no password
+                    avatar: googleData.avatar || null,
+                    rating: 5.0,
+                    sales: 0,
+                    purchases: 0,
+                    isPremium: false,
+                    premiumType: null,
+                    premiumExpiry: null,
+                    authProvider: 'google',
+                    createdAt: new Date().toISOString().split('T')[0]
+                };
+
+                registeredUsers.push(newUser);
+                localStorage.setItem('wibeRegisteredUsers', JSON.stringify(registeredUsers));
+
+                // Also update wibeUsers for admin panel
+                const wibeUsers = JSON.parse(localStorage.getItem('wibeUsers') || '[]');
+                wibeUsers.push({
+                    id: String(newUser.id),
+                    name: newUser.name,
+                    email: newUser.email,
+                    isPremium: false,
+                    premiumType: null,
+                    premiumExpiry: null
+                });
+                localStorage.setItem('wibeUsers', JSON.stringify(wibeUsers));
+
+                const userDataWithoutPassword = { ...newUser };
+                delete userDataWithoutPassword.password;
+                setUser(userDataWithoutPassword);
+                localStorage.setItem('wibeUser', JSON.stringify(userDataWithoutPassword));
+                resolve(userDataWithoutPassword);
+            }
+        });
+    };
+
     // Logout function
     const logout = () => {
         setUser(null);
@@ -144,6 +211,7 @@ export const AuthProvider = ({ children }) => {
         isLoading,
         isAuthenticated: !!user,
         login,
+        loginWithGoogle,
         register,
         logout,
         updateProfile
