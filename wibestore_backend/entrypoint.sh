@@ -11,8 +11,11 @@ echo "==> Making migrations..."
 python manage.py makemigrations accounts --noinput
 python manage.py makemigrations --noinput
 
-echo "==> Running migrations..."
-python manage.py migrate --noinput
+echo "==> Creating superuser..."
+python manage.py createsuperuser --noinput || true
+
+echo "==> Collecting static files..."
+python manage.py collectstatic --noinput
 
 echo "==> Collecting static files..."
 python manage.py collectstatic --noinput
