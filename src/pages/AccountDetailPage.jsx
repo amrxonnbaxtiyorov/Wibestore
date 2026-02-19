@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { accounts, formatPrice, COMMISSION_RATE } from '../data/mockData';
 import AccountCard from '../components/AccountCard';
 import ReviewModal from '../components/ReviewModal';
+import LoginModal from '../components/LoginModal';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 
@@ -16,6 +17,8 @@ const AccountDetailPage = () => {
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [hasPurchased, setHasPurchased] = useState(false);
     const [hasReviewed, setHasReviewed] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [loginMessage, setLoginMessage] = useState('');
 
     const account = accounts.find(acc => acc.id === parseInt(accountId));
 
@@ -35,9 +38,23 @@ const AccountDetailPage = () => {
     }, [user, account]);
 
     const handleContactSeller = () => {
-        if (!isAuthenticated) { navigate('/login'); return; }
+        if (!isAuthenticated) {
+            setLoginMessage('Sotuvchi bilan bog\'lanish uchun tizimga kiring');
+            setShowLoginModal(true);
+            return;
+        }
         const seller = { id: account.seller.id || 999, name: account.seller.name, rating: account.seller.rating };
         startConversation(seller, account);
+    };
+
+    const handleBuyClick = () => {
+        if (!isAuthenticated) {
+            setLoginMessage('Akkauntni sotib olish uchun tizimga kiring');
+            setShowLoginModal(true);
+            return;
+        }
+        // TODO: Purchase flow implementation
+        alert('Xarid jarayoni boshlandi!');
     };
 
     const handleReviewSubmit = () => setHasReviewed(true);
@@ -200,7 +217,11 @@ const AccountDetailPage = () => {
                             </div>
 
                             {/* Buy Button */}
-                            <button className="btn btn-primary btn-lg" style={{ width: '100%', padding: '14px', fontSize: 'var(--font-size-base)' }}>
+                            <button
+                                onClick={handleBuyClick}
+                                className="btn btn-primary btn-lg"
+                                style={{ width: '100%', padding: '14px', fontSize: 'var(--font-size-base)' }}
+                            >
                                 Sotib olish
                             </button>
 
@@ -253,6 +274,16 @@ const AccountDetailPage = () => {
                 seller={account?.seller}
                 account={account}
                 onSubmit={handleReviewSubmit}
+            />
+
+            {/* Login Modal */}
+            <LoginModal
+                isOpen={showLoginModal}
+                onClose={() => setShowLoginModal(false)}
+                message={loginMessage}
+                onSuccess={() => {
+                    setShowLoginModal(false);
+                }}
             />
 
             {/* Floating Review Button */}
