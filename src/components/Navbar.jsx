@@ -224,8 +224,18 @@ const Navbar = () => {
                             style={{ padding: '0 8px' }}
                         >
                             <Globe className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
-                            <span className="hidden sm:inline text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                                {currentLang.flag}
+                            <span className="hidden sm:inline-flex items-center gap-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                                <img
+                                    src={currentLang.flagUrl}
+                                    alt={currentLang.name}
+                                    style={{
+                                        width: '20px',
+                                        height: '14px',
+                                        objectFit: 'cover',
+                                        borderRadius: '2px',
+                                        display: 'block',
+                                    }}
+                                />
                             </span>
                         </button>
 
@@ -234,7 +244,7 @@ const Navbar = () => {
                                 className="dropdown-menu absolute right-0 mt-1"
                                 role="menu"
                                 aria-label="Language selection"
-                                style={{ minWidth: '140px' }}
+                                style={{ minWidth: '160px' }}
                             >
                                 {langList.map((lang) => (
                                     <button
@@ -242,7 +252,17 @@ const Navbar = () => {
                                         onClick={() => { setLanguage(lang.code); setIsLangOpen(false); }}
                                         className={`dropdown-item ${language === lang.code ? 'dropdown-item-active' : ''}`}
                                     >
-                                        <span>{lang.flag}</span>
+                                        <img
+                                            src={lang.flagUrl}
+                                            alt={lang.name}
+                                            style={{
+                                                width: '20px',
+                                                height: '14px',
+                                                objectFit: 'cover',
+                                                borderRadius: '2px',
+                                                marginRight: '8px',
+                                            }}
+                                        />
                                         <span>{lang.name}</span>
                                     </button>
                                 ))}

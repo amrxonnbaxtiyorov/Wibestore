@@ -8,9 +8,24 @@ const translations = { uz, ru, en };
 const LanguageContext = createContext();
 
 export const languages = [
-    { code: 'uz', name: "O'zbek", flag: '🇺🇿' },
-    { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-    { code: 'en', name: 'English', flag: '🇺🇸' },
+    {
+        code: 'uz',
+        name: "O'zbek",
+        flag: '🇺🇿',
+        flagUrl: 'https://flagcdn.com/w320/uz.png',
+    },
+    {
+        code: 'ru',
+        name: 'Русский',
+        flag: '🇷🇺',
+        flagUrl: 'https://flagcdn.com/w320/ru.png',
+    },
+    {
+        code: 'en',
+        name: 'English',
+        flag: '🇺🇸',
+        flagUrl: 'https://flagcdn.com/w320/gb.png',
+    },
 ];
 
 export const LanguageProvider = ({ children }) => {

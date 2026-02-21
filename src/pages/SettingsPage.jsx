@@ -395,7 +395,19 @@ const SettingsPage = () => {
                                                     transition: 'all 0.15s ease',
                                                 }}
                                             >
-                                                <div style={{ fontSize: '28px', marginBottom: '8px' }}>{lang.flag}</div>
+                                                <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+                                                    <img
+                                                        src={lang.flagUrl}
+                                                        alt={lang.name}
+                                                        style={{
+                                                            width: '40px',
+                                                            height: '24px',
+                                                            objectFit: 'cover',
+                                                            borderRadius: '4px',
+                                                            display: 'block',
+                                                        }}
+                                                    />
+                                                </div>
                                                 <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{lang.name}</p>
                                             </button>
                                         ))}
