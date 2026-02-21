@@ -40,8 +40,8 @@ class Game(BaseModel):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
-    @property
-    def active_listings_count(self) -> int:
+    def get_active_listings_count(self) -> int:
+        """Return count of active listings for this game."""
         return self.listings.filter(status="active").count()
 
 

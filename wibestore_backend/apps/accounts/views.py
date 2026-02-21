@@ -22,6 +22,7 @@ from .serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     UserProfileUpdateSerializer,
+    UserPublicSerializer,
     UserRegisterSerializer,
     UserSerializer,
 )
@@ -318,8 +319,6 @@ class DeleteAccountView(APIView):
 @extend_schema(tags=["Users"])
 class PublicUserProfileView(generics.RetrieveAPIView):
     """GET /api/v1/auth/users/{id}/ — Public user profile."""
-
-    from .serializers import UserPublicSerializer
 
     serializer_class = UserPublicSerializer
     permission_classes = [permissions.AllowAny]

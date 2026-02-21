@@ -10,10 +10,6 @@ export PORT="${PORT:-8000}"
 
 echo "==> WibeStore Entrypoint Started (PORT=$PORT)"
 
-echo "==> Making migrations..."
-python manage.py makemigrations accounts --noinput
-python manage.py makemigrations --noinput
-
 echo "==> Applying migrations..."
 python manage.py migrate --noinput
 

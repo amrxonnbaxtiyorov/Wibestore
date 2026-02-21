@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Shield, Zap, Users, TrendingUp, Star, Crown, ChevronRight } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Users, TrendingUp, Star, Crown, ChevronRight, Trophy } from 'lucide-react';
 import { useGames, useListings } from '../hooks';
 import GameCard from '../components/GameCard';
 import AccountCard from '../components/AccountCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
+import { games as mockGames, accounts as mockAccounts } from '../data/mockData';
 
 // Animated counter hook
 function useCounter(target, duration = 2000) {
@@ -47,14 +48,23 @@ const HomePage = () => {
     // API hooks
     const { data: gamesData, isLoading: gamesLoading } = useGames();
     const { data: listingsData, isLoading: listingsLoading } = useListings({ limit: 8 });
-    
-    // Use API data or fallback - handle both paginated and non-paginated responses
-    const games = gamesData?.results || gamesData || [];
-    
+
+    // Use API data or fallback to mock data
+    const games = gamesData?.results || gamesData || mockGames;
+
     // Handle different response structures
-    const allListings = listingsData?.pages?.flatMap?.(page => page.results) || listingsData?.results || listingsData || [];
+    const allListings = listingsData?.pages?.flatMap?.(page => page.results) || listingsData?.results || listingsData || mockAccounts;
     const premiumAccounts = allListings.filter(l => l.is_premium)?.slice(0, 6) || [];
     const recommendedAccounts = allListings.slice(0, 8) || [];
+    
+    // Top accounts - sorted by premium status and rating
+    const topAccounts = [...allListings]
+        .sort((a, b) => {
+            if (a.is_premium && !b.is_premium) return -1;
+            if (!a.is_premium && b.is_premium) return 1;
+            return (b.seller?.rating || 0) - (a.seller?.rating || 0);
+        })
+        .slice(0, 8);
 
     const statsData = [
         { target: '12,500+', label: t('stats.accounts'), icon: TrendingUp },
@@ -314,6 +324,62 @@ const HomePage = () => {
                                     isLiked: account.is_favorited || false,
                                     isPremium: account.is_premium,
                                 }} featured />
+                            ))
+                        ) : null}
+                    </div>
+                </div>
+            </section>
+
+            {/* Top Accounts Section */}
+            <section
+                style={{
+                    paddingTop: '48px',
+                    paddingBottom: '48px',
+                    backgroundColor: 'var(--color-bg-secondary)',
+                }}
+            >
+                <div className="gh-container">
+                    <div className="flex items-center justify-between" style={{ marginBottom: '24px' }}>
+                        <h2
+                            className="flex items-center gap-2"
+                            style={{
+                                fontSize: 'var(--font-size-xl)',
+                                fontWeight: 'var(--font-weight-semibold)',
+                                color: 'var(--color-text-primary)',
+                            }}
+                        >
+                            <Trophy className="w-5 h-5" style={{ color: 'var(--color-premium-gold-light)' }} />
+                            {t('nav.top')}
+                        </h2>
+                        <Link
+                            to="/top"
+                            className="flex items-center gap-1 text-sm font-medium"
+                            style={{ color: 'var(--color-text-accent)', textDecoration: 'none' }}
+                        >
+                            {t('sections.all')}
+                            <ChevronRight className="w-4 h-4" />
+                        </Link>
+                    </div>
+
+                    <div
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger"
+                        style={{ gap: '16px' }}
+                    >
+                        {listingsLoading ? (
+                            [...Array(8)].map((_, i) => <SkeletonLoader key={i} />)
+                        ) : topAccounts.length > 0 ? (
+                            topAccounts.map((account) => (
+                                <AccountCard key={account.id} account={{
+                                    id: account.id,
+                                    gameId: account.game?.slug || account.game?.id,
+                                    gameName: account.game?.name,
+                                    title: account.title,
+                                    price: parseFloat(account.price),
+                                    seller: account.seller,
+                                    image: account.images?.[0]?.image || account.image,
+                                    isLiked: account.is_favorited || false,
+                                    isPremium: account.is_premium,
+                                }} />
                             ))
                         ) : null}
                     </div>

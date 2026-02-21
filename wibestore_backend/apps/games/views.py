@@ -2,7 +2,6 @@
 WibeStore Backend - Games Views
 """
 
-from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions
 
@@ -21,15 +20,7 @@ class GameListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        return (
-            Game.objects.filter(is_active=True)
-            .annotate(
-                active_listings_count=Count(
-                    "listings", filter=Q(listings__status="active")
-                )
-            )
-            .order_by("sort_order", "name")
-        )
+        return Game.objects.filter(is_active=True).order_by("sort_order", "name")
 
 
 @extend_schema(tags=["Games"])
@@ -41,11 +32,7 @@ class GameDetailView(generics.RetrieveAPIView):
     lookup_field = "slug"
 
     def get_queryset(self):
-        return Game.objects.filter(is_active=True).annotate(
-            active_listings_count=Count(
-                "listings", filter=Q(listings__status="active")
-            )
-        )
+        return Game.objects.filter(is_active=True)
 
 
 @extend_schema(tags=["Games"])
