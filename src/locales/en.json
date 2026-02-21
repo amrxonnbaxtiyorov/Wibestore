@@ -283,7 +283,12 @@
         "escrow_item": "Escrow — payment is held until the buyer confirms"
     },
     "detail": {
-        "link_copied": "Link copied"
+        "link_copied": "Link copied",
+        "listing_not_found": "Listing not found",
+        "listing_not_found_desc": "This account does not exist or has been deleted.",
+        "listing_error_desc": "Unable to load. Please check your connection and try again.",
+        "back_to_products": "All products",
+        "try_again": "Try again"
     },
     "notifications": {
         "title": "Notifications",

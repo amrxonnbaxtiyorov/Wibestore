@@ -168,7 +168,7 @@ const AccountDetailPage = () => {
     const { t } = useLanguage();
     const { addToast } = useToast();
 
-    const { data: listing, isLoading } = useListing(accountId);
+    const { data: listing, isLoading, isError, error, refetch } = useListing(accountId);
     const { mutate: addToFavorites } = useAddToFavorites();
     const { mutate: removeFromFavorites } = useRemoveFromFavorites();
     const { data: relatedData } = useListings({ game: listing?.game?.id, limit: 4 });
@@ -201,19 +201,31 @@ const AccountDetailPage = () => {
         );
     }
 
-    /* ── Not found ── */
+    /* ── Not found or error ── */
     if (!listing) {
+        const isNetworkError = !error?.response;
+        const description = isNetworkError ? t('detail.listing_error_desc') : t('detail.listing_not_found_desc');
+
         return (
             <div className="page-enter" style={{ minHeight: 'calc(100vh - 64px)' }}>
                 <div className="gh-container">
                     <div className="empty-state" style={{ paddingTop: '80px' }}>
-                        <AlertCircle className="empty-state-icon" />
-                        <h3 className="empty-state-title">Listing topilmadi</h3>
-                        <p className="empty-state-description">Bu akkaunt mavjud emas yoki o'chirilgan.</p>
-                        <Link to="/products" className="btn btn-primary btn-md" style={{ textDecoration: 'none' }}>
-                            <ArrowLeft style={{ width: '16px', height: '16px' }} />
-                            Barcha mahsulotlar
-                        </Link>
+                        <div className="empty-state-icon" style={{ width: 64, height: 64, borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-error-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto var(--space-6)' }}>
+                            <AlertCircle style={{ width: 32, height: 32, color: 'var(--color-error)' }} />
+                        </div>
+                        <h3 className="empty-state-title">{t('detail.listing_not_found')}</h3>
+                        <p className="empty-state-description">{description}</p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', justifyContent: 'center' }}>
+                            {isNetworkError && (
+                                <button type="button" onClick={() => refetch()} className="btn btn-secondary btn-md">
+                                    {t('detail.try_again')}
+                                </button>
+                            )}
+                            <Link to="/products" className="btn btn-primary btn-md" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                <ArrowLeft style={{ width: '16px', height: '16px' }} />
+                                {t('detail.back_to_products')}
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

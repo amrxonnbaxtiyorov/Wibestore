@@ -283,7 +283,12 @@
         "escrow_item": "Escrow tizimi — pul xaridor tasdiqlagunga qadar saytda saqlanadi"
     },
     "detail": {
-        "link_copied": "Havola nusxalandi"
+        "link_copied": "Havola nusxalandi",
+        "listing_not_found": "Listing topilmadi",
+        "listing_not_found_desc": "Bu akkaunt mavjud emas yoki o'chirilgan.",
+        "listing_error_desc": "Yuklab bo'lmadi. Internetingizni tekshiring va qayta urinib ko'ring.",
+        "back_to_products": "Barcha mahsulotlar",
+        "try_again": "Qayta urinish"
     },
     "notifications": {
         "title": "Bildirishnomalar",
