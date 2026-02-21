@@ -25,20 +25,12 @@ class ErrorBoundary extends Component {
         
         // Отправка ошибки в Sentry (если настроен)
         if (import.meta.env.VITE_SENTRY_DSN) {
-            // Sentry.captureException(error, { extra: errorInfo });
+            try {
+                if (typeof window !== 'undefined' && window.Sentry) {
+                    window.Sentry.captureException(error, { extra: errorInfo });
+                }
+            } catch (_) {}
         }
-        
-        // Логирование на сервер (опционально)
-        fetch('/api/v1/log-error/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                error: error.toString(),
-                componentStack: errorInfo.componentStack,
-                url: window.location.href,
-                userAgent: navigator.userAgent,
-            }),
-        }).catch(() => {}); // Игнорируем ошибки логирования
     }
 
     handleRetry = () => {

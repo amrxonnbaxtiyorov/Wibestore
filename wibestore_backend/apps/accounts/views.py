@@ -70,6 +70,27 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
     throttle_scope = "auth"
 
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        # Return same shape as Register/Google: { success, data: { user, tokens } }
+        access = response.data.get("access")
+        refresh = response.data.get("refresh")
+        if access and refresh:
+            from rest_framework_simplejwt.tokens import AccessToken
+            payload = AccessToken(access).payload
+            user_id = payload.get("user_id")
+            if user_id:
+                user = User.objects.filter(pk=user_id).first()
+                if user:
+                    response.data = {
+                        "success": True,
+                        "data": {
+                            "user": UserSerializer(user).data,
+                            "tokens": {"access": access, "refresh": refresh},
+                        },
+                    }
+        return response
+
 
 @extend_schema(tags=["Authentication"])
 class LogoutView(APIView):

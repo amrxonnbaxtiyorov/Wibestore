@@ -52,13 +52,17 @@ export const AuthProvider = ({ children }) => {
             const publicClient = createPublicClient();
             const { data } = await publicClient.post('/auth/login/', { email, password });
             
-            // Backend returns: { success: true, data: { user, tokens: { access, refresh } } }
-            const { user: userData, tokens } = data.data || data;
-            
-            // Сохраняем токены
+            // Backend returns: { success: true, data: { user, tokens } } or legacy { access, refresh }
+            const payload = data.data || data;
+            const tokens = payload.tokens || { access: payload.access, refresh: payload.refresh };
             setTokens({ access: tokens.access, refresh: tokens.refresh });
-            setUser(userData);
             
+            let userData = payload.user;
+            if (!userData && tokens.access) {
+                const { data: me } = await apiClient.get('/auth/me/');
+                userData = me;
+            }
+            setUser(userData);
             return userData;
         } catch (error) {
             console.error('[Auth] Login failed:', error);
@@ -108,13 +112,15 @@ export const AuthProvider = ({ children }) => {
 
     // Logout функция
     const logout = async () => {
+        const tokens = getStoredTokens();
         try {
-            // Уведомляем сервер о logout (для blacklist токена)
-            await apiClient.post('/auth/logout/');
+            // Уведомляем сервер о logout (blacklist refresh токена)
+            if (tokens?.refresh) {
+                await apiClient.post('/auth/logout/', { refresh: tokens.refresh });
+            }
         } catch (error) {
             console.error('[Auth] Logout request failed:', error);
         } finally {
-            // Очищаем локально в любом случае
             removeTokens();
             setUser(null);
         }

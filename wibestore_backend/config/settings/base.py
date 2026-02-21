@@ -268,6 +268,14 @@ CORS_ALLOWED_ORIGINS = env.list(
     default=["http://localhost:5173", "http://localhost:3000"],
 )
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 # ============================================================
 # CHANNEL LAYERS (WebSocket)

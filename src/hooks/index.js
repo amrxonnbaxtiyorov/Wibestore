@@ -55,9 +55,16 @@ export { useReports, useCreateReport, useUpdateReport } from './useReports';
 export {
     useAdminDashboard,
     useAdminUsers,
-    useAdminUpdateUser,
+    useAdminBanUser,
+    useAdminPendingListings,
     useAdminListings,
+    useAdminApproveListing,
+    useAdminRejectListing,
     useAdminUpdateListing,
+    useAdminReports,
+    useAdminResolveReport,
+    useAdminDisputes,
+    useAdminResolveDispute,
     useAdminTransactions,
 } from './useAdmin';
 export { useUploadImage, useUploadImages } from './useUpload';

@@ -8,6 +8,7 @@ import { CoinProvider } from './context/CoinContext';
 import { LanguageProvider } from './context/LanguageContext';
 import ToastProvider from './components/ToastProvider';
 import ErrorBoundary from './components/ErrorBoundary';
+import AuthGuard, { AdminGuard, GuestGuard } from './components/AuthGuard';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ChatWidget from './components/ChatWidget';
@@ -101,47 +102,47 @@ function App() {
                   <ChatProvider>
                     <NotificationProvider>
                     <Routes>
-                      {/* Admin Login - No layout */}
+                      {/* Admin Login - No layout, only for guests */}
                       <Route path="/admin/login" element={
                         <Suspense fallback={<PageLoader />}>
-                          <AdminLogin />
+                          <GuestGuard><AdminLogin /></GuestGuard>
                         </Suspense>
                       } />
 
-                      {/* Admin Routes */}
+                      {/* Admin Routes - protected by AdminGuard */}
                       <Route path="/admin" element={
                         <Suspense fallback={<PageLoader />}>
-                          <AdminLayout><AdminDashboard /></AdminLayout>
+                          <AdminGuard><AdminLayout><AdminDashboard /></AdminLayout></AdminGuard>
                         </Suspense>
                       } />
                       <Route path="/admin/accounts" element={
                         <Suspense fallback={<PageLoader />}>
-                          <AdminLayout><AdminAccounts /></AdminLayout>
+                          <AdminGuard><AdminLayout><AdminAccounts /></AdminLayout></AdminGuard>
                         </Suspense>
                       } />
                       <Route path="/admin/users" element={
                         <Suspense fallback={<PageLoader />}>
-                          <AdminLayout><AdminUsers /></AdminLayout>
+                          <AdminGuard><AdminLayout><AdminUsers /></AdminLayout></AdminGuard>
                         </Suspense>
                       } />
                       <Route path="/admin/reports" element={
                         <Suspense fallback={<PageLoader />}>
-                          <AdminLayout><AdminReports /></AdminLayout>
+                          <AdminGuard><AdminLayout><AdminReports /></AdminLayout></AdminGuard>
                         </Suspense>
                       } />
                       <Route path="/admin/premium" element={
                         <Suspense fallback={<PageLoader />}>
-                          <AdminLayout><AdminPremium /></AdminLayout>
+                          <AdminGuard><AdminLayout><AdminPremium /></AdminLayout></AdminGuard>
                         </Suspense>
                       } />
                       <Route path="/admin/finance" element={
                         <Suspense fallback={<PageLoader />}>
-                          <AdminLayout><AdminFinance /></AdminLayout>
+                          <AdminGuard><AdminLayout><AdminFinance /></AdminLayout></AdminGuard>
                         </Suspense>
                       } />
                       <Route path="/admin/settings" element={
                         <Suspense fallback={<PageLoader />}>
-                          <AdminLayout><AdminSettings /></AdminLayout>
+                          <AdminGuard><AdminLayout><AdminSettings /></AdminLayout></AdminGuard>
                         </Suspense>
                       } />
 
@@ -188,16 +189,16 @@ function App() {
                                 <Route path="/products" element={<ProductsPage />} />
                                 <Route path="/premium" element={<PremiumPage />} />
                                 <Route path="/top" element={<TopAccountsPage />} />
-                                <Route path="/login" element={<LoginPage />} />
-                                <Route path="/signup" element={<SignupPage />} />
-                                <Route path="/profile" element={<ProfilePage />} />
+                                <Route path="/login" element={<GuestGuard><LoginPage /></GuestGuard>} />
+                                <Route path="/signup" element={<GuestGuard><SignupPage /></GuestGuard>} />
+                                <Route path="/profile" element={<AuthGuard><ProfilePage /></AuthGuard>} />
                                 <Route path="/terms" element={<TermsPage />} />
-                                <Route path="/sell" element={<SellPage />} />
+                                <Route path="/sell" element={<AuthGuard><SellPage /></AuthGuard>} />
                                 <Route path="/faq" element={<FAQPage />} />
                                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                                <Route path="/settings" element={<SettingsPage />} />
+                                <Route path="/settings" element={<AuthGuard><SettingsPage /></AuthGuard>} />
                                 <Route path="/statistics" element={<StatisticsPage />} />
-                                <Route path="/coins" element={<CoinsPage />} />
+                                <Route path="/coins" element={<AuthGuard><CoinsPage /></AuthGuard>} />
                                 <Route path="*" element={<NotFoundPage />} />
                               </Routes>
                             </Suspense>

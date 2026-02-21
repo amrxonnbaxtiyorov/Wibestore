@@ -3,56 +3,63 @@ import {
     AlertTriangle, Star, Clock, Eye, Check, X
 } from 'lucide-react';
 import { formatPrice } from '../../data/mockData';
+import { useAdminDashboard, useAdminPendingListings, useAdminReports } from '../../hooks/useAdmin';
+
+const defaultStats = [
+    { label: 'Jami akkauntlar', value: '0', change: '-', trend: 'up', icon: Package, color: 'var(--color-accent-blue)' },
+    { label: 'Bugun sotildi', value: '0', change: '-', trend: 'up', icon: TrendingUp, color: 'var(--color-accent-green)' },
+    { label: 'Kutilgan moderatsiya', value: '0', change: '-', trend: 'down', icon: Clock, color: 'var(--color-accent-orange)' },
+    { label: 'Shikoyatlar', value: '0', change: '-', trend: 'up', icon: AlertTriangle, color: 'var(--color-accent-red)' },
+];
+
+const fallbackAccounts = [
+    { id: 1, title: 'PUBG Mobile Conqueror', game: 'PUBG Mobile', price: 2500000, status: 'pending', seller: 'ProGamer_UZ' },
+    { id: 2, title: 'Steam 150+ Games', game: 'Steam', price: 3800000, status: 'active', seller: 'GameStore_TJ' },
+];
+const fallbackReports = [
+    { id: 1, type: 'Scam', account: 'PUBG Account #123', reporter: 'user123', status: 'pending' },
+];
 
 const AdminDashboard = () => {
-    const stats = [
-        {
-            label: 'Jami akkauntlar',
-            value: '12,450',
-            change: '+12%',
-            trend: 'up',
-            icon: Package,
-            color: 'var(--color-accent-blue)',
-        },
-        {
-            label: 'Bugun sotildi',
-            value: '156',
-            change: '+8%',
-            trend: 'up',
-            icon: TrendingUp,
-            color: 'var(--color-accent-green)',
-        },
-        {
-            label: 'Kutilgan moderatsiya',
-            value: '45',
-            change: '-5%',
-            trend: 'down',
-            icon: Clock,
-            color: 'var(--color-accent-orange)',
-        },
-        {
-            label: 'Shikoyatlar',
-            value: '12',
-            change: '+2',
-            trend: 'up',
-            icon: AlertTriangle,
-            color: 'var(--color-accent-red)',
-        },
-    ];
+    const { data: dashboardData, isLoading: dashboardLoading } = useAdminDashboard();
+    const { data: pendingListings = [], isLoading: listingsLoading } = useAdminPendingListings();
+    const { data: reportsList = [], isLoading: reportsLoading } = useAdminReports();
 
-    const recentAccounts = [
-        { id: 1, title: 'PUBG Mobile Conqueror', game: 'PUBG Mobile', price: 2500000, status: 'pending', seller: 'ProGamer_UZ' },
-        { id: 2, title: 'Steam 150+ Games', game: 'Steam', price: 3800000, status: 'active', seller: 'GameStore_TJ' },
-        { id: 3, title: 'Free Fire Heroic', game: 'Free Fire', price: 1200000, status: 'pending', seller: 'FFKing_UZ' },
-        { id: 4, title: 'Standoff 2 Elite', game: 'Standoff 2', price: 1800000, status: 'blocked', seller: 'SO2Master' },
-        { id: 5, title: 'Mobile Legends Mythic', game: 'Mobile Legends', price: 2100000, status: 'active', seller: 'MLBB_Pro' },
-    ];
+    const apiStats = dashboardData && typeof dashboardData === 'object' ? {
+        users: dashboardData.users,
+        listings: dashboardData.listings,
+        transactions: dashboardData.transactions,
+        escrow: dashboardData.escrow,
+        reports: dashboardData.reports,
+    } : null;
 
-    const recentReports = [
-        { id: 1, type: 'Scam', account: 'PUBG Account #123', reporter: 'user123', status: 'pending' },
-        { id: 2, type: "Yolg'on ma'lumot", account: 'Steam Account #456', reporter: 'buyer456', status: 'investigating' },
-        { id: 3, type: 'Akkaunt ishlamaydi', account: 'FF Account #789', reporter: 'player789', status: 'resolved' },
-    ];
+    const stats = apiStats ? [
+        { ...defaultStats[0], value: String(apiStats.listings?.total ?? 0), change: apiStats.users?.new_this_week ? `+${apiStats.users.new_this_week}` : '-' },
+        { ...defaultStats[1], value: String(apiStats.listings?.sold ?? 0), change: apiStats.transactions?.month_volume ? '+' : '-' },
+        { ...defaultStats[2], value: String(apiStats.listings?.pending ?? 0) },
+        { ...defaultStats[3], value: String(apiStats.reports?.pending ?? 0), change: apiStats.reports?.total ? `/${apiStats.reports.total}` : '-' },
+    ] : defaultStats;
+
+    const recentAccounts = Array.isArray(pendingListings) && pendingListings.length > 0
+        ? pendingListings.slice(0, 5).map((l) => ({
+            id: l.id,
+            title: l.title,
+            game: l.game?.name ?? '-',
+            price: parseFloat(l.price) || 0,
+            status: l.status,
+            seller: l.seller?.email ?? l.seller?.display_name ?? '-',
+        }))
+        : fallbackAccounts;
+
+    const recentReports = Array.isArray(reportsList) && reportsList.length > 0
+        ? reportsList.slice(0, 5).map((r) => ({
+            id: r.id,
+            type: r.reason || 'Report',
+            account: r.reported_listing?.title ?? (r.description || '').slice(0, 30) || '-',
+            reporter: r.reporter?.email ?? '-',
+            status: r.status,
+        }))
+        : fallbackReports;
 
     const getStatusBadge = (status) => {
         const config = {

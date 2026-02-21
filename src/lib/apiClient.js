@@ -12,10 +12,13 @@ import axios from 'axios';
  * - Retry logic для временных ошибок
  */
 
-// Базовый URL из environment variables
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+// Базовый URL из environment variables (relative для proxy в dev)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
-// Создаем axios инстанс
+// Retry logic для временных ошибок (502, 503, network)
+const RETRYABLE_STATUSES = [502, 503, 504];
+const MAX_RETRIES = 3;
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -135,9 +138,9 @@ apiClient.interceptors.response.use(
           refresh: tokens.refresh,
         });
 
-        const { access, refresh } = response.data;
-        
-        // Сохраняем новые токены
+        const { access, refresh: newRefresh } = response.data;
+        const refresh = newRefresh ?? tokens.refresh;
+
         saveTokens({ access, refresh });
         
         // Уведомляем ожидающие запросы
@@ -169,6 +172,19 @@ apiClient.interceptors.response.use(
     // Обработка network ошибок
     if (!error.response) {
       console.error('[API] Network error:', error.message);
+    }
+
+    // Retry для временных ошибок (502, 503, 504, network)
+    const retryCount = originalRequest._retryCount ?? 0;
+    const shouldRetry =
+      retryCount < MAX_RETRIES &&
+      (RETRYABLE_STATUSES.includes(error.response?.status) || !error.response);
+    if (shouldRetry) {
+      originalRequest._retryCount = retryCount + 1;
+      const delay = Math.min(1000 * 2 ** retryCount, 10000);
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(apiClient(originalRequest)), delay);
+      });
     }
 
     return Promise.reject(error);
