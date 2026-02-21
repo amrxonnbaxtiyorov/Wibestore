@@ -73,7 +73,7 @@ const ProductsPage = () => {
         <div className="page-enter" style={{ minHeight: '100vh' }}>
             <div className="gh-container">
                 <PageHeader
-                    breadcrumbs={[{ label: 'Home', to: '/' }, { label: t('nav.products') || 'Products' }]}
+                    breadcrumbs={[{ label: t('common.home'), to: '/' }, { label: t('nav.products') || 'Products' }]}
                     title={t('products.title') || 'All Products'}
                     description={`${filteredAccounts.length} ${t('products.found') || 'accounts found'}`}
                 />

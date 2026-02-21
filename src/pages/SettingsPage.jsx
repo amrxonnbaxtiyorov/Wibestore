@@ -135,7 +135,7 @@ const SettingsPage = () => {
             <div className="gh-container" style={{ maxWidth: '960px' }}>
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs">
-                    <Link to="/">Home</Link>
+                    <Link to="/">{t('common.home')}</Link>
                     <span className="breadcrumb-separator">/</span>
                     <Link to="/profile">{t('nav.profile') || 'Profile'}</Link>
                     <span className="breadcrumb-separator">/</span>

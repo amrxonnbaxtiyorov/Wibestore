@@ -26,7 +26,7 @@ const FAQPage = () => {
         { category: 'selling', question: t('faq.q6') || 'What is the commission?', answer: t('faq.a6') || 'Free plan: 10%, Premium: 8%, Pro: 5%. Pro plan is the most beneficial!' },
         { category: 'selling', question: t('faq.q7') || 'When do I receive payment?', answer: t('faq.a7') || 'Within 1-3 business days after the buyer confirms the account.' },
         { category: 'selling', question: t('faq.q8') || 'Why was my listing rejected?', answer: t('faq.a8') || 'Listings are rejected for: incorrect info, low-quality images, or prohibited content.' },
-        { category: 'security', question: t('faq.q9') || 'What is the Escrow system?', answer: t('faq.a9') || 'Escrow holds payment until the buyer confirms the account. This protects both parties.' },
+        { category: 'security', question: t('faq.q9') || 'What is Escrow?', answer: t('faq.a9') || 'Escrow holds payment until the buyer confirms the account. This protects both parties.' },
         { category: 'security', question: t('faq.q10') || 'How to protect against fraud?', answer: t('faq.a10') || 'Only trade through the platform. Never pay outside. Report suspicious listings. Our moderators work 24/7.' },
         { category: 'security', question: t('faq.q11') || 'Is my data safe?', answer: t('faq.a11') || 'Yes, we use SSL encryption and secure servers. Account details are only shown after purchase confirmation.' },
         { category: 'account', question: t('faq.q12') || 'I forgot my password', answer: t('faq.a12') || 'Click "Forgot password?" on the login page. A reset link will be sent to your email.' },
@@ -46,7 +46,7 @@ const FAQPage = () => {
             <div className="gh-container" style={{ maxWidth: '800px' }}>
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs">
-                    <Link to="/">Home</Link>
+                    <Link to="/">{t('common.home')}</Link>
                     <span className="breadcrumb-separator">/</span>
                     <span className="breadcrumb-current">FAQ</span>
                 </div>

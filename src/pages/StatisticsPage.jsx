@@ -58,7 +58,7 @@ const StatisticsPage = () => {
             <div className="gh-container" style={{ maxWidth: '900px' }}>
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs">
-                    <Link to="/">Home</Link>
+                    <Link to="/">{t('common.home')}</Link>
                     <span className="breadcrumb-separator">/</span>
                     <span className="breadcrumb-current">{t('nav.statistics') || 'Statistics'}</span>
                 </div>

@@ -244,7 +244,7 @@ const AccountDetailPage = () => {
             await navigator.clipboard.writeText(window.location.href);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-            addToast({ type: 'success', title: 'Havola nusxalandi' });
+            addToast({ type: 'success', title: t('detail.link_copied') });
         } catch {
             addToast({ type: 'error', title: 'Nusxalab bo\'lmadi' });
         }
@@ -273,7 +273,7 @@ const AccountDetailPage = () => {
             <div className="gh-container">
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs">
-                    <Link to="/">Home</Link>
+                    <Link to="/">{t('common.home')}</Link>
                     <span className="breadcrumb-separator">/</span>
                     <Link to="/products">Products</Link>
                     {listing.game?.name && (

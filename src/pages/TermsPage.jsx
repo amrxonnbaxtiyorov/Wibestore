@@ -36,7 +36,7 @@ const TermsPage = () => {
             <div className="gh-container" style={{ maxWidth: '800px' }}>
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs">
-                    <Link to="/">Home</Link>
+                    <Link to="/">{t('common.home')}</Link>
                     <span className="breadcrumb-separator">/</span>
                     <span className="breadcrumb-current">{t('terms.title') || 'Terms'}</span>
                 </div>
@@ -138,7 +138,7 @@ const TermsPage = () => {
                         <p style={{ marginBottom: '16px' }}>WibeStore xaridorlar va sotuvchilarni himoya qilish uchun quyidagi choralarni ko'radi:</p>
                         <div className="flex justify-center">
                             <ul style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-                                <ListItem icon={CheckCircle} color="var(--color-accent-green)"><strong>Escrow tizimi</strong> — pul xaridor tasdiqlagunga qadar saytda saqlanadi</ListItem>
+                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">{t('terms.escrow_item')}</ListItem>
                                 <ListItem icon={CheckCircle} color="var(--color-accent-green)"><strong>Akkaunt tekshiruvi</strong> — sotuvchilar akkauntlarni tasdiqlashdan o'tkazishi kerak</ListItem>
                                 <ListItem icon={CheckCircle} color="var(--color-accent-green)"><strong>48 soatlik kafolat</strong> — xarid qilingan akkaunt 48 soat ichida tekshiriladi</ListItem>
                                 <ListItem icon={CheckCircle} color="var(--color-accent-green)"><strong>To'liq qaytarish</strong> — muammo bo'lsa, pul to'liq qaytariladi</ListItem>

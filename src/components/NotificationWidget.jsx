@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, Trash2, X } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const NotificationWidget = () => {
+    const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
     const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAll } = useNotifications();
@@ -27,11 +29,11 @@ const NotificationWidget = () => {
         const hours = Math.floor(diff / 3600000);
         const days = Math.floor(diff / 86400000);
 
-        if (minutes < 1) return 'Hozir';
-        if (minutes < 60) return `${minutes} daqiqa oldin`;
-        if (hours < 24) return `${hours} soat oldin`;
-        if (days < 7) return `${days} kun oldin`;
-        return date.toLocaleDateString('uz-UZ');
+        if (minutes < 1) return t('notifications.time_now') || 'Just now';
+        if (minutes < 60) return (t('notifications.time_minutes_ago') || '{n} min ago').replace('{n}', minutes);
+        if (hours < 24) return (t('notifications.time_hours_ago') || '{n} hours ago').replace('{n}', hours);
+        if (days < 7) return (t('notifications.time_days_ago') || '{n} days ago').replace('{n}', days);
+        return date.toLocaleDateString();
     };
 
     return (
@@ -96,7 +98,7 @@ const NotificationWidget = () => {
                             color: 'var(--color-text-primary)',
                             fontSize: 'var(--font-size-base)',
                         }}>
-                            Bildirishnomalar
+                            {t('notifications.title')}
                         </h3>
                         <div className="flex items-center gap-2">
                             {unreadCount > 0 && (
@@ -110,7 +112,7 @@ const NotificationWidget = () => {
                                     }}
                                 >
                                     <Check className="w-3 h-3" />
-                                    Barchasini o'qish
+                                    {t('notifications.mark_all_read')}
                                 </button>
                             )}
                         </div>
@@ -227,7 +229,7 @@ const NotificationWidget = () => {
                                     className="empty-state-icon"
                                     style={{ width: '48px', height: '48px' }}
                                 />
-                                <p className="empty-state-description">Bildirishnomalar yo'q</p>
+                                <p className="empty-state-description">{t('notifications.empty')}</p>
                             </div>
                         )}
                     </div>
@@ -251,7 +253,7 @@ const NotificationWidget = () => {
                                 }}
                             >
                                 <Trash2 className="w-4 h-4" />
-                                Barchasini tozalash
+                                {t('notifications.clear_all')}
                             </button>
                         </div>
                     )}

@@ -121,7 +121,7 @@ const ProfilePage = () => {
             <div className="gh-container">
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs">
-                    <Link to="/">Home</Link>
+                    <Link to="/">{t('common.home')}</Link>
                     <span className="breadcrumb-separator">/</span>
                     <span className="breadcrumb-current">{t('nav.profile') || 'Profile'}</span>
                 </div>

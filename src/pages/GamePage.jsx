@@ -69,7 +69,7 @@ const GamePage = () => {
             <div className="gh-container">
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs">
-                    <Link to="/">Home</Link>
+                    <Link to="/">{t('common.home')}</Link>
                     <span className="breadcrumb-separator">/</span>
                     <Link to="/products">{t('nav.products') || 'Products'}</Link>
                     <span className="breadcrumb-separator">/</span>

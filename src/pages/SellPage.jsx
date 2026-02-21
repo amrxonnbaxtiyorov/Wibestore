@@ -231,7 +231,7 @@ const SellPage = () => {
                 <div className="gh-container" style={{ maxWidth: '720px' }}>
                     {/* Breadcrumbs */}
                     <div className="breadcrumbs">
-                        <Link to="/">Home</Link>
+                        <Link to="/">{t('common.home')}</Link>
                         <span className="breadcrumb-separator">/</span>
                         <span className="breadcrumb-current">Akkaunt sotish</span>
                     </div>
@@ -485,14 +485,14 @@ const SellPage = () => {
                                 }}>
                                     <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-accent-orange)' }} />
                                     <div style={{ fontSize: 'var(--font-size-sm)' }}>
-                                        <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-accent-orange)', marginBottom: '4px' }}>Muhim!</p>
-                                        <p style={{ color: 'var(--color-text-secondary)' }}>Bu ma'lumotlar faqat xarid tasdiqlangandan keyin xaridorga ko'rsatiladi. Bizning escrow tizimimiz sizni himoya qiladi.</p>
+                                        <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-accent-orange)', marginBottom: '4px' }}>{t('sell.important')}</p>
+                                        <p style={{ color: 'var(--color-text-secondary)' }}>{t('sell.escrow_notice')}</p>
                                     </div>
                                 </div>
 
                                 {/* Login Method */}
                                 <div style={{ marginBottom: '16px' }}>
-                                    <label className="input-label">Kirish usuli</label>
+                                    <label className="input-label">{t('sell.login_method')}</label>
                                     <div className="grid grid-cols-3" style={{ gap: '8px' }}>
                                         {['email', 'google', 'facebook'].map((method) => (
                                             <button key={method} type="button"
@@ -514,7 +514,7 @@ const SellPage = () => {
 
                                 {/* Account Email */}
                                 <div style={{ marginBottom: '16px' }}>
-                                    <label className="input-label">Akkaunt email/login *</label>
+                                    <label className="input-label">{t('sell.account_email_label')}</label>
                                     <input type="text" value={formData.accountEmail}
                                         onChange={(e) => setFormData({ ...formData, accountEmail: e.target.value })}
                                         placeholder="akkaunt@email.com" className="input input-lg" />
@@ -523,7 +523,7 @@ const SellPage = () => {
 
                                 {/* Account Password */}
                                 <div style={{ marginBottom: '16px' }}>
-                                    <label className="input-label">Akkaunt paroli *</label>
+                                    <label className="input-label">{t('sell.account_password_label')}</label>
                                     <input type="password" value={formData.accountPassword}
                                         onChange={(e) => setFormData({ ...formData, accountPassword: e.target.value })}
                                         placeholder="••••••••" className="input input-lg" />
@@ -532,7 +532,7 @@ const SellPage = () => {
 
                                 {/* Additional Info */}
                                 <div>
-                                    <label className="input-label">Qo'shimcha ma'lumot</label>
+                                    <label className="input-label">{t('sell.additional_info')}</label>
                                     <textarea
                                         value={formData.additionalInfo}
                                         onChange={(e) => setFormData({ ...formData, additionalInfo: e.target.value })}
@@ -548,13 +548,13 @@ const SellPage = () => {
                         {/* Navigation Buttons */}
                         <div className="flex items-center justify-between" style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--color-border-muted)' }}>
                             {step > 1 ? (
-                                <button onClick={prevStep} className="btn btn-ghost btn-md">Orqaga</button>
+                                <button onClick={prevStep} className="btn btn-ghost btn-md">{t('sell.back_btn')}</button>
                             ) : <div />}
                             {step < 3 ? (
-                                <button onClick={nextStep} className="btn btn-primary btn-lg">Keyingi</button>
+                                <button onClick={nextStep} className="btn btn-primary btn-lg">{t('sell.next_btn')}</button>
                             ) : (
                                 <button onClick={handleSubmit} disabled={isSubmitting} className="btn btn-success btn-lg">
-                                    {isSubmitting ? 'Yuborilmoqda...' : "E'lonni yuborish"}
+                                    {isSubmitting ? t('sell.submitting') : t('sell.submit_btn')}
                                 </button>
                             )}
                         </div>
@@ -569,8 +569,8 @@ const SellPage = () => {
                     }}>
                         <Shield className="w-4 h-4 mt-0.5" style={{ color: 'var(--color-accent-green)' }} />
                         <div style={{ fontSize: 'var(--font-size-sm)' }}>
-                            <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>Xavfsiz sotish</p>
-                            <p style={{ color: 'var(--color-text-secondary)' }}>Escrow tizimi orqali pulingiz xavfsiz. Xaridor akkauntni tasdiqlaguncha pul saytda saqlanadi.</p>
+                            <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>{t('sell.safe_selling')}</p>
+                            <p style={{ color: 'var(--color-text-secondary)' }}>{t('sell.escrow_safe')}</p>
                         </div>
                     </div>
                 </div>
