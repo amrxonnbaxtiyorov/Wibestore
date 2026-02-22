@@ -47,7 +47,7 @@ Build vaqtida Vite bu o‘zgaruvchilarni kod ichiga yozib qo‘yadi. Shuning uch
 
 - **Google kirish: "401 invalid client"**: **GOOGLE_OAUTH_SETUP.md** da Google Cloud Console va Railway sozlamalari batafsil. Authorized JavaScript origins ga frontend URL qo‘shing, `VITE_GOOGLE_CLIENT_ID` ni to‘g‘ri yozing va Redeploy qiling.
 
-- **405 Method Not Allowed** (masalan `api/v1/auth/google/` da): So‘rov frontend domeniga boradi (nginx faqat statik beradi, POST qabul qilmaydi). **Yechim:** `VITE_API_BASE_URL` ni **to‘liq backend URL** ga o‘rnating (masalan `https://sizning-backend.railway.app/api/v1`), nisbiy `/api/v1` emas. Keyin frontend ni **Redeploy** qiling.
+- **405 Method Not Allowed** (masalan `api/v1/auth/google/` da): So‘rov frontend domeniga boradi (nginx faqat statik beradi, POST qabul qilmaydi). **Yechim:** Railway → Frontend Service → **Variables** → `VITE_API_BASE_URL` = **to‘liq backend URL** (masalan `https://sizning-backend.railway.app/api/v1`), nisbiy `/api/v1` emas → **Save** → **Redeploy**. Vaqtinchalik (qayta deploy qilmasdan): brauzerda F12 → Console → `localStorage.setItem('wibe_api_base_url', 'https://BACKEND.railway.app/api/v1'); location.reload();` (BACKEND o‘rniga backend service URL).
 
 ## 6. Qisqa checklist
 

@@ -13,7 +13,21 @@ import axios from 'axios';
  */
 
 // Базовый URL из environment variables (relative для proxy в dev)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const BUILD_TIME_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
+// Runtime override: production'da qayta deploy qilmasdan backend URL berish (Railway'da VITE_API_BASE_URL unutilsa).
+// Brauzer konsolida: localStorage.setItem('wibe_api_base_url', 'https://YOUR-BACKEND.railway.app/api/v1'); location.reload();
+function getEffectiveBaseURL() {
+  if (typeof window === 'undefined') return BUILD_TIME_API_BASE_URL;
+  const fromStorage = localStorage.getItem('wibe_api_base_url');
+  if (fromStorage?.startsWith('http')) return fromStorage.replace(/\/$/, '');
+  if (typeof window.__VITE_API_BASE_URL__ === 'string' && window.__VITE_API_BASE_URL__?.startsWith('http')) {
+    return window.__VITE_API_BASE_URL__.replace(/\/$/, '');
+  }
+  return BUILD_TIME_API_BASE_URL;
+}
+
+const API_BASE_URL = BUILD_TIME_API_BASE_URL;
 
 // Retry logic для временных ошибок (502, 503, network)
 const RETRYABLE_STATUSES = [502, 503, 504];
@@ -86,9 +100,10 @@ const clearTokensAndLogout = () => {
   }
 };
 
-// Request interceptor - добавляем токен к запросам
+// Request interceptor - runtime API URL + токен
 apiClient.interceptors.request.use(
   (config) => {
+    config.baseURL = getEffectiveBaseURL();
     const tokens = getTokens();
     
     if (tokens?.access) {
@@ -203,13 +218,18 @@ export const removeTokens = () => {
 
 // Хелпер для получения публичного клиента (без авторизации)
 export const createPublicClient = () => {
-  return axios.create({
-    baseURL: API_BASE_URL,
+  const client = axios.create({
+    baseURL: getEffectiveBaseURL(),
     headers: {
       'Content-Type': 'application/json',
     },
     timeout: 30000,
   });
+  client.interceptors.request.use((config) => {
+    config.baseURL = getEffectiveBaseURL();
+    return config;
+  }, (err) => Promise.reject(err));
+  return client;
 };
 
 // Экспорт базового URL
