@@ -315,7 +315,11 @@
         "q13": "Hisobni qanday o'chiraman?",
         "a13": "Sozlamalar > Hisobni o'chirish. O'chirilgan hisoblar qayta tiklanmaydi.",
         "q14": "Premiumni qanday bekor qilaman?",
-        "a14": "Sozlamalar > Obuna > Bekor qilish. Premium muddat tugaguncha ishlatish mumkin."
+        "a14": "Sozlamalar > Obuna > Bekor qilish. Premium muddat tugaguncha ishlatish mumkin.",
+        "search": "Savollarni qidirish...",
+        "no_results": "Savollar topilmadi",
+        "contact_title": "Javob topilmadimi?",
+        "contact_subtitle": "Qo'llab-quvvatlash jamoamiz sizga yordam berishga tayyor"
     },
     "coins": {
         "badge": "Coin tizimi",

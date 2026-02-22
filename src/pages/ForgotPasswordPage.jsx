@@ -152,6 +152,7 @@ const ForgotPasswordPage = () => {
                                     className="input input-md"
                                     style={{ paddingLeft: '36px' }}
                                     required
+                                    autoComplete="email"
                                 />
                             </div>
                         </div>

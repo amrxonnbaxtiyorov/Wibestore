@@ -243,15 +243,15 @@ const SettingsPage = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: '16px', marginBottom: '24px' }}>
                                         <div>
                                             <label className="input-label">{t('settings.name')}</label>
-                                            <input type="text" value={profileData.name} onChange={(e) => setProfileData({ ...profileData, name: e.target.value })} className={inputStyle} />
+                                            <input type="text" value={profileData.name} onChange={(e) => setProfileData({ ...profileData, name: e.target.value })} className={inputStyle} autoComplete="name" />
                                         </div>
                                         <div>
                                             <label className="input-label">{t('settings.email')}</label>
-                                            <input type="email" value={profileData.email} onChange={(e) => setProfileData({ ...profileData, email: e.target.value })} className={inputStyle} />
+                                            <input type="email" value={profileData.email} onChange={(e) => setProfileData({ ...profileData, email: e.target.value })} className={inputStyle} autoComplete="email" />
                                         </div>
                                         <div className="md:col-span-2">
                                             <label className="input-label">{t('settings.phone')}</label>
-                                            <input type="tel" value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} placeholder="+998 90 123 45 67" className={inputStyle} />
+                                            <input type="tel" value={profileData.phone} onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })} placeholder="+998 90 123 45 67" className={inputStyle} autoComplete="tel" />
                                         </div>
                                         <div className="md:col-span-2">
                                             <label className="input-label">{t('settings.bio')}</label>
@@ -283,15 +283,15 @@ const SettingsPage = () => {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
                                         <div>
                                             <label className="input-label">{t('settings.current_password')}</label>
-                                            <input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} className={inputStyle} />
+                                            <input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} className={inputStyle} autoComplete="current-password" />
                                         </div>
                                         <div>
                                             <label className="input-label">{t('settings.new_password')}</label>
-                                            <input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} className={inputStyle} />
+                                            <input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} className={inputStyle} autoComplete="new-password" />
                                         </div>
                                         <div>
                                             <label className="input-label">{t('settings.confirm_password')}</label>
-                                            <input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} className={inputStyle} />
+                                            <input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} className={inputStyle} autoComplete="new-password" />
                                         </div>
                                     </div>
 

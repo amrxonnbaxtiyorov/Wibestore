@@ -315,7 +315,11 @@
         "q13": "How to delete my account?",
         "a13": "Go to Settings > Delete Account. Deleted accounts cannot be restored.",
         "q14": "How to cancel Premium?",
-        "a14": "Go to Settings > Subscription and click Cancel. You keep Premium until the period ends."
+        "a14": "Go to Settings > Subscription and click Cancel. You keep Premium until the period ends.",
+        "search": "Search questions...",
+        "no_results": "No questions found",
+        "contact_title": "Didn't find your answer?",
+        "contact_subtitle": "Our support team is here to help you"
     },
     "coins": {
         "badge": "Coins & Vouchers",

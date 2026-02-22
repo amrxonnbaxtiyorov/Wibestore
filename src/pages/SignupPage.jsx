@@ -168,6 +168,7 @@ const SignupPage = () => {
                                     className="input input-md"
                                     style={{ paddingLeft: '36px' }}
                                     required
+                                    autoComplete="name"
                                 />
                             </div>
                         </div>
@@ -185,6 +186,7 @@ const SignupPage = () => {
                                     className="input input-md"
                                     style={{ paddingLeft: '36px' }}
                                     required
+                                    autoComplete="email"
                                 />
                             </div>
                         </div>
@@ -202,6 +204,7 @@ const SignupPage = () => {
                                     className="input input-md"
                                     style={{ paddingLeft: '36px' }}
                                     required
+                                    autoComplete="tel"
                                 />
                             </div>
                         </div>
@@ -219,6 +222,7 @@ const SignupPage = () => {
                                     className="input input-md"
                                     style={{ paddingLeft: '36px', paddingRight: '40px' }}
                                     required
+                                    autoComplete="new-password"
                                 />
                                 <button
                                     type="button"
@@ -244,6 +248,7 @@ const SignupPage = () => {
                                     className="input input-md"
                                     style={{ paddingLeft: '36px' }}
                                     required
+                                    autoComplete="new-password"
                                 />
                             </div>
                         </div>
