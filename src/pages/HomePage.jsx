@@ -61,6 +61,20 @@ const HomePage = () => {
     const premiumAccounts = allListings.filter(l => l?.is_premium || l?.isPremium).slice(0, 6);
     const recommendedAccounts = allListings.slice(0, 8);
 
+    // Listing → AccountCard format (API va mock ikkalasini qo‘llab-quvvatlash)
+    const toAccountCard = (account) => ({
+        id: account?.id,
+        gameId: account?.game?.slug ?? account?.game?.id ?? account?.gameId,
+        gameName: account?.game?.name ?? account?.gameName,
+        title: account?.title,
+        price: typeof account?.price === 'number' ? account.price : parseFloat(account?.price) || 0,
+        description: account?.description ?? '',
+        seller: account?.seller ?? {},
+        image: account?.images?.[0]?.image ?? account?.primary_image ?? account?.image ?? '',
+        isLiked: account?.is_favorited ?? account?.isLiked ?? false,
+        isPremium: account?.is_premium ?? account?.isPremium ?? false,
+    });
+
     // Top accounts - sorted by premium status and rating
     const topAccounts = [...allListings]
         .sort((a, b) => {
@@ -320,17 +334,7 @@ const HomePage = () => {
                             Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
                         ) : premiumAccounts.length > 0 ? (
                             premiumAccounts.map((account) => (
-                                <AccountCard key={account.id} account={{
-                                    id: account.id,
-                                    gameId: account.game?.slug || account.game?.id,
-                                    gameName: account.game?.name,
-                                    title: account.title,
-                                    price: parseFloat(account.price),
-                                    seller: account.seller,
-                                    image: account.images?.[0]?.image || '',
-                                    isLiked: account.is_favorited || false,
-                                    isPremium: account.is_premium,
-                                }} featured />
+                                <AccountCard key={account?.id ?? account?.title} account={toAccountCard(account)} featured />
                             ))
                         ) : null}
                     </div>
@@ -376,17 +380,7 @@ const HomePage = () => {
                             Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
                         ) : topAccounts.length > 0 ? (
                             topAccounts.map((account) => (
-                                <AccountCard key={account.id} account={{
-                                    id: account.id,
-                                    gameId: account.game?.slug || account.game?.id,
-                                    gameName: account.game?.name,
-                                    title: account.title,
-                                    price: parseFloat(account.price),
-                                    seller: account.seller,
-                                    image: account.images?.[0]?.image || account.image,
-                                    isLiked: account.is_favorited || false,
-                                    isPremium: account.is_premium,
-                                }} />
+                                <AccountCard key={account?.id ?? account?.title} account={toAccountCard(account)} />
                             ))
                         ) : null}
                     </div>
@@ -426,17 +420,7 @@ const HomePage = () => {
                             Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
                         ) : recommendedAccounts.length > 0 ? (
                             recommendedAccounts.map((account) => (
-                                <AccountCard key={account.id} account={{
-                                    id: account.id,
-                                    gameId: account.game?.slug || account.game?.id,
-                                    gameName: account.game?.name,
-                                    title: account.title,
-                                    price: parseFloat(account.price),
-                                    seller: account.seller,
-                                    image: account.images?.[0]?.image || '',
-                                    isLiked: account.is_favorited || false,
-                                    isPremium: account.is_premium,
-                                }} />
+                                <AccountCard key={account?.id ?? account?.title} account={toAccountCard(account)} />
                             ))
                         ) : null}
                     </div>

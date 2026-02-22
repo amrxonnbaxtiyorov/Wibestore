@@ -10,15 +10,16 @@ const TopAccountsPage = () => {
     const [filter, setFilter] = useState('all');
     const [sortBy, setSortBy] = useState('rating');
 
+    const isPremiumAcc = (acc) => acc?.isPremium || acc?.is_premium;
     const filteredAccounts = [...accounts]
         .filter(acc => {
-            if (filter === 'premium') return acc.isPremium;
+            if (filter === 'premium') return isPremiumAcc(acc);
             return true;
         })
         .sort((a, b) => {
             if (sortBy === 'rating') {
-                if (a.isPremium && !b.isPremium) return -1;
-                if (!a.isPremium && b.isPremium) return 1;
+                if (isPremiumAcc(a) && !isPremiumAcc(b)) return -1;
+                if (!isPremiumAcc(a) && isPremiumAcc(b)) return 1;
                 return b.seller.rating - a.seller.rating;
             }
             if (sortBy === 'price-high') return b.price - a.price;
@@ -28,7 +29,7 @@ const TopAccountsPage = () => {
         });
 
     const statCards = [
-        { icon: Crown, label: t('top.premium_sellers') || 'Premium Sellers', value: accounts.filter(a => a.isPremium).length, color: 'var(--color-premium-gold-light)' },
+        { icon: Crown, label: t('top.premium_sellers') || 'Premium Sellers', value: accounts.filter(a => a?.isPremium || a?.is_premium).length, color: 'var(--color-premium-gold-light)' },
         { icon: Star, label: t('top.high_rated') || 'High rated only', value: '4.5+', color: 'var(--color-premium-gold-light)' },
         { icon: Flame, label: t('top.experienced') || 'Experienced sellers', value: '100+', color: 'var(--color-accent-orange)' },
     ];

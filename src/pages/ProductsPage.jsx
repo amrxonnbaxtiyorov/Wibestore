@@ -65,9 +65,9 @@ const ProductsPage = () => {
         return 0;
     });
 
-    // Premium first
-    const premium = filteredListings.filter(l => l?.is_premium);
-    const regular = filteredListings.filter(l => !l?.is_premium);
+    // Premium first (API: is_premium, mock: isPremium)
+    const premium = filteredListings.filter(l => l?.is_premium || l?.isPremium);
+    const regular = filteredListings.filter(l => !(l?.is_premium || l?.isPremium));
     const filteredAccounts = [...premium, ...regular];
 
     const sortOptions = [
@@ -223,9 +223,9 @@ const ProductsPage = () => {
                                         title: listing?.title ?? '',
                                         price: Number(listing?.price) || 0,
                                         seller: listing?.seller,
-                                        image: listing?.images?.[0]?.image ?? '',
+                                        image: listing?.images?.[0]?.image ?? listing?.image ?? listing?.primary_image ?? '',
                                         isLiked: listing?.is_favorited ?? false,
-                                        isPremium: listing?.is_premium ?? false,
+                                        isPremium: listing?.is_premium ?? listing?.isPremium ?? false,
                                     }}
                                     viewMode={viewMode}
                                 />

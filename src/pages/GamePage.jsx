@@ -37,8 +37,8 @@ const GamePage = () => {
         return 0;
     });
 
-    const premiumListings = sortedListings.filter(l => l?.is_premium);
-    const regularListings = sortedListings.filter(l => !l?.is_premium);
+    const premiumListings = sortedListings.filter(l => l?.is_premium || l?.isPremium);
+    const regularListings = sortedListings.filter(l => !(l?.is_premium || l?.isPremium));
     const finalAccounts = [...premiumListings, ...regularListings];
 
     const displayGame = apiGame || (!gameLoading && gameId ? mockGames.find((g) => (g.id || g.slug) === gameId) || null : null);
@@ -171,11 +171,11 @@ const GamePage = () => {
                                         gameId: game.slug || game.id,
                                         gameName: game.name,
                                         title: listing.title,
-                                        price: parseFloat(listing.price),
-                                        seller: listing.seller,
-                                        image: listing.images?.[0]?.image || '',
-                                        isLiked: listing.is_favorited || false,
-                                        isPremium: listing.is_premium,
+                                        price: parseFloat(listing.price) || 0,
+                                        seller: listing.seller ?? {},
+                                        image: listing.images?.[0]?.image ?? listing.image ?? '',
+                                        isLiked: listing.is_favorited ?? listing.isLiked ?? false,
+                                        isPremium: listing.is_premium ?? listing.isPremium ?? false,
                                     }}
                                 />
                             ))}
