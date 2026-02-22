@@ -14,7 +14,7 @@ const GamePage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     
     // API hooks
-    const { data: game, isLoading: gameLoading } = useGame(gameId);
+    const { data: apiGame, isLoading: gameLoading } = useGame(gameId);
     const { data, isLoading, fetchNextPage, hasNextPage } = useGameListings(gameId, {
         ordering: sortBy === 'price-low' ? 'price' : sortBy === 'price-high' ? '-price' : '-created_at',
     });
@@ -41,7 +41,7 @@ const GamePage = () => {
     const regularListings = sortedListings.filter(l => !l?.is_premium);
     const finalAccounts = [...premiumListings, ...regularListings];
 
-    const displayGame = game || (!gameLoading && gameId ? mockGames.find((g) => (g.id || g.slug) === gameId) || null : null);
+    const displayGame = apiGame || (!gameLoading && gameId ? mockGames.find((g) => (g.id || g.slug) === gameId) || null : null);
 
     if (gameLoading && !displayGame) {
         return (
@@ -72,7 +72,7 @@ const GamePage = () => {
         );
     }
 
-    const game = displayGame ? { ...displayGame, listings_count: displayGame.listings_count ?? listings.length } : null;
+    const game = { ...displayGame, listings_count: displayGame.listings_count ?? listings.length };
 
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px' }}>
