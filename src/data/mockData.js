@@ -1,4 +1,4 @@
-﻿// WibeStore - Mock Data
+// WibeStore - Mock Data
 // All prices in UZS (Uzbek Sum)
 
 export const games = [
@@ -343,197 +343,159 @@ export const games = [
     }
 ];
 
+// Helper: API-formatga mos mock listing (bosh sahifa, mahsulotlar, batafsil uchun)
+function mockListing(id, gameId, gameName, title, description, price, image, seller, isPremium) {
+    return {
+        id,
+        gameId,
+        gameName,
+        game: { slug: gameId, id: gameId, name: gameName },
+        title,
+        description,
+        price: String(price),
+        image,
+        images: [{ image }],
+        seller: { ...seller, rating: seller.rating },
+        isPremium: !!isPremium,
+        is_premium: !!isPremium,
+        is_favorited: false,
+        status: 'active',
+        createdAt: '2024-02-01'
+    };
+}
+
+const _sellers = {
+    pro: { id: 1, name: 'ProGamer_UZ', rating: 4.9, sales: 156, isPremium: true },
+    gameStore: { id: 2, name: 'GameStore_TJ', rating: 4.7, sales: 89, isPremium: true },
+    ffKing: { id: 3, name: 'FFKing_UZ', rating: 4.8, sales: 234, isPremium: false },
+    so2: { id: 4, name: 'SO2Master', rating: 4.6, sales: 78, isPremium: true },
+    mlbb: { id: 5, name: 'MLBB_Pro', rating: 4.9, sales: 167, isPremium: true },
+    clash: { id: 6, name: 'ClashKing', rating: 4.8, sales: 45, isPremium: false },
+    roblox: { id: 7, name: 'RobloxMaster', rating: 4.5, sales: 312, isPremium: false },
+    pubgTrader: { id: 8, name: 'PUBGTrader', rating: 4.7, sales: 98, isPremium: false },
+};
+
 export const accounts = [
-    {
-        id: 1,
-        gameId: 'pubg-mobile',
-        gameName: 'PUBG Mobile',
-        title: 'Conqueror Account - Season 25',
-        description: 'Level 75, 200+ skins, M416 Glacier, AWM Dragon, Kar98 Dragon',
-        price: 2500000,
-        image: '/img/Pubg/pg.jpg',
-        seller: {
-            id: 1,
-            name: 'ProGamer_UZ',
-            rating: 4.9,
-            sales: 156,
-            isPremium: true
-        },
-        isPremium: true,
-        status: 'active',
-        createdAt: '2024-01-28'
-    },
-    {
-        id: 2,
-        gameId: 'steam',
-        gameName: 'Steam Account',
-        title: 'Steam Account - 150+ Games',
-        description: 'GTA V, CS2, Rust, PUBG, Dota 2, FIFA 24 va boshqalar',
-        price: 3800000,
-        image: '/img/Steam/st.jpg',
-        seller: {
-            id: 2,
-            name: 'GameStore_TJ',
-            rating: 4.7,
-            sales: 89,
-            isPremium: true
-        },
-        isPremium: true,
-        status: 'active',
-        createdAt: '2024-01-27'
-    },
-    {
-        id: 3,
-        gameId: 'free-fire',
-        gameName: 'Free Fire',
-        title: 'Heroic Account - 50+ Characters',
-        description: 'Chrono, Alok, K, Skyler. 100+ skins, Elite Pass Season 1-50',
-        price: 1200000,
-        image: '/img/FireFree/fire.jpg',
-        seller: {
-            id: 3,
-            name: 'FFKing_UZ',
-            rating: 4.8,
-            sales: 234,
-            isPremium: false
-        },
-        isPremium: false,
-        status: 'active',
-        createdAt: '2024-01-28'
-    },
-    {
-        id: 4,
-        gameId: 'standoff2',
-        gameName: 'Standoff 2',
-        title: 'Elite Account - Rare Knives',
-        description: 'Karambit Fade, M4A4 Howl, AK-47 Fire Serpent',
-        price: 1800000,
-        image: '/img/icons/st.webp',
-        seller: {
-            id: 4,
-            name: 'SO2Master',
-            rating: 4.6,
-            sales: 78,
-            isPremium: true
-        },
-        isPremium: true,
-        status: 'active',
-        createdAt: '2024-01-26'
-    },
-    {
-        id: 5,
-        gameId: 'mobile-legends',
-        gameName: 'Mobile Legends',
-        title: 'Mythic Glory - All Heroes',
-        description: '115+ heroes, 200+ skins, Legendary skins, Collector skins',
-        price: 2100000,
-        image: '/img/icons/ml.webp',
-        seller: {
-            id: 5,
-            name: 'MLBB_Pro',
-            rating: 4.9,
-            sales: 167,
-            isPremium: true
-        },
-        isPremium: true,
-        status: 'active',
-        createdAt: '2024-01-28'
-    },
-    {
-        id: 6,
-        gameId: 'clash-of-clans',
-        gameName: 'Clash of Clans',
-        title: 'TH14 Max Account',
-        description: 'Fully maxed TH14, 6 builders, all heroes 80+',
-        price: 4500000,
-        image: '/img/icons/cc.webp',
-        seller: {
-            id: 6,
-            name: 'ClashKing',
-            rating: 4.8,
-            sales: 45,
-            isPremium: false
-        },
-        isPremium: false,
-        status: 'active',
-        createdAt: '2024-01-25'
-    },
-    {
-        id: 7,
-        gameId: 'codm',
-        gameName: 'Call of Duty Mobile',
-        title: 'Legendary Account - All Guns',
-        description: 'Legendary rank, 50+ legendary skins, Damascus camo',
-        price: 1900000,
-        image: '/img/icons/cal.webp',
-        seller: {
-            id: 1,
-            name: 'ProGamer_UZ',
-            rating: 4.9,
-            sales: 156,
-            isPremium: true
-        },
-        isPremium: true,
-        status: 'active',
-        createdAt: '2024-01-28'
-    },
-    {
-        id: 8,
-        gameId: 'roblox',
-        gameName: 'Roblox',
-        title: 'Rich Account - 10K Robux',
-        description: '10,000 Robux, Premium membership, rare limiteds',
-        price: 850000,
-        image: '/img/icons/roblox.webp',
-        seller: {
-            id: 7,
-            name: 'RobloxMaster',
-            rating: 4.5,
-            sales: 312,
-            isPremium: false
-        },
-        isPremium: false,
-        status: 'active',
-        createdAt: '2024-01-27'
-    },
-    {
-        id: 9,
-        gameId: 'pubg-mobile',
-        gameName: 'PUBG Mobile',
-        title: 'ACE Account - 150 Skins',
-        description: 'Level 68, 150 skins, multiple mythics, maxed RP',
-        price: 1500000,
-        image: '/img/Pubg/pg.jpg',
-        seller: {
-            id: 8,
-            name: 'PUBGTrader',
-            rating: 4.7,
-            sales: 98,
-            isPremium: false
-        },
-        isPremium: false,
-        status: 'active',
-        createdAt: '2024-01-26'
-    },
-    {
-        id: 10,
-        gameId: 'steam',
-        gameName: 'Steam Account',
-        title: 'CS2 Account - Global Elite',
-        description: 'Global Elite, 15k hours, Knife Karambit Doppler',
-        price: 2800000,
-        image: '/img/Steam/st.jpg',
-        seller: {
-            id: 2,
-            name: 'GameStore_TJ',
-            rating: 4.7,
-            sales: 89,
-            isPremium: true
-        },
-        isPremium: true,
-        status: 'active',
-        createdAt: '2024-01-28'
-    }
+    mockListing(
+        1, 'pubg-mobile', 'PUBG Mobile',
+        'Conqueror hisobi - Season 25',
+        'Daraja 75, 200+ skin, M416 Glacier, AWM Dragon, Kar98 Dragon. Roy Pass to\'liq, barcha mifrik skinlar. Email va parol beriladi, Escrow orqali xavfsiz.',
+        2500000, '/img/Pubg/pg.jpg', _sellers.pro, true
+    ),
+    mockListing(
+        2, 'steam', 'Steam Account',
+        'Steam hisobi - 150+ o\'yin',
+        'GTA V, CS2, Rust, PUBG, Dota 2, FIFA 24 va boshqa o\'yinlar. Steam Guard ochiq, email bilan birga. To\'liq access.',
+        3800000, '/img/Steam/st.jpg', _sellers.gameStore, true
+    ),
+    mockListing(
+        3, 'free-fire', 'Free Fire',
+        'Heroic hisobi - 50+ personaj',
+        'Chrono, Alok, K, Skyler. 100+ skin, Elite Pass 1–50 mavsum. Barcha maxsus personajlar ochiq. Tez yetkazib beriladi.',
+        1200000, '/img/FireFree/fire.jpg', _sellers.ffKing, false
+    ),
+    mockListing(
+        4, 'standoff2', 'Standoff 2',
+        'Elite hisobi - noyob pichoklar',
+        'Karambit Fade, M4A4 Howl, AK-47 Fire Serpent. Yuqori reyting, ko\'p skinlar. VK yoki email orqali bog\'langan.',
+        1800000, '/img/icons/st.webp', _sellers.so2, true
+    ),
+    mockListing(
+        5, 'mobile-legends', 'Mobile Legends',
+        'Mythic Glory - barcha qahramonlar',
+        '115+ qahramon, 200+ skin, Legendary va Collector skinlar. Emblem to\'liq. Mening profilim orqali tekshirishingiz mumkin.',
+        2100000, '/img/icons/ml.webp', _sellers.mlbb, true
+    ),
+    mockListing(
+        6, 'clash-of-clans', 'Clash of Clans',
+        'TH14 Max hisob',
+        'TH14 to\'liq max, 6 ta builder, barcha qahramonlar 80+. O\'g\'il qal’a, Giga Inferno. Faol klan bilan.',
+        4500000, '/img/icons/cc.webp', _sellers.clash, false
+    ),
+    mockListing(
+        7, 'codm', 'Call of Duty Mobile',
+        'Legendary hisob - barcha qurollar',
+        'Legendary daraja, 50+ legendary skin, Damascus camo. To\'liq RP, barcha operatorlar. Tezkor yetkazish.',
+        1900000, '/img/icons/cal.webp', _sellers.pro, true
+    ),
+    mockListing(
+        8, 'roblox', 'Roblox',
+        'Boy hisob - 10K Robux',
+        '10,000 Robux, Premium obuna, noyob limitedlar. Email va parol beriladi. Ad Blocker yoqilgan.',
+        850000, '/img/icons/roblox.webp', _sellers.roblox, false
+    ),
+    mockListing(
+        9, 'pubg-mobile', 'PUBG Mobile',
+        'ACE hisobi - 150 skin',
+        'Daraja 68, 150 skin, bir nechta mifrik, RP max. AWM, M4 mifrik skinlar. Kuniga 2 soat o\'ynalgan, xavfsiz.',
+        1500000, '/img/Pubg/pg.jpg', _sellers.pubgTrader, false
+    ),
+    mockListing(
+        10, 'steam', 'Steam Account',
+        'CS2 hisobi - Global Elite',
+        'Global Elite, 15k soat, Karambit Doppler pichog\'i. Ko\'p skinlar, 500+ o\'yin. Steam Guard va email bilan.',
+        2800000, '/img/Steam/st.jpg', _sellers.gameStore, true
+    ),
+    mockListing(
+        11, 'free-fire', 'Free Fire',
+        'Grandmaster hisob - barcha petlar',
+        'Barcha petlar va personajlar, 80+ skin. Elite Pass hozirgi mavsum to\'liq. Kuniga 1 soat, hisob toza.',
+        950000, '/img/FireFree/fire.jpg', _sellers.ffKing, true
+    ),
+    mockListing(
+        12, 'mobile-legends', 'Mobile Legends',
+        'Mythic 50+ yulduz - collector skinlar',
+        '50+ yulduz Mythic, barcha collector va Legend skinlar. Emblem 60. Profil ochiq, skrinshotlar bor.',
+        3200000, '/img/icons/ml.webp', _sellers.mlbb, true
+    ),
+    mockListing(
+        13, 'clash-of-clans', 'Clash of Clans',
+        'TH13 max - tez sotuv',
+        'TH13 to\'liq max, qahramonlar 75+. O\'g\'il qal’a. Klan wars uchun tayyor. Email bilan beriladi.',
+        2800000, '/img/icons/cc.webp', _sellers.clash, false
+    ),
+    mockListing(
+        14, 'standoff2', 'Standoff 2',
+        'Yuqori reyting - ko\'p skinlar',
+        'Gold rank, 30+ skin, noyob pichoklar. VK bog\'langan, email ham beriladi. Yordam bilan o\'tkazamiz.',
+        1200000, '/img/icons/st.webp', _sellers.so2, false
+    ),
+    mockListing(
+        15, 'pubg-mobile', 'PUBG Mobile',
+        'Crown hisobi - 80 skin',
+        'Daraja 55, 80 skin, RP to\'liq. Bir nechta mifrik. Telefon va email bilan, 24 soat ichida yetkazamiz.',
+        1100000, '/img/Pubg/pg.jpg', _sellers.pubgTrader, false
+    ),
+    mockListing(
+        16, 'codm', 'Call of Duty Mobile',
+        'Master hisob - Damascus',
+        'Master daraja, Damascus camo barcha qurollarda. 20+ legendary skin. Faol o\'yinchi, hisob xavfsiz.',
+        1400000, '/img/icons/cal.webp', _sellers.pro, false
+    ),
+    mockListing(
+        17, 'roblox', 'Roblox',
+        'Premium + 5K Robux',
+        'Roblox Premium obuna, 5000 Robux. Noyob limitedlar va kiyimlar. Email va parol to\'liq beriladi.',
+        650000, '/img/icons/roblox.webp', _sellers.roblox, true
+    ),
+    mockListing(
+        18, 'steam', 'Steam Account',
+        'Steam - 50 ta mashhur o\'yin',
+        'GTA V, RDR2, Elden Ring, Hogwarts Legacy va boshqalar. 2 yillik hisob, Steam Guard ochiq.',
+        5200000, '/img/Steam/st.jpg', _sellers.gameStore, true
+    ),
+    mockListing(
+        19, 'mobile-legends', 'Mobile Legends',
+        'Epic hisob - 60+ qahramon',
+        '60+ qahramon, 80+ skin. Epic daraja, emblem 45. Tez sotuv, narx kelishiladi. Profil ochiq.',
+        750000, '/img/icons/ml.webp', _sellers.mlbb, false
+    ),
+    mockListing(
+        20, 'free-fire', 'Free Fire',
+        'Diamond hisob - 30 skin',
+        'Diamond daraja, 30+ skin, 15+ personaj. Elite Pass 3 mavsum. Kuniga 30 daqiqa, hisob faol.',
+        550000, '/img/FireFree/fire.jpg', _sellers.ffKing, false
+    )
 ];
 
 export const premiumPlans = [

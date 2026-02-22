@@ -5,6 +5,7 @@ import { useGame, useGameListings } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
+import { games as mockGames, accounts as mockAccounts } from '../data/mockData';
 
 const GamePage = () => {
     const { t } = useLanguage();
@@ -19,7 +20,10 @@ const GamePage = () => {
     });
     
     const rawListings = data?.pages?.flatMap(page => page?.results ?? []) ?? [];
-    const listings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
+    let listings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
+    if (listings.length === 0 && gameId) {
+        listings = mockAccounts.filter((a) => (a.game?.slug || a.gameId) === gameId);
+    }
 
     // Filter and sort
     const filteredListings = listings.filter(listing =>
@@ -37,7 +41,9 @@ const GamePage = () => {
     const regularListings = sortedListings.filter(l => !l?.is_premium);
     const finalAccounts = [...premiumListings, ...regularListings];
 
-    if (gameLoading) {
+    const displayGame = game || (!gameLoading && gameId ? mockGames.find((g) => (g.id || g.slug) === gameId) || null : null);
+
+    if (gameLoading && !displayGame) {
         return (
             <div className="page-enter" style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <SkeletonLoader />
@@ -45,7 +51,7 @@ const GamePage = () => {
         );
     }
 
-    if (!game) {
+    if (!displayGame) {
         return (
             <div className="page-enter" style={{ minHeight: 'calc(100vh - 64px)' }}>
                 <div className="gh-container">
@@ -65,6 +71,8 @@ const GamePage = () => {
             </div>
         );
     }
+
+    const game = displayGame ? { ...displayGame, listings_count: displayGame.listings_count ?? listings.length } : null;
 
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px' }}>

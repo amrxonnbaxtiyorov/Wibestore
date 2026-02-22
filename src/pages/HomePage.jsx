@@ -53,9 +53,10 @@ const HomePage = () => {
     const rawGames = gamesData?.results ?? gamesData ?? mockGames;
     const games = Array.isArray(rawGames) ? rawGames.filter(Boolean) : [];
 
-    // Handle different response structures — ensure array and no undefined items
-    const rawListings = listingsData?.pages?.flatMap?.(page => page?.results ?? []) ?? listingsData?.results ?? listingsData ?? mockAccounts;
-    const allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
+    // API bo'sh bo'lsa mock akkauntlar ko'rinsin (sotuvchi/xaridor va xatolik tekshiruvi uchun)
+    const rawListings = listingsData?.pages?.flatMap?.(page => page?.results ?? []) ?? listingsData?.results ?? listingsData ?? [];
+    let allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
+    if (allListings.length === 0) allListings = mockAccounts;
 
     const premiumAccounts = allListings.filter(l => l?.is_premium).slice(0, 6);
     const recommendedAccounts = allListings.slice(0, 8);

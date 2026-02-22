@@ -11,6 +11,7 @@ import AccountCard from '../components/AccountCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
+import { accounts as mockAccounts } from '../data/mockData';
 
 /* ─── Image Carousel ──────────────────────────────────────────── */
 const ImageCarousel = ({ images, title }) => {
@@ -168,9 +169,13 @@ const AccountDetailPage = () => {
     const { t } = useLanguage();
     const { addToast } = useToast();
 
-    const { data: listing, isLoading, isError, error, refetch } = useListing(accountId);
+    const { data: apiListing, isLoading, isError, error, refetch } = useListing(accountId);
     const { mutate: addToFavorites } = useAddToFavorites();
     const { mutate: removeFromFavorites } = useRemoveFromFavorites();
+    // API bo'sh/error bo'lsa mock akkauntlardan ko'rsatamiz (test uchun)
+    const listing = apiListing || (!isLoading && accountId
+        ? mockAccounts.find((a) => String(a.id) === String(accountId)) || null
+        : null);
     const { data: relatedData } = useListings({ game: listing?.game?.id, limit: 4 });
 
     const [isLiked, setIsLiked] = useState(false);
@@ -268,11 +273,11 @@ const AccountDetailPage = () => {
     };
 
     const features = listing.features || [];
-    const images = listing.images || [];
-    // useListings returns InfiniteQuery — data is in pages[0].results
-    const relatedListings = (relatedData?.pages?.[0]?.results || [])
-        .filter(l => l.id !== listing.id)
-        .slice(0, 4);
+    const images = listing.images?.length ? listing.images : (listing.image ? [{ image: listing.image }] : []);
+    const apiRelated = (relatedData?.pages?.[0]?.results || []).filter((l) => l.id !== listing.id).slice(0, 4);
+    const relatedListings = apiRelated.length > 0
+        ? apiRelated
+        : mockAccounts.filter((a) => (a.game?.slug || a.gameId) === (listing.game?.slug || listing.gameId) && a.id !== listing.id).slice(0, 4);
 
     const tabs = [
         { id: 'description', label: t('detail.description') || 'Tavsif' },
