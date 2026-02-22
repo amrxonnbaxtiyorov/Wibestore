@@ -386,13 +386,18 @@ const Navbar = () => {
                         </div>
                     )}
 
-                    {/* Mobile menu toggle */}
+                    {/* Mobile menu toggle - lg:hidden = faqat kichik ekranda ko'rinadi */}
                     <button
+                        type="button"
                         className="btn btn-ghost btn-sm lg:hidden"
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setIsMobileMenuOpen((prev) => !prev);
+                        }}
                         aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
                         aria-expanded={isMobileMenuOpen}
-                        style={{ padding: '0 8px' }}
+                        style={{ padding: '0 8px', cursor: 'pointer', minWidth: '40px', minHeight: '40px' }}
                     >
                         {isMobileMenuOpen ? (
                             <X className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
@@ -403,11 +408,16 @@ const Navbar = () => {
                 </div>
             </div>
 
-            {/* Mobile Menu */}
+            {/* Mobile Menu - z-index bilan sahifa ustida */}
             {isMobileMenuOpen && (
                 <div
                     className="lg:hidden animate-fadeIn"
                     style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        zIndex: 60,
                         backgroundColor: 'var(--color-bg-primary)',
                         borderTop: '1px solid var(--color-border-default)',
                         boxShadow: 'var(--shadow-lg)',

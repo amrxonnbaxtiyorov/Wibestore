@@ -1,5 +1,5 @@
-import { useParams, Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
     Heart, Share2, Shield, Star, MessageCircle, CheckCircle,
     AlertCircle, ChevronLeft, ChevronRight, Copy, Check,
@@ -11,6 +11,8 @@ import AccountCard from '../components/AccountCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
+import { useAuth } from '../context/AuthContext';
+import { useChat } from '../context/ChatContext';
 import { accounts as mockAccounts } from '../data/mockData';
 
 /* ─── Image Carousel ──────────────────────────────────────────── */
@@ -166,8 +168,12 @@ const StatItem = ({ icon: Icon, label, value, color }) => (
 /* ─── Main Component ──────────────────────────────────────────── */
 const AccountDetailPage = () => {
     const { accountId } = useParams();
+    const navigate = useNavigate();
+    const location = useLocation();
     const { t } = useLanguage();
     const { addToast } = useToast();
+    const { user, isAuthenticated } = useAuth();
+    const { startConversation, openChat } = useChat();
 
     const { data: apiListing, isLoading, isError, error, refetch } = useListing(accountId);
     const { mutate: addToFavorites } = useAddToFavorites();
@@ -195,6 +201,19 @@ const AccountDetailPage = () => {
     const [isLiked, setIsLiked] = useState(false);
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState('description');
+
+    // Sevimlilar: API yoki localStorage (kirish qilmaganida)
+    const FAV_STORAGE_KEY = 'wibeFavoriteListingIds';
+    useEffect(() => {
+        if (!listing?.id) return;
+        if (isAuthenticated) return;
+        try {
+            const saved = JSON.parse(localStorage.getItem(FAV_STORAGE_KEY) || '[]');
+            setIsLiked(saved.includes(String(listing.id)));
+        } catch {
+            setIsLiked(false);
+        }
+    }, [listing?.id, isAuthenticated]);
 
     /* ── Loading ── */
     if (isLoading) {
@@ -253,20 +272,59 @@ const AccountDetailPage = () => {
 
     /* ── Handlers ── */
     const handleFavorite = () => {
-        if (isLiked) {
-            removeFromFavorites(listing.id, {
-                onSuccess: () => {
-                    setIsLiked(false);
-                    addToast({ type: 'info', title: t('detail.removed_from_favorites') });
-                }
-            });
+        if (isAuthenticated) {
+            if (isLiked) {
+                removeFromFavorites(listing.id, {
+                    onSuccess: () => {
+                        setIsLiked(false);
+                        addToast({ type: 'info', title: t('detail.removed_from_favorites') });
+                    },
+                    onError: () => addToast({ type: 'error', title: t('detail.delete_error') })
+                });
+            } else {
+                addToFavorites(listing.id, {
+                    onSuccess: () => {
+                        setIsLiked(true);
+                        addToast({ type: 'success', title: t('detail.added_to_favorites') });
+                    },
+                    onError: () => addToast({ type: 'error', title: t('detail.delete_error') })
+                });
+            }
         } else {
-            addToFavorites(listing.id, {
-                onSuccess: () => {
-                    setIsLiked(true);
-                    addToast({ type: 'success', title: t('detail.added_to_favorites') });
-                }
-            });
+            try {
+                const saved = JSON.parse(localStorage.getItem(FAV_STORAGE_KEY) || '[]');
+                const idStr = String(listing.id);
+                const next = isLiked ? saved.filter((id) => id !== idStr) : [...saved, idStr];
+                localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(next));
+                setIsLiked(!isLiked);
+                addToast({ type: 'success', title: isLiked ? t('detail.removed_from_favorites') : t('detail.added_to_favorites') });
+            } catch {
+                addToast({ type: 'error', title: t('detail.copy_failed') });
+            }
+        }
+    };
+
+    const handleContactSeller = () => {
+        if (!isAuthenticated || !user) {
+            addToast({ type: 'info', title: t('detail.contact_seller') || 'Sotuvchi bilan bog\'lanish uchun kirish qiling' });
+            navigate('/login?redirect=' + encodeURIComponent(location.pathname));
+            return;
+        }
+        const seller = {
+            id: listing.seller?.id,
+            name: listing.seller?.display_name || listing.seller?.name || t('detail.seller'),
+            rating: listing.seller?.rating ?? 5
+        };
+        const account = {
+            id: listing.id,
+            title: listing.title,
+            image: listing.images?.[0]?.image || listing.image
+        };
+        if (seller.id && account.id) {
+            startConversation(seller, account);
+            openChat();
+        } else {
+            addToast({ type: 'info', title: 'Sotuvchi bilan chat tez orada ulanadi.' });
         }
     };
 
@@ -439,7 +497,12 @@ const AccountDetailPage = () => {
                                 <button className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center' }}>
                                     {t('detail.buy_now') || 'Sotib olish'}
                                 </button>
-                                <button className="btn btn-secondary btn-lg" style={{ width: '100%', justifyContent: 'center' }}>
+                                <button
+                                    type="button"
+                                    onClick={handleContactSeller}
+                                    className="btn btn-secondary btn-lg"
+                                    style={{ width: '100%', justifyContent: 'center' }}
+                                >
                                     <MessageCircle style={{ width: '18px', height: '18px' }} />
                                     {t('detail.contact_seller') || 'Sotuvchi bilan bog\'lanish'}
                                 </button>
