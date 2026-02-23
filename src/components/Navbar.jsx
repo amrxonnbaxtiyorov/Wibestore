@@ -120,23 +120,23 @@ const Navbar = () => {
                 aria-label="Main navigation"
             >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
-                    <div className="h-full flex items-center justify-between gap-4">
-                        {/* Logo Section */}
+                    <div className="h-full flex items-center gap-4 sm:gap-6 lg:gap-8">
+                        {/* ─── Chap blok: Logo ─── */}
                         <Link
                             to="/"
-                            className="group flex items-center gap-3 flex-shrink-0 transition-transform hover:scale-105"
+                            className="group flex items-center gap-2.5 sm:gap-3 flex-shrink-0 transition-transform hover:scale-[1.02]"
                             style={{ textDecoration: 'none' }}
                         >
                             <div
-                                className="relative flex items-center justify-center rounded-xl transition-all group-hover:shadow-lg"
+                                className="relative flex items-center justify-center rounded-xl transition-all group-hover:shadow-lg flex-shrink-0"
                                 style={{
-                                    width: '44px',
-                                    height: '44px',
+                                    width: '40px',
+                                    height: '40px',
                                     background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
                                     boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
                                 }}
                             >
-                                <Gamepad2 className="w-6 h-6" style={{ color: '#fff' }} />
+                                <Gamepad2 className="w-5 h-5" style={{ color: '#fff' }} />
                                 <div 
                                     className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
                                     style={{
@@ -144,9 +144,9 @@ const Navbar = () => {
                                     }}
                                 />
                             </div>
-                            <div className="hidden sm:block">
+                            <div className="hidden sm:block min-w-0">
                                 <span
-                                    className="text-xl font-bold block"
+                                    className="text-lg font-bold block leading-tight"
                                     style={{ 
                                         color: 'var(--color-text-primary)',
                                         background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
@@ -158,7 +158,7 @@ const Navbar = () => {
                                     WibeStore
                                 </span>
                                 <span
-                                    className="text-xs"
+                                    className="text-[11px] block leading-tight"
                                     style={{ color: 'var(--color-text-muted)' }}
                                 >
                                     Gaming Marketplace
@@ -166,13 +166,19 @@ const Navbar = () => {
                             </div>
                         </Link>
 
-                        {/* Desktop Navigation - Centered */}
-                        <div className="hidden lg:flex items-center gap-2">
+                        {/* Ajratgich: Logo | Nav */}
+                        <div
+                            className="hidden lg:block flex-shrink-0 w-px h-8"
+                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
+                        />
+
+                        {/* ─── Nav linklar (desktop) ─── */}
+                        <div className="hidden lg:flex items-center gap-0.5 flex-shrink-0">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.to}
                                     to={link.to}
-                                    className="group relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105"
+                                    className="group relative flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] whitespace-nowrap"
                                     style={{
                                         textDecoration: 'none',
                                         backgroundColor: isActive(link.to) 
@@ -234,21 +240,27 @@ const Navbar = () => {
                             {isAdmin && (
                                 <Link
                                     to="/admin"
-                                    className="group flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105"
+                                    className="group flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] whitespace-nowrap"
                                     style={{
                                         textDecoration: 'none',
                                         backgroundColor: 'rgba(239, 68, 68, 0.1)',
                                         border: '1px solid rgba(239, 68, 68, 0.2)',
                                     }}
                                 >
-                                    <Settings className="w-4 h-4" style={{ color: 'var(--color-accent-red)' }} />
+                                    <Settings className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-accent-red)' }} />
                                     <span style={{ color: 'var(--color-accent-red)', fontWeight: '600' }}>Admin</span>
                                 </Link>
                             )}
                         </div>
 
-                        {/* Right Actions */}
-                        <div className="flex items-center gap-2">
+                        {/* Ajratgich: Nav | Qidiruv — faqat qidiruv ko‘rinadigan ekranlarda */}
+                        <div
+                            className="hidden md:block flex-shrink-0 w-px h-8"
+                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', marginLeft: '4px' }}
+                        />
+
+                        {/* ─── O‘rta blok: Qidiruv ─── */}
+                        <div className="flex-1 min-w-0 hidden md:flex justify-center max-w-xs lg:max-w-sm">
                             {/* Search Bar - Desktop */}
                             <form 
                                 onSubmit={handleSearch} 
