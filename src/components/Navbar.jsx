@@ -166,19 +166,19 @@ const Navbar = () => {
                             </div>
                         </Link>
 
-                        {/* Ajratgich: Logo | Nav */}
+                        {/* Ajratgich: Logo | Nav — navni orqaroqga surish uchun chap margin */}
                         <div
-                            className="hidden lg:block flex-shrink-0 w-px self-center"
+                            className="hidden lg:block flex-shrink-0 w-px self-center ml-4 lg:ml-6"
                             style={{ height: '28px', backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
                         />
 
-                        {/* ─── Nav linklar (desktop) ─── */}
-                        <div className="hidden lg:flex items-center gap-0.5 flex-shrink-0 h-10">
+                        {/* ─── Nav linklar (desktop) — linklar orasida keng oraliq ─── */}
+                        <div className="hidden lg:flex items-center gap-4 lg:gap-6 flex-shrink-0 h-10">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.to}
                                     to={link.to}
-                                    className="group relative flex items-center justify-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] whitespace-nowrap"
+                                    className="group relative flex items-center justify-center gap-2 px-4 py-2 h-9 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] whitespace-nowrap"
                                     style={{
                                         textDecoration: 'none',
                                         backgroundColor: isActive(link.to) 
@@ -240,7 +240,7 @@ const Navbar = () => {
                             {isAdmin && (
                                 <Link
                                     to="/admin"
-                                    className="group flex items-center justify-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] whitespace-nowrap"
+                                    className="group flex items-center justify-center gap-2 px-4 py-2 h-9 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] whitespace-nowrap"
                                     style={{
                                         textDecoration: 'none',
                                         backgroundColor: 'rgba(239, 68, 68, 0.1)',
