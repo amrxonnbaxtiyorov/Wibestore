@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Sun, Moon, Bell, User, LogOut, Settings, ShoppingBag, Heart, Crown, Gamepad2, ChevronDown } from 'lucide-react';
+import { Search, Menu, X, Sun, Moon, Bell, User, LogOut, Settings, ShoppingBag, Heart, Crown, Gamepad2, ChevronDown, Sparkles, TrendingUp, BarChart3, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCoins } from '../context/CoinContext';
@@ -11,7 +11,7 @@ const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const { theme, toggleTheme, isDark } = useTheme();
     const { coins } = useCoins();
-    const { t, language, setLanguage, languages: langs } = useLanguage();
+    const { t, language, setLanguage } = useLanguage();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -19,6 +19,7 @@ const Navbar = () => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isLangOpen, setIsLangOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [searchFocused, setSearchFocused] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
     const profileRef = useRef(null);
@@ -64,7 +65,7 @@ const Navbar = () => {
 
     // Scroll detection
     useEffect(() => {
-        const handleScroll = () => setIsScrolled(window.scrollY > 8);
+        const handleScroll = () => setIsScrolled(window.scrollY > 10);
         window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
@@ -90,407 +91,648 @@ const Navbar = () => {
     };
 
     const navLinks = [
-        { to: '/products', label: t('nav.products') || 'Products' },
-        { to: '/top', label: t('nav.top') || 'Top' },
-        { to: '/statistics', label: t('nav.statistics') || 'Statistics' },
-        { to: '/premium', label: t('nav.premium') || 'Premium', icon: Crown },
+        { to: '/products', label: t('nav.products') || 'Каталог', icon: ShoppingBag, color: 'from-blue-500 to-cyan-500' },
+        { to: '/top', label: t('nav.top') || 'Топ', icon: TrendingUp, color: 'from-orange-500 to-red-500' },
+        { to: '/statistics', label: t('nav.statistics') || 'Статистика', icon: BarChart3, color: 'from-purple-500 to-pink-500' },
+        { to: '/premium', label: t('nav.premium') || 'Premium', icon: Zap, color: 'from-amber-400 to-orange-500', badge: 'NEW' },
     ];
-    
-    // Admin link - faqat admin userlarga ko'rinadi
+
     const isAdmin = user?.is_staff || false;
-
     const isActive = (path) => location.pathname === path;
-
     const currentLang = langList.find(l => l.code === language) || langList[0];
 
     return (
-        <nav
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${isScrolled
-                ? 'border-b shadow-sm'
-                : 'border-b border-transparent'
+        <>
+            <nav
+                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+                    isScrolled ? 'shadow-lg backdrop-blur-xl' : ''
                 }`}
-            style={{
-                height: '64px',
-                backgroundColor: isScrolled
-                    ? (isDark ? 'rgba(13, 17, 23, 0.95)' : 'rgba(255, 255, 255, 0.97)')
-                    : (isDark ? 'rgba(13, 17, 23, 0.8)' : 'rgba(255, 255, 255, 0.85)'),
-                backdropFilter: 'blur(12px)',
-                borderColor: isScrolled ? 'var(--color-border-default)' : 'transparent',
-            }}
-            role="navigation"
-            aria-label="Main navigation"
-        >
-            <div className="gh-container h-full flex items-center justify-between gap-6 lg:gap-8">
-                {/* Logo */}
-                <Link
-                    to="/"
-                    className="flex items-center gap-2.5 flex-shrink-0"
-                    style={{ textDecoration: 'none' }}
-                >
-                    <div
-                        className="flex items-center justify-center rounded-lg"
-                        style={{
-                            width: '32px',
-                            height: '32px',
-                            background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
-                        }}
-                    >
-                        <Gamepad2 className="w-5 h-5" style={{ color: '#fff' }} />
-                    </div>
-                    <span
-                        className="text-lg font-bold hidden sm:block"
-                        style={{ color: 'var(--color-text-primary)' }}
-                    >
-                        WibeStore
-                    </span>
-                </Link>
-
-                {/* Desktop Navigation */}
-                <div className="hidden lg:flex items-center gap-4">
-                    {navLinks.map((link) => (
+                style={{
+                    height: '72px',
+                    backgroundColor: isScrolled
+                        ? (isDark ? 'rgba(13, 17, 23, 0.98)' : 'rgba(255, 255, 255, 0.98)')
+                        : (isDark ? 'rgba(13, 17, 23, 0.7)' : 'rgba(255, 255, 255, 0.7)'),
+                    borderBottom: isScrolled 
+                        ? `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`
+                        : '1px solid transparent',
+                }}
+                role="navigation"
+                aria-label="Main navigation"
+            >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+                    <div className="h-full flex items-center justify-between gap-4">
+                        {/* Logo Section */}
                         <Link
-                            key={link.to}
-                            to={link.to}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium nav-link-hover`}
-                            style={{
-                                color: isActive(link.to) ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                                backgroundColor: isActive(link.to) ? 'var(--color-bg-secondary)' : 'transparent',
-                                textDecoration: 'none',
-                            }}
+                            to="/"
+                            className="group flex items-center gap-3 flex-shrink-0 transition-transform hover:scale-105"
+                            style={{ textDecoration: 'none' }}
                         >
-                            {link.icon && <link.icon className="w-4 h-4" style={{ color: 'var(--color-premium-gold-light)' }} />}
-                            {link.label}
-                        </Link>
-                    ))}
-                    
-                    {/* Admin Panel Link - faqat admin uchun */}
-                    {isAdmin && (
-                        <Link
-                            to="/admin"
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium nav-link-hover`}
-                            style={{
-                                color: 'var(--color-error)',
-                                backgroundColor: 'var(--color-error-bg)',
-                                textDecoration: 'none',
-                            }}
-                        >
-                            <Settings className="w-4 h-4" />
-                            Admin
-                        </Link>
-                    )}
-                </div>
-
-                {/* Search Bar (Desktop) */}
-                <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-md mx-6 lg:mx-8">
-                    <div className="relative w-full">
-                        <Search
-                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-                            style={{ color: 'var(--color-text-muted)' }}
-                        />
-                        <input
-                            type="text"
-                            placeholder={t('nav.search') || 'Search accounts...'}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            ref={searchInputRef}
-                            className="input input-md w-full"
-                            style={{ paddingLeft: '36px', height: '32px', fontSize: '13px' }}
-                            aria-label="Search"
-                        />
-                        <kbd
-                            className="absolute right-2 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center px-1.5 py-0.5 rounded text-xs"
-                            style={{
-                                backgroundColor: 'var(--color-bg-tertiary)',
-                                color: 'var(--color-text-muted)',
-                                border: '1px solid var(--color-border-default)',
-                                fontSize: '10px',
-                            }}
-                        >
-                            Ctrl+K
-                        </kbd>
-                    </div>
-                </form>
-
-                {/* Right Actions */}
-                <div className="flex items-center gap-2 lg:gap-3">
-                    {/* Language Switcher: bayroq chapda, o'ngda uz/ru/eng */}
-                    <div className="relative" ref={langRef}>
-                        <button
-                            onClick={() => setIsLangOpen(!isLangOpen)}
-                            className="btn btn-ghost btn-sm flex items-center gap-2"
-                            aria-label="Change language"
-                            aria-haspopup="true"
-                            aria-expanded={isLangOpen}
-                            style={{ padding: '6px 10px' }}
-                        >
-                            <img
-                                src={currentLang.flagUrl}
-                                alt={currentLang.name}
-                                style={{
-                                    width: '20px',
-                                    height: '14px',
-                                    objectFit: 'cover',
-                                    borderRadius: '2px',
-                                    display: 'block',
-                                }}
-                            />
-                            <span className="text-xs font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-                                {language === 'en' ? 'eng' : language}
-                            </span>
-                        </button>
-
-                        {isLangOpen && (
                             <div
-                                className="dropdown-menu absolute right-0 mt-1"
-                                role="menu"
-                                aria-label="Language selection"
-                                style={{ minWidth: '160px' }}
+                                className="relative flex items-center justify-center rounded-xl transition-all group-hover:shadow-lg"
+                                style={{
+                                    width: '44px',
+                                    height: '44px',
+                                    background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+                                }}
                             >
-                                {langList.map((lang) => (
-                                    <button
-                                        key={lang.code}
-                                        onClick={() => { setLanguage(lang.code); setIsLangOpen(false); }}
-                                        className={`dropdown-item ${language === lang.code ? 'dropdown-item-active' : ''}`}
-                                    >
-                                        <img
-                                            src={lang.flagUrl}
-                                            alt={lang.name}
+                                <Gamepad2 className="w-6 h-6" style={{ color: '#fff' }} />
+                                <div 
+                                    className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                                    style={{
+                                        background: 'linear-gradient(135deg, rgba(255,255,255,0.2), transparent)',
+                                    }}
+                                />
+                            </div>
+                            <div className="hidden sm:block">
+                                <span
+                                    className="text-xl font-bold block"
+                                    style={{ 
+                                        color: 'var(--color-text-primary)',
+                                        background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text',
+                                    }}
+                                >
+                                    WibeStore
+                                </span>
+                                <span
+                                    className="text-xs"
+                                    style={{ color: 'var(--color-text-muted)' }}
+                                >
+                                    Gaming Marketplace
+                                </span>
+                            </div>
+                        </Link>
+
+                        {/* Desktop Navigation - Centered */}
+                        <div className="hidden lg:flex items-center gap-2">
+                            {navLinks.map((link) => (
+                                <Link
+                                    key={link.to}
+                                    to={link.to}
+                                    className="group relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105"
+                                    style={{
+                                        textDecoration: 'none',
+                                        backgroundColor: isActive(link.to) 
+                                            ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                                            : 'transparent',
+                                    }}
+                                >
+                                    {/* Active Indicator */}
+                                    {isActive(link.to) && (
+                                        <div
+                                            className="absolute inset-0 rounded-xl"
                                             style={{
-                                                width: '20px',
-                                                height: '14px',
-                                                objectFit: 'cover',
-                                                borderRadius: '2px',
-                                                marginRight: '8px',
+                                                background: `linear-gradient(135deg, ${isActive(link.to) ? 'rgba(59, 130, 246, 0.1)' : 'transparent'})`,
+                                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
                                             }}
                                         />
-                                        <span>{lang.name}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Theme Toggle */}
-                    <button
-                        onClick={toggleTheme}
-                        className="btn btn-ghost btn-sm"
-                        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                        style={{ padding: '6px 10px' }}
-                    >
-                        {isDark ? (
-                            <Sun className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
-                        ) : (
-                            <Moon className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
-                        )}
-                    </button>
-
-                    {/* Notifications */}
-                    {isAuthenticated && (
-                        <NotificationWidget />
-                    )}
-
-                    {/* Auth actions */}
-                    {isAuthenticated ? (
-                        <div className="relative" ref={profileRef}>
-                            <button
-                                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="flex items-center gap-2 btn btn-ghost btn-sm"
-                                style={{ padding: '6px 10px' }}
-                                aria-label="User menu"
-                                aria-haspopup="true"
-                                aria-expanded={isProfileOpen}
-                            >
-                                <div className="avatar avatar-sm" style={{
-                                    backgroundColor: 'var(--color-accent-blue)',
-                                    color: '#fff'
-                                }}>
-                                    {user?.avatar ? (
-                                        <img src={user.avatar} alt="" />
-                                    ) : (
-                                        <span style={{ fontSize: '11px' }}>
-                                            {(user?.name || 'U').charAt(0).toUpperCase()}
-                                        </span>
                                     )}
-                                </div>
-                                <ChevronDown className="w-3 h-3 hidden sm:block" style={{ color: 'var(--color-text-muted)' }} />
-                            </button>
-
-                            {isProfileOpen && (
-                                <div
-                                    className="dropdown-menu absolute right-0 mt-1"
-                                    role="menu"
-                                    aria-label="User actions"
-                                    style={{ minWidth: '220px' }}
-                                >
-                                    {/* User info */}
-                                    <div style={{ padding: '12px 12px 8px' }}>
-                                        <div className="font-semibold text-sm" style={{ color: 'var(--color-text-primary)' }}>
-                                            {user?.name || 'User'}
-                                        </div>
-                                        <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                                            {user?.email || ''}
-                                        </div>
-                                        {coins > 0 && (
-                                            <div className="flex items-center gap-1 mt-1">
-                                                <span style={{ fontSize: '12px' }}>🪙</span>
-                                                <span className="text-xs font-medium" style={{ color: 'var(--color-premium-gold-light)' }}>
-                                                    {coins} coins
-                                                </span>
-                                            </div>
+                                    
+                                    {/* Icon with gradient */}
+                                    <div className="relative">
+                                        <link.icon 
+                                            className="w-4 h-4 transition-transform group-hover:scale-110" 
+                                            style={{ 
+                                                color: isActive(link.to) 
+                                                    ? 'var(--color-text-accent)' 
+                                                    : 'var(--color-text-secondary)',
+                                            }} 
+                                        />
+                                        {link.badge && (
+                                            <span
+                                                className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs font-bold rounded-full"
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                                                    color: '#fff',
+                                                    fontSize: '9px',
+                                                    padding: '2px 4px',
+                                                }}
+                                            >
+                                                {link.badge}
+                                            </span>
                                         )}
                                     </div>
-                                    <div className="dropdown-divider" />
-
-                                    <Link to="/profile" className="dropdown-item" onClick={() => setIsProfileOpen(false)}>
-                                        <User className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
-                                        <span>{t('nav.profile') || 'Profile'}</span>
-                                    </Link>
-                                    <Link to="/sell" className="dropdown-item" onClick={() => setIsProfileOpen(false)}>
-                                        <ShoppingBag className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
-                                        <span>{t('nav.sell') || 'Sell Account'}</span>
-                                    </Link>
-                                    <Link to="/settings" className="dropdown-item" onClick={() => setIsProfileOpen(false)}>
-                                        <Settings className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
-                                        <span>{t('nav.settings') || 'Settings'}</span>
-                                    </Link>
-
-                                    <div className="dropdown-divider" />
-
-                                    <button
-                                        onClick={handleLogout}
-                                        className="dropdown-item"
-                                        style={{ color: 'var(--color-accent-red)' }}
+                                    
+                                    {/* Label */}
+                                    <span
+                                        style={{
+                                            color: isActive(link.to) 
+                                                ? 'var(--color-text-primary)' 
+                                                : 'var(--color-text-secondary)',
+                                            fontWeight: isActive(link.to) ? '600' : '500',
+                                        }}
                                     >
-                                        <LogOut className="w-4 h-4" />
-                                        <span>{t('nav.logout') || 'Log out'}</span>
-                                    </button>
-                                </div>
+                                        {link.label}
+                                    </span>
+                                </Link>
+                            ))}
+
+                            {/* Admin Panel Link */}
+                            {isAdmin && (
+                                <Link
+                                    to="/admin"
+                                    className="group flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105"
+                                    style={{
+                                        textDecoration: 'none',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                    }}
+                                >
+                                    <Settings className="w-4 h-4" style={{ color: 'var(--color-accent-red)' }} />
+                                    <span style={{ color: 'var(--color-accent-red)', fontWeight: '600' }}>Admin</span>
+                                </Link>
                             )}
                         </div>
-                    ) : (
-                        <div className="flex items-center gap-3 lg:gap-4">
-                            <Link
-                                to="/login"
-                                className="btn btn-ghost btn-sm hidden sm:inline-flex"
-                                style={{ textDecoration: 'none', color: 'var(--color-text-primary)', padding: '8px 14px' }}
-                            >
-                                {t('nav.login') || 'Sign in'}
-                            </Link>
-                            <Link
-                                to="/signup"
-                                className="btn btn-primary btn-sm"
-                                style={{ textDecoration: 'none', padding: '8px 16px' }}
-                            >
-                                {t('nav.signup') || 'Sign up'}
-                            </Link>
-                        </div>
-                    )}
 
-                    {/* Mobile menu toggle - lg:hidden = faqat kichik ekranda ko'rinadi */}
-                    <button
-                        type="button"
-                        className="btn btn-ghost btn-sm lg:hidden"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setIsMobileMenuOpen((prev) => !prev);
-                        }}
-                        aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-                        aria-expanded={isMobileMenuOpen}
-                        style={{ padding: '0 8px', cursor: 'pointer', minWidth: '40px', minHeight: '40px' }}
-                    >
-                        {isMobileMenuOpen ? (
-                            <X className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
-                        ) : (
-                            <Menu className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
-                        )}
-                    </button>
-                </div>
-            </div>
+                        {/* Right Actions */}
+                        <div className="flex items-center gap-2">
+                            {/* Search Bar - Desktop */}
+                            <form 
+                                onSubmit={handleSearch} 
+                                className={`hidden md:flex items-center transition-all duration-300 ${
+                                    searchFocused ? 'w-64' : 'w-48'
+                                }`}
+                            >
+                                <div className="relative w-full">
+                                    <Search
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors"
+                                        style={{ 
+                                            color: searchFocused ? 'var(--color-text-accent)' : 'var(--color-text-muted)' 
+                                        }}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder={t('nav.search') || 'Поиск...'}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onFocus={() => setSearchFocused(true)}
+                                        onBlur={() => setSearchFocused(false)}
+                                        ref={searchInputRef}
+                                        className="w-full px-4 py-2.5 pl-10 rounded-xl text-sm font-medium transition-all outline-none"
+                                        style={{
+                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                            color: 'var(--color-text-primary)',
+                                            border: `2px solid ${searchFocused ? 'var(--color-accent-blue)' : 'transparent'}`,
+                                        }}
+                                        aria-label="Search"
+                                    />
+                                    <kbd
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center px-2 py-1 rounded-md text-xs font-medium transition-all"
+                                        style={{
+                                            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                            color: 'var(--color-text-muted)',
+                                            fontSize: '10px',
+                                        }}
+                                    >
+                                        ⌘K
+                                    </kbd>
+                                </div>
+                            </form>
 
-            {/* Mobile Menu - z-index bilan sahifa ustida */}
-            {isMobileMenuOpen && (
-                <div
-                    className="lg:hidden animate-fadeIn"
-                    style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        right: 0,
-                        zIndex: 60,
-                        backgroundColor: 'var(--color-bg-primary)',
-                        borderTop: '1px solid var(--color-border-default)',
-                        boxShadow: 'var(--shadow-lg)',
-                    }}
-                >
-                    {/* Mobile search */}
-                    <form onSubmit={handleSearch} className="p-4 md:hidden">
-                        <div className="relative">
-                            <Search
-                                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-                                style={{ color: 'var(--color-text-muted)' }}
+                            {/* Divider */}
+                            <div 
+                                className="hidden md:block w-px h-6"
+                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}
                             />
-                            <input
-                                type="text"
-                                placeholder={t('nav.search') || 'Search...'}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="input input-md w-full"
-                                style={{ paddingLeft: '36px' }}
-                            />
-                        </div>
-                    </form>
 
-                    {/* Nav links */}
-                    <div className="px-2 pb-4 space-y-0.5">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={link.to}
-                                to={link.to}
-                                className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors"
-                                style={{
-                                    color: isActive(link.to) ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                                    backgroundColor: isActive(link.to) ? 'var(--color-bg-secondary)' : 'transparent',
-                                    textDecoration: 'none',
-                                }}
-                            >
-                                {link.icon && <link.icon className="w-4 h-4" style={{ color: 'var(--color-premium-gold-light)' }} />}
-                                {link.label}
-                            </Link>
-                        ))}
-                        
-                        {/* Mobile Admin Link */}
-                        {isAdmin && (
-                            <Link
-                                to="/admin"
-                                className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-colors"
-                                style={{
-                                    color: 'var(--color-error)',
-                                    backgroundColor: 'var(--color-error-bg)',
-                                    textDecoration: 'none',
-                                }}
-                            >
-                                <Settings className="w-4 h-4" />
-                                Admin Panel
-                            </Link>
-                        )}
-
-                        {!isAuthenticated && (
-                            <>
-                                <div className="divider my-2" />
-                                <Link
-                                    to="/login"
-                                    className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium"
-                                    style={{ color: 'var(--color-text-primary)', textDecoration: 'none' }}
+                            {/* Language Switcher */}
+                            <div className="relative" ref={langRef}>
+                                <button
+                                    onClick={() => setIsLangOpen(!isLangOpen)}
+                                    className="group flex items-center gap-2 px-3 py-2 rounded-xl transition-all hover:scale-105"
+                                    aria-label="Change language"
+                                    style={{
+                                        backgroundColor: isLangOpen 
+                                            ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                                            : 'transparent',
+                                    }}
                                 >
-                                    {t('nav.login') || 'Sign in'}
-                                </Link>
-                            </>
-                        )}
+                                    <img
+                                        src={currentLang.flagUrl}
+                                        alt={currentLang.name}
+                                        className="rounded-md shadow-sm"
+                                        style={{
+                                            width: '22px',
+                                            height: '16px',
+                                            objectFit: 'cover',
+                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`,
+                                        }}
+                                    />
+                                    <span 
+                                        className="text-xs font-semibold hidden sm:block"
+                                        style={{ color: 'var(--color-text-secondary)' }}
+                                    >
+                                        {language === 'en' ? 'ENG' : language.toUpperCase()}
+                                    </span>
+                                </button>
+
+                                {isLangOpen && (
+                                    <div
+                                        className="absolute right-0 mt-2 p-2 rounded-xl shadow-xl animate-in fade-in zoom-in duration-200"
+                                        style={{
+                                            minWidth: '140px',
+                                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                        }}
+                                    >
+                                        {langList.map((lang) => (
+                                            <button
+                                                key={lang.code}
+                                                onClick={() => { setLanguage(lang.code); setIsLangOpen(false); }}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                style={{
+                                                    backgroundColor: language === lang.code 
+                                                        ? (isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)')
+                                                        : 'transparent',
+                                                }}
+                                            >
+                                                <img
+                                                    src={lang.flagUrl}
+                                                    alt={lang.name}
+                                                    className="rounded-md"
+                                                    style={{
+                                                        width: '20px',
+                                                        height: '14px',
+                                                        objectFit: 'cover',
+                                                    }}
+                                                />
+                                                <span
+                                                    style={{
+                                                        color: language === lang.code 
+                                                            ? 'var(--color-text-accent)' 
+                                                            : 'var(--color-text-secondary)',
+                                                        fontSize: '13px',
+                                                        fontWeight: language === lang.code ? '600' : '500',
+                                                    }}
+                                                >
+                                                    {lang.name}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Theme Toggle */}
+                            <button
+                                onClick={toggleTheme}
+                                className="group p-2.5 rounded-xl transition-all hover:scale-110 hover:rotate-12"
+                                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                                style={{
+                                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                }}
+                            >
+                                {isDark ? (
+                                    <Sun className="w-5 h-5" style={{ color: '#FCD34D' }} />
+                                ) : (
+                                    <Moon className="w-5 h-5" style={{ color: '#6366F1' }} />
+                                )}
+                            </button>
+
+                            {/* Notifications */}
+                            {isAuthenticated && (
+                                <div className="relative">
+                                    <NotificationWidget />
+                                </div>
+                            )}
+
+                            {/* Auth Section */}
+                            {isAuthenticated ? (
+                                <div className="relative" ref={profileRef}>
+                                    <button
+                                        onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                        className="group flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all hover:scale-105"
+                                        style={{
+                                            backgroundColor: isProfileOpen 
+                                                ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                                                : 'transparent',
+                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                        }}
+                                    >
+                                        <div className="relative">
+                                            <div 
+                                                className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shadow-lg"
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                                    color: '#fff',
+                                                }}
+                                            >
+                                                {user?.avatar ? (
+                                                    <img 
+                                                        src={user.avatar} 
+                                                        alt={user?.name || 'User'} 
+                                                        className="w-full h-full rounded-xl object-cover"
+                                                    />
+                                                ) : (
+                                                    (user?.name || 'U').charAt(0).toUpperCase()
+                                                )}
+                                            </div>
+                                            {/* Online indicator */}
+                                            <div 
+                                                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
+                                                style={{
+                                                    backgroundColor: '#10B981',
+                                                    borderColor: isDark ? '#1e293b' : '#fff',
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="hidden lg:block text-left">
+                                            <div 
+                                                className="text-sm font-semibold"
+                                                style={{ color: 'var(--color-text-primary)' }}
+                                            >
+                                                {user?.name || 'User'}
+                                            </div>
+                                            {coins > 0 && (
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-xs">🪙</span>
+                                                    <span 
+                                                        className="text-xs font-bold"
+                                                        style={{ color: '#F59E0B' }}
+                                                    >
+                                                        {coins} coins
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <ChevronDown 
+                                            className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        />
+                                    </button>
+
+                                    {isProfileOpen && (
+                                        <div
+                                            className="absolute right-0 mt-2 p-2 rounded-xl shadow-xl animate-in fade-in zoom-in duration-200"
+                                            style={{
+                                                minWidth: '240px',
+                                                backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                            }}
+                                        >
+                                            {/* User Info Card */}
+                                            <div 
+                                                className="p-3 mb-2 rounded-xl"
+                                                style={{
+                                                    background: isDark 
+                                                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2))'
+                                                        : 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))',
+                                                }}
+                                            >
+                                                <div 
+                                                    className="font-semibold text-sm"
+                                                    style={{ color: 'var(--color-text-primary)' }}
+                                                >
+                                                    {user?.name || 'User'}
+                                                </div>
+                                                <div 
+                                                    className="text-xs truncate"
+                                                    style={{ color: 'var(--color-text-muted)' }}
+                                                >
+                                                    {user?.email || ''}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Link 
+                                                    to="/profile" 
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                    onClick={() => setIsProfileOpen(false)}
+                                                    style={{ textDecoration: 'none' }}
+                                                >
+                                                    <User className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
+                                                    <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
+                                                        {t('nav.profile') || 'Профиль'}
+                                                    </span>
+                                                </Link>
+                                                <Link 
+                                                    to="/sell" 
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                    onClick={() => setIsProfileOpen(false)}
+                                                    style={{ textDecoration: 'none' }}
+                                                >
+                                                    <ShoppingBag className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
+                                                    <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
+                                                        {t('nav.sell') || 'Продать аккаунт'}
+                                                    </span>
+                                                </Link>
+                                                <Link 
+                                                    to="/settings" 
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                    onClick={() => setIsProfileOpen(false)}
+                                                    style={{ textDecoration: 'none' }}
+                                                >
+                                                    <Settings className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
+                                                    <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
+                                                        {t('nav.settings') || 'Настройки'}
+                                                    </span>
+                                                </Link>
+                                            </div>
+
+                                            <div className="mt-2 pt-2 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                    style={{
+                                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    <LogOut className="w-4 h-4" style={{ color: 'var(--color-accent-red)' }} />
+                                                    <span style={{ color: 'var(--color-accent-red)', fontSize: '14px', fontWeight: '600' }}>
+                                                        {t('nav.logout') || 'Выйти'}
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <Link
+                                        to="/login"
+                                        className="hidden sm:inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+                                        style={{
+                                            textDecoration: 'none',
+                                            color: 'var(--color-text-primary)',
+                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                        }}
+                                    >
+                                        {t('nav.login') || 'Войти'}
+                                    </Link>
+                                    <Link
+                                        to="/signup"
+                                        className="group relative inline-flex items-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 overflow-hidden"
+                                        style={{
+                                            textDecoration: 'none',
+                                            background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                            color: '#fff',
+                                            boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+                                        }}
+                                    >
+                                        <span className="relative z-10">{t('nav.signup') || 'Регистрация'}</span>
+                                        <div 
+                                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #8B5CF6, #3B82F6)',
+                                            }}
+                                        />
+                                    </Link>
+                                </div>
+                            )}
+
+                            {/* Mobile Menu Toggle */}
+                            <button
+                                type="button"
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="lg:hidden p-2.5 rounded-xl transition-all hover:scale-110"
+                                style={{
+                                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                }}
+                            >
+                                {isMobileMenuOpen ? (
+                                    <X className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
+                                ) : (
+                                    <Menu className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
-            )}
-        </nav>
+
+                {/* Mobile Menu */}
+                {isMobileMenuOpen && (
+                    <div
+                        className="lg:hidden animate-in slide-in-from-top duration-200"
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 60,
+                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                            borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                        }}
+                    >
+                        <div className="p-4 space-y-3">
+                            {/* Mobile Search */}
+                            <form onSubmit={handleSearch}>
+                                <div className="relative">
+                                    <Search
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5"
+                                        style={{ color: 'var(--color-text-muted)' }}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder={t('nav.search') || 'Поиск...'}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full px-4 py-3 pl-11 rounded-xl text-base font-medium outline-none"
+                                        style={{
+                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                            color: 'var(--color-text-primary)',
+                                            border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                        }}
+                                    />
+                                </div>
+                            </form>
+
+                            {/* Nav Links */}
+                            <div className="space-y-1">
+                                {navLinks.map((link) => (
+                                    <Link
+                                        key={link.to}
+                                        to={link.to}
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium transition-all"
+                                        style={{
+                                            textDecoration: 'none',
+                                            backgroundColor: isActive(link.to) 
+                                                ? (isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)')
+                                                : 'transparent',
+                                        }}
+                                    >
+                                        <link.icon 
+                                            className="w-5 h-5" 
+                                            style={{ 
+                                                color: isActive(link.to) ? 'var(--color-text-accent)' : 'var(--color-text-secondary)',
+                                            }} 
+                                        />
+                                        <span style={{ color: 'var(--color-text-primary)' }}>
+                                            {link.label}
+                                            {link.badge && (
+                                                <span 
+                                                    className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full"
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                                                        color: '#fff',
+                                                    }}
+                                                >
+                                                    {link.badge}
+                                                </span>
+                                            )}
+                                        </span>
+                                    </Link>
+                                ))}
+
+                                {/* Admin Link */}
+                                {isAdmin && (
+                                    <Link
+                                        to="/admin"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium transition-all"
+                                        style={{
+                                            textDecoration: 'none',
+                                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                        }}
+                                    >
+                                        <Settings className="w-5 h-5" style={{ color: 'var(--color-accent-red)' }} />
+                                        <span style={{ color: 'var(--color-accent-red)' }}>Admin Panel</span>
+                                    </Link>
+                                )}
+                            </div>
+
+                            {/* Auth Actions */}
+                            {!isAuthenticated && (
+                                <>
+                                    <div className="pt-3 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+                                        <Link
+                                            to="/login"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="flex items-center justify-center px-4 py-3.5 rounded-xl text-base font-semibold transition-all mb-2"
+                                            style={{
+                                                textDecoration: 'none',
+                                                color: 'var(--color-text-primary)',
+                                                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                            }}
+                                        >
+                                            {t('nav.login') || 'Войти'}
+                                        </Link>
+                                        <Link
+                                            to="/signup"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="flex items-center justify-center px-4 py-3.5 rounded-xl text-base font-bold transition-all"
+                                            style={{
+                                                textDecoration: 'none',
+                                                background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                                color: '#fff',
+                                            }}
+                                        >
+                                            {t('nav.signup') || 'Регистрация'}
+                                        </Link>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </nav>
+        </>
     );
 };
 
