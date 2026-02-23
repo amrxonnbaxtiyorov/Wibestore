@@ -4,7 +4,7 @@ WibeStore Backend - Marketplace Views
 
 import logging
 
-from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework.backends import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, parsers, permissions, status
 from rest_framework.response import Response
