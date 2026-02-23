@@ -120,11 +120,11 @@ const Navbar = () => {
                 aria-label="Main navigation"
             >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
-                    <div className="h-full flex items-center gap-4 sm:gap-6 lg:gap-8">
+                    <div className="h-full flex items-center gap-4 sm:gap-5 lg:gap-6">
                         {/* ─── Chap blok: Logo ─── */}
                         <Link
                             to="/"
-                            className="group flex items-center gap-2.5 sm:gap-3 flex-shrink-0 transition-transform hover:scale-[1.02]"
+                            className="group flex items-center gap-2.5 sm:gap-3 flex-shrink-0 transition-transform hover:scale-[1.02] h-10"
                             style={{ textDecoration: 'none' }}
                         >
                             <div
@@ -168,17 +168,17 @@ const Navbar = () => {
 
                         {/* Ajratgich: Logo | Nav */}
                         <div
-                            className="hidden lg:block flex-shrink-0 w-px h-8"
-                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
+                            className="hidden lg:block flex-shrink-0 w-px self-center"
+                            style={{ height: '28px', backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
                         />
 
                         {/* ─── Nav linklar (desktop) ─── */}
-                        <div className="hidden lg:flex items-center gap-0.5 flex-shrink-0">
+                        <div className="hidden lg:flex items-center gap-0.5 flex-shrink-0 h-10">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.to}
                                     to={link.to}
-                                    className="group relative flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] whitespace-nowrap"
+                                    className="group relative flex items-center justify-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] whitespace-nowrap"
                                     style={{
                                         textDecoration: 'none',
                                         backgroundColor: isActive(link.to) 
@@ -240,7 +240,7 @@ const Navbar = () => {
                             {isAdmin && (
                                 <Link
                                     to="/admin"
-                                    className="group flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] whitespace-nowrap"
+                                    className="group flex items-center justify-center gap-2 px-3 h-9 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] whitespace-nowrap"
                                     style={{
                                         textDecoration: 'none',
                                         backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -260,25 +260,25 @@ const Navbar = () => {
                         />
 
                         {/* ─── O‘rta blok: Qidiruv ─── */}
-                        <div className="flex-1 min-w-0 hidden md:flex justify-center max-w-[200px] lg:max-w-[260px]">
+                        <div className="flex-1 min-w-0 hidden md:flex justify-center items-center max-w-[200px] lg:max-w-[280px]">
                             <form
                                 onSubmit={handleSearch}
-                                className="w-full flex items-center"
+                                className="w-full flex items-center h-10"
                             >
-                                <div className="relative w-full">
+                                <div className="relative w-full h-10 flex items-center">
                                     <Search
                                         className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors flex-shrink-0"
                                         style={{ color: searchFocused ? 'var(--color-text-accent)' : 'var(--color-text-muted)' }}
                                     />
                                     <input
                                         type="text"
-                                        placeholder={t('nav.search') || 'Qidirish...'}
+                                        placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         onFocus={() => setSearchFocused(true)}
                                         onBlur={() => setSearchFocused(false)}
                                         ref={searchInputRef}
-                                        className="w-full px-4 py-2 pl-9 pr-8 rounded-lg text-sm font-medium transition-all outline-none"
+                                        className="w-full h-10 px-4 pl-9 pr-8 rounded-lg text-sm font-medium transition-all outline-none"
                                         style={{
                                             backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                             color: 'var(--color-text-primary)',
@@ -301,17 +301,17 @@ const Navbar = () => {
 
                         {/* Ajratgich: Qidiruv | O‘ng blok */}
                         <div
-                            className="hidden md:block flex-shrink-0 w-px h-8"
-                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
+                            className="hidden md:block flex-shrink-0 w-px self-center"
+                            style={{ height: '28px', backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
                         />
 
                         {/* ─── O‘ng blok: Til, tema, bildirishnoma, auth, menyu ─── */}
-                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 h-10">
                             {/* Language Switcher */}
-                            <div className="relative" ref={langRef}>
+                            <div className="relative h-10 flex items-center" ref={langRef}>
                                 <button
                                     onClick={() => setIsLangOpen(!isLangOpen)}
-                                    className="group flex items-center gap-2 px-3 py-2 rounded-xl transition-all hover:scale-105"
+                                    className="flex items-center gap-2 px-3 h-9 rounded-lg transition-all hover:scale-[1.02] min-w-0"
                                     aria-label="Change language"
                                     style={{
                                         backgroundColor: isLangOpen 
@@ -322,16 +322,16 @@ const Navbar = () => {
                                     <img
                                         src={currentLang.flagUrl}
                                         alt={currentLang.name}
-                                        className="rounded-md shadow-sm"
+                                        className="rounded flex-shrink-0"
                                         style={{
-                                            width: '22px',
-                                            height: '16px',
+                                            width: '20px',
+                                            height: '14px',
                                             objectFit: 'cover',
                                             border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`,
                                         }}
                                     />
                                     <span 
-                                        className="text-xs font-semibold hidden sm:block"
+                                        className="text-xs font-semibold hidden sm:block leading-none"
                                         style={{ color: 'var(--color-text-secondary)' }}
                                     >
                                         {language === 'en' ? 'ENG' : language.toUpperCase()}
@@ -388,7 +388,7 @@ const Navbar = () => {
                             {/* Theme Toggle */}
                             <button
                                 onClick={toggleTheme}
-                                className="group p-2.5 rounded-xl transition-all hover:scale-110 hover:rotate-12"
+                                className="flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:scale-[1.05] flex-shrink-0"
                                 aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
                                 style={{
                                     backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
@@ -403,17 +403,17 @@ const Navbar = () => {
 
                             {/* Notifications */}
                             {isAuthenticated && (
-                                <div className="relative">
+                                <div className="relative h-10 flex items-center">
                                     <NotificationWidget />
                                 </div>
                             )}
 
                             {/* Auth Section */}
                             {isAuthenticated ? (
-                                <div className="relative" ref={profileRef}>
+                                <div className="relative h-10 flex items-center" ref={profileRef}>
                                     <button
                                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                        className="group flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all hover:scale-105"
+                                        className="flex items-center gap-2 px-3 h-9 rounded-lg transition-all hover:scale-[1.02]"
                                         style={{
                                             backgroundColor: isProfileOpen 
                                                 ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
@@ -421,9 +421,9 @@ const Navbar = () => {
                                             border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                                         }}
                                     >
-                                        <div className="relative">
+                                        <div className="relative flex-shrink-0">
                                             <div 
-                                                className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shadow-lg"
+                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
                                                 style={{
                                                     background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
                                                     color: '#fff',
@@ -433,7 +433,7 @@ const Navbar = () => {
                                                     <img 
                                                         src={user.avatar} 
                                                         alt={user?.name || 'User'} 
-                                                        className="w-full h-full rounded-xl object-cover"
+                                                        className="w-full h-full rounded-lg object-cover"
                                                     />
                                                 ) : (
                                                     (user?.name || 'U').charAt(0).toUpperCase()
@@ -441,14 +441,14 @@ const Navbar = () => {
                                             </div>
                                             {/* Online indicator */}
                                             <div 
-                                                className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
+                                                className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
                                                 style={{
                                                     backgroundColor: '#10B981',
                                                     borderColor: isDark ? '#1e293b' : '#fff',
                                                 }}
                                             />
                                         </div>
-                                        <div className="hidden lg:block text-left">
+                                        <div className="hidden lg:block text-left min-w-0">
                                             <div 
                                                 className="text-sm font-semibold"
                                                 style={{ color: 'var(--color-text-primary)' }}
@@ -564,32 +564,26 @@ const Navbar = () => {
                                 <div className="flex items-center gap-2">
                                     <Link
                                         to="/login"
-                                        className="hidden sm:inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+                                        className="hidden sm:inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-semibold transition-all hover:scale-[1.02]"
                                         style={{
                                             textDecoration: 'none',
                                             color: 'var(--color-text-primary)',
                                             backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                         }}
                                     >
-                                        {t('nav.login') || 'Войти'}
+                                        {t('nav.login') || 'Kirish'}
                                     </Link>
                                     <Link
                                         to="/signup"
-                                        className="group relative inline-flex items-center px-5 py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 overflow-hidden"
+                                        className="inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-bold transition-all hover:scale-[1.02]"
                                         style={{
                                             textDecoration: 'none',
                                             background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
                                             color: '#fff',
-                                            boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
+                                            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.35)',
                                         }}
                                     >
-                                        <span className="relative z-10">{t('nav.signup') || 'Регистрация'}</span>
-                                        <div 
-                                            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            style={{
-                                                background: 'linear-gradient(135deg, #8B5CF6, #3B82F6)',
-                                            }}
-                                        />
+                                        {t('nav.signup') || "Ro'yxatdan o'tish"}
                                     </Link>
                                 </div>
                             )}
@@ -598,7 +592,7 @@ const Navbar = () => {
                             <button
                                 type="button"
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="lg:hidden p-2.5 rounded-xl transition-all hover:scale-110"
+                                className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:scale-[1.05] flex-shrink-0"
                                 style={{
                                     backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                 }}
