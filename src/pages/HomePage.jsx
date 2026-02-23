@@ -278,9 +278,7 @@ const HomePage = () => {
                         className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 animate-stagger grid-auto-fill-280"
                         style={{ gap: 'var(--space-4)' }}
                     >
-                        {gamesLoading ? (
-                            Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-                        ) : games.length > 0 ? (
+                        {games.length > 0 ? (
                             games.map((game) => {
                                 const slug = game.slug || game.id;
                                 return (
@@ -297,6 +295,8 @@ const HomePage = () => {
                                     />
                                 );
                             })
+                        ) : gamesLoading ? (
+                            Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
                         ) : null}
                     </div>
                 </div>
