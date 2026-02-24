@@ -283,7 +283,7 @@ const Navbar = () => {
                                         onFocus={() => setSearchFocused(true)}
                                         onBlur={() => setSearchFocused(false)}
                                         ref={searchInputRef}
-                                        className="w-full h-10 px-4 pl-[3.25rem] pr-8 rounded-lg text-sm font-medium transition-all outline-none"
+                                        className="w-full h-10 px-4 pl-[4rem] pr-8 rounded-lg text-sm font-medium transition-all outline-none"
                                         style={{
                                             backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                             color: 'var(--color-text-primary)',
@@ -311,7 +311,7 @@ const Navbar = () => {
                         />
 
                         {/* ─── O‘ng blok: Til, tema, bildirishnoma, auth, menyu ─── */}
-                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 h-10">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 h-10 ml-auto">
                             {/* Language Switcher */}
                             <div className="relative h-10 flex items-center" ref={langRef}>
                                 <button
@@ -640,7 +640,7 @@ const Navbar = () => {
                                         placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full px-4 py-3 pl-11 rounded-xl text-base font-medium outline-none"
+                                        className="w-full px-4 py-3 pl-14 rounded-xl text-base font-medium outline-none"
                                         style={{
                                             backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                             color: 'var(--color-text-primary)',
