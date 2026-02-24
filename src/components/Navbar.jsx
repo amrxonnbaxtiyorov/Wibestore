@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Sun, Moon, Bell, User, LogOut, Settings, ShoppingBag, Heart, Crown, Gamepad2, ChevronDown, Sparkles, TrendingUp, BarChart3, Zap } from 'lucide-react';
+import { Search, Menu, X, Sun, Moon, Bell, User, LogOut, Settings, ShoppingBag, Heart, Crown, ChevronDown, Sparkles, TrendingUp, BarChart3, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCoins } from '../context/CoinContext';
@@ -123,49 +123,18 @@ const Navbar = () => {
             >
                 <div className="max-w-7xl mx-auto pl-4 sm:pl-6 lg:pl-8 pr-3 sm:pr-4 lg:pr-5 h-full">
                     <div className="h-full flex items-center gap-4 sm:gap-5 lg:gap-6">
-                        {/* ─── Chap blok: Logo ─── */}
+                        {/* ─── Chap blok: Logo (wibestore_logo.png) ─── */}
                         <Link
                             to="/"
-                            className="group flex items-center gap-2.5 sm:gap-3 flex-shrink-0 transition-transform hover:scale-[1.02] h-10"
+                            className="group flex items-center flex-shrink-0 transition-transform hover:scale-[1.02] h-10"
                             style={{ textDecoration: 'none' }}
                         >
-                            <div
-                                className="relative flex items-center justify-center rounded-xl transition-all group-hover:shadow-lg flex-shrink-0"
-                                style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
-                                    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
-                                }}
-                            >
-                                <Gamepad2 className="w-5 h-5" style={{ color: '#fff' }} />
-                                <div 
-                                    className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                                    style={{
-                                        background: 'linear-gradient(135deg, rgba(255,255,255,0.2), transparent)',
-                                    }}
-                                />
-                            </div>
-                            <div className="hidden sm:block min-w-0">
-                                <span
-                                    className="text-lg font-bold block leading-tight"
-                                    style={{ 
-                                        color: 'var(--color-text-primary)',
-                                        background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
-                                        WebkitBackgroundClip: 'text',
-                                        WebkitTextFillColor: 'transparent',
-                                        backgroundClip: 'text',
-                                    }}
-                                >
-                                    WibeStore
-                                </span>
-                                <span
-                                    className="text-[11px] block leading-tight"
-                                    style={{ color: 'var(--color-text-muted)' }}
-                                >
-                                    Gaming Marketplace
-                                </span>
-                            </div>
+                            <img
+                                src="/wibestore_logo.png"
+                                alt="WibeStore - Gaming Marketplace"
+                                className="h-9 sm:h-10 w-auto object-contain"
+                                style={{ maxWidth: '180px' }}
+                            />
                         </Link>
 
                         {/* Logo va nav orasidagi joy (flex o‘ng blokni surish uchun emas) */}
