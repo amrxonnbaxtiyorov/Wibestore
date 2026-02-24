@@ -123,18 +123,29 @@ const Navbar = () => {
             >
                 <div className="max-w-7xl mx-auto pl-4 sm:pl-6 lg:pl-8 pr-3 sm:pr-4 lg:pr-5 h-full">
                     <div className="h-full flex items-center gap-4 sm:gap-5 lg:gap-6">
-                        {/* ─── Chap blok: Logo (wibestore_logo.png) ─── */}
+                        {/* ─── Chap blok: Logo (orqa fonsiz, temaga mos) ─── */}
                         <Link
                             to="/"
                             className="group flex items-center flex-shrink-0 transition-transform hover:scale-[1.02] h-10"
                             style={{ textDecoration: 'none' }}
                         >
-                            <img
-                                src="/wibestore_logo.png"
-                                alt="WibeStore - Gaming Marketplace"
-                                className="h-9 sm:h-10 w-auto object-contain"
-                                style={{ maxWidth: '180px' }}
-                            />
+                            <span
+                                className="flex items-center justify-center h-10 px-1"
+                                style={{
+                                    mixBlendMode: 'multiply',
+                                    filter: isDark ? 'brightness(1.35) contrast(1.15)' : 'none',
+                                }}
+                            >
+                                <img
+                                    src="/wibestore_logo.png"
+                                    alt="WibeStore - Gaming Marketplace"
+                                    className="h-8 sm:h-9 w-auto object-contain select-none pointer-events-none"
+                                    style={{
+                                        maxWidth: '160px',
+                                        display: 'block',
+                                    }}
+                                />
+                            </span>
                         </Link>
 
                         {/* Logo va nav orasidagi joy (flex o‘ng blokni surish uchun emas) */}
