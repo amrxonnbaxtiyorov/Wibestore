@@ -168,13 +168,16 @@ const Navbar = () => {
                             </div>
                         </Link>
 
-                        {/* Ajratgich: Logo | Nav — navni orqaroqga surish uchun chap margin */}
+                        {/* Bo'sh joy: nav menuni o'ngga surish */}
+                        <div className="hidden lg:block flex-1 min-w-0" aria-hidden="true" />
+
+                        {/* Ajratgich: Logo | Nav */}
                         <div
-                            className="hidden lg:block flex-shrink-0 w-px self-center ml-4 lg:ml-6"
+                            className="hidden lg:block flex-shrink-0 w-px self-center"
                             style={{ height: '28px', backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
                         />
 
-                        {/* ─── Nav linklar (desktop) — linklar orasida keng oraliq ─── */}
+                        {/* ─── Nav linklar (desktop) — o'ng tomonda ─── */}
                         <div className="hidden lg:flex items-center gap-4 lg:gap-6 flex-shrink-0 h-10">
                             {navLinks.map((link) => (
                                 <Link
@@ -269,7 +272,7 @@ const Navbar = () => {
                             >
                                 <div className="relative w-full h-10 flex items-center">
                                     <Search
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors flex-shrink-0"
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors flex-shrink-0 pointer-events-none"
                                         style={{ color: searchFocused ? 'var(--color-text-accent)' : 'var(--color-text-muted)' }}
                                     />
                                     <input
@@ -280,7 +283,7 @@ const Navbar = () => {
                                         onFocus={() => setSearchFocused(true)}
                                         onBlur={() => setSearchFocused(false)}
                                         ref={searchInputRef}
-                                        className="w-full h-10 px-4 pl-9 pr-8 rounded-lg text-sm font-medium transition-all outline-none"
+                                        className="w-full h-10 px-4 pl-11 pr-8 rounded-lg text-sm font-medium transition-all outline-none"
                                         style={{
                                             backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                             color: 'var(--color-text-primary)',
@@ -634,7 +637,7 @@ const Navbar = () => {
                                     />
                                     <input
                                         type="text"
-                                        placeholder={t('nav.search') || 'Поиск...'}
+                                        placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="w-full px-4 py-3 pl-11 rounded-xl text-base font-medium outline-none"
