@@ -137,7 +137,7 @@ const Navbar = () => {
                                 }}
                             >
                                 <img
-                                    src="/wibestore_logo.png"
+                                    src="/logotip.png"
                                     alt="WibeStore - Gaming Marketplace"
                                     className="h-8 sm:h-9 w-auto object-contain select-none pointer-events-none"
                                     style={{
