@@ -121,7 +121,7 @@ const Navbar = () => {
                 role="navigation"
                 aria-label="Main navigation"
             >
-                <div className="max-w-7xl mx-auto pl-4 sm:pl-6 lg:pl-8 pr-6 sm:pr-8 lg:pr-12 h-full">
+                <div className="max-w-7xl mx-auto pl-4 sm:pl-6 lg:pl-8 pr-3 sm:pr-4 lg:pr-5 h-full">
                     <div className="h-full flex items-center gap-4 sm:gap-5 lg:gap-6">
                         {/* ─── Chap blok: Logo ─── */}
                         <Link
@@ -266,7 +266,7 @@ const Navbar = () => {
 
                         {/* ─── O‘rta blok: Qidiruv ─── */}
                         <div className="hidden md:flex flex-1 min-w-0" aria-hidden="true" />
-                        <div className="hidden md:flex items-center flex-shrink-0 w-[200px] sm:w-[240px] lg:w-[280px] xl:w-[320px]">
+                        <div className="hidden md:flex items-center flex-shrink-0 w-[200px] sm:w-[240px] lg:w-[280px] xl:w-[320px] ml-auto">
                             <form
                                 onSubmit={handleSearch}
                                 className="w-full flex items-center h-10"
