@@ -168,8 +168,8 @@ const Navbar = () => {
                             </div>
                         </Link>
 
-                        {/* Bo'sh joy: nav menuni o'ngga surish */}
-                        <div className="hidden lg:block flex-1 min-w-0" aria-hidden="true" />
+                        {/* Logo va nav orasidagi joy (flex o‘ng blokni surish uchun emas) */}
+                        <div className="hidden lg:block min-w-0 grow-0 w-0" aria-hidden="true" />
 
                         {/* Ajratgich: Logo | Nav */}
                         <div
@@ -265,7 +265,8 @@ const Navbar = () => {
                         />
 
                         {/* ─── O‘rta blok: Qidiruv ─── */}
-                        <div className="flex-1 min-w-0 hidden md:flex justify-center items-center max-w-[260px] lg:max-w-[340px]">
+                        <div className="hidden md:flex flex-1 min-w-0" aria-hidden="true" />
+                        <div className="hidden md:flex items-center flex-shrink-0 w-[200px] sm:w-[240px] lg:w-[280px] xl:w-[320px]">
                             <form
                                 onSubmit={handleSearch}
                                 className="w-full flex items-center h-10"
@@ -311,7 +312,7 @@ const Navbar = () => {
                         />
 
                         {/* ─── O‘ng blok: Til, tema, bildirishnoma, auth, menyu ─── */}
-                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 h-10 ml-auto">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 h-10">
                             {/* Language Switcher */}
                             <div className="relative h-10 flex items-center" ref={langRef}>
                                 <button
