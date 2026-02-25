@@ -509,7 +509,7 @@ const Navbar = () => {
                                 <div className="flex items-center gap-3">
                                     <Link
                                         to="/login"
-                                        className="hidden sm:inline-flex items-center justify-center h-9 px-10 rounded-sm text-[13px] font-medium transition-colors duration-150"
+                                        className="hidden sm:inline-flex items-center justify-center h-9 px-14 rounded-sm text-[13px] font-medium transition-colors duration-150"
                                         style={{
                                             textDecoration: 'none',
                                             color: isDark ? '#c9d1d9' : '#1f2328',
@@ -522,7 +522,7 @@ const Navbar = () => {
                                     </Link>
                                     <Link
                                         to="/signup"
-                                        className="inline-flex items-center justify-center h-9 px-10 rounded-sm text-[13px] font-semibold transition-all duration-150"
+                                        className="inline-flex items-center justify-center h-9 px-14 rounded-sm text-[13px] font-semibold transition-all duration-150"
                                         style={{
                                             textDecoration: 'none',
                                             backgroundColor: isDark ? '#238636' : '#1f883d',
