@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useCoins } from '../context/CoinContext';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
 import NotificationWidget from './NotificationWidget';
-import logoImg from '../assets/logo_wibe_store.png';
+import Logo from './Logo';
 
 const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
@@ -126,28 +126,14 @@ const Navbar = () => {
                         {/* ─── Logo ─── */}
                         <Link
                             to="/"
-                            className="flex items-center flex-shrink-0 transition-opacity duration-200 hover:opacity-80"
+                            className="flex items-center flex-shrink-0 mr-4 transition-opacity duration-200 hover:opacity-80"
                             style={{ textDecoration: 'none' }}
                         >
-                            <img
-                                src={logoImg}
-                                alt="WibeStore"
-                                className="select-none pointer-events-none"
-                                style={{
-                                    height: '48px',
-                                    width: 'auto',
-                                    filter: isDark
-                                        ? 'brightness(1.1) drop-shadow(0 0 8px rgba(59,130,246,0.15))'
-                                        : 'none',
-                                }}
-                            />
+                            <Logo height={38} />
                         </Link>
 
-                        {/* ─── Spacer ─── */}
-                        <div className="flex-1 min-w-0" />
-
                         {/* ─── Nav Links (desktop) ─── */}
-                        <div className="hidden lg:flex items-center gap-1.5 mr-4 flex-shrink-0">
+                        <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
                             {navLinks.map((link) => {
                                 const active = isActive(link.to);
                                 return (
@@ -215,6 +201,9 @@ const Navbar = () => {
                                 </Link>
                             )}
                         </div>
+
+                        {/* ─── Spacer ─── */}
+                        <div className="flex-1 min-w-0" />
 
                         {/* ─── Search (desktop) ─── */}
                         <div className="hidden md:flex items-center mr-3">
@@ -520,7 +509,7 @@ const Navbar = () => {
                                 <div className="flex items-center gap-2">
                                     <Link
                                         to="/login"
-                                        className="hidden sm:inline-flex items-center justify-center h-9 px-4 rounded-sm text-[13px] font-medium transition-colors duration-150"
+                                        className="hidden sm:inline-flex items-center justify-center h-9 px-7 rounded-sm text-[13px] font-medium transition-colors duration-150"
                                         style={{
                                             textDecoration: 'none',
                                             color: isDark ? '#c9d1d9' : '#1f2328',
@@ -533,7 +522,7 @@ const Navbar = () => {
                                     </Link>
                                     <Link
                                         to="/signup"
-                                        className="inline-flex items-center justify-center h-9 px-4 rounded-sm text-[13px] font-semibold transition-all duration-150"
+                                        className="inline-flex items-center justify-center h-9 px-7 rounded-sm text-[13px] font-semibold transition-all duration-150"
                                         style={{
                                             textDecoration: 'none',
                                             backgroundColor: isDark ? '#238636' : '#1f883d',
