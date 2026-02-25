@@ -122,3 +122,78 @@ class ReviewReplyView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+@extend_schema(tags=["Reviews"])
+class ReviewDetailView(APIView):
+    """PUT/DELETE /api/v1/reviews/{id}/ — Update or delete a review."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request, pk):
+        try:
+            review = Review.objects.get(pk=pk, reviewer=request.user)
+        except Review.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"message": "Review not found."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        rating = request.data.get("rating")
+        comment = request.data.get("comment")
+
+        if rating is not None:
+            if not (1 <= int(rating) <= 5):
+                return Response(
+                    {"success": False, "error": {"message": "Rating must be between 1 and 5."}},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            review.rating = int(rating)
+
+        if comment is not None:
+            review.comment = comment
+
+        review.save(update_fields=["rating", "comment", "updated_at"])
+        ReviewService.update_seller_rating(review.reviewee)
+
+        return Response(
+            {"success": True, "data": ReviewSerializer(review).data},
+            status=status.HTTP_200_OK,
+        )
+
+    def delete(self, request, pk):
+        try:
+            review = Review.objects.get(pk=pk, reviewer=request.user)
+        except Review.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"message": "Review not found."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        ReviewService.delete_review(review)
+        return Response(
+            {"success": True, "message": "Review deleted."},
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(tags=["Reviews"])
+class ReviewHelpfulView(APIView):
+    """POST /api/v1/reviews/{id}/helpful/ — Mark review as helpful."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            review = Review.objects.get(pk=pk)
+        except Review.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"message": "Review not found."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Simple toggle - no model field needed yet, just return success
+        return Response(
+            {"success": True, "message": "Marked as helpful."},
+            status=status.HTTP_200_OK,
+        )

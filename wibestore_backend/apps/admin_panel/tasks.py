@@ -25,7 +25,7 @@ def calculate_daily_statistics():
         total_users = User.objects.count()
         active_users = User.objects.filter(is_active=True).count()
         new_users_today = User.objects.filter(
-            date_joined__date=today
+            created_at__date=today
         ).count()
         
         # Listing statistics

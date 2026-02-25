@@ -130,8 +130,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         else:
             # Calculate average from all reviews
             avg_rating = Review.objects.filter(
-                seller=self,
-                listing__status='sold'  # Only count reviews for sold listings
+                reviewee=self,
             ).aggregate(avg=Avg('rating'))['avg']
             
             self.rating = round(avg_rating, 2) if avg_rating is not None else 5.0

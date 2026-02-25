@@ -24,7 +24,7 @@ export const useMarkNotificationRead = () => {
 
     return useMutation({
         mutationFn: async (notificationId) => {
-            const { data } = await apiClient.patch(`/notifications/${notificationId}/`, { is_read: true });
+            const { data } = await apiClient.post(`/notifications/${notificationId}/read/`);
             return data;
         },
         onSuccess: () => {
@@ -41,7 +41,7 @@ export const useMarkAllNotificationsRead = () => {
 
     return useMutation({
         mutationFn: async () => {
-            await apiClient.post('/notifications/mark-all-read/');
+            await apiClient.post('/notifications/read-all/');
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['notifications']);

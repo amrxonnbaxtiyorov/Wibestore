@@ -34,9 +34,9 @@ class ListingFilter(django_filters.FilterSet):
         label='Game Slug'
     )
     
-    # Category filter
+    # Category filter (via game's category)
     category = django_filters.CharFilter(
-        field_name='categories__slug',
+        field_name='game__category__slug',
         label='Category Slug'
     )
     

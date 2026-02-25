@@ -11,5 +11,7 @@ app_name = "reviews"
 urlpatterns = [
     path("", views.CreateReviewView.as_view(), name="create-review"),
     path("user/<uuid:user_id>/", views.UserReviewsView.as_view(), name="user-reviews"),
+    path("<uuid:pk>/", views.ReviewDetailView.as_view(), name="review-detail"),
     path("<uuid:pk>/reply/", views.ReviewReplyView.as_view(), name="review-reply"),
+    path("<uuid:pk>/helpful/", views.ReviewHelpfulView.as_view(), name="review-helpful"),
 ]

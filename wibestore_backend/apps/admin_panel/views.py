@@ -260,3 +260,17 @@ class AdminUserBanView(APIView):
                 {"success": False, "error": {"message": "Invalid action."}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+@extend_schema(tags=["Admin"])
+class AdminTransactionsView(generics.ListAPIView):
+    """GET /api/v1/admin-panel/transactions/ — All transactions."""
+
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return Transaction.objects.all().select_related("user").order_by("-created_at")
+
+    def get_serializer_class(self):
+        from .serializers import AdminTransactionSerializer
+        return AdminTransactionSerializer

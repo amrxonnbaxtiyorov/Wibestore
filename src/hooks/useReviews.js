@@ -23,13 +23,16 @@ export const useCreateReview = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ listing_id, rating, comment }) => {
-            const { data } = await apiClient.post('/reviews/', { listing_id, rating, comment });
+        mutationFn: async ({ escrow_id, rating, comment, listing_id }) => {
+            const { data } = await apiClient.post('/reviews/', { escrow_id, rating, comment });
             return data;
         },
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries(['reviews', 'listing', variables.listing_id]);
-            queryClient.invalidateQueries(['listings', variables.listing_id]);
+            if (variables.listing_id) {
+                queryClient.invalidateQueries(['reviews', 'listing', variables.listing_id]);
+                queryClient.invalidateQueries(['listings', variables.listing_id]);
+            }
+            queryClient.invalidateQueries(['reviews']);
         },
     });
 };
@@ -74,8 +77,8 @@ export const useReviewResponse = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ reviewId, response }) => {
-            const { data } = await apiClient.post(`/reviews/${reviewId}/response/`, { response });
+        mutationFn: async ({ reviewId, reply }) => {
+            const { data } = await apiClient.post(`/reviews/${reviewId}/reply/`, { reply });
             return data;
         },
         onSuccess: (_, variables) => {

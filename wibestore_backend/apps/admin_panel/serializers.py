@@ -84,14 +84,19 @@ class AdminTransactionSerializer(serializers.ModelSerializer):
 
 class AdminReportSerializer(serializers.ModelSerializer):
     """Serializer for admin report management."""
-    
+
     reporter_name = serializers.CharField(source='reporter.full_name', read_only=True)
-    target_name = serializers.CharField(source='target.full_name', read_only=True, allow_null=True)
-    
+    reported_user_name = serializers.CharField(
+        source='reported_user.full_name', read_only=True, allow_null=True
+    )
+
     class Meta:
-        model = Review  # Assuming Report model exists
+        from apps.reports.models import Report
+        model = Report
         fields = [
-            'id', 'reporter', 'reporter_name', 'target', 'target_name',
-            'reason', 'description', 'status', 'created_at',
+            'id', 'reporter', 'reporter_name', 'reported_user',
+            'reported_user_name', 'reported_listing', 'reason',
+            'description', 'status', 'resolution_note', 'resolved_at',
+            'created_at',
         ]
         read_only_fields = fields

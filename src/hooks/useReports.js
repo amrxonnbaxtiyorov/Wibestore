@@ -8,7 +8,7 @@ export const useReports = () => {
     return useQuery({
         queryKey: ['reports'],
         queryFn: async () => {
-            const { data } = await apiClient.get('/reports/');
+            const { data } = await apiClient.get('/reports/my/');
             return data;
         },
         staleTime: 1 * 60 * 1000,
@@ -22,8 +22,13 @@ export const useCreateReport = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ target_type, target_id, reason, description }) => {
-            const { data } = await apiClient.post('/reports/', { target_type, target_id, reason, description });
+        mutationFn: async ({ reported_user_id, reported_listing_id, reason, description }) => {
+            const { data } = await apiClient.post('/reports/', {
+                reported_user_id,
+                reported_listing_id,
+                reason,
+                description,
+            });
             return data;
         },
         onSuccess: () => {
