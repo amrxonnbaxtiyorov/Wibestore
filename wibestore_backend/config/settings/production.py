@@ -2,11 +2,6 @@
 WibeStore Backend - Production Settings
 """
 
-import sentry_sdk
-from sentry_sdk.integrations.celery import CeleryIntegration
-from sentry_sdk.integrations.django import DjangoIntegration
-from sentry_sdk.integrations.redis import RedisIntegration
-
 from .base import *  # noqa: F401,F403
 
 # ============================================================
@@ -37,18 +32,20 @@ CSRF_TRUSTED_ORIGINS = env.list(  # noqa: F405
 )
 
 # ============================================================
-# STORAGE (S3)
+# STORAGE (S3 — only if AWS credentials are configured)
 # ============================================================
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")  # noqa: F405
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")  # noqa: F405
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="wibestore-media")  # noqa: F405
 AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="ap-southeast-1")  # noqa: F405
-AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = None
-AWS_S3_OBJECT_PARAMETERS = {
-    "CacheControl": "max-age=86400",
-}
+
+if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_S3_OBJECT_PARAMETERS = {
+        "CacheControl": "max-age=86400",
+    }
 
 # ============================================================
 # STATIC FILES (WhiteNoise)
@@ -56,29 +53,34 @@ AWS_S3_OBJECT_PARAMETERS = {
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ============================================================
-# SENTRY
+# SENTRY (optional — only if SENTRY_DSN is configured)
 # ============================================================
 SENTRY_DSN = env("SENTRY_DSN", default="")  # noqa: F405
 
 if SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[
-            DjangoIntegration(),
-            CeleryIntegration(),
-            RedisIntegration(),
-        ],
-        traces_sample_rate=0.1,
-        send_default_pii=True,
-        environment="production",
-    )
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.celery import CeleryIntegration
+        from sentry_sdk.integrations.django import DjangoIntegration
+        from sentry_sdk.integrations.redis import RedisIntegration
 
-# ============================================================
-# LOGGING (production — add Sentry handler)
-# ============================================================
-LOGGING["handlers"]["sentry"] = {  # noqa: F405
-    "class": "sentry_sdk.integrations.logging.SentryHandler",
-    "level": "ERROR",
-}
-LOGGING["loggers"]["django.request"]["handlers"].append("sentry")  # noqa: F405
-LOGGING["loggers"]["apps"]["handlers"].append("sentry")  # noqa: F405
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[
+                DjangoIntegration(),
+                CeleryIntegration(),
+                RedisIntegration(),
+            ],
+            traces_sample_rate=0.1,
+            send_default_pii=True,
+            environment="production",
+        )
+
+        LOGGING["handlers"]["sentry"] = {  # noqa: F405
+            "class": "sentry_sdk.integrations.logging.SentryHandler",
+            "level": "ERROR",
+        }
+        LOGGING["loggers"]["django.request"]["handlers"].append("sentry")  # noqa: F405
+        LOGGING["loggers"]["apps"]["handlers"].append("sentry")  # noqa: F405
+    except ImportError:
+        pass
