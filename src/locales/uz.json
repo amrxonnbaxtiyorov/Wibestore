@@ -409,7 +409,8 @@
         "premium_only": "Faqat Premium",
         "results": "akkaunt",
         "game_all": "Barcha o'yinlar",
-        "filter_by_game": "O'yin"
+        "filter_by_game": "O'yin",
+        "sort_label": "Saralash"
     },
     "sort": {
         "rating": "Eng yaxshi reyting",

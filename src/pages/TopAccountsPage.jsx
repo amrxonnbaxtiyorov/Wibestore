@@ -89,67 +89,78 @@ const TopAccountsPage = () => {
                     ))}
                 </div>
 
-                {/* Game filter */}
-                <div style={{ marginBottom: 'var(--space-4)' }}>
-                    <label htmlFor="top-game-filter" style={{
-                        display: 'block',
-                        fontSize: 'var(--font-size-sm)',
-                        fontWeight: 'var(--font-weight-medium)',
-                        color: 'var(--color-text-secondary)',
-                        marginBottom: 'var(--space-2)',
-                    }}>
-                        {t('top.filter_by_game') || "O'yin"}
-                    </label>
-                    <select
-                        id="top-game-filter"
-                        value={gameFilter}
-                        onChange={(e) => setGameFilter(e.target.value)}
-                        className="select select-md"
-                        style={{ minWidth: '220px', maxWidth: '100%' }}
-                        aria-label={t('top.filter_by_game') || "O'yin"}
-                    >
-                        <option value="">{t('top.game_all') || "Barcha o'yinlar"}</option>
-                        {games.map((game) => (
-                            <option key={game.id} value={game.id}>{game.name}</option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Filters & Sort */}
+                {/* O'yin va saralash — bir qatorda */}
                 <div
-                    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
+                    className="flex flex-wrap items-end gap-4"
                     style={{ marginBottom: 'var(--space-6)' }}
                 >
-                    {/* Filter tabs */}
-                    <div className="tabs" style={{ borderBottom: 'none', flex: 1 }}>
-                        <button
-                            className={`tab ${filter === 'all' ? 'tab-active' : ''}`}
-                            onClick={() => setFilter('all')}
+                    {/* O'yin */}
+                    <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                        <label htmlFor="top-game-filter" style={{
+                            display: 'block',
+                            fontSize: 'var(--font-size-sm)',
+                            fontWeight: 'var(--font-weight-medium)',
+                            color: 'var(--color-text-secondary)',
+                            marginBottom: 'var(--space-2)',
+                        }}>
+                            {t('top.filter_by_game') || "O'yin"}
+                        </label>
+                        <select
+                            id="top-game-filter"
+                            value={gameFilter}
+                            onChange={(e) => setGameFilter(e.target.value)}
+                            className="select select-md"
+                            style={{ width: '100%', minWidth: '180px' }}
+                            aria-label={t('top.filter_by_game') || "O'yin"}
                         >
-                            {t('top.all') || 'All'}
-                        </button>
-                        <button
-                            className={`tab ${filter === 'premium' ? 'tab-active' : ''}`}
-                            onClick={() => setFilter('premium')}
-                        >
-                            <Crown className="w-4 h-4" style={{ color: 'var(--color-premium-gold-light)' }} />
-                            {t('top.premium_only') || 'Premium Only'}
-                        </button>
+                            <option value="">{t('top.game_all') || "Barcha o'yinlar"}</option>
+                            {games.map((game) => (
+                                <option key={game.id} value={game.id}>{game.name}</option>
+                            ))}
+                        </select>
                     </div>
+                    {/* Saralash */}
+                    <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                        <label htmlFor="top-sort" style={{
+                            display: 'block',
+                            fontSize: 'var(--font-size-sm)',
+                            fontWeight: 'var(--font-weight-medium)',
+                            color: 'var(--color-text-secondary)',
+                            marginBottom: 'var(--space-2)',
+                        }}>
+                            {t('top.sort_label') || 'Saralash'}
+                        </label>
+                        <select
+                            id="top-sort"
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="select select-md"
+                            style={{ width: '100%', minWidth: '180px' }}
+                            aria-label="Sort accounts"
+                        >
+                            <option value="rating">{t('sort.rating') || 'Eng yaxshi reyting'}</option>
+                            <option value="price-high">{t('sort.price_high') || 'Narx: yuqori'}</option>
+                            <option value="price-low">{t('sort.price_low') || 'Narx: past'}</option>
+                            <option value="sales">{t('sort.sales') || "Ko'p sotuvlar"}</option>
+                        </select>
+                    </div>
+                </div>
 
-                    {/* Sort */}
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="select select-md"
-                        style={{ minWidth: '180px' }}
-                        aria-label="Sort accounts"
+                {/* Filter tabs: Barchasi / Premium */}
+                <div className="tabs" style={{ borderBottom: 'none', marginBottom: 'var(--space-6)' }}>
+                    <button
+                        className={`tab ${filter === 'all' ? 'tab-active' : ''}`}
+                        onClick={() => setFilter('all')}
                     >
-                        <option value="rating">{t('sort.rating') || 'Eng yaxshi reyting'}</option>
-                        <option value="price-high">{t('sort.price_high') || 'Narx: yuqori'}</option>
-                        <option value="price-low">{t('sort.price_low') || 'Narx: past'}</option>
-                        <option value="sales">{t('sort.sales') || "Ko'p sotuvlar"}</option>
-                    </select>
+                        {t('top.all') || 'All'}
+                    </button>
+                    <button
+                        className={`tab ${filter === 'premium' ? 'tab-active' : ''}`}
+                        onClick={() => setFilter('premium')}
+                    >
+                        <Crown className="w-4 h-4" style={{ color: 'var(--color-premium-gold-light)' }} />
+                        {t('top.premium_only') || 'Premium Only'}
+                    </button>
                 </div>
 
                 {/* Result count */}

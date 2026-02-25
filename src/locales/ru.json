@@ -409,7 +409,8 @@
         "premium_only": "Только Премиум",
         "results": "аккаунтов",
         "game_all": "Все игры",
-        "filter_by_game": "Игра"
+        "filter_by_game": "Игра",
+        "sort_label": "Сортировка"
     },
     "sort": {
         "rating": "По рейтингу",

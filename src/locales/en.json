@@ -409,7 +409,8 @@
         "premium_only": "Premium Only",
         "results": "accounts",
         "game_all": "All games",
-        "filter_by_game": "Game"
+        "filter_by_game": "Game",
+        "sort_label": "Sort by"
     },
     "sort": {
         "rating": "Best Rating",
