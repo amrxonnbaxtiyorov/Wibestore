@@ -407,7 +407,9 @@
         "experienced": "Experienced sellers",
         "all": "All",
         "premium_only": "Premium Only",
-        "results": "accounts"
+        "results": "accounts",
+        "game_all": "All games",
+        "filter_by_game": "Game"
     },
     "sort": {
         "rating": "Best Rating",

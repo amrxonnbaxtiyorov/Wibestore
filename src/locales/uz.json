@@ -407,7 +407,9 @@
         "experienced": "Tajribali sotuvchilar",
         "all": "Barchasi",
         "premium_only": "Faqat Premium",
-        "results": "akkaunt"
+        "results": "akkaunt",
+        "game_all": "Barcha o'yinlar",
+        "filter_by_game": "O'yin"
     },
     "sort": {
         "rating": "Eng yaxshi reyting",

@@ -407,7 +407,9 @@
         "experienced": "Опытные продавцы",
         "all": "Все",
         "premium_only": "Только Премиум",
-        "results": "аккаунтов"
+        "results": "аккаунтов",
+        "game_all": "Все игры",
+        "filter_by_game": "Игра"
     },
     "sort": {
         "rating": "По рейтингу",

@@ -2,17 +2,21 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Crown, Star, Flame, Trophy } from 'lucide-react';
 import AccountCard from '../components/AccountCard';
-import { accounts } from '../data/mockData';
+import { accounts, games } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
 
 const TopAccountsPage = () => {
     const { t } = useLanguage();
     const [filter, setFilter] = useState('all');
     const [sortBy, setSortBy] = useState('rating');
+    const [gameFilter, setGameFilter] = useState('');
 
     const isPremiumAcc = (acc) => acc?.isPremium || acc?.is_premium;
+    const getAccGameId = (acc) => acc?.gameId || acc?.game?.id || acc?.game?.slug || '';
+
     const filteredAccounts = [...accounts]
         .filter(acc => {
+            if (gameFilter && getAccGameId(acc) !== gameFilter) return false;
             if (filter === 'premium') return isPremiumAcc(acc);
             return true;
         })
@@ -20,11 +24,11 @@ const TopAccountsPage = () => {
             if (sortBy === 'rating') {
                 if (isPremiumAcc(a) && !isPremiumAcc(b)) return -1;
                 if (!isPremiumAcc(a) && isPremiumAcc(b)) return 1;
-                return b.seller.rating - a.seller.rating;
+                return (b.seller?.rating || 0) - (a.seller?.rating || 0);
             }
-            if (sortBy === 'price-high') return b.price - a.price;
-            if (sortBy === 'price-low') return a.price - b.price;
-            if (sortBy === 'sales') return b.seller.sales - a.seller.sales;
+            if (sortBy === 'price-high') return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
+            if (sortBy === 'price-low') return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
+            if (sortBy === 'sales') return (b.seller?.sales || 0) - (a.seller?.sales || 0);
             return 0;
         });
 
@@ -85,6 +89,32 @@ const TopAccountsPage = () => {
                     ))}
                 </div>
 
+                {/* Game filter */}
+                <div style={{ marginBottom: 'var(--space-4)' }}>
+                    <label htmlFor="top-game-filter" style={{
+                        display: 'block',
+                        fontSize: 'var(--font-size-sm)',
+                        fontWeight: 'var(--font-weight-medium)',
+                        color: 'var(--color-text-secondary)',
+                        marginBottom: 'var(--space-2)',
+                    }}>
+                        {t('top.filter_by_game') || "O'yin"}
+                    </label>
+                    <select
+                        id="top-game-filter"
+                        value={gameFilter}
+                        onChange={(e) => setGameFilter(e.target.value)}
+                        className="select select-md"
+                        style={{ minWidth: '220px', maxWidth: '100%' }}
+                        aria-label={t('top.filter_by_game') || "O'yin"}
+                    >
+                        <option value="">{t('top.game_all') || "Barcha o'yinlar"}</option>
+                        {games.map((game) => (
+                            <option key={game.id} value={game.id}>{game.name}</option>
+                        ))}
+                    </select>
+                </div>
+
                 {/* Filters & Sort */}
                 <div
                     className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
@@ -115,10 +145,10 @@ const TopAccountsPage = () => {
                         style={{ minWidth: '180px' }}
                         aria-label="Sort accounts"
                     >
-                        <option value="rating">{t('sort.rating') || 'Best Rating'}</option>
-                        <option value="price-high">{t('sort.price_high') || 'Price: High'}</option>
-                        <option value="price-low">{t('sort.price_low') || 'Price: Low'}</option>
-                        <option value="sales">{t('sort.sales') || 'Most Sales'}</option>
+                        <option value="rating">{t('sort.rating') || 'Eng yaxshi reyting'}</option>
+                        <option value="price-high">{t('sort.price_high') || 'Narx: yuqori'}</option>
+                        <option value="price-low">{t('sort.price_low') || 'Narx: past'}</option>
+                        <option value="sales">{t('sort.sales') || "Ko'p sotuvlar"}</option>
                     </select>
                 </div>
 
