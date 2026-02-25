@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Sun, Moon, Bell, User, LogOut, Settings, ShoppingBag, Heart, Crown, ChevronDown, Sparkles, TrendingUp, BarChart3, Zap } from 'lucide-react';
+import { Search, Menu, X, Sun, Moon, User, LogOut, Settings, ShoppingBag, Crown, ChevronDown, TrendingUp, BarChart3, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCoins } from '../context/CoinContext';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
 import NotificationWidget from './NotificationWidget';
+import logoImg from '../assets/logo_wibe_store.png';
 
 const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
@@ -70,7 +71,7 @@ const Navbar = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Close mobile menu on route change (defer to avoid sync setState in effect)
+    // Close mobile menu on route change
     useEffect(() => {
         queueMicrotask(() => {
             setIsMobileMenuOpen(false);
@@ -89,14 +90,15 @@ const Navbar = () => {
         if (searchQuery.trim()) {
             navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
             setSearchQuery('');
+            searchInputRef.current?.blur();
         }
     };
 
     const navLinks = [
-        { to: '/products', label: t('nav.products') || 'Каталог', icon: ShoppingBag, color: 'from-blue-500 to-cyan-500' },
-        { to: '/top', label: t('nav.top') || 'Топ', icon: TrendingUp, color: 'from-orange-500 to-red-500' },
-        { to: '/statistics', label: t('nav.statistics') || 'Статистика', icon: BarChart3, color: 'from-purple-500 to-pink-500' },
-        { to: '/premium', label: t('nav.premium') || 'Premium', icon: Zap, color: 'from-amber-400 to-orange-500', badge: 'NEW' },
+        { to: '/products', label: t('nav.products') || 'Boshqa mahsulotlar', icon: ShoppingBag },
+        { to: '/top', label: t('nav.top') || 'Top akkauntlar', icon: TrendingUp },
+        { to: '/statistics', label: t('nav.statistics') || 'Statistika', icon: BarChart3 },
+        { to: '/premium', label: t('nav.premium') || 'Site Premium', icon: Zap, badge: 'NEW' },
     ];
 
     const isAdmin = user?.is_staff || false;
@@ -106,248 +108,249 @@ const Navbar = () => {
     return (
         <>
             <nav
-                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg backdrop-blur-xl' : ''
-                    }`}
+                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg' : ''}`}
                 style={{
-                    height: '72px',
+                    height: '64px',
                     backgroundColor: isScrolled
-                        ? (isDark ? 'rgba(13, 17, 23, 0.98)' : 'rgba(255, 255, 255, 0.98)')
-                        : (isDark ? 'rgba(13, 17, 23, 0.7)' : 'rgba(255, 255, 255, 0.7)'),
-                    borderBottom: isScrolled
-                        ? `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`
-                        : '1px solid transparent',
+                        ? (isDark ? 'rgba(13, 17, 23, 0.95)' : 'rgba(255, 255, 255, 0.95)')
+                        : (isDark ? '#0d1117' : '#ffffff'),
+                    backdropFilter: isScrolled ? 'blur(20px) saturate(180%)' : 'none',
+                    borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
                 }}
                 role="navigation"
                 aria-label="Main navigation"
             >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full" style={{ marginLeft: '100px' }}>
-                    <div className="h-full flex items-center justify-between gap-4 sm:gap-5 lg:gap-6">
-                        {/* ─── Logo: transparent fon, saytga mos ─── */}
+                <div className="h-full w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="h-full flex items-center gap-1">
+
+                        {/* ─── Logo ─── */}
                         <Link
                             to="/"
-                            className="group flex items-center flex-shrink-0 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] h-14"
+                            className="flex items-center flex-shrink-0 mr-2 lg:mr-6 transition-opacity duration-200 hover:opacity-80"
                             style={{ textDecoration: 'none' }}
                         >
-                            <span className="flex items-center h-14 sm:h-16 flex-shrink-0">
-                                <img
-                                    src="/src/assets/logo_wibe_store.png"
-                                    alt="WibeStore - Gaming Marketplace"
-                                    className="h-full w-auto max-h-14 sm:max-h-16 object-contain select-none pointer-events-none block"
-                                    style={{
-                                        maxWidth: '280px',
-                                        filter: isDark ? 'brightness(1.05) drop-shadow(0 1px 2px rgba(0,0,0,0.3))' : 'drop-shadow(0 1px 2px rgba(0,0,0,0.06))',
-                                    }}
-                                />
-                            </span>
+                            <img
+                                src={logoImg}
+                                alt="WibeStore"
+                                className="select-none pointer-events-none"
+                                style={{
+                                    height: '36px',
+                                    width: 'auto',
+                                    filter: isDark
+                                        ? 'brightness(1.1) drop-shadow(0 0 8px rgba(59,130,246,0.15))'
+                                        : 'none',
+                                }}
+                            />
                         </Link>
 
-                        {/* ─── Nav linklar (desktop) — o'ng tomonda ─── */}
-                        <div className="hidden lg:flex items-center gap-4 lg:gap-6 flex-shrink-0 h-10">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.to}
-                                    to={link.to}
-                                    className="group relative flex items-center justify-center gap-2 px-4 py-2 h-9 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-[1.02] whitespace-nowrap"
-                                    style={{
-                                        textDecoration: 'none',
-                                        backgroundColor: isActive(link.to)
-                                            ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
-                                            : 'transparent',
-                                    }}
-                                >
-                                    {/* Active Indicator */}
-                                    {isActive(link.to) && (
-                                        <div
-                                            className="absolute inset-0 rounded-lg"
-                                            style={{
-                                                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12), transparent)',
-                                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'}`,
-                                            }}
-                                        />
-                                    )}
-
-                                    {/* Icon with gradient */}
-                                    <div className="relative">
-                                        <link.icon
-                                            className="w-4 h-4 transition-transform group-hover:scale-110"
-                                            style={{
-                                                color: isActive(link.to)
-                                                    ? 'var(--color-text-accent)'
-                                                    : 'var(--color-text-secondary)',
-                                            }}
-                                        />
+                        {/* ─── Nav Links (desktop) ─── */}
+                        <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                            {navLinks.map((link) => {
+                                const active = isActive(link.to);
+                                return (
+                                    <Link
+                                        key={link.to}
+                                        to={link.to}
+                                        className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors duration-150 whitespace-nowrap"
+                                        style={{
+                                            textDecoration: 'none',
+                                            color: active
+                                                ? (isDark ? '#f0f6fc' : '#1f2328')
+                                                : (isDark ? '#8b949e' : '#656d76'),
+                                            backgroundColor: active
+                                                ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)')
+                                                : 'transparent',
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (!active) {
+                                                e.currentTarget.style.color = isDark ? '#c9d1d9' : '#1f2328';
+                                                e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!active) {
+                                                e.currentTarget.style.color = isDark ? '#8b949e' : '#656d76';
+                                                e.currentTarget.style.backgroundColor = 'transparent';
+                                            }
+                                        }}
+                                    >
+                                        <link.icon className="w-3.5 h-3.5" />
+                                        <span>{link.label}</span>
                                         {link.badge && (
                                             <span
-                                                className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs font-bold rounded-full"
+                                                className="px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none"
                                                 style={{
                                                     background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
                                                     color: '#fff',
-                                                    fontSize: '9px',
-                                                    padding: '2px 4px',
                                                 }}
                                             >
                                                 {link.badge}
                                             </span>
                                         )}
-                                    </div>
+                                        {active && (
+                                            <span
+                                                className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full"
+                                                style={{ backgroundColor: isDark ? '#58a6ff' : '#0969da' }}
+                                            />
+                                        )}
+                                    </Link>
+                                );
+                            })}
 
-                                    {/* Label */}
-                                    <span
-                                        style={{
-                                            color: isActive(link.to)
-                                                ? 'var(--color-text-primary)'
-                                                : 'var(--color-text-secondary)',
-                                            fontWeight: isActive(link.to) ? '600' : '500',
-                                        }}
-                                    >
-                                        {link.label}
-                                    </span>
-                                </Link>
-                            ))}
-
-                            {/* Admin Panel Link */}
                             {isAdmin && (
                                 <Link
                                     to="/admin"
-                                    className="group flex items-center justify-center gap-2 px-4 py-2 h-9 rounded-lg text-sm font-medium transition-all hover:scale-[1.02] whitespace-nowrap"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-semibold transition-colors duration-150 whitespace-nowrap"
                                     style={{
                                         textDecoration: 'none',
-                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                        color: isDark ? '#f85149' : '#cf222e',
+                                        backgroundColor: isDark ? 'rgba(248,81,73,0.1)' : 'rgba(207,34,46,0.06)',
                                     }}
                                 >
-                                    <Settings className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-accent-red)' }} />
-                                    <span style={{ color: 'var(--color-accent-red)', fontWeight: '600' }}>Admin</span>
+                                    <Settings className="w-3.5 h-3.5" />
+                                    <span>Admin</span>
                                 </Link>
                             )}
                         </div>
 
-                        {/* Ajratgich: Nav | Qidiruv — faqat qidiruv ko‘rinadigan ekranlarda */}
-                        <div
-                            className="hidden md:block flex-shrink-0 w-px h-8"
-                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', marginLeft: '4px' }}
-                        />
+                        {/* ─── Spacer ─── */}
+                        <div className="flex-1 min-w-0" />
 
-                        {/* ─── O‘rta blok: Qidiruv ─── */}
-                        <div className="hidden md:flex flex-1 min-w-0" aria-hidden="true" />
-                        <div className="hidden md:flex items-center flex-shrink-0 w-[200px] sm:w-[240px] lg:w-[280px] xl:w-[320px] ml-auto">
-                            <form
-                                onSubmit={handleSearch}
-                                className="w-full flex items-center h-10"
-                            >
-                                <div className="relative w-full h-10 flex items-center">
-                                    {/* Lupa icon — faqat focus bo'lganda ko'rinadi */}
-                                    <Search
-                                        className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex-shrink-0 pointer-events-none transition-all duration-200 ${searchFocused || searchQuery ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}
-                                        style={{ color: 'var(--color-text-accent)' }}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder={searchFocused ? '' : (t('nav.search') || 'Akkaunt qidirish...')}
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        onFocus={() => setSearchFocused(true)}
-                                        onBlur={() => setSearchFocused(false)}
-                                        ref={searchInputRef}
-                                        className="w-full h-10 rounded-lg text-sm font-medium transition-all duration-200 outline-none"
-                                        style={{
-                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                            color: 'var(--color-text-primary)',
-                                            border: `1px solid ${searchFocused ? 'var(--color-accent-blue)' : 'transparent'}`,
-                                            paddingLeft: (searchFocused || searchQuery) ? '36px' : '14px',
-                                            paddingRight: '36px',
-                                        }}
-                                        aria-label="Search"
-                                    />
-                                    <kbd
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 hidden xl:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
-                                        style={{
-                                            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-                                            color: 'var(--color-text-muted)',
-                                        }}
-                                    >
-                                        ⌘K
-                                    </kbd>
-                                </div>
+                        {/* ─── Search (desktop) ─── */}
+                        <div className="hidden md:flex items-center mr-3">
+                            <form onSubmit={handleSearch} className="relative">
+                                <Search
+                                    className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                                    style={{ color: isDark ? '#484f58' : '#8c959f' }}
+                                />
+                                <input
+                                    ref={searchInputRef}
+                                    type="text"
+                                    placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onFocus={() => setSearchFocused(true)}
+                                    onBlur={() => setSearchFocused(false)}
+                                    className="h-8 rounded-md text-xs font-medium outline-none transition-all duration-200"
+                                    style={{
+                                        width: searchFocused ? '280px' : '220px',
+                                        paddingLeft: '32px',
+                                        paddingRight: '48px',
+                                        backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                                        color: isDark ? '#f0f6fc' : '#1f2328',
+                                        border: `1px solid ${searchFocused
+                                            ? (isDark ? '#388bfd' : '#0969da')
+                                            : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
+                                            }`,
+                                        boxShadow: searchFocused
+                                            ? `0 0 0 3px ${isDark ? 'rgba(56,139,253,0.15)' : 'rgba(9,105,218,0.15)'}`
+                                            : 'none',
+                                    }}
+                                    aria-label="Search"
+                                />
+                                <kbd
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium leading-none"
+                                    style={{
+                                        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                                        color: isDark ? '#484f58' : '#8c959f',
+                                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                                    }}
+                                >
+                                    Ctrl K
+                                </kbd>
                             </form>
                         </div>
 
-                        {/* Ajratgich: Qidiruv | O‘ng blok */}
+                        {/* ─── Divider ─── */}
                         <div
-                            className="hidden md:block flex-shrink-0 w-px self-center"
-                            style={{ height: '28px', backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
+                            className="hidden md:block w-px h-5 mx-1 flex-shrink-0"
+                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}
                         />
 
-                        {/* ─── O‘ng blok: Til, tema, bildirishnoma, auth, menyu ─── */}
-                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 h-10">
+                        {/* ─── Right Actions ─── */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+
                             {/* Language Switcher */}
-                            <div className="relative h-10 flex items-center" ref={langRef}>
+                            <div className="relative" ref={langRef}>
                                 <button
                                     onClick={() => setIsLangOpen(!isLangOpen)}
-                                    className="flex items-center gap-2 px-3 h-9 rounded-lg transition-all hover:scale-[1.02] min-w-0"
+                                    className="flex items-center gap-1.5 h-8 px-2 rounded-md transition-colors duration-150"
                                     aria-label="Change language"
                                     style={{
                                         backgroundColor: isLangOpen
-                                            ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                                            ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)')
                                             : 'transparent',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isLangOpen) e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isLangOpen) e.currentTarget.style.backgroundColor = 'transparent';
                                     }}
                                 >
                                     <img
                                         src={currentLang.flagUrl}
                                         alt={currentLang.name}
-                                        className="rounded flex-shrink-0"
+                                        className="rounded-sm flex-shrink-0"
                                         style={{
-                                            width: '20px',
-                                            height: '14px',
+                                            width: '18px',
+                                            height: '13px',
                                             objectFit: 'cover',
-                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`,
+                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
                                         }}
                                     />
                                     <span
-                                        className="text-xs font-semibold hidden sm:block leading-none"
-                                        style={{ color: 'var(--color-text-secondary)' }}
+                                        className="text-[11px] font-semibold hidden sm:block"
+                                        style={{ color: isDark ? '#8b949e' : '#656d76' }}
                                     >
-                                        {language === 'en' ? 'ENG' : language.toUpperCase()}
+                                        {language === 'en' ? 'EN' : language.toUpperCase()}
                                     </span>
+                                    <ChevronDown
+                                        className={`w-3 h-3 hidden sm:block transition-transform duration-200 ${isLangOpen ? 'rotate-180' : ''}`}
+                                        style={{ color: isDark ? '#484f58' : '#8c959f' }}
+                                    />
                                 </button>
 
                                 {isLangOpen && (
                                     <div
-                                        className="absolute right-0 mt-2 p-2 rounded-xl shadow-xl animate-in fade-in zoom-in duration-200"
+                                        className="absolute right-0 top-full mt-1.5 py-1 rounded-lg shadow-lg"
                                         style={{
-                                            minWidth: '140px',
-                                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                            minWidth: '150px',
+                                            backgroundColor: isDark ? '#161b22' : '#ffffff',
+                                            border: `1px solid ${isDark ? '#30363d' : '#d0d7de'}`,
+                                            zIndex: 100,
                                         }}
                                     >
                                         {langList.map((lang) => (
                                             <button
                                                 key={lang.code}
                                                 onClick={() => { setLanguage(lang.code); setIsLangOpen(false); }}
-                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors duration-100"
                                                 style={{
                                                     backgroundColor: language === lang.code
-                                                        ? (isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)')
+                                                        ? (isDark ? 'rgba(56,139,253,0.15)' : 'rgba(9,105,218,0.08)')
                                                         : 'transparent',
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    if (language !== lang.code) e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    if (language !== lang.code) e.currentTarget.style.backgroundColor = 'transparent';
                                                 }}
                                             >
                                                 <img
                                                     src={lang.flagUrl}
                                                     alt={lang.name}
-                                                    className="rounded-md"
-                                                    style={{
-                                                        width: '20px',
-                                                        height: '14px',
-                                                        objectFit: 'cover',
-                                                    }}
+                                                    className="rounded-sm"
+                                                    style={{ width: '18px', height: '13px', objectFit: 'cover' }}
                                                 />
                                                 <span
+                                                    className="text-[13px]"
                                                     style={{
                                                         color: language === lang.code
-                                                            ? 'var(--color-text-accent)'
-                                                            : 'var(--color-text-secondary)',
-                                                        fontSize: '13px',
-                                                        fontWeight: language === lang.code ? '600' : '500',
+                                                            ? (isDark ? '#58a6ff' : '#0969da')
+                                                            : (isDark ? '#c9d1d9' : '#1f2328'),
+                                                        fontWeight: language === lang.code ? '600' : '400',
                                                     }}
                                                 >
                                                     {lang.name}
@@ -361,42 +364,48 @@ const Navbar = () => {
                             {/* Theme Toggle */}
                             <button
                                 onClick={toggleTheme}
-                                className="flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:scale-[1.05] flex-shrink-0"
+                                className="flex items-center justify-center w-8 h-8 rounded-md transition-colors duration-150 flex-shrink-0"
                                 aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                                style={{
-                                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                             >
                                 {isDark ? (
-                                    <Sun className="w-5 h-5" style={{ color: '#FCD34D' }} />
+                                    <Sun className="w-4 h-4" style={{ color: '#e3b341' }} />
                                 ) : (
-                                    <Moon className="w-5 h-5" style={{ color: '#6366F1' }} />
+                                    <Moon className="w-4 h-4" style={{ color: '#6366F1' }} />
                                 )}
                             </button>
 
                             {/* Notifications */}
-                            {isAuthenticated && (
-                                <div className="relative h-10 flex items-center">
-                                    <NotificationWidget />
-                                </div>
-                            )}
+                            {isAuthenticated && <NotificationWidget />}
+
+                            {/* Divider before auth */}
+                            <div
+                                className="hidden sm:block w-px h-5 mx-1 flex-shrink-0"
+                                style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}
+                            />
 
                             {/* Auth Section */}
                             {isAuthenticated ? (
-                                <div className="relative h-10 flex items-center" ref={profileRef}>
+                                <div className="relative" ref={profileRef}>
                                     <button
                                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                        className="flex items-center gap-2 px-3 h-9 rounded-lg transition-all hover:scale-[1.02]"
+                                        className="flex items-center gap-2 h-8 pl-1 pr-2 rounded-md transition-colors duration-150"
                                         style={{
                                             backgroundColor: isProfileOpen
-                                                ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                                                ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)')
                                                 : 'transparent',
-                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (!isProfileOpen) e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!isProfileOpen) e.currentTarget.style.backgroundColor = 'transparent';
                                         }}
                                     >
                                         <div className="relative flex-shrink-0">
                                             <div
-                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                                                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden"
                                                 style={{
                                                     background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
                                                     color: '#fff',
@@ -406,127 +415,93 @@ const Navbar = () => {
                                                     <img
                                                         src={user.avatar}
                                                         alt={user?.name || 'User'}
-                                                        className="w-full h-full rounded-lg object-cover"
+                                                        className="w-full h-full object-cover"
                                                     />
                                                 ) : (
                                                     (user?.name || 'U').charAt(0).toUpperCase()
                                                 )}
                                             </div>
-                                            {/* Online indicator */}
                                             <div
-                                                className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+                                                className="absolute -bottom-px -right-px w-2 h-2 rounded-full"
                                                 style={{
-                                                    backgroundColor: '#10B981',
-                                                    borderColor: isDark ? '#1e293b' : '#fff',
+                                                    backgroundColor: '#3fb950',
+                                                    border: `1.5px solid ${isDark ? '#0d1117' : '#ffffff'}`,
                                                 }}
                                             />
                                         </div>
-                                        <div className="hidden lg:block text-left min-w-0">
-                                            <div
-                                                className="text-sm font-semibold"
-                                                style={{ color: 'var(--color-text-primary)' }}
-                                            >
-                                                {user?.name || 'User'}
-                                            </div>
-                                            {coins > 0 && (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-xs">🪙</span>
-                                                    <span
-                                                        className="text-xs font-bold"
-                                                        style={{ color: '#F59E0B' }}
-                                                    >
-                                                        {coins} coins
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
                                         <ChevronDown
-                                            className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}
-                                            style={{ color: 'var(--color-text-muted)' }}
+                                            className={`w-3 h-3 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`}
+                                            style={{ color: isDark ? '#484f58' : '#8c959f' }}
                                         />
                                     </button>
 
                                     {isProfileOpen && (
                                         <div
-                                            className="absolute right-0 mt-2 p-2 rounded-xl shadow-xl animate-in fade-in zoom-in duration-200"
+                                            className="absolute right-0 top-full mt-1.5 py-1 rounded-lg shadow-xl"
                                             style={{
-                                                minWidth: '240px',
-                                                backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                                minWidth: '220px',
+                                                backgroundColor: isDark ? '#161b22' : '#ffffff',
+                                                border: `1px solid ${isDark ? '#30363d' : '#d0d7de'}`,
+                                                zIndex: 100,
                                             }}
                                         >
-                                            {/* User Info Card */}
-                                            <div
-                                                className="p-3 mb-2 rounded-xl"
-                                                style={{
-                                                    background: isDark
-                                                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2))'
-                                                        : 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))',
-                                                }}
-                                            >
+                                            {/* User Info */}
+                                            <div className="px-3 py-2 mb-1" style={{ borderBottom: `1px solid ${isDark ? '#21262d' : '#eaeef2'}` }}>
                                                 <div
-                                                    className="font-semibold text-sm"
-                                                    style={{ color: 'var(--color-text-primary)' }}
+                                                    className="text-[13px] font-semibold"
+                                                    style={{ color: isDark ? '#f0f6fc' : '#1f2328' }}
                                                 >
                                                     {user?.name || 'User'}
                                                 </div>
                                                 <div
-                                                    className="text-xs truncate"
-                                                    style={{ color: 'var(--color-text-muted)' }}
+                                                    className="text-[12px] truncate"
+                                                    style={{ color: isDark ? '#484f58' : '#8c959f' }}
                                                 >
                                                     {user?.email || ''}
                                                 </div>
+                                                {coins > 0 && (
+                                                    <div className="flex items-center gap-1 mt-1">
+                                                        <Crown className="w-3 h-3" style={{ color: '#e3b341' }} />
+                                                        <span className="text-[12px] font-semibold" style={{ color: '#e3b341' }}>
+                                                            {coins} coins
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            <div className="space-y-1">
+                                            {/* Menu Items */}
+                                            {[
+                                                { to: '/profile', icon: User, label: t('nav.profile') || 'Profil' },
+                                                { to: '/sell', icon: ShoppingBag, label: t('nav.sell') || 'Akkaunt sotish' },
+                                                { to: '/settings', icon: Settings, label: t('nav.settings') || 'Sozlamalar' },
+                                            ].map((item) => (
                                                 <Link
-                                                    to="/profile"
-                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                    key={item.to}
+                                                    to={item.to}
+                                                    className="flex items-center gap-2.5 px-3 py-2 transition-colors duration-100"
                                                     onClick={() => setIsProfileOpen(false)}
                                                     style={{ textDecoration: 'none' }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                                                 >
-                                                    <User className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
-                                                    <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
-                                                        {t('nav.profile') || 'Профиль'}
+                                                    <item.icon className="w-4 h-4" style={{ color: isDark ? '#8b949e' : '#656d76' }} />
+                                                    <span className="text-[13px] font-medium" style={{ color: isDark ? '#c9d1d9' : '#1f2328' }}>
+                                                        {item.label}
                                                     </span>
                                                 </Link>
-                                                <Link
-                                                    to="/sell"
-                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
-                                                    onClick={() => setIsProfileOpen(false)}
-                                                    style={{ textDecoration: 'none' }}
-                                                >
-                                                    <ShoppingBag className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
-                                                    <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
-                                                        {t('nav.sell') || 'Продать аккаунт'}
-                                                    </span>
-                                                </Link>
-                                                <Link
-                                                    to="/settings"
-                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
-                                                    onClick={() => setIsProfileOpen(false)}
-                                                    style={{ textDecoration: 'none' }}
-                                                >
-                                                    <Settings className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
-                                                    <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
-                                                        {t('nav.settings') || 'Настройки'}
-                                                    </span>
-                                                </Link>
-                                            </div>
+                                            ))}
 
-                                            <div className="mt-2 pt-2 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+                                            {/* Logout */}
+                                            <div style={{ borderTop: `1px solid ${isDark ? '#21262d' : '#eaeef2'}`, marginTop: '4px', paddingTop: '4px' }}>
                                                 <button
                                                     onClick={handleLogout}
-                                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
-                                                    style={{
-                                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                                        border: 'none',
-                                                        cursor: 'pointer',
-                                                    }}
+                                                    className="w-full flex items-center gap-2.5 px-3 py-2 transition-colors duration-100 text-left"
+                                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isDark ? 'rgba(248,81,73,0.1)' : 'rgba(207,34,46,0.06)'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                                                 >
-                                                    <LogOut className="w-4 h-4" style={{ color: 'var(--color-accent-red)' }} />
-                                                    <span style={{ color: 'var(--color-accent-red)', fontSize: '14px', fontWeight: '600' }}>
-                                                        {t('nav.logout') || 'Выйти'}
+                                                    <LogOut className="w-4 h-4" style={{ color: isDark ? '#f85149' : '#cf222e' }} />
+                                                    <span className="text-[13px] font-medium" style={{ color: isDark ? '#f85149' : '#cf222e' }}>
+                                                        {t('nav.logout') || 'Chiqish'}
                                                     </span>
                                                 </button>
                                             </div>
@@ -537,24 +512,26 @@ const Navbar = () => {
                                 <div className="flex items-center gap-2">
                                     <Link
                                         to="/login"
-                                        className="hidden sm:inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-semibold transition-all hover:scale-[1.02]"
+                                        className="hidden sm:inline-flex items-center justify-center h-8 px-3 rounded-md text-[13px] font-medium transition-colors duration-150"
                                         style={{
                                             textDecoration: 'none',
-                                            color: 'var(--color-text-primary)',
-                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                            color: isDark ? '#c9d1d9' : '#1f2328',
                                         }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                                     >
                                         {t('nav.login') || 'Kirish'}
                                     </Link>
                                     <Link
                                         to="/signup"
-                                        className="inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-bold transition-all hover:scale-[1.02]"
+                                        className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-[13px] font-semibold transition-all duration-150"
                                         style={{
                                             textDecoration: 'none',
-                                            background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
-                                            color: '#fff',
-                                            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.35)',
+                                            backgroundColor: isDark ? '#238636' : '#1f883d',
+                                            color: '#ffffff',
                                         }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isDark ? '#2ea043' : '#1a7f37'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = isDark ? '#238636' : '#1f883d'; }}
                                     >
                                         {t('nav.signup') || "Ro'yxatdan o'tish"}
                                     </Link>
@@ -565,144 +542,141 @@ const Navbar = () => {
                             <button
                                 type="button"
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:scale-[1.05] flex-shrink-0"
-                                style={{
-                                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                }}
+                                className="lg:hidden flex items-center justify-center w-8 h-8 rounded-md ml-1 transition-colors duration-150 flex-shrink-0"
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                             >
                                 {isMobileMenuOpen ? (
-                                    <X className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
+                                    <X className="w-5 h-5" style={{ color: isDark ? '#f0f6fc' : '#1f2328' }} />
                                 ) : (
-                                    <Menu className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
+                                    <Menu className="w-5 h-5" style={{ color: isDark ? '#f0f6fc' : '#1f2328' }} />
                                 )}
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Mobile Menu */}
+                {/* ─── Mobile Menu ─── */}
                 {isMobileMenuOpen && (
                     <div
-                        className="lg:hidden animate-in slide-in-from-top duration-200"
+                        className="lg:hidden"
                         style={{
                             position: 'absolute',
                             top: '100%',
                             left: 0,
                             right: 0,
                             zIndex: 60,
-                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                            borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                            backgroundColor: isDark ? '#161b22' : '#ffffff',
+                            borderTop: `1px solid ${isDark ? '#21262d' : '#eaeef2'}`,
+                            boxShadow: '0 16px 32px rgba(0,0,0,0.15)',
                         }}
                     >
-                        <div className="p-4 space-y-3">
+                        <div className="px-4 py-3 space-y-1">
                             {/* Mobile Search */}
-                            <form onSubmit={handleSearch}>
+                            <form onSubmit={handleSearch} className="mb-3">
                                 <div className="relative">
                                     <Search
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5"
-                                        style={{ color: 'var(--color-text-muted)' }}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                                        style={{ color: isDark ? '#484f58' : '#8c959f' }}
                                     />
                                     <input
                                         type="text"
                                         placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full px-4 py-3 pl-14 rounded-xl text-base font-medium outline-none"
+                                        className="w-full h-10 pl-10 pr-4 rounded-md text-sm font-medium outline-none"
                                         style={{
-                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                            color: 'var(--color-text-primary)',
-                                            border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                                            color: isDark ? '#f0f6fc' : '#1f2328',
+                                            border: `1px solid ${isDark ? '#30363d' : '#d0d7de'}`,
                                         }}
                                     />
                                 </div>
                             </form>
 
                             {/* Nav Links */}
-                            <div className="space-y-1">
-                                {navLinks.map((link) => (
+                            {navLinks.map((link) => {
+                                const active = isActive(link.to);
+                                return (
                                     <Link
                                         key={link.to}
                                         to={link.to}
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium transition-all"
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors duration-100"
                                         style={{
                                             textDecoration: 'none',
-                                            backgroundColor: isActive(link.to)
-                                                ? (isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)')
+                                            color: active
+                                                ? (isDark ? '#f0f6fc' : '#1f2328')
+                                                : (isDark ? '#8b949e' : '#656d76'),
+                                            backgroundColor: active
+                                                ? (isDark ? 'rgba(56,139,253,0.15)' : 'rgba(9,105,218,0.08)')
                                                 : 'transparent',
                                         }}
                                     >
-                                        <link.icon
-                                            className="w-5 h-5"
-                                            style={{
-                                                color: isActive(link.to) ? 'var(--color-text-accent)' : 'var(--color-text-secondary)',
-                                            }}
-                                        />
-                                        <span style={{ color: 'var(--color-text-primary)' }}>
-                                            {link.label}
-                                            {link.badge && (
-                                                <span
-                                                    className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full"
-                                                    style={{
-                                                        background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
-                                                        color: '#fff',
-                                                    }}
-                                                >
-                                                    {link.badge}
-                                                </span>
-                                            )}
-                                        </span>
+                                        <link.icon className="w-4 h-4 flex-shrink-0" />
+                                        <span className="flex-1">{link.label}</span>
+                                        {link.badge && (
+                                            <span
+                                                className="px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none"
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                                                    color: '#fff',
+                                                }}
+                                            >
+                                                {link.badge}
+                                            </span>
+                                        )}
                                     </Link>
-                                ))}
+                                );
+                            })}
 
-                                {/* Admin Link */}
-                                {isAdmin && (
+                            {isAdmin && (
+                                <Link
+                                    to="/admin"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-colors duration-100"
+                                    style={{
+                                        textDecoration: 'none',
+                                        color: isDark ? '#f85149' : '#cf222e',
+                                        backgroundColor: isDark ? 'rgba(248,81,73,0.1)' : 'rgba(207,34,46,0.06)',
+                                    }}
+                                >
+                                    <Settings className="w-4 h-4 flex-shrink-0" />
+                                    <span>Admin Panel</span>
+                                </Link>
+                            )}
+
+                            {/* Auth Actions (mobile) */}
+                            {!isAuthenticated && (
+                                <div
+                                    className="pt-3 mt-2 space-y-2"
+                                    style={{ borderTop: `1px solid ${isDark ? '#21262d' : '#eaeef2'}` }}
+                                >
                                     <Link
-                                        to="/admin"
+                                        to="/login"
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium transition-all"
+                                        className="flex items-center justify-center h-10 rounded-md text-sm font-medium transition-colors duration-150"
                                         style={{
                                             textDecoration: 'none',
-                                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                            color: isDark ? '#c9d1d9' : '#1f2328',
+                                            border: `1px solid ${isDark ? '#30363d' : '#d0d7de'}`,
                                         }}
                                     >
-                                        <Settings className="w-5 h-5" style={{ color: 'var(--color-accent-red)' }} />
-                                        <span style={{ color: 'var(--color-accent-red)' }}>Admin Panel</span>
+                                        {t('nav.login') || 'Kirish'}
                                     </Link>
-                                )}
-                            </div>
-
-                            {/* Auth Actions */}
-                            {!isAuthenticated && (
-                                <>
-                                    <div className="pt-3 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
-                                        <Link
-                                            to="/login"
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                            className="flex items-center justify-center px-4 py-3.5 rounded-xl text-base font-semibold transition-all mb-2"
-                                            style={{
-                                                textDecoration: 'none',
-                                                color: 'var(--color-text-primary)',
-                                                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                            }}
-                                        >
-                                            {t('nav.login') || 'Войти'}
-                                        </Link>
-                                        <Link
-                                            to="/signup"
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                            className="flex items-center justify-center px-4 py-3.5 rounded-xl text-base font-bold transition-all"
-                                            style={{
-                                                textDecoration: 'none',
-                                                background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
-                                                color: '#fff',
-                                            }}
-                                        >
-                                            {t('nav.signup') || 'Регистрация'}
-                                        </Link>
-                                    </div>
-                                </>
+                                    <Link
+                                        to="/signup"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="flex items-center justify-center h-10 rounded-md text-sm font-bold transition-colors duration-150"
+                                        style={{
+                                            textDecoration: 'none',
+                                            backgroundColor: isDark ? '#238636' : '#1f883d',
+                                            color: '#ffffff',
+                                        }}
+                                    >
+                                        {t('nav.signup') || "Ro'yxatdan o'tish"}
+                                    </Link>
+                                </div>
                             )}
                         </div>
                     </div>
