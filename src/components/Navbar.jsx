@@ -149,6 +149,7 @@ const Navbar = () => {
                                             backgroundColor: active
                                                 ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)')
                                                 : 'transparent',
+                                            padding: isActive ? '10px' : 'auto',
                                         }}
                                         onMouseEnter={(e) => {
                                             if (!active) {
