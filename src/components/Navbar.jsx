@@ -232,61 +232,58 @@ const Navbar = () => {
                             )}
                         </div>
 
-                        {/* Ajratgich: Nav | Qidiruv — faqat qidiruv ko‘rinadigan ekranlarda */}
+                        {/* ─── O‘ng taraf: Qidiruv, til, tema, auth — bitta blok, o‘ngga yopishadi ─── */}
+                        <div className="flex-1 min-w-0 hidden lg:block" aria-hidden="true" />
+
+                        {/* Ajratgich: Nav | O‘ng blok — faqat desktop */}
                         <div
                             className="hidden md:block flex-shrink-0 w-px h-8"
                             style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', marginLeft: '4px' }}
                         />
 
-                        {/* ─── O‘rta blok: Qidiruv ─── */}
-                        <div className="hidden md:flex flex-1 min-w-0" aria-hidden="true" />
-                        <div className="hidden md:flex items-center flex-shrink-0 w-[200px] sm:w-[240px] lg:w-[280px] xl:w-[320px] ml-auto">
-                            <form
-                                onSubmit={handleSearch}
-                                className="w-full flex items-center h-10"
-                            >
-                                <div className="relative w-full h-10 flex items-center">
-                                    <Search
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors flex-shrink-0 pointer-events-none"
-                                        style={{ color: searchFocused ? 'var(--color-text-accent)' : 'var(--color-text-muted)' }}
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        onFocus={() => setSearchFocused(true)}
-                                        onBlur={() => setSearchFocused(false)}
-                                        ref={searchInputRef}
-                                        className="w-full h-10 px-4 pl-[4rem] pr-8 rounded-lg text-sm font-medium transition-all outline-none"
-                                        style={{
-                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                            color: 'var(--color-text-primary)',
-                                            border: `1px solid ${searchFocused ? 'var(--color-accent-blue)' : 'transparent'}`,
-                                        }}
-                                        aria-label="Search"
-                                    />
-                                    <kbd
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 hidden xl:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
-                                        style={{
-                                            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-                                            color: 'var(--color-text-muted)',
-                                        }}
-                                    >
-                                        ⌘K
-                                    </kbd>
-                                </div>
-                            </form>
-                        </div>
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-auto">
+                            {/* Qidiruv — faqat desktop */}
+                            <div className="hidden md:block w-[200px] sm:w-[240px] lg:w-[280px] xl:w-[320px] flex-shrink-0">
+                                <form onSubmit={handleSearch} className="w-full flex items-center h-10">
+                                    <div className="relative w-full h-10 flex items-center">
+                                        <Search
+                                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors flex-shrink-0 pointer-events-none"
+                                            style={{ color: searchFocused ? 'var(--color-text-accent)' : 'var(--color-text-muted)' }}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onFocus={() => setSearchFocused(true)}
+                                            onBlur={() => setSearchFocused(false)}
+                                            ref={searchInputRef}
+                                            className="w-full h-10 px-4 pl-[4rem] pr-8 rounded-lg text-sm font-medium transition-all outline-none"
+                                            style={{
+                                                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                                color: 'var(--color-text-primary)',
+                                                border: `1px solid ${searchFocused ? 'var(--color-accent-blue)' : 'transparent'}`,
+                                            }}
+                                            aria-label="Search"
+                                        />
+                                        <kbd
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 hidden xl:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
+                                            style={{
+                                                backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                                color: 'var(--color-text-muted)',
+                                            }}
+                                        >
+                                            ⌘K
+                                        </kbd>
+                                    </div>
+                                </form>
+                            </div>
 
-                        {/* Ajratgich: Qidiruv | O‘ng blok */}
-                        <div
-                            className="hidden md:block flex-shrink-0 w-px self-center"
-                            style={{ height: '28px', backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
-                        />
-
-                        {/* ─── O‘ng blok: Til, tema, bildirishnoma, auth, menyu ─── */}
-                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 h-10">
+                            {/* Ajratgich: Qidiruv | Til/Tema/Auth */}
+                            <div
+                                className="hidden md:block flex-shrink-0 w-px self-center"
+                                style={{ height: '28px', backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
+                            />
                             {/* Language Switcher */}
                             <div className="relative h-10 flex items-center" ref={langRef}>
                                 <button
