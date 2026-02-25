@@ -30,6 +30,7 @@ if env_file.exists():
 # ============================================================
 # CORE SETTINGS
 # ============================================================
+# In production, set SECRET_KEY in env (never use default).
 SECRET_KEY = env("SECRET_KEY", default="django-insecure-change-me-in-production")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
@@ -124,7 +125,8 @@ ASGI_APPLICATION = "config.asgi.application"
 
 # ============================================================
 # DATABASE
-# Railway Postgres provides DATABASE_PUBLIC_URL; we support both.
+# Railway sets DATABASE_PUBLIC_URL; local dev can use DATABASE_URL or this default.
+# Production must set DATABASE_URL or DATABASE_PUBLIC_URL (do not rely on default).
 # ============================================================
 _db_default = (
     os.environ.get("DATABASE_PUBLIC_URL")
@@ -354,7 +356,7 @@ AXES_HANDLER = "axes.handlers.cache.AxesCacheHandler"
 # ============================================================
 # ENCRYPTION (for sensitive data like account credentials)
 # ============================================================
-# FERNET_KEY is required for encryption. Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# In production, set FERNET_KEY in env. Generate: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 FERNET_KEY = env("FERNET_KEY", default=None)
 if not FERNET_KEY:
     import warnings
@@ -362,7 +364,7 @@ if not FERNET_KEY:
         "FERNET_KEY not set! Sensitive data encryption will not work. "
         "Generate a key with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
     )
-    FERNET_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="  # Dummy key for development only
+    FERNET_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="  # Dummy key for development only; never use in production
 
 # ============================================================
 # PAYMENTS

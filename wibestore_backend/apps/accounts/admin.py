@@ -6,7 +6,18 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
+from apps.accounts.models import PasswordHistory
+
 User = get_user_model()
+
+
+@admin.register(PasswordHistory)
+class PasswordHistoryAdmin(admin.ModelAdmin):
+    list_display = ["user", "created_at"]
+    list_filter = ["created_at"]
+    search_fields = ["user__email"]
+    readonly_fields = ["password_hash", "created_at"]
+    ordering = ["-created_at"]
 
 
 @admin.register(User)

@@ -2,7 +2,9 @@
 WibeStore Backend - Production Settings
 """
 
+import os
 import socket
+import warnings
 
 from .base import *  # noqa: F401,F403
 
@@ -10,6 +12,22 @@ from .base import *  # noqa: F401,F403
 # DEBUG (must be False in production)
 # ============================================================
 DEBUG = False
+
+# ============================================================
+# PRODUCTION SECURITY CHECKS (fail fast if misconfigured)
+# ============================================================
+if os.environ.get("SECRET_KEY", "").strip() in ("", "django-insecure-change-me-in-production"):
+    raise ValueError(
+        "Production requires a strong SECRET_KEY. "
+        "Set SECRET_KEY in your environment (e.g. Railway Variables)."
+    )
+# FERNET_KEY: base.py sets a dummy if unset; in production we require a real key from env
+if not os.environ.get("FERNET_KEY", "").strip() or FERNET_KEY == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=":  # noqa: F405
+    warnings.warn(
+        "FERNET_KEY is not set or is dummy in production. Set FERNET_KEY in env. "
+        "Generate: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\"",
+        UserWarning,
+    )
 
 # ============================================================
 # SECURITY

@@ -13,7 +13,7 @@ from django.db import transaction
 
 from apps.accounts.models import User
 from apps.games.models import Game, Category
-from apps.marketplace.models import Listing, ListingImage
+from apps.marketplace.models import Listing
 from apps.subscriptions.models import SubscriptionPlan
 
 
@@ -24,19 +24,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("Creating seed data...")
 
-        # Create categories
         self.create_categories()
-
-        # Create games (40+)
         self.create_games()
-
-        # Create subscription plans
         self.create_subscription_plans()
-
-        # Create test users
         self.create_test_users()
-
-        # Create listings
         self.create_listings()
 
         self.stdout.write(
@@ -59,18 +50,15 @@ class Command(BaseCommand):
             {"name": "MOBA", "slug": "moba"},
             {"name": "MMORPG", "slug": "mmorpg"},
         ]
-
         for cat in categories:
             Category.objects.get_or_create(
                 slug=cat["slug"],
                 defaults={"name": cat["name"], "name_uz": cat["name"], "name_ru": cat["name"]}
             )
-
         self.stdout.write("Created categories")
 
     def create_games(self):
         games = [
-            # Popular Mobile Games
             {"name": "PUBG Mobile", "slug": "pubg-mobile", "category": "mobile-games"},
             {"name": "Free Fire", "slug": "free-fire", "category": "mobile-games"},
             {"name": "Mobile Legends", "slug": "mobile-legends", "category": "mobile-games"},
@@ -83,8 +71,6 @@ class Command(BaseCommand):
             {"name": "Minecraft PE", "slug": "minecraft-pe", "category": "mobile-games"},
             {"name": "Standoff 2", "slug": "standoff-2", "category": "mobile-games"},
             {"name": "Brawl Stars", "slug": "brawl-stars", "category": "mobile-games"},
-            
-            # PC Games
             {"name": "Steam", "slug": "steam", "category": "pc-games"},
             {"name": "CS:GO", "slug": "csgo", "category": "pc-games"},
             {"name": "Dota 2", "slug": "dota-2", "category": "pc-games"},
@@ -97,8 +83,6 @@ class Command(BaseCommand):
             {"name": "Rocket League", "slug": "rocket-league", "category": "pc-games"},
             {"name": "Fall Guys", "slug": "fall-guys", "category": "pc-games"},
             {"name": "Among Us", "slug": "among-us", "category": "pc-games"},
-            
-            # Console Games
             {"name": "PlayStation Network", "slug": "psn", "category": "console-games"},
             {"name": "Xbox Live", "slug": "xbox-live", "category": "console-games"},
             {"name": "Nintendo Switch", "slug": "nintendo-switch", "category": "console-games"},
@@ -112,7 +96,6 @@ class Command(BaseCommand):
             {"name": "Spider-Man", "slug": "spider-man", "category": "console-games"},
             {"name": "Assassin's Creed", "slug": "assassins-creed", "category": "console-games"},
         ]
-
         for game_data in games:
             category = Category.objects.filter(slug=game_data["category"]).first()
             Game.objects.get_or_create(
@@ -126,34 +109,14 @@ class Command(BaseCommand):
                     "is_active": True,
                 }
             )
-
         self.stdout.write(f"Created {len(games)} games")
 
     def create_subscription_plans(self):
         plans = [
-            {
-                "name": "Free",
-                "slug": "free",
-                "price": 0,
-                "commission_rate": 0.10,
-                "features": ["10% commission", "Basic support", "Standard listing"]
-            },
-            {
-                "name": "Premium",
-                "slug": "premium",
-                "price": 50000,
-                "commission_rate": 0.08,
-                "features": ["8% commission", "Priority support", "Featured listings", "Analytics"]
-            },
-            {
-                "name": "Pro",
-                "slug": "pro",
-                "price": 100000,
-                "commission_rate": 0.05,
-                "features": ["5% commission", "24/7 support", "Top featured listings", "Advanced analytics", "API access"]
-            }
+            {"name": "Free", "slug": "free", "price": 0, "commission_rate": 0.10, "features": ["10% commission", "Basic support", "Standard listing"]},
+            {"name": "Premium", "slug": "premium", "price": 50000, "commission_rate": 0.08, "features": ["8% commission", "Priority support", "Featured listings", "Analytics"]},
+            {"name": "Pro", "slug": "pro", "price": 100000, "commission_rate": 0.05, "features": ["5% commission", "24/7 support", "Top featured listings", "Advanced analytics", "API access"]},
         ]
-
         for plan in plans:
             SubscriptionPlan.objects.get_or_create(
                 slug=plan["slug"],
@@ -167,11 +130,9 @@ class Command(BaseCommand):
                     "is_active": True,
                 }
             )
-
         self.stdout.write("Created subscription plans")
 
     def create_test_users(self):
-        # Admin user
         User.objects.filter(email="admin@wibestore.uz").delete()
         User.objects.create_superuser(
             email="admin@wibestore.uz",
@@ -180,10 +141,8 @@ class Command(BaseCommand):
             is_staff=True,
             is_verified=True,
         )
-
-        # Seller user
         User.objects.filter(email="seller@wibestore.uz").delete()
-        seller = User.objects.create_user(
+        User.objects.create_user(
             email="seller@wibestore.uz",
             password="seller123",
             full_name="Top Seller",
@@ -191,8 +150,6 @@ class Command(BaseCommand):
             rating=4.9,
             total_sales=150,
         )
-
-        # Buyer user
         User.objects.filter(email="buyer@wibestore.uz").delete()
         User.objects.create_user(
             email="buyer@wibestore.uz",
@@ -202,8 +159,6 @@ class Command(BaseCommand):
             rating=5.0,
             total_purchases=25,
         )
-
-        # Regular user
         User.objects.filter(email="user@wibestore.uz").delete()
         User.objects.create_user(
             email="user@wibestore.uz",
@@ -211,16 +166,13 @@ class Command(BaseCommand):
             full_name="Test User",
             is_verified=False,
         )
-
         self.stdout.write("Created test users")
 
     def create_listings(self):
         seller = User.objects.filter(email="seller@wibestore.uz").first()
         if not seller:
             return
-
         games = list(Game.objects.filter(is_active=True)[:20])
-        
         listings_data = [
             {"title": "PUBG Mobile Account - Conqueror", "price": 500000, "game_slug": "pubg-mobile"},
             {"title": "Steam Account - 100+ Games", "price": 1200000, "game_slug": "steam"},
@@ -233,7 +185,6 @@ class Command(BaseCommand):
             {"title": "Mobile Legends Mythic", "price": 400000, "game_slug": "mobile-legends"},
             {"title": "Clash of Clans TH15", "price": 600000, "game_slug": "clash-of-clans"},
         ]
-
         for data in listings_data:
             game = next((g for g in games if g.slug == data["game_slug"]), None)
             if game and seller:
@@ -246,5 +197,4 @@ class Command(BaseCommand):
                     status="active",
                     is_premium=random.choice([True, False]),
                 )
-
         self.stdout.write("Created test listings")

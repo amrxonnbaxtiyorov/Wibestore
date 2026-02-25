@@ -41,3 +41,12 @@ Bu logdagi “noto‘g‘ri” URL xatolarini kamaytiradi va backend uchun ham y
 - **Retry:** useListings/useListing 2 marta, apiClient MAX_RETRIES=2 — 502 da tez xato.
 - **URL:** /products?search=... debounce 400ms; Clear all/filters URL ni tozalaydi.
 - **Badge:** O'yin filtri slug/id bo'yicha to'g'ri; skeleton 12 ta.
+
+---
+
+## Django backend tuzatishlar (2026)
+
+- **seed_data buyrug‘i:** `apps/core/management/commands/` dan asosiy **core** app ga ko‘chirildi (`core/management/commands/seed_data.py`). Endi `python manage.py seed_data` ishlaydi.
+- **Production xavfsizlik:** Production sozlamalarida default **SECRET_KEY** ishlatilsa dastur ishga tushmaydi (ValueError). **FERNET_KEY** bo‘lmasa yoki dummy bo‘lsa ogohlantirish chiqadi.
+- **PasswordHistory:** Django admin da ro‘yxatdan o‘tkazildi (Accounts → Password histories).
+- **Hujjatlashtirish:** `.env.example` va settings da production uchun SECRET_KEY, FERNET_KEY, DATABASE_URL majburiy ekani ko‘rsatilgan.
