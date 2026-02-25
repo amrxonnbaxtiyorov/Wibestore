@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"/d/Projects/Github/Studentlarni projectlari/Wibestore\" log --oneline -20)",
+      "Bash(git -C \"/d/Projects/Github/Studentlarni projectlari/Wibestore\" branch -a)",
+      "Bash(git -C \"/d/Projects/Github/Studentlarni projectlari/Wibestore\" log --all --oneline)",
+      "Bash(git -C \"/d/Projects/Github/Studentlarni projectlari/Wibestore\" config --get remote.origin.url)",
+      "Bash(git add src/components/Navbar.jsx)",
+      "Bash(git commit:*)",
+      "Bash(git push origin main)",
+      "Bash(python -m py_compile apps/accounts/serializers.py apps/accounts/views.py apps/accounts/services.py)",
+      "Bash(xargs grep -l \"EscrowTransactionSerializer\\\\|PaymentMethodSerializer\")",
+      "Bash(git add -A)"
+    ]
+  }
+}

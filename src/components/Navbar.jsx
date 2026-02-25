@@ -126,7 +126,7 @@ const Navbar = () => {
                         {/* ─── Logo ─── */}
                         <Link
                             to="/"
-                            className="flex items-center flex-shrink-0 mr-2 lg:mr-6 transition-opacity duration-200 hover:opacity-80"
+                            className="flex items-center flex-shrink-0 mr-4 lg:mr-8 transition-opacity duration-200 hover:opacity-80"
                             style={{ textDecoration: 'none' }}
                         >
                             <img
@@ -134,7 +134,7 @@ const Navbar = () => {
                                 alt="WibeStore"
                                 className="select-none pointer-events-none"
                                 style={{
-                                    height: '36px',
+                                    height: '44px',
                                     width: 'auto',
                                     filter: isDark
                                         ? 'brightness(1.1) drop-shadow(0 0 8px rgba(59,130,246,0.15))'
@@ -144,7 +144,7 @@ const Navbar = () => {
                         </Link>
 
                         {/* ─── Nav Links (desktop) ─── */}
-                        <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                        <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
                             {navLinks.map((link) => {
                                 const active = isActive(link.to);
                                 return (
@@ -274,89 +274,105 @@ const Navbar = () => {
                             <div className="relative" ref={langRef}>
                                 <button
                                     onClick={() => setIsLangOpen(!isLangOpen)}
-                                    className="flex items-center gap-1.5 h-8 px-2 rounded-md transition-colors duration-150"
+                                    className="flex items-center gap-2 h-8 px-3 rounded-full transition-all duration-200"
                                     aria-label="Change language"
                                     style={{
-                                        backgroundColor: isLangOpen
-                                            ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)')
-                                            : 'transparent',
+                                        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
                                     }}
                                     onMouseEnter={(e) => {
-                                        if (!isLangOpen) e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+                                        e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
                                     }}
                                     onMouseLeave={(e) => {
-                                        if (!isLangOpen) e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
                                     }}
                                 >
                                     <img
                                         src={currentLang.flagUrl}
                                         alt={currentLang.name}
-                                        className="rounded-sm flex-shrink-0"
+                                        className="rounded flex-shrink-0"
                                         style={{
-                                            width: '18px',
-                                            height: '13px',
+                                            width: '20px',
+                                            height: '14px',
                                             objectFit: 'cover',
                                             border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
                                         }}
                                     />
                                     <span
-                                        className="text-[11px] font-semibold hidden sm:block"
-                                        style={{ color: isDark ? '#8b949e' : '#656d76' }}
+                                        className="text-[12px] font-semibold hidden sm:block"
+                                        style={{ color: isDark ? '#e6edf3' : '#1f2328' }}
                                     >
-                                        {language === 'en' ? 'EN' : language.toUpperCase()}
+                                        {{ uz: "O'zbekcha", ru: 'Русский', en: 'English' }[language] || currentLang.name}
                                     </span>
                                     <ChevronDown
-                                        className={`w-3 h-3 hidden sm:block transition-transform duration-200 ${isLangOpen ? 'rotate-180' : ''}`}
-                                        style={{ color: isDark ? '#484f58' : '#8c959f' }}
+                                        className={`w-3.5 h-3.5 hidden sm:block transition-transform duration-200 ${isLangOpen ? 'rotate-180' : ''}`}
+                                        style={{ color: isDark ? '#8b949e' : '#656d76' }}
                                     />
                                 </button>
 
                                 {isLangOpen && (
                                     <div
-                                        className="absolute right-0 top-full mt-1.5 py-1 rounded-lg shadow-lg"
+                                        className="absolute right-0 top-full mt-2 py-1.5 rounded-xl shadow-xl overflow-hidden"
                                         style={{
-                                            minWidth: '150px',
-                                            backgroundColor: isDark ? '#161b22' : '#ffffff',
+                                            minWidth: '180px',
+                                            backgroundColor: isDark ? '#1c2333' : '#ffffff',
                                             border: `1px solid ${isDark ? '#30363d' : '#d0d7de'}`,
                                             zIndex: 100,
                                         }}
                                     >
-                                        {langList.map((lang) => (
-                                            <button
-                                                key={lang.code}
-                                                onClick={() => { setLanguage(lang.code); setIsLangOpen(false); }}
-                                                className="w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors duration-100"
-                                                style={{
-                                                    backgroundColor: language === lang.code
-                                                        ? (isDark ? 'rgba(56,139,253,0.15)' : 'rgba(9,105,218,0.08)')
-                                                        : 'transparent',
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    if (language !== lang.code) e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    if (language !== lang.code) e.currentTarget.style.backgroundColor = 'transparent';
-                                                }}
-                                            >
-                                                <img
-                                                    src={lang.flagUrl}
-                                                    alt={lang.name}
-                                                    className="rounded-sm"
-                                                    style={{ width: '18px', height: '13px', objectFit: 'cover' }}
-                                                />
-                                                <span
-                                                    className="text-[13px]"
+                                        {langList.map((lang) => {
+                                            const selected = language === lang.code;
+                                            const subtitles = { uz: "O'zbek tili", ru: 'Russian', en: 'English' };
+                                            return (
+                                                <button
+                                                    key={lang.code}
+                                                    onClick={() => { setLanguage(lang.code); setIsLangOpen(false); }}
+                                                    className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors duration-100"
                                                     style={{
-                                                        color: language === lang.code
-                                                            ? (isDark ? '#58a6ff' : '#0969da')
-                                                            : (isDark ? '#c9d1d9' : '#1f2328'),
-                                                        fontWeight: language === lang.code ? '600' : '400',
+                                                        backgroundColor: selected
+                                                            ? (isDark ? 'rgba(56,139,253,0.12)' : 'rgba(9,105,218,0.06)')
+                                                            : 'transparent',
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        if (!selected) e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        if (!selected) e.currentTarget.style.backgroundColor = 'transparent';
                                                     }}
                                                 >
-                                                    {lang.name}
-                                                </span>
-                                            </button>
-                                        ))}
+                                                    <img
+                                                        src={lang.flagUrl}
+                                                        alt={lang.name}
+                                                        className="rounded flex-shrink-0"
+                                                        style={{
+                                                            width: '24px',
+                                                            height: '17px',
+                                                            objectFit: 'cover',
+                                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`,
+                                                        }}
+                                                    />
+                                                    <div className="flex flex-col">
+                                                        <span
+                                                            className="text-[13px] leading-tight"
+                                                            style={{
+                                                                color: selected
+                                                                    ? (isDark ? '#58a6ff' : '#0969da')
+                                                                    : (isDark ? '#e6edf3' : '#1f2328'),
+                                                                fontWeight: selected ? '600' : '500',
+                                                            }}
+                                                        >
+                                                            {lang.name}
+                                                        </span>
+                                                        <span
+                                                            className="text-[11px] leading-tight"
+                                                            style={{ color: isDark ? '#484f58' : '#8c959f' }}
+                                                        >
+                                                            {subtitles[lang.code]}
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
@@ -509,13 +525,14 @@ const Navbar = () => {
                                     )}
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5">
                                     <Link
                                         to="/login"
-                                        className="hidden sm:inline-flex items-center justify-center h-8 px-3 rounded-md text-[13px] font-medium transition-colors duration-150"
+                                        className="hidden sm:inline-flex items-center justify-center h-7 px-2.5 rounded-md text-[12px] font-medium transition-colors duration-150"
                                         style={{
                                             textDecoration: 'none',
                                             color: isDark ? '#c9d1d9' : '#1f2328',
+                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}`,
                                         }}
                                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'; }}
                                         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
@@ -524,7 +541,7 @@ const Navbar = () => {
                                     </Link>
                                     <Link
                                         to="/signup"
-                                        className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-[13px] font-semibold transition-all duration-150"
+                                        className="inline-flex items-center justify-center h-7 px-2.5 rounded-md text-[12px] font-semibold transition-all duration-150"
                                         style={{
                                             textDecoration: 'none',
                                             backgroundColor: isDark ? '#238636' : '#1f883d',
