@@ -2,6 +2,8 @@
 WibeStore Backend - Production Settings
 """
 
+import socket
+
 from .base import *  # noqa: F401,F403
 
 # ============================================================
@@ -51,6 +53,47 @@ if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
 # STATIC FILES (WhiteNoise)
 # ============================================================
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# ============================================================
+# REDIS / CACHE — fallback to local memory if Redis unavailable
+# ============================================================
+REDIS_URL = env("REDIS_URL", default="")  # noqa: F405
+
+
+def _redis_available(url):
+    """Check if Redis is reachable."""
+    if not url:
+        return False
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or 6379
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(2)
+        s.connect((host, port))
+        s.close()
+        return True
+    except (OSError, Exception):
+        return False
+
+
+if not _redis_available(REDIS_URL):
+    # No Redis — use local memory cache and disable Redis-dependent features
+    CACHES = {  # noqa: F811
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+    CHANNEL_LAYERS = {  # noqa: F811
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+    # Axes: use database handler instead of cache when Redis unavailable
+    AXES_HANDLER = "axes.handlers.database.AxesDatabaseHandler"  # noqa: F811
+    # Remove Redis health check
+    INSTALLED_APPS = [app for app in INSTALLED_APPS if app != "health_check.contrib.redis"]  # noqa: F811
 
 # ============================================================
 # SENTRY (optional — only if SENTRY_DSN is configured)
