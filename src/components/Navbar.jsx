@@ -120,8 +120,8 @@ const Navbar = () => {
                 role="navigation"
                 aria-label="Main navigation"
             >
-                <div className="max-w-7xl mx-auto pl-4 sm:pl-6 lg:pl-8 pr-3 sm:pr-4 lg:pr-5 h-full">
-                    <div className="h-full flex items-center gap-4 sm:gap-5 lg:gap-6">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full" style={{ marginLeft: '100px' }}>
+                    <div className="h-full flex items-center justify-between gap-4 sm:gap-5 lg:gap-6">
                         {/* ─── Logo: transparent fon, saytga mos ─── */}
                         <Link
                             to="/"
@@ -141,17 +141,8 @@ const Navbar = () => {
                             </span>
                         </Link>
 
-                        {/* Logo va nav orasidagi joy (flex o‘ng blokni surish uchun emas) */}
-                        <div className="hidden lg:block min-w-0 grow-0 w-0" aria-hidden="true" />
-
-                        {/* Ajratgich: Logo | Nav */}
-                        <div
-                            className="hidden lg:block flex-shrink-0 w-px self-center"
-                            style={{ height: '28px', backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
-                        />
-
-                        {/* ─── Nav linklar (desktop) ─── */}
-                        <div className="hidden lg:flex items-center gap-2 lg:gap-4 flex-shrink-0 h-10">
+                        {/* ─── Nav linklar (desktop) — o'ng tomonda ─── */}
+                        <div className="hidden lg:flex items-center gap-4 lg:gap-6 flex-shrink-0 h-10">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.to}
@@ -230,487 +221,493 @@ const Navbar = () => {
                                 </Link>
                             )}
                         </div>
-                    </div>
 
-                    {/* ─── O‘rtada bo‘sh joy — o‘ng blokni to‘g‘ri suradi ─── */}
-                    <div className="flex-1 min-w-0" aria-hidden="true" />
+                        {/* Ajratgich: Nav | Qidiruv — faqat qidiruv ko‘rinadigan ekranlarda */}
+                        <div
+                            className="hidden md:block flex-shrink-0 w-px h-8"
+                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)', marginLeft: '4px' }}
+                        />
 
-                    {/* ─── O‘rta blok: Qidiruv ─── */}
-                    <div className="hidden md:flex flex-1 min-w-0" aria-hidden="true" />
-                    <div className="hidden md:flex items-center flex-shrink-0 w-[200px] sm:w-[240px] lg:w-[280px] xl:w-[320px] ml-auto">
-                        <form
-                            onSubmit={handleSearch}
-                            className="w-full flex items-center h-10"
-                        >
-                            <div className="relative w-full h-10 flex items-center">
-                                <Search
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors flex-shrink-0 pointer-events-none"
-                                    style={{ color: searchFocused ? 'var(--color-text-accent)' : 'var(--color-text-muted)' }}
-                                />
-                                <input
-                                    type="text"
-                                    placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onFocus={() => setSearchFocused(true)}
-                                    onBlur={() => setSearchFocused(false)}
-                                    ref={searchInputRef}
-                                    className="w-full h-10 px-4 pl-[4rem] pr-8 rounded-lg text-sm font-medium transition-all outline-none"
+                        {/* ─── O‘rta blok: Qidiruv ─── */}
+                        <div className="hidden md:flex flex-1 min-w-0" aria-hidden="true" />
+                        <div className="hidden md:flex items-center flex-shrink-0 w-[200px] sm:w-[240px] lg:w-[280px] xl:w-[320px] ml-auto">
+                            <form
+                                onSubmit={handleSearch}
+                                className="w-full flex items-center h-10"
+                            >
+                                <div className="relative w-full h-10 flex items-center">
+                                    {/* Lupa icon — faqat focus bo'lganda ko'rinadi */}
+                                    <Search
+                                        className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex-shrink-0 pointer-events-none transition-all duration-200 ${searchFocused || searchQuery ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}
+                                        style={{ color: 'var(--color-text-accent)' }}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder={searchFocused ? '' : (t('nav.search') || 'Akkaunt qidirish...')}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onFocus={() => setSearchFocused(true)}
+                                        onBlur={() => setSearchFocused(false)}
+                                        ref={searchInputRef}
+                                        className="w-full h-10 rounded-lg text-sm font-medium transition-all duration-200 outline-none"
+                                        style={{
+                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                            color: 'var(--color-text-primary)',
+                                            border: `1px solid ${searchFocused ? 'var(--color-accent-blue)' : 'transparent'}`,
+                                            paddingLeft: (searchFocused || searchQuery) ? '36px' : '14px',
+                                            paddingRight: '36px',
+                                        }}
+                                        aria-label="Search"
+                                    />
+                                    <kbd
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 hidden xl:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
+                                        style={{
+                                            backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                            color: 'var(--color-text-muted)',
+                                        }}
+                                    >
+                                        ⌘K
+                                    </kbd>
+                                </div>
+                            </form>
+                        </div>
+
+                        {/* Ajratgich: Qidiruv | O‘ng blok */}
+                        <div
+                            className="hidden md:block flex-shrink-0 w-px self-center"
+                            style={{ height: '28px', backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
+                        />
+
+                        {/* ─── O‘ng blok: Til, tema, bildirishnoma, auth, menyu ─── */}
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 h-10">
+                            {/* Language Switcher */}
+                            <div className="relative h-10 flex items-center" ref={langRef}>
+                                <button
+                                    onClick={() => setIsLangOpen(!isLangOpen)}
+                                    className="flex items-center gap-2 px-3 h-9 rounded-lg transition-all hover:scale-[1.02] min-w-0"
+                                    aria-label="Change language"
                                     style={{
-                                        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                        color: 'var(--color-text-primary)',
-                                        border: `1px solid ${searchFocused ? 'var(--color-accent-blue)' : 'transparent'}`,
-                                    }}
-                                    aria-label="Search"
-                                />
-                                <kbd
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 hidden xl:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
-                                    style={{
-                                        backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-                                        color: 'var(--color-text-muted)',
+                                        backgroundColor: isLangOpen
+                                            ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                                            : 'transparent',
                                     }}
                                 >
-                                    ⌘K
-                                </kbd>
-                            </div>
-                        </form>
-                    </div>
-
-                    {/* Ajratgich: Qidiruv | Til/Tema/Auth */}
-                    <div
-                        className="hidden md:block flex-shrink-0 w-px self-center"
-                        style={{ height: '28px', backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)' }}
-                    />
-                    {/* Language Switcher */}
-                    <div className="relative h-10 flex items-center" ref={langRef}>
-                        <button
-                            onClick={() => setIsLangOpen(!isLangOpen)}
-                            className="flex items-center gap-2 px-3 h-9 rounded-lg transition-all hover:scale-[1.02] min-w-0"
-                            aria-label="Change language"
-                            style={{
-                                backgroundColor: isLangOpen
-                                    ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
-                                    : 'transparent',
-                            }}
-                        >
-                            <img
-                                src={currentLang.flagUrl}
-                                alt={currentLang.name}
-                                className="rounded flex-shrink-0"
-                                style={{
-                                    width: '20px',
-                                    height: '14px',
-                                    objectFit: 'cover',
-                                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`,
-                                }}
-                            />
-                            <span
-                                className="text-xs font-semibold hidden sm:block leading-none"
-                                style={{ color: 'var(--color-text-secondary)' }}
-                            >
-                                {language === 'en' ? 'ENG' : language.toUpperCase()}
-                            </span>
-                        </button>
-
-                        {isLangOpen && (
-                            <div
-                                className="absolute right-0 mt-2 p-2 rounded-xl shadow-xl animate-in fade-in zoom-in duration-200"
-                                style={{
-                                    minWidth: '140px',
-                                    backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                                }}
-                            >
-                                {langList.map((lang) => (
-                                    <button
-                                        key={lang.code}
-                                        onClick={() => { setLanguage(lang.code); setIsLangOpen(false); }}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                    <img
+                                        src={currentLang.flagUrl}
+                                        alt={currentLang.name}
+                                        className="rounded flex-shrink-0"
                                         style={{
-                                            backgroundColor: language === lang.code
+                                            width: '20px',
+                                            height: '14px',
+                                            objectFit: 'cover',
+                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`,
+                                        }}
+                                    />
+                                    <span
+                                        className="text-xs font-semibold hidden sm:block leading-none"
+                                        style={{ color: 'var(--color-text-secondary)' }}
+                                    >
+                                        {language === 'en' ? 'ENG' : language.toUpperCase()}
+                                    </span>
+                                </button>
+
+                                {isLangOpen && (
+                                    <div
+                                        className="absolute right-0 mt-2 p-2 rounded-xl shadow-xl animate-in fade-in zoom-in duration-200"
+                                        style={{
+                                            minWidth: '140px',
+                                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                        }}
+                                    >
+                                        {langList.map((lang) => (
+                                            <button
+                                                key={lang.code}
+                                                onClick={() => { setLanguage(lang.code); setIsLangOpen(false); }}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                style={{
+                                                    backgroundColor: language === lang.code
+                                                        ? (isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)')
+                                                        : 'transparent',
+                                                }}
+                                            >
+                                                <img
+                                                    src={lang.flagUrl}
+                                                    alt={lang.name}
+                                                    className="rounded-md"
+                                                    style={{
+                                                        width: '20px',
+                                                        height: '14px',
+                                                        objectFit: 'cover',
+                                                    }}
+                                                />
+                                                <span
+                                                    style={{
+                                                        color: language === lang.code
+                                                            ? 'var(--color-text-accent)'
+                                                            : 'var(--color-text-secondary)',
+                                                        fontSize: '13px',
+                                                        fontWeight: language === lang.code ? '600' : '500',
+                                                    }}
+                                                >
+                                                    {lang.name}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Theme Toggle */}
+                            <button
+                                onClick={toggleTheme}
+                                className="flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:scale-[1.05] flex-shrink-0"
+                                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                                style={{
+                                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                }}
+                            >
+                                {isDark ? (
+                                    <Sun className="w-5 h-5" style={{ color: '#FCD34D' }} />
+                                ) : (
+                                    <Moon className="w-5 h-5" style={{ color: '#6366F1' }} />
+                                )}
+                            </button>
+
+                            {/* Notifications */}
+                            {isAuthenticated && (
+                                <div className="relative h-10 flex items-center">
+                                    <NotificationWidget />
+                                </div>
+                            )}
+
+                            {/* Auth Section */}
+                            {isAuthenticated ? (
+                                <div className="relative h-10 flex items-center" ref={profileRef}>
+                                    <button
+                                        onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                        className="flex items-center gap-2 px-3 h-9 rounded-lg transition-all hover:scale-[1.02]"
+                                        style={{
+                                            backgroundColor: isProfileOpen
+                                                ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+                                                : 'transparent',
+                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                        }}
+                                    >
+                                        <div className="relative flex-shrink-0">
+                                            <div
+                                                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                                    color: '#fff',
+                                                }}
+                                            >
+                                                {user?.avatar ? (
+                                                    <img
+                                                        src={user.avatar}
+                                                        alt={user?.name || 'User'}
+                                                        className="w-full h-full rounded-lg object-cover"
+                                                    />
+                                                ) : (
+                                                    (user?.name || 'U').charAt(0).toUpperCase()
+                                                )}
+                                            </div>
+                                            {/* Online indicator */}
+                                            <div
+                                                className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+                                                style={{
+                                                    backgroundColor: '#10B981',
+                                                    borderColor: isDark ? '#1e293b' : '#fff',
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="hidden lg:block text-left min-w-0">
+                                            <div
+                                                className="text-sm font-semibold"
+                                                style={{ color: 'var(--color-text-primary)' }}
+                                            >
+                                                {user?.name || 'User'}
+                                            </div>
+                                            {coins > 0 && (
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-xs">🪙</span>
+                                                    <span
+                                                        className="text-xs font-bold"
+                                                        style={{ color: '#F59E0B' }}
+                                                    >
+                                                        {coins} coins
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <ChevronDown
+                                            className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}
+                                            style={{ color: 'var(--color-text-muted)' }}
+                                        />
+                                    </button>
+
+                                    {isProfileOpen && (
+                                        <div
+                                            className="absolute right-0 mt-2 p-2 rounded-xl shadow-xl animate-in fade-in zoom-in duration-200"
+                                            style={{
+                                                minWidth: '240px',
+                                                backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                            }}
+                                        >
+                                            {/* User Info Card */}
+                                            <div
+                                                className="p-3 mb-2 rounded-xl"
+                                                style={{
+                                                    background: isDark
+                                                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2))'
+                                                        : 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))',
+                                                }}
+                                            >
+                                                <div
+                                                    className="font-semibold text-sm"
+                                                    style={{ color: 'var(--color-text-primary)' }}
+                                                >
+                                                    {user?.name || 'User'}
+                                                </div>
+                                                <div
+                                                    className="text-xs truncate"
+                                                    style={{ color: 'var(--color-text-muted)' }}
+                                                >
+                                                    {user?.email || ''}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Link
+                                                    to="/profile"
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                    onClick={() => setIsProfileOpen(false)}
+                                                    style={{ textDecoration: 'none' }}
+                                                >
+                                                    <User className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
+                                                    <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
+                                                        {t('nav.profile') || 'Профиль'}
+                                                    </span>
+                                                </Link>
+                                                <Link
+                                                    to="/sell"
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                    onClick={() => setIsProfileOpen(false)}
+                                                    style={{ textDecoration: 'none' }}
+                                                >
+                                                    <ShoppingBag className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
+                                                    <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
+                                                        {t('nav.sell') || 'Продать аккаунт'}
+                                                    </span>
+                                                </Link>
+                                                <Link
+                                                    to="/settings"
+                                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                    onClick={() => setIsProfileOpen(false)}
+                                                    style={{ textDecoration: 'none' }}
+                                                >
+                                                    <Settings className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
+                                                    <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
+                                                        {t('nav.settings') || 'Настройки'}
+                                                    </span>
+                                                </Link>
+                                            </div>
+
+                                            <div className="mt-2 pt-2 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                                    style={{
+                                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    <LogOut className="w-4 h-4" style={{ color: 'var(--color-accent-red)' }} />
+                                                    <span style={{ color: 'var(--color-accent-red)', fontSize: '14px', fontWeight: '600' }}>
+                                                        {t('nav.logout') || 'Выйти'}
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <Link
+                                        to="/login"
+                                        className="hidden sm:inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-semibold transition-all hover:scale-[1.02]"
+                                        style={{
+                                            textDecoration: 'none',
+                                            color: 'var(--color-text-primary)',
+                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                        }}
+                                    >
+                                        {t('nav.login') || 'Kirish'}
+                                    </Link>
+                                    <Link
+                                        to="/signup"
+                                        className="inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-bold transition-all hover:scale-[1.02]"
+                                        style={{
+                                            textDecoration: 'none',
+                                            background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                            color: '#fff',
+                                            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.35)',
+                                        }}
+                                    >
+                                        {t('nav.signup') || "Ro'yxatdan o'tish"}
+                                    </Link>
+                                </div>
+                            )}
+
+                            {/* Mobile Menu Toggle */}
+                            <button
+                                type="button"
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                                className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:scale-[1.05] flex-shrink-0"
+                                style={{
+                                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                }}
+                            >
+                                {isMobileMenuOpen ? (
+                                    <X className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
+                                ) : (
+                                    <Menu className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile Menu */}
+                {isMobileMenuOpen && (
+                    <div
+                        className="lg:hidden animate-in slide-in-from-top duration-200"
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 60,
+                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                            borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+                        }}
+                    >
+                        <div className="p-4 space-y-3">
+                            {/* Mobile Search */}
+                            <form onSubmit={handleSearch}>
+                                <div className="relative">
+                                    <Search
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5"
+                                        style={{ color: 'var(--color-text-muted)' }}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full px-4 py-3 pl-14 rounded-xl text-base font-medium outline-none"
+                                        style={{
+                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                                            color: 'var(--color-text-primary)',
+                                            border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                        }}
+                                    />
+                                </div>
+                            </form>
+
+                            {/* Nav Links */}
+                            <div className="space-y-1">
+                                {navLinks.map((link) => (
+                                    <Link
+                                        key={link.to}
+                                        to={link.to}
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium transition-all"
+                                        style={{
+                                            textDecoration: 'none',
+                                            backgroundColor: isActive(link.to)
                                                 ? (isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)')
                                                 : 'transparent',
                                         }}
                                     >
-                                        <img
-                                            src={lang.flagUrl}
-                                            alt={lang.name}
-                                            className="rounded-md"
+                                        <link.icon
+                                            className="w-5 h-5"
                                             style={{
-                                                width: '20px',
-                                                height: '14px',
-                                                objectFit: 'cover',
+                                                color: isActive(link.to) ? 'var(--color-text-accent)' : 'var(--color-text-secondary)',
                                             }}
                                         />
-                                        <span
-                                            style={{
-                                                color: language === lang.code
-                                                    ? 'var(--color-text-accent)'
-                                                    : 'var(--color-text-secondary)',
-                                                fontSize: '13px',
-                                                fontWeight: language === lang.code ? '600' : '500',
-                                            }}
-                                        >
-                                            {lang.name}
+                                        <span style={{ color: 'var(--color-text-primary)' }}>
+                                            {link.label}
+                                            {link.badge && (
+                                                <span
+                                                    className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full"
+                                                    style={{
+                                                        background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                                                        color: '#fff',
+                                                    }}
+                                                >
+                                                    {link.badge}
+                                                </span>
+                                            )}
                                         </span>
-                                    </button>
+                                    </Link>
                                 ))}
+
+                                {/* Admin Link */}
+                                {isAdmin && (
+                                    <Link
+                                        to="/admin"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium transition-all"
+                                        style={{
+                                            textDecoration: 'none',
+                                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                        }}
+                                    >
+                                        <Settings className="w-5 h-5" style={{ color: 'var(--color-accent-red)' }} />
+                                        <span style={{ color: 'var(--color-accent-red)' }}>Admin Panel</span>
+                                    </Link>
+                                )}
                             </div>
-                        )}
-                    </div>
 
-                    {/* Theme Toggle */}
-                    <button
-                        onClick={toggleTheme}
-                        className="flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:scale-[1.05] flex-shrink-0"
-                        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                        style={{
-                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                        }}
-                    >
-                        {isDark ? (
-                            <Sun className="w-5 h-5" style={{ color: '#FCD34D' }} />
-                        ) : (
-                            <Moon className="w-5 h-5" style={{ color: '#6366F1' }} />
-                        )}
-                    </button>
-
-                    {/* Notifications */}
-                    {isAuthenticated && (
-                        <div className="relative h-10 flex items-center">
-                            <NotificationWidget />
-                        </div>
-                    )}
-
-                    {/* Auth Section */}
-                    {isAuthenticated ? (
-                        <div className="relative h-10 flex items-center" ref={profileRef}>
-                            <button
-                                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="flex items-center gap-2 px-3 h-9 rounded-lg transition-all hover:scale-[1.02]"
-                                style={{
-                                    backgroundColor: isProfileOpen
-                                        ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
-                                        : 'transparent',
-                                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                                }}
-                            >
-                                <div className="relative flex-shrink-0">
-                                    <div
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
-                                        style={{
-                                            background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
-                                            color: '#fff',
-                                        }}
-                                    >
-                                        {user?.avatar ? (
-                                            <img
-                                                src={user.avatar}
-                                                alt={user?.name || 'User'}
-                                                className="w-full h-full rounded-lg object-cover"
-                                            />
-                                        ) : (
-                                            (user?.name || 'U').charAt(0).toUpperCase()
-                                        )}
-                                    </div>
-                                    {/* Online indicator */}
-                                    <div
-                                        className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-                                        style={{
-                                            backgroundColor: '#10B981',
-                                            borderColor: isDark ? '#1e293b' : '#fff',
-                                        }}
-                                    />
-                                </div>
-                                <div className="hidden lg:block text-left min-w-0">
-                                    <div
-                                        className="text-sm font-semibold"
-                                        style={{ color: 'var(--color-text-primary)' }}
-                                    >
-                                        {user?.name || 'User'}
-                                    </div>
-                                    {coins > 0 && (
-                                        <div className="flex items-center gap-1">
-                                            <span className="text-xs">🪙</span>
-                                            <span
-                                                className="text-xs font-bold"
-                                                style={{ color: '#F59E0B' }}
-                                            >
-                                                {coins} coins
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                <ChevronDown
-                                    className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`}
-                                    style={{ color: 'var(--color-text-muted)' }}
-                                />
-                            </button>
-
-                            {isProfileOpen && (
-                                <div
-                                    className="absolute right-0 mt-2 p-2 rounded-xl shadow-xl animate-in fade-in zoom-in duration-200"
-                                    style={{
-                                        minWidth: '240px',
-                                        backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                                    }}
-                                >
-                                    {/* User Info Card */}
-                                    <div
-                                        className="p-3 mb-2 rounded-xl"
-                                        style={{
-                                            background: isDark
-                                                ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2))'
-                                                : 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))',
-                                        }}
-                                    >
-                                        <div
-                                            className="font-semibold text-sm"
-                                            style={{ color: 'var(--color-text-primary)' }}
-                                        >
-                                            {user?.name || 'User'}
-                                        </div>
-                                        <div
-                                            className="text-xs truncate"
-                                            style={{ color: 'var(--color-text-muted)' }}
-                                        >
-                                            {user?.email || ''}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-1">
+                            {/* Auth Actions */}
+                            {!isAuthenticated && (
+                                <>
+                                    <div className="pt-3 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
                                         <Link
-                                            to="/profile"
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
-                                            onClick={() => setIsProfileOpen(false)}
-                                            style={{ textDecoration: 'none' }}
-                                        >
-                                            <User className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
-                                            <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
-                                                {t('nav.profile') || 'Профиль'}
-                                            </span>
-                                        </Link>
-                                        <Link
-                                            to="/sell"
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
-                                            onClick={() => setIsProfileOpen(false)}
-                                            style={{ textDecoration: 'none' }}
-                                        >
-                                            <ShoppingBag className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
-                                            <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
-                                                {t('nav.sell') || 'Продать аккаунт'}
-                                            </span>
-                                        </Link>
-                                        <Link
-                                            to="/settings"
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
-                                            onClick={() => setIsProfileOpen(false)}
-                                            style={{ textDecoration: 'none' }}
-                                        >
-                                            <Settings className="w-4 h-4" style={{ color: 'var(--color-text-secondary)' }} />
-                                            <span style={{ color: 'var(--color-text-primary)', fontSize: '14px', fontWeight: '500' }}>
-                                                {t('nav.settings') || 'Настройки'}
-                                            </span>
-                                        </Link>
-                                    </div>
-
-                                    <div className="mt-2 pt-2 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
-                                        <button
-                                            onClick={handleLogout}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all hover:scale-102"
+                                            to="/login"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="flex items-center justify-center px-4 py-3.5 rounded-xl text-base font-semibold transition-all mb-2"
                                             style={{
-                                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                                border: 'none',
-                                                cursor: 'pointer',
+                                                textDecoration: 'none',
+                                                color: 'var(--color-text-primary)',
+                                                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                             }}
                                         >
-                                            <LogOut className="w-4 h-4" style={{ color: 'var(--color-accent-red)' }} />
-                                            <span style={{ color: 'var(--color-accent-red)', fontSize: '14px', fontWeight: '600' }}>
-                                                {t('nav.logout') || 'Выйти'}
-                                            </span>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                            <Link
-                                to="/login"
-                                className="hidden sm:inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-semibold transition-all hover:scale-[1.02]"
-                                style={{
-                                    textDecoration: 'none',
-                                    color: 'var(--color-text-primary)',
-                                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                }}
-                            >
-                                {t('nav.login') || 'Kirish'}
-                            </Link>
-                            <Link
-                                to="/signup"
-                                className="inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-bold transition-all hover:scale-[1.02]"
-                                style={{
-                                    textDecoration: 'none',
-                                    background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
-                                    color: '#fff',
-                                    boxShadow: '0 2px 8px rgba(59, 130, 246, 0.35)',
-                                }}
-                            >
-                                {t('nav.signup') || "Ro'yxatdan o'tish"}
-                            </Link>
-                        </div>
-                    )}
-
-                    {/* Mobile Menu Toggle */}
-                    <button
-                        type="button"
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-all hover:scale-[1.05] flex-shrink-0"
-                        style={{
-                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                        }}
-                    >
-                        {isMobileMenuOpen ? (
-                            <X className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
-                        ) : (
-                            <Menu className="w-5 h-5" style={{ color: 'var(--color-text-primary)' }} />
-                        )}
-                    </button>
-                </div>
-            </div>
-        </div >
-
-            {/* Mobile Menu */ }
-    {
-        isMobileMenuOpen && (
-            <div
-                className="lg:hidden animate-in slide-in-from-top duration-200"
-                style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    zIndex: 60,
-                    backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                    borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-                }}
-            >
-                <div className="p-4 space-y-3">
-                    {/* Mobile Search */}
-                    <form onSubmit={handleSearch}>
-                        <div className="relative">
-                            <Search
-                                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5"
-                                style={{ color: 'var(--color-text-muted)' }}
-                            />
-                            <input
-                                type="text"
-                                placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full px-4 py-3 pl-14 rounded-xl text-base font-medium outline-none"
-                                style={{
-                                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                    color: 'var(--color-text-primary)',
-                                    border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                                }}
-                            />
-                        </div>
-                    </form>
-
-                    {/* Nav Links */}
-                    <div className="space-y-1">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={link.to}
-                                to={link.to}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium transition-all"
-                                style={{
-                                    textDecoration: 'none',
-                                    backgroundColor: isActive(link.to)
-                                        ? (isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)')
-                                        : 'transparent',
-                                }}
-                            >
-                                <link.icon
-                                    className="w-5 h-5"
-                                    style={{
-                                        color: isActive(link.to) ? 'var(--color-text-accent)' : 'var(--color-text-secondary)',
-                                    }}
-                                />
-                                <span style={{ color: 'var(--color-text-primary)' }}>
-                                    {link.label}
-                                    {link.badge && (
-                                        <span
-                                            className="ml-2 px-2 py-0.5 text-xs font-bold rounded-full"
+                                            {t('nav.login') || 'Войти'}
+                                        </Link>
+                                        <Link
+                                            to="/signup"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="flex items-center justify-center px-4 py-3.5 rounded-xl text-base font-bold transition-all"
                                             style={{
-                                                background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                                                textDecoration: 'none',
+                                                background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
                                                 color: '#fff',
                                             }}
                                         >
-                                            {link.badge}
-                                        </span>
-                                    )}
-                                </span>
-                            </Link>
-                        ))}
-
-                        {/* Admin Link */}
-                        {isAdmin && (
-                            <Link
-                                to="/admin"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-base font-medium transition-all"
-                                style={{
-                                    textDecoration: 'none',
-                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                }}
-                            >
-                                <Settings className="w-5 h-5" style={{ color: 'var(--color-accent-red)' }} />
-                                <span style={{ color: 'var(--color-accent-red)' }}>Admin Panel</span>
-                            </Link>
-                        )}
+                                            {t('nav.signup') || 'Регистрация'}
+                                        </Link>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
-
-                    {/* Auth Actions */}
-                    {!isAuthenticated && (
-                        <>
-                            <div className="pt-3 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
-                                <Link
-                                    to="/login"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="flex items-center justify-center px-4 py-3.5 rounded-xl text-base font-semibold transition-all mb-2"
-                                    style={{
-                                        textDecoration: 'none',
-                                        color: 'var(--color-text-primary)',
-                                        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                                    }}
-                                >
-                                    {t('nav.login') || 'Войти'}
-                                </Link>
-                                <Link
-                                    to="/signup"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="flex items-center justify-center px-4 py-3.5 rounded-xl text-base font-bold transition-all"
-                                    style={{
-                                        textDecoration: 'none',
-                                        background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
-                                        color: '#fff',
-                                    }}
-                                >
-                                    {t('nav.signup') || 'Регистрация'}
-                                </Link>
-                            </div>
-                        </>
-                    )}
-                </div>
-            </div>
-        )
-    }
-            </nav >
+                )}
+            </nav>
         </>
     );
 };
