@@ -381,7 +381,21 @@
         "submitting": "Yuborilmoqda..."
     },
     "terms": {
-        "escrow_item": "Escrow tizimi — pul xaridor tasdiqlagunga qadar saytda saqlanadi"
+        "title": "Foydalanish shartlari",
+        "badge": "Huquqiy hujjatlar",
+        "heading": "Foydalanish shartlari",
+        "last_updated": "Oxirgi yangilanish: 29-yanvar 2026",
+        "s1_title": "1. Umumiy qoidalar",
+        "s2_title": "2. Foydalanuvchi talablari",
+        "s3_title": "3. Komissiya va to'lovlar",
+        "s4_title": "4. Firibgarlikka qarshi qoidalar",
+        "s5_title": "5. Xavfsizlik kafolati",
+        "s6_title": "6. Savdo jarayoni",
+        "s7_title": "7. Maxfiylik siyosati",
+        "s8_title": "8. Nizolarni hal qilish",
+        "s9_title": "9. Shartlarning o'zgarishi",
+        "escrow_item": "Escrow tizimi — pul xaridor tasdiqlagunga qadar saytda saqlanadi",
+        "back_home": "Bosh sahifaga"
     },
     "top": {
         "badge": "Eng yaxshilari",

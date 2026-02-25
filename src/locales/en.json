@@ -381,7 +381,21 @@
         "submitting": "Submitting..."
     },
     "terms": {
-        "escrow_item": "Escrow — payment is held until the buyer confirms"
+        "title": "Terms of Service",
+        "badge": "Legal Documents",
+        "heading": "Terms of Service",
+        "last_updated": "Last updated: January 29, 2026",
+        "s1_title": "1. General Rules",
+        "s2_title": "2. User Requirements",
+        "s3_title": "3. Commission & Payments",
+        "s4_title": "4. Anti-Fraud Rules",
+        "s5_title": "5. Security Guarantee",
+        "s6_title": "6. Transaction Process",
+        "s7_title": "7. Privacy Policy",
+        "s8_title": "8. Dispute Resolution",
+        "s9_title": "9. Changes to Terms",
+        "escrow_item": "Escrow — payment is held until the buyer confirms",
+        "back_home": "Go to Homepage"
     },
     "top": {
         "badge": "Best of the best",
