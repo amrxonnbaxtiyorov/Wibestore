@@ -91,11 +91,12 @@ Bu logdagi “noto‘g‘ri” URL xatolarini kamaytiradi va backend uchun ham y
 
 **Sabab:** Migratsiyalar qo‘llanmagan, PostgreSQL da `listings`, `games` va boshqa jadvallar yaratilmagan.
 
-**Tuzatish:**  
-- **entrypoint.sh** da deploy vaqtida avval `python manage.py makemigrations --noinput` (kerak bo‘lsa), keyin `python manage.py migrate --noinput` ishlatiladi.  
-- Birinchi deployda migratsiyalar yaratiladi va jadvallar paydo bo‘ladi.
+**Tuzatish (2026):**  
+- Barcha applar uchun **dastlabki migratsiya fayllari** loyihaga qo‘shildi: `apps/*/migrations/0001_initial.py` (accounts, games, marketplace, messaging, notifications, payments, reports, reviews, subscriptions).  
+- **entrypoint.sh** da avval `makemigrations`, keyin `migrate` ishlatiladi — deploy paytida jadvallar yaratiladi.  
+- Repoda migratsiyalar bor bo‘lgani uchun har safar deployda `migrate` yetarli.
 
-**Siz qilishingiz kerak:** Backend ni **qayta deploy** qiling (yangi entrypoint ishlashi kerak). Agar jadvalar hali bo‘lmasa, Railway logda “Applying migrations” va “Creating migrations” xabarlarini tekshiring.
+**Siz qilishingiz kerak:** Backend ni **qayta deploy** qiling. Railway logda “Applying migrations” ko‘rinsin; shundan keyin `/api/v1/listings/` va `/api/v1/games/` 500 bermasligi kerak.
 
 ### 3. 401 (Unauthorized) — xato emas
 
