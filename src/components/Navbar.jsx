@@ -441,6 +441,7 @@ const Navbar = () => {
                                             className="absolute right-0 top-full mt-1.5 py-1 rounded-lg shadow-xl"
                                             style={{
                                                 minWidth: '220px',
+                                                padding: '10px',
                                                 backgroundColor: isDark ? '#161b22' : '#ffffff',
                                                 border: `1px solid ${isDark ? '#30363d' : '#d0d7de'}`,
                                                 zIndex: 100,
