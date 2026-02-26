@@ -16,7 +16,7 @@ from core.models import BaseModel
 
 
 class PaymentMethod(BaseModel):
-    """Available payment methods (Payme, Click, Paynet, Uzcard, Humo)."""
+    """Available payment methods: Google Pay, Visa Card, Mastercard, Apple Pay."""
 
     name = models.CharField(max_length=50)
     code = models.CharField(max_length=20, unique=True, choices=PAYMENT_METHOD_CHOICES)

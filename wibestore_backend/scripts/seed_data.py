@@ -212,9 +212,10 @@ def seed_payment_methods():
     from apps.payments.models import PaymentMethod
 
     methods_data = [
-        {"name": "Payme", "code": "payme", "is_active": True},
-        {"name": "Click", "code": "click", "is_active": True},
-        {"name": "Paynet", "code": "paynet", "is_active": True},
+        {"name": "Google Pay", "code": "google_pay", "is_active": True},
+        {"name": "Visa Card", "code": "visa", "is_active": True},
+        {"name": "Mastercard", "code": "mastercard", "is_active": True},
+        {"name": "Apple Pay", "code": "apple_pay", "is_active": True},
         {"name": "Uzcard", "code": "uzcard", "is_active": True},
         {"name": "Humo", "code": "humo", "is_active": True},
     ]

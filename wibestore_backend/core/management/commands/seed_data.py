@@ -14,6 +14,7 @@ from django.db import transaction
 from apps.accounts.models import User
 from apps.games.models import Game, Category
 from apps.marketplace.models import Listing
+from apps.payments.models import PaymentMethod
 from apps.subscriptions.models import SubscriptionPlan
 
 
@@ -26,6 +27,7 @@ class Command(BaseCommand):
 
         self.create_categories()
         self.create_games()
+        self.create_payment_methods()
         self.create_subscription_plans()
         self.create_test_users()
         self.create_listings()
@@ -56,6 +58,24 @@ class Command(BaseCommand):
                 defaults={"name": cat["name"]}
             )
         self.stdout.write("Created categories")
+
+    def create_payment_methods(self):
+        """Create payment methods: Google Pay, Visa, Mastercard, Apple Pay."""
+        PaymentMethod.objects.filter(
+            code__in=["payme", "click", "paynet", "uzcard", "humo"]
+        ).update(is_active=False)
+        methods = [
+            {"name": "Google Pay", "code": "google_pay", "icon": "📱"},
+            {"name": "Visa Card", "code": "visa", "icon": "💳"},
+            {"name": "Mastercard", "code": "mastercard", "icon": "💳"},
+            {"name": "Apple Pay", "code": "apple_pay", "icon": "🍎"},
+        ]
+        for m in methods:
+            PaymentMethod.objects.get_or_create(
+                code=m["code"],
+                defaults={"name": m["name"], "icon": m["icon"], "is_active": True},
+            )
+        self.stdout.write("Created payment methods")
 
     def create_games(self):
         games = [

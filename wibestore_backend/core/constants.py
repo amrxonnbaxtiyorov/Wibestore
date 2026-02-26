@@ -99,14 +99,13 @@ REPORT_STATUS_CHOICES = [
 ]
 
 # ============================================================
-# PAYMENT METHODS
+# PAYMENT METHODS (Google Pay, Visa, Mastercard, Apple Pay)
 # ============================================================
 PAYMENT_METHOD_CHOICES = [
-    ("payme", "Payme"),
-    ("click", "Click"),
-    ("paynet", "Paynet"),
-    ("uzcard", "Uzcard"),
-    ("humo", "Humo"),
+    ("google_pay", "Google Pay"),
+    ("visa", "Visa Card"),
+    ("mastercard", "Mastercard"),
+    ("apple_pay", "Apple Pay"),
 ]
 
 # ============================================================

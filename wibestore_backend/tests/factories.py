@@ -89,8 +89,8 @@ class PaymentMethodFactory(DjangoModelFactory):
     class Meta:
         model = "payments.PaymentMethod"
 
-    name = factory.Sequence(lambda n: f"Payment Method {n}")
-    code = factory.Sequence(lambda n: f"method_{n}")
+    name = "Visa Card"
+    code = "visa"
     is_active = True
 
 

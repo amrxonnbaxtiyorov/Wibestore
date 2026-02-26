@@ -21,7 +21,10 @@ export const useTransactions = () => {
 export const useDeposit = () => {
     return useMutation({
         mutationFn: async ({ amount, method }) => {
-            const { data } = await apiClient.post('/payments/deposit/', { amount, method });
+            const { data } = await apiClient.post('/payments/deposit/', {
+                amount,
+                payment_method: method,
+            });
             return data;
         },
     });
@@ -33,7 +36,10 @@ export const useDeposit = () => {
 export const useWithdraw = () => {
     return useMutation({
         mutationFn: async ({ amount, method }) => {
-            const { data } = await apiClient.post('/payments/withdraw/', { amount, method });
+            const { data } = await apiClient.post('/payments/withdraw/', {
+                amount,
+                payment_method: method,
+            });
             return data;
         },
     });

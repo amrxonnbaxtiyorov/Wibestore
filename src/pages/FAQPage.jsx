@@ -19,7 +19,7 @@ const FAQPage = () => {
 
     const faqs = [
         { category: 'buying', question: t('faq.q1') || 'How do I buy an account?', answer: t('faq.a1') || 'Select an account, click "Buy", choose payment method and complete payment. Account details will be sent after confirmation.' },
-        { category: 'buying', question: t('faq.q2') || 'How does payment work?', answer: t('faq.a2') || 'We accept Payme, Click, Paynet, Uzcard and Humo. All payments are secure and encrypted.' },
+        { category: 'buying', question: t('faq.q2') || 'How does payment work?', answer: t('faq.a2') || 'We accept Google Pay, Visa Card, Mastercard and Apple Pay. All payments are secure and encrypted.' },
         { category: 'buying', question: t('faq.q3') || 'What if the account doesn\'t work?', answer: t('faq.a3') || 'Click "Report" within 48 hours. Our moderators will review and if confirmed, a full refund will be issued.' },
         { category: 'buying', question: t('faq.q4') || 'How long to verify an account?', answer: t('faq.a4') || 'You have 48 hours after purchase to verify the account. Issues within this period are eligible for refund.' },
         { category: 'selling', question: t('faq.q5') || 'How do I sell my account?', answer: t('faq.a5') || 'Go to "Sell" page, fill in account details and submit. After moderation, your listing will appear on the site.' },

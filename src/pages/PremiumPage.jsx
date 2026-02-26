@@ -326,7 +326,7 @@ const PremiumPage = () => {
                         {t('premium.payment_methods') || 'Payment Methods'}
                     </h3>
                     <div className="flex items-center justify-center gap-3 flex-wrap" style={{ marginBottom: '16px' }}>
-                        {['Payme', 'Click', 'Paynet', 'UzCard', 'Humo'].map((method) => (
+                        {['Google Pay', 'Visa Card', 'Mastercard', 'Apple Pay'].map((method) => (
                             <div
                                 key={method}
                                 style={{

@@ -16,7 +16,7 @@
         "badge": "100% xavfsiz savdo kafolati",
         "title1": "O'yin akkauntlari uchun",
         "title2": "ishonchli marketplace",
-        "subtitle": "PUBG Mobile, Free Fire, Steam va boshqa o'yinlar uchun akkauntlarni xavfsiz sotib oling yoki soting. Payme, Click, Paynet orqali to'lang.",
+        "subtitle": "PUBG Mobile, Free Fire, Steam va boshqa o'yinlar uchun akkauntlarni xavfsiz sotib oling yoki soting. Google Pay, Visa, Mastercard, Apple Pay orqali to'lang.",
         "cta_browse": "Akkauntlarni ko'rish",
         "cta_sell": "Sotuvchi bo'lish"
     },
@@ -56,7 +56,7 @@
     },
     "cta": {
         "title": "Akkauntlaringizni soting!",
-        "subtitle": "Premium va oddiy sotuvchilar uchun imkoniyat. Faqat 10% komissiya. Payme, Click, Paynet orqali to'lov qiling.",
+        "subtitle": "Premium va oddiy sotuvchilar uchun imkoniyat. Faqat 10% komissiya. Google Pay, Visa, Mastercard, Apple Pay orqali to'lov qiling.",
         "start": "Hoziroq boshlash",
         "get_premium": "Premium olish"
     },
@@ -294,7 +294,7 @@
         "q1": "Akkauntni qanday sotib olaman?",
         "a1": "Akkauntni tanlang, Sotib olish tugmasini bosing, to'lov usulini tanlang va to'lang. Tasdiqdan keyin ma'lumotlar yuboriladi.",
         "q2": "To'lov qanday ishlaydi?",
-        "a2": "Payme, Click, Paynet, Uzcard va Humo qabul qilamiz. Barcha to'lovlar xavfsiz.",
+        "a2": "Google Pay, Visa Card, Mastercard va Apple Pay qabul qilamiz. Barcha to'lovlar xavfsiz.",
         "q3": "Akkaunt ishlamasa nima qilaman?",
         "a3": "48 soat ichida Shikoyat qilish tugmasini bosing. Tekshiramiz va asos bo'lsa pul qaytariladi.",
         "q4": "Tekshirish uchun qancha vaqt bor?",

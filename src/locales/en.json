@@ -16,7 +16,7 @@
         "badge": "100% secure trading guarantee",
         "title1": "Trusted marketplace for",
         "title2": "gaming accounts",
-        "subtitle": "Safely buy or sell accounts for PUBG Mobile, Free Fire, Steam and other games. Pay via Payme, Click, Paynet.",
+        "subtitle": "Safely buy or sell accounts for PUBG Mobile, Free Fire, Steam and other games. Pay via Google Pay, Visa, Mastercard, Apple Pay.",
         "cta_browse": "Browse Accounts",
         "cta_sell": "Become a Seller"
     },
@@ -56,7 +56,7 @@
     },
     "cta": {
         "title": "Sell your accounts!",
-        "subtitle": "Opportunity for premium and regular sellers. Only 10% commission. Payment via Payme, Click, Paynet.",
+        "subtitle": "Opportunity for premium and regular sellers. Only 10% commission. Payment via Google Pay, Visa, Mastercard, Apple Pay.",
         "start": "Get Started",
         "get_premium": "Get Premium"
     },
@@ -294,7 +294,7 @@
         "q1": "How do I buy an account?",
         "a1": "Select an account, click Buy, choose payment method and pay. You get the account details after confirmation.",
         "q2": "How does payment work?",
-        "a2": "We accept Payme, Click, Paynet, Uzcard and Humo. All payments are secure.",
+        "a2": "We accept Google Pay, Visa Card, Mastercard and Apple Pay. All payments are secure.",
         "q3": "What if the account does not work?",
         "a3": "Click Report within 48 hours. We will review and refund if the claim is valid.",
         "q4": "How long do I have to verify?",

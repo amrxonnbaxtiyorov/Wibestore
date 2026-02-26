@@ -195,24 +195,10 @@ export const premiumPlans = [
 ];
 
 export const paymentMethods = [
-    {
-        id: 'payme',
-        name: 'Payme',
-        icon: '\uD83D\uDCB3',
-        logo: '/payments/payme.png'
-    },
-    {
-        id: 'click',
-        name: 'Click',
-        icon: '\uD83D\uDCF1',
-        logo: '/payments/click.png'
-    },
-    {
-        id: 'paynet',
-        name: 'Paynet',
-        icon: '\uD83C\uDFE6',
-        logo: '/payments/paynet.png'
-    }
+    { id: 'google_pay', name: 'Google Pay', icon: '📱', logo: '/payments/google-pay.svg' },
+    { id: 'visa', name: 'Visa Card', icon: '💳', logo: '/payments/visa.svg' },
+    { id: 'mastercard', name: 'Mastercard', icon: '💳', logo: '/payments/mastercard.svg' },
+    { id: 'apple_pay', name: 'Apple Pay', icon: '🍎', logo: '/payments/apple-pay.svg' },
 ];
 
 // Commission rate - 10% for all sellers
