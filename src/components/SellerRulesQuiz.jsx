@@ -4,12 +4,11 @@ import { useLanguage } from '../context/LanguageContext';
 import {
     sellerRulesSectionsUz,
     getRandomQuizQuestions,
-    SELLER_RULES_STORAGE_KEY,
 } from '../data/sellerRules';
 
 /**
  * Sotuvchi qoidalarini to'liq o'qish + 5 ta tasodifiy savol.
- * Barcha savollar to'g'ri bo'lsa onPass() chaqiladi va localStorage ga yoziladi.
+ * Barcha savollar to'g'ri bo'lsa onPass() chaqiladi. Har safar /sell da qoidalar ko'rsatiladi.
  */
 export default function SellerRulesQuiz({ onPass }) {
     const { t, language } = useLanguage();
@@ -43,9 +42,6 @@ export default function SellerRulesQuiz({ onPass }) {
             setSubmitError(t('seller_rules.quiz_fail') || "Ba'zi javoblar noto'g'ri. Qoidalarni qayta o'qing va urinib ko'ring.");
             return;
         }
-        try {
-            localStorage.setItem(SELLER_RULES_STORAGE_KEY, 'true');
-        } catch (_) {}
         setPhase('done');
         onPass?.();
     };
@@ -182,12 +178,4 @@ export default function SellerRulesQuiz({ onPass }) {
     }
 
     return null;
-}
-
-export function hasSellerRulesPassed() {
-    try {
-        return localStorage.getItem(SELLER_RULES_STORAGE_KEY) === 'true';
-    } catch {
-        return false;
-    }
 }

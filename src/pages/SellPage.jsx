@@ -6,7 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import { useCreateListing, useUploadImage } from '../hooks';
 import { games } from '../data/mockData';
-import SellerRulesQuiz, { hasSellerRulesPassed } from '../components/SellerRulesQuiz';
+import SellerRulesQuiz from '../components/SellerRulesQuiz';
 
 const SellPage = () => {
     const navigate = useNavigate();
@@ -39,10 +39,6 @@ const SellPage = () => {
     useEffect(() => {
         if (!isAuthenticated) navigate('/login');
     }, [isAuthenticated, navigate]);
-
-    useEffect(() => {
-        setRulesPassed(hasSellerRulesPassed());
-    }, []);
 
     if (!isAuthenticated) return null;
 
