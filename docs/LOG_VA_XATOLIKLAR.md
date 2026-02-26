@@ -62,3 +62,41 @@ Bu logdagi “noto‘g‘ri” URL xatolarini kamaytiradi va backend uchun ham y
 - **Ehtimoliy sabab:** Production DB da jadval yo‘q yoki migratsiyalar qo‘llanmagan. Loyihada `apps/*/migrations/` papkalari bo‘sh edi.
 - **Qilingan:** Barcha applar uchun `migrations/__init__.py` qo‘shildi. Game admin: `list_editable` va “Active Listings” ustuni olib tashlandi, xatolik logga yoziladi.
 - **Siz qilishingiz kerak:** Backend (yoki Railway) da bir marta: `python manage.py makemigrations`, keyin `python manage.py migrate`. Keyin backend ni qayta ishga tushiring (redeploy). Agar 500 davom etsa, Railway → Deployments → View logs da aniq xato matnini ko‘ring.
+
+---
+
+## log.txt — backend 500 va Redis/DB xatolari (tuzatilgan)
+
+### 1. Redis ConnectionError: localhost:6379 Connection refused
+
+**Belgi (log.txt):**  
+`redis.exceptions.ConnectionError: Error 111 connecting to localhost:6379. Connection refused`  
+`GET /api/v1/games/ 500`, `GET /api/v1/listings/ 500`
+
+**Sabab:** Production (Railway) da Redis servisi yo‘q, lekin cache/session Redis ga ulanishga urinadi (default `redis://localhost:6379`).
+
+**Tuzatish (production.py):**  
+- Redis faqat REDIS_URL **berilgan va localhost emas** bo‘lsa ishlatiladi.  
+- REDIS_URL bo‘sh yoki localhost bo‘lsa cache = **LocMemCache**, CHANNEL_LAYERS = **InMemoryChannelLayer**, AXES = **AxesDatabaseHandler**.  
+- Shuning uchun Redis bo‘lmasa ham backend 500 bermaydi.
+
+**Siz qilishingiz kerak:** Railway da **REDIS_URL** o‘rnatmasangiz, hozirgi o‘zgarishlar yetadi. Agar Redis ishlatmoqchi bo‘lsangiz, Railway Redis plugin qo‘shib, REDIS_URL ni o‘shanda berilgan qiymatga o‘rnating.
+
+### 2. relation "listings" / "games" does not exist
+
+**Belgi (log.txt):**  
+`django.db.utils.ProgrammingError: relation "listings" does not exist`  
+`psycopg.errors.UndefinedTable: relation "games" does not exist`  
+`GET /api/v1/listings/ 500`, `GET /api/v1/games/ 500`
+
+**Sabab:** Migratsiyalar qo‘llanmagan, PostgreSQL da `listings`, `games` va boshqa jadvallar yaratilmagan.
+
+**Tuzatish:**  
+- **entrypoint.sh** da deploy vaqtida avval `python manage.py makemigrations --noinput` (kerak bo‘lsa), keyin `python manage.py migrate --noinput` ishlatiladi.  
+- Birinchi deployda migratsiyalar yaratiladi va jadvallar paydo bo‘ladi.
+
+**Siz qilishingiz kerak:** Backend ni **qayta deploy** qiling (yangi entrypoint ishlashi kerak). Agar jadvalar hali bo‘lmasa, Railway logda “Applying migrations” va “Creating migrations” xabarlarini tekshiring.
+
+### 3. 401 (Unauthorized) — xato emas
+
+Logda `GET /api/v1/listings/ 401`, `GET /api/v1/games/ 401` — token muddati tugagan yoki yo‘q bo‘lganda normal javob. Keyin `/auth/refresh/` so‘rov yuboriladi. Tuzatish talab qilmaydi.

@@ -74,17 +74,18 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ============================================================
 # REDIS / CACHE — fallback to local memory if Redis unavailable
+# Railway da REDIS_URL ni o'rnatmasangiz yoki localhost bo'lsa, cache = LocMem (500 oldini olish).
 # ============================================================
-REDIS_URL = env("REDIS_URL", default="")  # noqa: F405
+REDIS_URL = (env("REDIS_URL", default="") or "").strip()  # noqa: F405
 
 
-def _redis_available(url):
-    """Check if Redis is reachable."""
-    if not url:
+def _use_redis_cache():
+    """Use Redis only if REDIS_URL is set and not localhost (production Redis is external)."""
+    if not REDIS_URL or "localhost" in REDIS_URL or "127.0.0.1" in REDIS_URL:
         return False
     try:
         from urllib.parse import urlparse
-        parsed = urlparse(url)
+        parsed = urlparse(REDIS_URL)
         host = parsed.hostname or "localhost"
         port = parsed.port or 6379
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -96,7 +97,7 @@ def _redis_available(url):
         return False
 
 
-if not _redis_available(REDIS_URL):
+if not _use_redis_cache():
     # No Redis — use local memory cache and disable Redis-dependent features
     CACHES = {  # noqa: F811
         "default": {
