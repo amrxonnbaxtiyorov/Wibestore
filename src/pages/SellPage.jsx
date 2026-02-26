@@ -44,14 +44,16 @@ const SellPage = () => {
 
     if (!rulesPassed) {
         return (
-            <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px' }}>
-                <div className="gh-container" style={{ maxWidth: '720px' }}>
-                    <div className="breadcrumbs">
+            <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px', display: 'flex', flexDirection: 'column' }}>
+                <div className="gh-container" style={{ maxWidth: '720px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: 'calc(100vh - 120px)' }}>
+                    <div className="breadcrumbs" style={{ flexShrink: 0 }}>
                         <Link to="/">{t('common.home')}</Link>
                         <span className="breadcrumb-separator">/</span>
                         <span className="breadcrumb-current">{t('nav.sell') || 'Sotish'}</span>
                     </div>
-                    <SellerRulesQuiz onPass={() => setRulesPassed(true)} />
+                    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <SellerRulesQuiz onPass={() => setRulesPassed(true)} />
+                    </div>
                 </div>
             </div>
         );

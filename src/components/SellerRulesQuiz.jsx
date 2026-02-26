@@ -18,7 +18,10 @@ export default function SellerRulesQuiz({ onPass }) {
     const [answers, setAnswers] = useState({});
     const [submitError, setSubmitError] = useState(null);
 
-    const isUz = language === 'uz' || !language;
+    const isRu = language === 'ru';
+    const isUz = language === 'uz' || (!language && !isRu);
+    const getQuestion = (q) => (isRu ? q.questionRu : (isUz ? q.questionUz : q.questionEn));
+    const getOptions = (q) => (isRu ? q.optionsRu : (isUz ? q.optionsUz : q.optionsEn));
 
     const handleStartQuiz = () => {
         if (!readConfirmed) return;
@@ -74,18 +77,22 @@ export default function SellerRulesQuiz({ onPass }) {
                     backgroundColor: 'var(--color-bg-secondary)',
                     marginBottom: '20px',
                 }}>
-                    {sellerRulesSectionsUz.map((section, idx) => (
-                        <div key={idx} style={{ marginBottom: idx < sellerRulesSectionsUz.length - 1 ? '20px' : 0 }}>
-                            <h3 style={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '10px' }}>
-                                {section.title}
-                            </h3>
-                            <ul style={{ paddingLeft: '20px', color: 'var(--color-text-secondary)', lineHeight: 1.6, fontSize: 'var(--font-size-sm)' }}>
-                                {section.items.map((item, i) => (
-                                    <li key={i} style={{ marginBottom: '6px' }}>{item}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
+                    {sellerRulesSectionsUz.map((section, idx) => {
+                        const title = isRu && section.titleRu ? section.titleRu : section.title;
+                        const items = isRu && section.itemsRu ? section.itemsRu : section.items;
+                        return (
+                            <div key={idx} style={{ marginBottom: idx < sellerRulesSectionsUz.length - 1 ? '20px' : 0 }}>
+                                <h3 style={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '10px' }}>
+                                    {title}
+                                </h3>
+                                <ul style={{ paddingLeft: '20px', color: 'var(--color-text-secondary)', lineHeight: 1.6, fontSize: 'var(--font-size-sm)' }}>
+                                    {items.map((item, i) => (
+                                        <li key={i} style={{ marginBottom: '6px' }}>{item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        );
+                    })}
                 </div>
 
                 <label className="flex items-start gap-3" style={{ cursor: 'pointer', marginBottom: '16px' }}>
@@ -116,8 +123,8 @@ export default function SellerRulesQuiz({ onPass }) {
 
     if (phase === 'quiz') {
         return (
-            <div className="seller-rules-quiz" style={{ maxWidth: '720px', margin: '0 auto' }}>
-                <div className="text-center" style={{ marginBottom: '24px' }}>
+            <div className="seller-rules-quiz" style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1 }}>
+                <div className="text-center" style={{ marginBottom: '16px', flexShrink: 0 }}>
                     <h2 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
                         {t('seller_rules.quiz_title') || "Qoidalar bo'yicha savollar (5 ta)"}
                     </h2>
@@ -126,46 +133,48 @@ export default function SellerRulesQuiz({ onPass }) {
                     </p>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '24px' }}>
-                    {questions.map((q, index) => (
-                        <div key={q.id} style={{
-                            border: '1px solid var(--color-border-default)',
-                            borderRadius: 'var(--radius-lg)',
-                            padding: '20px',
-                            backgroundColor: 'var(--color-bg-secondary)',
-                        }}>
-                            <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '12px' }}>
-                                {index + 1}. {isUz ? q.questionUz : q.questionEn}
-                            </p>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {(isUz ? q.optionsUz : q.optionsEn).map((opt, optIndex) => (
-                                    <label key={optIndex} className="flex items-center gap-3" style={{ cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name={q.id}
-                                            checked={answers[q.id] === optIndex}
-                                            onChange={() => setAnswer(q.id, optIndex)}
-                                            style={{ width: '18px', height: '18px', accentColor: 'var(--color-accent-blue)' }}
-                                        />
-                                        <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>{opt}</span>
-                                    </label>
-                                ))}
+                <div style={{ flex: 1, overflowY: 'auto', marginBottom: '16px', paddingBottom: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        {questions.map((q, index) => (
+                            <div key={q.id} style={{
+                                border: '1px solid var(--color-border-default)',
+                                borderRadius: 'var(--radius-lg)',
+                                padding: '16px',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                            }}>
+                                <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '10px', fontSize: 'var(--font-size-sm)' }}>
+                                    {index + 1}. {getQuestion(q)}
+                                </p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {(getOptions(q) || q.optionsEn).map((opt, optIndex) => (
+                                        <label key={optIndex} className="flex items-center gap-3" style={{ cursor: 'pointer' }}>
+                                            <input
+                                                type="radio"
+                                                name={q.id}
+                                                checked={answers[q.id] === optIndex}
+                                                onChange={() => setAnswer(q.id, optIndex)}
+                                                style={{ width: '18px', height: '18px', accentColor: 'var(--color-accent-blue)' }}
+                                            />
+                                            <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>{opt}</span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
 
                 {submitError && (
                     <div className="flex items-center gap-2" style={{
                         padding: '12px 16px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-error-bg)',
-                        color: 'var(--color-error)', marginBottom: '16px', fontSize: 'var(--font-size-sm)',
+                        color: 'var(--color-error)', marginBottom: '12px', fontSize: 'var(--font-size-sm)', flexShrink: 0,
                     }}>
                         <AlertCircle className="w-4 h-4 flex-shrink-0" />
                         {submitError}
                     </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '12px', flexShrink: 0 }}>
                     <button type="button" onClick={() => setPhase('rules')} className="btn btn-secondary" style={{ flex: 1 }}>
                         {t('common.back') || 'Orqaga'}
                     </button>

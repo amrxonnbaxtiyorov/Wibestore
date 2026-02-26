@@ -18,7 +18,10 @@ export default function BuyerRulesQuiz({ onPass, onClose, inModal = true }) {
     const [answers, setAnswers] = useState({});
     const [submitError, setSubmitError] = useState(null);
 
-    const isUz = language === 'uz' || !language;
+    const isRu = language === 'ru';
+    const isUz = language === 'uz' || (!language && !isRu);
+    const getQuestion = (q) => (isRu ? q.questionRu : (isUz ? q.questionUz : q.questionEn));
+    const getOptions = (q) => (isRu ? q.optionsRu : (isUz ? q.optionsUz : q.optionsEn));
 
     const handleStartQuiz = () => {
         if (!readConfirmed) return;
@@ -83,16 +86,20 @@ export default function BuyerRulesQuiz({ onPass, onClose, inModal = true }) {
                     backgroundColor: 'var(--color-bg-secondary)',
                     marginBottom: '16px',
                 }}>
-                    {buyerRulesSectionsUz.map((section, idx) => (
-                        <div key={idx} style={{ marginBottom: idx < buyerRulesSectionsUz.length - 1 ? '16px' : 0 }}>
-                            <h4 style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '8px' }}>{section.title}</h4>
-                            <ul style={{ paddingLeft: '18px', color: 'var(--color-text-secondary)', lineHeight: 1.5, fontSize: 'var(--font-size-sm)' }}>
-                                {section.items.map((item, i) => (
-                                    <li key={i} style={{ marginBottom: '4px' }}>{item}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
+                    {buyerRulesSectionsUz.map((section, idx) => {
+                        const title = isRu && section.titleRu ? section.titleRu : section.title;
+                        const items = isRu && section.itemsRu ? section.itemsRu : section.items;
+                        return (
+                            <div key={idx} style={{ marginBottom: idx < buyerRulesSectionsUz.length - 1 ? '16px' : 0 }}>
+                                <h4 style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '8px' }}>{title}</h4>
+                                <ul style={{ paddingLeft: '18px', color: 'var(--color-text-secondary)', lineHeight: 1.5, fontSize: 'var(--font-size-sm)' }}>
+                                    {items.map((item, i) => (
+                                        <li key={i} style={{ marginBottom: '4px' }}>{item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        );
+                    })}
                 </div>
                 <label className="flex items-start gap-3" style={{ cursor: 'pointer', marginBottom: '12px' }}>
                     <input type="checkbox" checked={readConfirmed} onChange={(e) => setReadConfirmed(e.target.checked)} style={{ marginTop: '4px', width: '18px', height: '18px', accentColor: 'var(--color-accent-blue)' }} />
@@ -118,10 +125,10 @@ export default function BuyerRulesQuiz({ onPass, onClose, inModal = true }) {
                     {questions.map((q, index) => (
                         <div key={q.id} style={{ border: '1px solid var(--color-border-default)', borderRadius: 'var(--radius-md)', padding: '12px', backgroundColor: 'var(--color-bg-secondary)' }}>
                             <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '8px', fontSize: 'var(--font-size-sm)' }}>
-                                {index + 1}. {isUz ? q.questionUz : q.questionEn}
+                                {index + 1}. {getQuestion(q)}
                             </p>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                {(isUz ? q.optionsUz : q.optionsEn).map((opt, optIndex) => (
+                                {(getOptions(q) || q.optionsEn).map((opt, optIndex) => (
                                     <label key={optIndex} className="flex items-center gap-2" style={{ cursor: 'pointer', fontSize: 'var(--font-size-sm)' }}>
                                         <input type="radio" name={q.id} checked={answers[q.id] === optIndex} onChange={() => setAnswer(q.id, optIndex)} style={{ width: '16px', height: '16px', accentColor: 'var(--color-accent-blue)' }} />
                                         <span style={{ color: 'var(--color-text-secondary)' }}>{opt}</span>
