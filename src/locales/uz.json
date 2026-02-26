@@ -397,6 +397,18 @@
         "escrow_item": "Escrow tizimi — pul xaridor tasdiqlagunga qadar saytda saqlanadi",
         "back_home": "Bosh sahifaga"
     },
+    "seller_rules": {
+        "badge": "Sotuvchi qoidalari",
+        "title": "Akkaunt joylashdan oldin qoidalarni o'qing",
+        "subtitle": "Quyidagi qoidalarni to'liq o'qing. Keyin 5 ta savolga javob bering.",
+        "read_confirm": "Men barcha qoidalarni to'liq o'qidim va qabul qilaman.",
+        "start_quiz": "Savollarni boshlash",
+        "quiz_title": "Qoidalar bo'yicha savollar (5 ta)",
+        "quiz_subtitle": "Har bir savolga bitta javob tanlang. Barchasi to'g'ri bo'lishi kerak.",
+        "submit_quiz": "Javoblarni yuborish",
+        "answer_all": "Barcha savollarga javob bering.",
+        "quiz_fail": "Ba'zi javoblar noto'g'ri. Qoidalarni qayta o'qing va urinib ko'ring."
+    },
     "top": {
         "badge": "Eng yaxshilari",
         "title": "Top",

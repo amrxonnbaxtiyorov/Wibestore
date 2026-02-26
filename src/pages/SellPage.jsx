@@ -6,12 +6,14 @@ import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import { useCreateListing, useUploadImage } from '../hooks';
 import { games } from '../data/mockData';
+import SellerRulesQuiz, { hasSellerRulesPassed } from '../components/SellerRulesQuiz';
 
 const SellPage = () => {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
     const { t } = useLanguage();
     const { addToast } = useToast();
+    const [rulesPassed, setRulesPassed] = useState(false);
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -38,7 +40,26 @@ const SellPage = () => {
         if (!isAuthenticated) navigate('/login');
     }, [isAuthenticated, navigate]);
 
+    useEffect(() => {
+        setRulesPassed(hasSellerRulesPassed());
+    }, []);
+
     if (!isAuthenticated) return null;
+
+    if (!rulesPassed) {
+        return (
+            <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px' }}>
+                <div className="gh-container" style={{ maxWidth: '720px' }}>
+                    <div className="breadcrumbs">
+                        <Link to="/">{t('common.home')}</Link>
+                        <span className="breadcrumb-separator">/</span>
+                        <span className="breadcrumb-current">{t('nav.sell') || 'Sotish'}</span>
+                    </div>
+                    <SellerRulesQuiz onPass={() => setRulesPassed(true)} />
+                </div>
+            </div>
+        );
+    }
 
     const featureOptions = [
         'Original email', "Email o'zgartirish mumkin", "Telefon bog'langan",
