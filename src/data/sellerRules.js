@@ -197,7 +197,7 @@ export const buyerRulesSectionsUz = [
     ],
   },
   {
-    title: '2. Xaridor uchun mas'uliyat',
+    title: '2. Xaridor uchun mas\'uliyat',
     titleRu: '2. Ответственность покупателя',
     items: [
       'Buyurtmani tasdiqlashdan oldin akkauntni tekshiring. Tasdiqlaganingizdan keyin nizo qiyinlashadi.',
