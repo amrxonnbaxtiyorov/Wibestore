@@ -216,7 +216,7 @@ const HomePage = () => {
                                 <ArrowRight className="w-4 h-4" />
                             </Link>
                             <Link
-                                to="/signup"
+                                to="/sell"
                                 className="btn btn-secondary btn-xl"
                                 style={{
                                     width: 'auto',
