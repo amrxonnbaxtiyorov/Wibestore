@@ -18,9 +18,10 @@ function slug(name) {
     .slice(0, 50) || 'game';
 }
 
-/** Ba'zi o'yinlar uchun maxsus icon/rasm (id bo'yicha) */
+/** Original/official o'yin rasmlari — faqat public/img/icons/ da yuklangan asl brend rasmlari */
 const OVERRIDES = {
   'pubg-mobile': { icon: '⚔️', image: '/img/icons/Pubg-icon.webp', accountCount: 547, color: '#F7B32B' },
+  'pubg': { icon: '⚔️', image: '/img/icons/Pubg-icon.webp', accountCount: 547, color: '#F7B32B' },
   'steam': { icon: '🎮', image: '/img/icons/steam.png', accountCount: 1203, color: '#1B2838' },
   'free-fire': { icon: '🔫', image: '/img/icons/free.webp', accountCount: 389, color: '#FF5722' },
   'standoff-2': { icon: '🔫', image: '/img/icons/st.webp', accountCount: 256, color: '#E91E63' },

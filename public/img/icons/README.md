@@ -1,8 +1,13 @@
 # O'yin rasmlari (icons)
 
-Bosh sahifadagi "Mashhur o'yinlar" bo'limida 8 ta o'yin rasmlari ko'rinadi. Quyidagi fayllarni qo'ying (official/brend rasmlari):
+Faqat **original/official** o'yin rasmlarini qo'ying (brend logolari yoki rasmiy cover).
 
-- `Pubg-icon.webp` — PUBG Mobile
+- **Bosh sahifa** — "Mashhur o'yinlar" bo'limida 8 ta o'yin.
+- **Akkaunt sotish** — kirganda eng ko'p sotilgan (ko'p e'lon bor) o'yinlar avval chiqadi; ular ham shu rasmlardan foydalanadi.
+
+Quyidagi fayllarni `public/img/icons/` da saqlang:
+
+- `Pubg-icon.webp` — PUBG / PUBG Mobile
 - `steam.png` — Steam
 - `free.webp` — Free Fire
 - `st.webp` — Standoff 2
@@ -10,6 +15,6 @@ Bosh sahifadagi "Mashhur o'yinlar" bo'limida 8 ta o'yin rasmlari ko'rinadi. Quyi
 - `cc.webp` — Clash of Clans
 - `cal.webp` — Call of Duty Mobile
 - `roblox.webp` — Roblox
-- `placeholder.png` — boshqa o'yinlar uchun zaxira
+- `placeholder.png` — boshqa o'yinlar uchun zaxira (umumiy o'yin ikonkasi)
 
 Rasmlar bo'lmasa, kartada emoji zaxira ko'rsatiladi.

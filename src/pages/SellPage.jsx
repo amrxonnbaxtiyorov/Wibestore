@@ -4,9 +4,23 @@ import { Upload, X, Plus, DollarSign, Image, FileText, Tag, Shield, AlertCircle,
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
-import { useCreateListing, useUploadImage } from '../hooks';
-import { games } from '../data/mockData';
+import { useCreateListing, useUploadImage, useGames } from '../hooks';
+import getGamesList from '../data/gamesList';
 import SellerRulesQuiz from '../components/SellerRulesQuiz';
+
+// Eng ko'p sotilgan / ko'p e'lon bor o'yinlar (API yoki mock bo'yicha)
+function getTopGamesForSell(apiGames, mockGames) {
+    const list = Array.isArray(apiGames) && apiGames.length > 0
+        ? apiGames.map((g) => ({
+            id: g.slug ?? g.id,
+            name: g.name,
+            image: g.image || (g.banner ? (typeof g.banner === 'string' ? g.banner : g.banner?.url) : null) || '/img/icons/placeholder.png',
+            accountCount: g.active_listings_count ?? g.listings_count ?? 0,
+        }))
+        : mockGames;
+    const sorted = [...list].sort((a, b) => (b.accountCount ?? 0) - (a.accountCount ?? 0));
+    return sorted;
+}
 
 const SellPage = () => {
     const navigate = useNavigate();
@@ -23,10 +37,22 @@ const SellPage = () => {
     // API hooks
     const { mutate: createListing, isLoading: _isCreating } = useCreateListing();
     const { mutate: _uploadImage, isLoading: _isUploading } = useUploadImage();
+    const { data: gamesData } = useGames();
+
+    const mockGames = getGamesList();
+    const allGamesSorted = getTopGamesForSell(gamesData?.results ?? gamesData, mockGames);
+    const topGamesForSell = allGamesSorted.slice(0, 8);
+    const allGames = Array.isArray(gamesData?.results ?? gamesData) && (gamesData?.results ?? gamesData).length > 0
+        ? (gamesData.results ?? gamesData).map((g) => ({
+            id: g.slug ?? g.id,
+            name: g.name,
+            image: g.image || (g.banner ? (typeof g.banner === 'string' ? g.banner : g.banner?.url) : null) || '/img/icons/placeholder.png',
+          }))
+        : mockGames;
 
     const filteredModalGames = modalGameSearch
-        ? games.filter(g => g.name.toLowerCase().includes(modalGameSearch.toLowerCase()))
-        : games;
+        ? allGames.filter(g => g.name.toLowerCase().includes(modalGameSearch.toLowerCase()))
+        : allGames;
 
     const [formData, setFormData] = useState({
         gameId: '', title: '', description: '', price: '',
@@ -302,7 +328,7 @@ const SellPage = () => {
                                 <div style={{ marginBottom: '20px' }}>
                                     <label className="input-label">O'yin *</label>
                                     <div className="grid grid-cols-3 sm:grid-cols-4" style={{ gap: '8px' }}>
-                                        {games.slice(0, 8).map((game) => (
+                                        {topGamesForSell.map((game) => (
                                             <button key={game.id} type="button"
                                                 onClick={() => setFormData({ ...formData, gameId: game.id })}
                                                 style={{
@@ -328,7 +354,7 @@ const SellPage = () => {
                                         }}
                                     >
                                         <Plus className="w-4 h-4" />
-                                        Boshqa o'yinlarni ko'rish ({games.length} ta)
+                                        Boshqa o'yinlarni ko'rish ({allGames.length} ta)
                                     </button>
                                     {errors.gameId && <p style={errorStyle}>{errors.gameId}</p>}
                                 </div>
