@@ -8,9 +8,16 @@ from rest_framework import serializers
 from apps.accounts.serializers import UserPublicSerializer
 from apps.games.serializers import GameListSerializer
 
-from .models import Favorite, Listing, ListingImage, ListingView
+from .models import Favorite, Listing, ListingImage, ListingView, SavedSearch
 
 User = get_user_model()
+
+
+class SavedSearchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SavedSearch
+        fields = ["id", "name", "query_params", "notify_email", "is_active", "last_notified_at", "created_at"]
+        read_only_fields = ["id", "last_notified_at", "created_at"]
 
 
 class ListingImageSerializer(serializers.ModelSerializer):
@@ -43,6 +50,9 @@ class ListingSerializer(serializers.ModelSerializer):
             "is_premium",
             "views_count",
             "favorites_count",
+            "warranty_days",
+            "sale_percent",
+            "sale_ends_at",
             "login_method",
             "level",
             "rank",
@@ -85,6 +95,9 @@ class ListingCreateSerializer(serializers.ModelSerializer):
             "description",
             "price",
             "original_price",
+            "warranty_days",
+            "sale_percent",
+            "sale_ends_at",
             "login_method",
             "account_email",
             "account_password",
@@ -134,6 +147,9 @@ class ListingListSerializer(serializers.ModelSerializer):
             "is_premium",
             "views_count",
             "favorites_count",
+            "warranty_days",
+            "sale_percent",
+            "sale_ends_at",
             "status",
             "primary_image",
             "created_at",

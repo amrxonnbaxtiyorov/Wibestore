@@ -3,7 +3,7 @@ import {
     AlertTriangle, Star, Clock, Eye, Check, X
 } from 'lucide-react';
 import { formatPrice } from '../../data/mockData';
-import { useAdminDashboard, useAdminPendingListings, useAdminReports } from '../../hooks/useAdmin';
+import { useAdminDashboard, useAdminFraudStats, useAdminPendingListings, useAdminReports } from '../../hooks/useAdmin';
 
 const defaultStats = [
     { label: 'Jami akkauntlar', value: '0', change: '-', trend: 'up', icon: Package, color: 'var(--color-accent-blue)' },
@@ -22,6 +22,7 @@ const fallbackReports = [
 
 const AdminDashboard = () => {
     const { data: dashboardData, isLoading: _dashboardLoading } = useAdminDashboard();
+    const { data: fraudData } = useAdminFraudStats();
     const { data: pendingListings = [], isLoading: _listingsLoading } = useAdminPendingListings();
     const { data: reportsList = [], isLoading: _reportsLoading } = useAdminReports();
 
@@ -95,6 +96,26 @@ const AdminDashboard = () => {
                     Xush kelibsiz, Admin!
                 </p>
             </div>
+
+            {/* Fraud & Dispute stats */}
+            {fraudData && (
+                <div style={{
+                    padding: '16px',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--color-border-default)',
+                    backgroundColor: 'var(--color-warning-bg)',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '24px',
+                    alignItems: 'center',
+                }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>Fraud & Disputes</span>
+                    <span>Shubhali: <strong>{fraudData.suspicious_activities_unresolved ?? 0}</strong></span>
+                    <span>Hal qilingan (hafta): <strong>{fraudData.suspicious_resolved_this_week ?? 0}</strong></span>
+                    <span>Escrow nizo: <strong>{fraudData.escrow_disputed ?? 0}</strong></span>
+                    <span>Shikoyatlar kutilmoqda: <strong>{fraudData.reports_pending ?? 0}</strong></span>
+                </div>
+            )}
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" style={{ gap: '16px' }}>

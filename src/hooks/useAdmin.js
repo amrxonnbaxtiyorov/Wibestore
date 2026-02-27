@@ -18,6 +18,20 @@ export const useAdminDashboard = () => {
 };
 
 /**
+ * Hook для получения fraud/dispute статистики (admin)
+ */
+export const useAdminFraudStats = () => {
+    return useQuery({
+        queryKey: ['admin', 'fraud-stats'],
+        queryFn: async () => {
+            const { data } = await apiClient.get(`${ADMIN_BASE}/stats/fraud/`);
+            return data?.data ?? data;
+        },
+        staleTime: 1 * 60 * 1000,
+    });
+};
+
+/**
  * Hook для получения списка пользователей (admin)
  */
 export const useAdminUsers = (filters = {}) => {
@@ -196,6 +210,7 @@ export const useAdminTransactions = (filters = {}) => {
 
 export default {
     useAdminDashboard,
+    useAdminFraudStats,
     useAdminUsers,
     useAdminBanUser,
     useAdminPendingListings,

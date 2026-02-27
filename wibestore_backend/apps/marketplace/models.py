@@ -38,6 +38,24 @@ class Listing(BaseSoftDeleteModel):
     views_count = models.PositiveIntegerField(default=0)
     favorites_count = models.PositiveIntegerField(default=0)
 
+    # Warranty (kafolat) — days seller guarantees account
+    warranty_days = models.PositiveSmallIntegerField(
+        default=0,
+        blank=True,
+        help_text="Kafolat muddati (kun); 0 = kafolat yo'q",
+    )
+    # Flash sale
+    sale_percent = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="Chegirma foizi (flash sale); null = aksiya yo'q",
+    )
+    sale_ends_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Aksiya tugash vaqti",
+    )
+
     # Account details
     login_method = models.CharField(
         max_length=20, choices=LOGIN_METHOD_CHOICES, default="email"
@@ -164,3 +182,85 @@ class ListingView(models.Model):
 
     def __str__(self) -> str:
         return f"View: {self.listing.title} at {self.viewed_at}"
+
+
+class PromoCode(models.Model):
+    """Promo / coupon code for discount on listing or cart."""
+
+    code = models.CharField(max_length=50, unique=True, db_index=True)
+    discount_percent = models.PositiveSmallIntegerField(default=0)
+    discount_fixed = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0, null=True, blank=True
+    )
+    min_purchase = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0, null=True, blank=True
+    )
+    max_uses_total = models.PositiveIntegerField(null=True, blank=True)
+    max_uses_per_user = models.PositiveIntegerField(default=1)
+    valid_from = models.DateTimeField(null=True, blank=True)
+    valid_until = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="promo_codes",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "promo_codes"
+        ordering = ["-created_at"]
+        verbose_name = "Promo Code"
+        verbose_name_plural = "Promo Codes"
+
+    def __str__(self) -> str:
+        return self.code
+
+
+class PromoCodeUse(models.Model):
+    """Track promo code usage per user."""
+
+    promo = models.ForeignKey(
+        PromoCode, on_delete=models.CASCADE, related_name="uses"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="promo_uses"
+    )
+    used_at = models.DateTimeField(auto_now_add=True)
+    order_id = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        db_table = "promo_code_uses"
+        ordering = ["-used_at"]
+        verbose_name = "Promo Code Use"
+        verbose_name_plural = "Promo Code Uses"
+
+    def __str__(self) -> str:
+        return f"{self.promo.code} by {self.user.email}"
+
+
+class SavedSearch(models.Model):
+    """User's saved search (alert when new listings match)."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="saved_searches",
+    )
+    name = models.CharField(max_length=100)
+    query_params = models.JSONField(default=dict)
+    notify_email = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    last_notified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "saved_searches"
+        ordering = ["-created_at"]
+        verbose_name = "Saved Search"
+        verbose_name_plural = "Saved Searches"
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.user.email})"

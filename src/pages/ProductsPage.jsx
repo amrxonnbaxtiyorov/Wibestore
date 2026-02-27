@@ -17,6 +17,7 @@ const ProductsPage = () => {
     const [sortBy, setSortBy] = useState('newest');
     const [viewMode, setViewMode] = useState('grid');
     const [priceRange, setPriceRange] = useState({ min: 0, max: 10000000 });
+    const [hasWarrantyOnly, setHasWarrantyOnly] = useState(false);
 
     // URL dan search ni sinxronlashtirish (sahifa ochilganda yoki link orqali)
     useEffect(() => {
@@ -46,7 +47,8 @@ const ProductsPage = () => {
         ...(searchQuery.trim() && { search: searchQuery.trim() }),
         ...(priceRange.min > 0 && { min_price: priceRange.min }),
         ...(priceRange.max < 10000000 && { max_price: priceRange.max }),
-        ordering: sortBy === 'price-low' ? 'price' : sortBy === 'price-high' ? '-price' : '-created_at',
+        ...(hasWarrantyOnly && { has_warranty: true }),
+        ordering: sortBy === 'price-low' ? 'price' : sortBy === 'price-high' ? '-price' : sortBy === 'views' ? '-views_count' : '-created_at',
     });
 
     // Flatten paginated data — API bo'sh bo'lsa mock akkauntlar (test va tekshiruv uchun)
@@ -97,6 +99,7 @@ const ProductsPage = () => {
         { value: 'newest', label: t('products.sort_newest') || 'Newest' },
         { value: 'price-low', label: t('products.sort_price_low') || 'Price: Low to High' },
         { value: 'price-high', label: t('products.sort_price_high') || 'Price: High to Low' },
+        { value: 'views', label: t('products.sort_views') || 'Most Viewed' },
         { value: 'rating', label: t('products.sort_rating') || 'Best Rating' },
     ];
 
@@ -167,6 +170,17 @@ const ProductsPage = () => {
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                     </select>
+
+                    {/* Warranty filter */}
+                    <label className="flex items-center gap-2 cursor-pointer" style={{ whiteSpace: 'nowrap' }}>
+                        <input
+                            type="checkbox"
+                            checked={hasWarrantyOnly}
+                            onChange={(e) => setHasWarrantyOnly(e.target.checked)}
+                            className="checkbox checkbox-sm"
+                        />
+                        <span className="text-sm">{t('products.warranty_only') || 'Kafolatli'}</span>
+                    </label>
 
                     {/* View toggle */}
                     <div className="flex items-center gap-1">

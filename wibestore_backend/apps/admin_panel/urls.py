@@ -10,6 +10,7 @@ app_name = "admin_panel"
 
 urlpatterns = [
     path("dashboard/", views.AdminDashboardView.as_view(), name="dashboard"),
+    path("stats/fraud/", views.AdminFraudStatsView.as_view(), name="fraud-stats"),
     path("listings/pending/", views.AdminPendingListingsView.as_view(), name="pending-listings"),
     path("listings/<uuid:pk>/approve/", views.AdminApproveListingView.as_view(), name="approve-listing"),
     path("listings/<uuid:pk>/reject/", views.AdminRejectListingView.as_view(), name="reject-listing"),

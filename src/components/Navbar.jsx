@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Sun, Moon, User, LogOut, Settings, ShoppingBag, Crown, ChevronDown, TrendingUp, BarChart3, Zap } from 'lucide-react';
+import { Search, Menu, X, Sun, Moon, User, LogOut, Settings, ShoppingBag, Crown, ChevronDown, TrendingUp, BarChart3, Zap, GitCompare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCoins } from '../context/CoinContext';
@@ -96,6 +96,7 @@ const Navbar = () => {
 
     const navLinks = [
         { to: '/products', label: t('nav.products') || 'Boshqa mahsulotlar', icon: ShoppingBag },
+        { to: '/compare', label: t('nav.compare') || 'Solishtirish', icon: GitCompare },
         { to: '/top', label: t('nav.top') || 'Top akkauntlar', icon: TrendingUp },
         { to: '/statistics', label: t('nav.statistics') || 'Statistika', icon: BarChart3 },
         { to: '/premium', label: t('nav.premium') || 'Site Premium', icon: Zap, badge: 'NEW' },

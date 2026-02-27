@@ -121,3 +121,84 @@ class MarkNotificationReadView(APIView):
                 {"success": False, "error": {"message": "Notification not found."}},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+
+@extend_schema(tags=["Profile"])
+class SellerDashboardView(APIView):
+    """GET /api/v1/profile/dashboard/ — Seller stats: sales, views, conversion."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from django.db.models import Count, Sum
+        user = request.user
+        listings = Listing.objects.filter(seller=user)
+        active = listings.filter(status="active")
+        sold = listings.filter(status="sold")
+        total_views = active.aggregate(s=Sum("views_count"))["s"] or 0
+        from apps.payments.models import EscrowTransaction
+        sales = EscrowTransaction.objects.filter(seller=user, status="confirmed")
+        total_sales_count = sales.count()
+        total_sales_amount = sales.aggregate(s=Sum("seller_earnings"))["s"] or 0
+        return Response({
+            "active_listings": active.count(),
+            "sold_listings": sold.count(),
+            "total_views": total_views,
+            "total_sales_count": total_sales_count,
+            "total_sales_amount": str(total_sales_amount),
+            "conversion": round((total_sales_count / total_views * 100), 2) if total_views else 0,
+        })
+
+
+@extend_schema(tags=["Profile"])
+class ReferralView(APIView):
+    """GET /api/v1/profile/referral/ — My referral code and stats."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        import secrets
+        from apps.accounts.models import Referral
+        user = request.user
+        if not user.referral_code:
+            user.referral_code = secrets.token_urlsafe(8).upper()[:10]
+            user.save(update_fields=["referral_code"])
+        referred_count = Referral.objects.filter(referrer=user).count()
+        return Response({
+            "referral_code": user.referral_code,
+            "referral_url": f"{request.build_absolute_uri('/')}?ref={user.referral_code}",
+            "referred_count": referred_count,
+        })
+
+
+@extend_schema(tags=["Profile"])
+class SavedSearchListCreateView(generics.ListCreateAPIView):
+    """GET/POST /api/v1/profile/saved-searches/ — List or create saved search."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        from apps.marketplace.models import SavedSearch
+        return SavedSearch.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        from apps.marketplace.serializers import SavedSearchSerializer
+        return SavedSearchSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+@extend_schema(tags=["Profile"])
+class SavedSearchDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """GET/PATCH/DELETE /api/v1/profile/saved-searches/<id>/."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        from apps.marketplace.models import SavedSearch
+        return SavedSearch.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        from apps.marketplace.serializers import SavedSearchSerializer
+        return SavedSearchSerializer

@@ -112,6 +112,69 @@ export const useProfileNotifications = () => {
     });
 };
 
+/**
+ * Seller dashboard: sales, views, conversion
+ */
+export const useSellerDashboard = () => {
+    return useQuery({
+        queryKey: ['profile', 'dashboard'],
+        queryFn: async () => {
+            const { data } = await apiClient.get('/profile/dashboard/');
+            return data;
+        },
+        staleTime: 2 * 60 * 1000,
+    });
+};
+
+/**
+ * Referral code and stats
+ */
+export const useReferral = () => {
+    return useQuery({
+        queryKey: ['profile', 'referral'],
+        queryFn: async () => {
+            const { data } = await apiClient.get('/profile/referral/');
+            return data;
+        },
+        staleTime: 5 * 60 * 1000,
+    });
+};
+
+/**
+ * Saved searches (alerts)
+ */
+export const useSavedSearches = () => {
+    return useQuery({
+        queryKey: ['profile', 'saved-searches'],
+        queryFn: async () => {
+            const { data } = await apiClient.get('/profile/saved-searches/');
+            return data;
+        },
+        staleTime: 2 * 60 * 1000,
+    });
+};
+
+export const useCreateSavedSearch = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (body) => {
+            const { data } = await apiClient.post('/profile/saved-searches/', body);
+            return data;
+        },
+        onSuccess: () => queryClient.invalidateQueries(['profile', 'saved-searches']),
+    });
+};
+
+export const useDeleteSavedSearch = (id) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async () => {
+            await apiClient.delete(`/profile/saved-searches/${id}/`);
+        },
+        onSuccess: () => queryClient.invalidateQueries(['profile', 'saved-searches']),
+    });
+};
+
 export default {
     useProfile,
     useUpdateProfile,
@@ -120,4 +183,9 @@ export default {
     useProfilePurchases,
     useProfileSales,
     useProfileNotifications,
+    useSellerDashboard,
+    useReferral,
+    useSavedSearches,
+    useCreateSavedSearch,
+    useDeleteSavedSearch,
 };

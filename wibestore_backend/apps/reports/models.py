@@ -63,3 +63,46 @@ class Report(BaseModel):
 
     def __str__(self) -> str:
         return f"Report by {self.reporter.email} ({self.reason})"
+
+
+class SuspiciousActivity(models.Model):
+    """Log suspicious activity for admin review (fraud detection)."""
+
+    activity_type = models.CharField(
+        max_length=30,
+        choices=[
+            ("many_purchases_same_ip", "Many purchases from same IP"),
+            ("new_user_high_value", "New user high-value purchase"),
+            ("many_accounts_same_ip", "Many accounts from same IP"),
+            ("other", "Other"),
+        ],
+        db_index=True,
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="suspicious_activities",
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    details = models.JSONField(default=dict, blank=True)
+    resolved = models.BooleanField(default=False, db_index=True)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="resolved_suspicious",
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "suspicious_activities"
+        ordering = ["-created_at"]
+        verbose_name = "Suspicious Activity"
+        verbose_name_plural = "Suspicious Activities"
+
+    def __str__(self) -> str:
+        return f"{self.activity_type} ({self.created_at})"

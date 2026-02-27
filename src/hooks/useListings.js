@@ -48,6 +48,38 @@ export const useListings = (filters = {}) => {
 };
 
 /**
+ * Compare listings by IDs (max 4)
+ */
+export const useCompareListings = (ids = []) => {
+    const idList = Array.isArray(ids) ? ids.filter(Boolean).slice(0, 4) : [];
+    return useQuery({
+        queryKey: ['listings', 'compare', idList.join(',')],
+        queryFn: async () => {
+            const { data } = await apiClient.get(`/listings/compare/?ids=${idList.join(',')}`);
+            return data;
+        },
+        enabled: idList.length > 0,
+        staleTime: 2 * 60 * 1000,
+    });
+};
+
+/**
+ * Apply promo code (returns discount, final_amount)
+ */
+export const useApplyPromo = () => {
+    return useMutation({
+        mutationFn: async ({ code, amount, listing_id }) => {
+            const { data } = await apiClient.post('/listings/promo/apply/', {
+                code: code?.trim?.()?.toUpperCase?.() || code,
+                ...(amount != null && { amount }),
+                ...(listing_id && { listing_id }),
+            });
+            return data;
+        },
+    });
+};
+
+/**
  * Hook для получения конкретного listing'а по ID
  */
 export const useListing = (id) => {
@@ -182,4 +214,6 @@ export default {
     useAddToFavorites,
     useRemoveFromFavorites,
     useTrackView,
+    useCompareListings,
+    useApplyPromo,
 };

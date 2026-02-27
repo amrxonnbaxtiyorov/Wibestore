@@ -5,7 +5,7 @@ WibeStore Backend - Marketplace Admin
 from django.contrib import admin
 from django.db.utils import ProgrammingError
 
-from .models import Favorite, Listing, ListingImage, ListingView
+from .models import Favorite, Listing, ListingImage, ListingView, PromoCode, PromoCodeUse, SavedSearch
 
 
 class ListingImageInline(admin.TabularInline):
@@ -22,6 +22,8 @@ class ListingAdmin(admin.ModelAdmin):
         "price",
         "status",
         "is_premium",
+        "warranty_days",
+        "sale_percent",
         "views_count",
         "favorites_count",
         "created_at",
@@ -71,3 +73,20 @@ class ListingViewAdmin(admin.ModelAdmin):
             return super().get_queryset(request)
         except ProgrammingError:
             return ListingView.objects.none()
+
+
+@admin.register(PromoCode)
+class PromoCodeAdmin(admin.ModelAdmin):
+    list_display = ["code", "discount_percent", "discount_fixed", "is_active", "valid_from", "valid_until", "game"]
+    list_filter = ["is_active", "game"]
+
+
+@admin.register(PromoCodeUse)
+class PromoCodeUseAdmin(admin.ModelAdmin):
+    list_display = ["promo", "user", "used_at", "order_id"]
+
+
+@admin.register(SavedSearch)
+class SavedSearchAdmin(admin.ModelAdmin):
+    list_display = ["user", "name", "is_active", "notify_email", "created_at"]
+    list_filter = ["is_active"]

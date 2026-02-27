@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Star, Crown, Heart } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Star, Crown, Heart, GitCompare } from 'lucide-react';
 import { formatPrice } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { addToCompare } from '../pages/ComparePage';
+import { useToast } from './ToastProvider';
 
 const AccountCard = ({ account, featured = false }) => {
     const { user, isAuthenticated } = useAuth();
     const { t } = useLanguage();
+    const navigate = useNavigate();
+    const { addToast } = useToast();
     const [isLiked, setIsLiked] = useState(false);
 
     useEffect(() => {
@@ -38,6 +42,14 @@ const AccountCard = ({ account, featured = false }) => {
         setIsLiked(!isLiked);
     };
 
+    const handleAddToCompare = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        addToCompare(accountId);
+        addToast({ type: 'success', title: t('compare.added') || 'Added to compare', message: '' });
+        navigate('/compare');
+    };
+
     // Fallback for missing data
     const accountId = account.id || crypto.randomUUID();
     const accountTitle = account.title || t('common.untitled_account');
@@ -47,6 +59,10 @@ const AccountCard = ({ account, featured = false }) => {
     const accountImage = account.image;
     const accountIsPremium = account.isPremium || account.is_premium || false;
     const seller = account.seller || { rating: 5.0, isPremium: false };
+    const warrantyDays = account.warranty_days ?? 0;
+    const salePercent = account.sale_percent ?? 0;
+    const saleEndsAt = account.sale_ends_at ? new Date(account.sale_ends_at) : null;
+    const isOnSale = salePercent > 0 && (!saleEndsAt || saleEndsAt > new Date());
     
     return (
         <Link
@@ -75,6 +91,36 @@ const AccountCard = ({ account, featured = false }) => {
                     }}
                 />
             )}
+
+            {/* Sale & Warranty badges */}
+            <div className="absolute top-2 right-2 flex flex-col gap-1" style={{ zIndex: 2 }}>
+                {isOnSale && (
+                    <span
+                        className="badge"
+                        style={{
+                            backgroundColor: 'var(--color-error)',
+                            color: 'white',
+                            fontSize: '11px',
+                            padding: '2px 6px',
+                        }}
+                    >
+                        -{salePercent}%
+                    </span>
+                )}
+                {warrantyDays > 0 && (
+                    <span
+                        className="badge"
+                        style={{
+                            backgroundColor: 'var(--color-accent-green)',
+                            color: 'white',
+                            fontSize: '11px',
+                            padding: '2px 6px',
+                        }}
+                    >
+                        {warrantyDays} {t('common.days_warranty') || 'kun kafolat'}
+                    </span>
+                )}
+            </div>
 
             {/* Image */}
             <div
@@ -117,6 +163,26 @@ const AccountCard = ({ account, featured = false }) => {
                         <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
                     </button>
                 )}
+
+                {/* Compare Button */}
+                <button
+                    onClick={handleAddToCompare}
+                    className="absolute flex items-center justify-center rounded-full transition-all"
+                    style={{
+                        top: '12px',
+                        left: isAuthenticated ? '50px' : '12px',
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        backdropFilter: 'blur(4px)',
+                        color: '#fff',
+                        border: 'none',
+                        cursor: 'pointer',
+                    }}
+                    aria-label={t('compare.add') || 'Add to compare'}
+                >
+                    <GitCompare className="w-3.5 h-3.5" />
+                </button>
 
                 {/* Premium Badge */}
                 {accountIsPremium && (

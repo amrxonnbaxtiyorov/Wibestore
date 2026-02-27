@@ -249,3 +249,104 @@ class ListingReviewsView(generics.ListAPIView):
             .select_related("reviewer", "reviewee")
             .order_by("-created_at")
         )
+
+
+@extend_schema(tags=["Listings"])
+class CompareListingsView(APIView):
+    """GET /api/v1/listings/compare/?ids=uuid1,uuid2,uuid3 — Listings for comparison (max 4)."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        ids_param = request.query_params.get("ids", "")
+        if not ids_param:
+            return Response(
+                {"results": [], "error": "ids query param required (comma-separated UUIDs)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        ids = [x.strip() for x in ids_param.split(",") if x.strip()][:4]
+        if not ids:
+            return Response({"results": []})
+        qs = (
+            Listing.objects.filter(id__in=ids, status="active", deleted_at__isnull=True)
+            .select_related("game", "seller")
+            .prefetch_related("images")
+        )
+        order = {uuid: i for i, uuid in enumerate(ids)}
+        items = sorted(list(qs), key=lambda x: order.get(str(x.id), 999))
+        serializer = ListingSerializer(items, many=True, context={"request": request})
+        return Response({"results": serializer.data})
+
+
+@extend_schema(tags=["Listings"])
+class ApplyPromoView(APIView):
+    """POST /api/v1/listings/promo/apply/ — Apply promo code; body: { code, amount } or { code, listing_id }."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from django.utils import timezone
+        from .models import PromoCode, PromoCodeUse
+
+        code = (request.data.get("code") or "").strip().upper()
+        amount = request.data.get("amount")
+        listing_id = request.data.get("listing_id")
+        if not code:
+            return Response(
+                {"success": False, "error": "code is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            promo = PromoCode.objects.get(code=code, is_active=True)
+        except PromoCode.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Promo code not found or inactive"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        now = timezone.now()
+        if promo.valid_from and now < promo.valid_from:
+            return Response(
+                {"success": False, "error": "Promo not yet valid"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if promo.valid_until and now > promo.valid_until:
+            return Response(
+                {"success": False, "error": "Promo expired"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if amount is None and listing_id:
+            try:
+                listing = Listing.objects.get(id=listing_id, status="active")
+                amount = float(listing.price)
+            except (Listing.DoesNotExist, ValueError):
+                amount = 0
+        if amount is None:
+            amount = 0
+        amount = float(amount)
+        if promo.min_purchase and amount < float(promo.min_purchase):
+            return Response(
+                {"success": False, "error": f"Minimum purchase: {promo.min_purchase}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        uses_count = PromoCodeUse.objects.filter(promo=promo).count()
+        if promo.max_uses_total is not None and uses_count >= promo.max_uses_total:
+            return Response(
+                {"success": False, "error": "Promo limit reached"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user_uses = PromoCodeUse.objects.filter(promo=promo, user=request.user).count()
+        if user_uses >= promo.max_uses_per_user:
+            return Response(
+                {"success": False, "error": "You have already used this promo"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        discount_fixed = float(promo.discount_fixed or 0)
+        discount_percent = (float(amount) * promo.discount_percent) / 100
+        discount = max(discount_fixed, discount_percent)
+        final_amount = max(0, amount - discount)
+        return Response({
+            "success": True,
+            "discount": discount,
+            "final_amount": final_amount,
+            "promo_code": promo.code,
+        })

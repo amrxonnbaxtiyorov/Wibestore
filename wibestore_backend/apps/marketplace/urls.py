@@ -10,6 +10,8 @@ app_name = "marketplace"
 
 urlpatterns = [
     path("", views.ListingListCreateView.as_view(), name="listing-list-create"),
+    path("compare/", views.CompareListingsView.as_view(), name="listing-compare"),
+    path("promo/apply/", views.ApplyPromoView.as_view(), name="promo-apply"),
     path("<uuid:pk>/", views.ListingDetailView.as_view(), name="listing-detail"),
     path("<uuid:pk>/favorite/", views.ListingFavoriteView.as_view(), name="listing-favorite"),
     path("<uuid:pk>/view/", views.ListingViewCountView.as_view(), name="listing-view"),

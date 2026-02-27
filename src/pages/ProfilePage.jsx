@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Tag, Heart, Star, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle } from 'lucide-react';
+import { ShoppingBag, Tag, Heart, Star, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle, BarChart3, UserPlus, Copy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing } from '../hooks';
+import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing, useSellerDashboard, useReferral } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import ReviewList from '../components/ReviewList';
 import { games, formatPrice } from '../data/mockData';
@@ -24,6 +24,8 @@ const ProfilePage = () => {
     const { data: favoritesData } = useProfileFavorites();
     const { data: purchasesData } = useProfilePurchases();
     const { data: salesData } = useProfileSales();
+    const { data: dashboardData } = useSellerDashboard();
+    const { data: referralData } = useReferral();
     const { mutate: deleteListingMutation } = useDeleteListing();
 
     const [reviewCount] = useState(0);
@@ -88,6 +90,8 @@ const ProfilePage = () => {
     };
 
     const tabs = [
+        { id: 'dashboard', label: t('profile.dashboard') || 'Dashboard', icon: BarChart3 },
+        { id: 'referral', label: t('profile.referral') || 'Referral', icon: UserPlus },
         { id: 'listings', label: t('profile.my_listings') || 'My Listings', icon: Package, count: myListings.length },
         { id: 'purchases', label: t('profile.purchases') || 'Purchases', icon: ShoppingBag, count: purchases.length },
         { id: 'sales', label: t('profile.sales') || 'Sales', icon: Tag, count: sales.length },
@@ -205,7 +209,9 @@ const ProfilePage = () => {
                         >
                             <tab.icon className="w-4 h-4" />
                             <span className="hidden sm:inline">{tab.label}</span>
-                            <span className="badge badge-count" style={{ fontSize: '10px', padding: '0 5px', minWidth: '18px' }}>{tab.count}</span>
+                            {tab.count != null && (
+                                <span className="badge badge-count" style={{ fontSize: '10px', padding: '0 5px', minWidth: '18px' }}>{tab.count}</span>
+                            )}
                         </button>
                     ))}
                 </div>
@@ -221,6 +227,91 @@ const ProfilePage = () => {
                         minHeight: '400px',
                     }}
                 >
+                    {activeTab === 'dashboard' && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px' }}>
+                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-primary)' }}>{dashboardData?.active_listings ?? 0}</div>
+                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.active_listings') || 'Active listings'}</div>
+                            </div>
+                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.sold_listings ?? 0}</div>
+                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.sold') || 'Sold'}</div>
+                            </div>
+                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.total_views ?? 0}</div>
+                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.views') || 'Views'}</div>
+                            </div>
+                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.total_sales_count ?? 0}</div>
+                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.sales_count') || 'Sales'}</div>
+                            </div>
+                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 700 }}>{formatPrice(dashboardData?.total_sales_amount ?? 0)}</div>
+                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.earnings') || 'Earnings'}</div>
+                            </div>
+                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.conversion ?? 0}%</div>
+                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.conversion') || 'Conversion'}</div>
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === 'referral' && (
+                        <div className="card" style={{ padding: '24px', maxWidth: '480px' }}>
+                            <h3 style={{ fontSize: 'var(--font-size-lg)', marginBottom: '12px' }}>{t('profile.referral_title') || 'Invite friends'}</h3>
+                            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginBottom: '16px' }}>
+                                {t('profile.referral_description') || 'Share your link. When friends sign up, you get rewards.'}
+                            </p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.your_code') || 'Your code'}</label>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <code style={{
+                                        padding: '10px 14px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)',
+                                        fontFamily: 'monospace', fontSize: '16px', letterSpacing: '0.1em',
+                                    }}>
+                                        {referralData?.referral_code ?? '—'}
+                                    </code>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => {
+                                            if (referralData?.referral_code) {
+                                                navigator.clipboard.writeText(referralData.referral_code);
+                                                addToast({ type: 'success', title: t('common.copied') || 'Copied', message: '' });
+                                            }
+                                        }}
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <label style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '8px' }}>{t('profile.referral_link') || 'Link'}</label>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <input
+                                        readOnly
+                                        value={referralData?.referral_url ?? ''}
+                                        style={{
+                                            flex: 1, padding: '10px 14px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)',
+                                            border: '1px solid var(--color-border-default)', fontSize: '14px',
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={() => {
+                                            if (referralData?.referral_url) {
+                                                navigator.clipboard.writeText(referralData.referral_url);
+                                                addToast({ type: 'success', title: t('common.copied') || 'Copied', message: '' });
+                                            }
+                                        }}
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <p style={{ marginTop: '12px', fontSize: '14px', color: 'var(--color-text-muted)' }}>
+                                    {t('profile.referred_count') || 'Referred'}: <strong>{referralData?.referred_count ?? 0}</strong>
+                                </p>
+                            </div>
+                        </div>
+                    )}
                     {activeTab === 'listings' && (
                         <>
                             <div className="flex items-center justify-between" style={{ marginBottom: '20px' }}>

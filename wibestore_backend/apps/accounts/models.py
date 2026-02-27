@@ -67,6 +67,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     total_sales = models.PositiveIntegerField(default=0)
     total_purchases = models.PositiveIntegerField(default=0)
     balance = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    # Referral: unique code for this user (invite friends)
+    referral_code = models.CharField(
+        max_length=20, unique=True, blank=True, null=True, db_index=True
+    )
 
     # Preferences
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default="ru")
@@ -152,3 +156,30 @@ class PasswordHistory(models.Model):
 
     def __str__(self) -> str:
         return f"PasswordHistory({self.user.email}, {self.created_at})"
+
+
+class Referral(models.Model):
+    """Referral: referrer (who shared) and referred (who used code)."""
+
+    referrer = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="referrals_made",
+    )
+    referred = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="referred_by",
+    )
+    referral_code_used = models.CharField(max_length=20)
+    bonus_given_to_referrer = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "referrals"
+        ordering = ["-created_at"]
+        verbose_name = "Referral"
+        verbose_name_plural = "Referrals"
+
+    def __str__(self) -> str:
+        return f"{self.referrer.email} → {self.referred.email}"

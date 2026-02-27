@@ -17,7 +17,7 @@ from apps.marketplace.serializers import ListingSerializer
 from apps.marketplace.services import ListingService
 from apps.payments.models import EscrowTransaction, Transaction
 from apps.payments.services import EscrowService
-from apps.reports.models import Report
+from apps.reports.models import Report, SuspiciousActivity
 from apps.reports.serializers import ReportSerializer
 from core.permissions import IsAdminUser
 
@@ -74,6 +74,32 @@ class AdminDashboardView(APIView):
         }
 
         return Response({"success": True, "data": stats})
+
+
+@extend_schema(tags=["Admin"])
+class AdminFraudStatsView(APIView):
+    """GET /api/v1/admin-panel/stats/fraud/ — Fraud & dispute statistics."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        now = timezone.now()
+        seven_days_ago = now - timedelta(days=7)
+        suspicious_unresolved = SuspiciousActivity.objects.filter(resolved=False).count()
+        suspicious_resolved_week = SuspiciousActivity.objects.filter(
+            resolved=True, resolved_at__gte=seven_days_ago
+        ).count()
+        disputed = EscrowTransaction.objects.filter(status="disputed").count()
+        reports_pending = Report.objects.filter(status="pending").count()
+        return Response({
+            "success": True,
+            "data": {
+                "suspicious_activities_unresolved": suspicious_unresolved,
+                "suspicious_resolved_this_week": suspicious_resolved_week,
+                "escrow_disputed": disputed,
+                "reports_pending": reports_pending,
+            },
+        })
 
 
 @extend_schema(tags=["Admin"])

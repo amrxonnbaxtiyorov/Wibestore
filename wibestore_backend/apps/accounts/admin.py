@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from apps.accounts.models import PasswordHistory
+from apps.accounts.models import PasswordHistory, Referral
 
 User = get_user_model()
 
@@ -46,7 +46,7 @@ class UserAdmin(BaseUserAdmin):
         ),
         (
             "Marketplace",
-            {"fields": ("rating", "total_sales", "total_purchases", "balance")},
+            {"fields": ("rating", "total_sales", "total_purchases", "balance", "referral_code")},
         ),
         (
             "Permissions",
@@ -66,3 +66,10 @@ class UserAdmin(BaseUserAdmin):
             },
         ),
     )
+
+
+@admin.register(Referral)
+class ReferralAdmin(admin.ModelAdmin):
+    list_display = ["referrer", "referred", "referral_code_used", "bonus_given_to_referrer", "created_at"]
+    list_filter = ["bonus_given_to_referrer"]
+    search_fields = ["referrer__email", "referred__email"]

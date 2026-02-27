@@ -14,6 +14,7 @@ import Footer from './components/Footer';
 import ChatWidget from './components/ChatWidget';
 import CommandPalette from './components/CommandPalette';
 import ScrollToTop from './components/ScrollToTop';
+import OnboardingTour from './components/OnboardingTour';
 
 // Lazy-loaded pages for code-splitting & performance
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -32,6 +33,7 @@ const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
 const CoinsPage = lazy(() => import('./pages/CoinsPage'));
+const ComparePage = lazy(() => import('./pages/ComparePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Admin pages
@@ -130,6 +132,7 @@ const PublicLayout = ({ children }) => (
     <Footer />
     <ChatWidget />
     <CommandPalette />
+    <OnboardingTour />
   </div>
 );
 
@@ -208,6 +211,11 @@ function App() {
                         <Route path="/products" element={
                           <Suspense fallback={<PageLoader />}>
                             <PublicLayout><ProductsPage /></PublicLayout>
+                          </Suspense>
+                        } />
+                        <Route path="/compare" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <PublicLayout><ComparePage /></PublicLayout>
                           </Suspense>
                         } />
                         <Route path="/premium" element={

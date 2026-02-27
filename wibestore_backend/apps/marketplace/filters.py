@@ -76,13 +76,40 @@ class ListingFilter(django_filters.FilterSet):
         lookup_expr='icontains',
         label='Rank'
     )
-    
+
+    # Warranty: only listings with warranty_days > 0
+    has_warranty = django_filters.BooleanFilter(
+        method='filter_has_warranty',
+        label='Has Warranty',
+    )
+
+    # Ordering
+    ordering = django_filters.OrderingFilter(
+        fields=(
+            ('price', 'price'),
+            ('created_at', 'created_at'),
+            ('views_count', 'views_count'),
+            ('favorites_count', 'favorites_count'),
+        ),
+        field_labels={
+            'price': 'Price',
+            'created_at': 'Newest',
+            'views_count': 'Views',
+            'favorites_count': 'Favorites',
+        },
+    )
+
     class Meta:
         model = Listing
         fields = [
             'search', 'min_price', 'max_price', 'game', 'category',
-            'status', 'is_premium', 'seller', 'level', 'rank',
+            'status', 'is_premium', 'seller', 'level', 'rank', 'has_warranty', 'ordering',
         ]
+
+    def filter_has_warranty(self, queryset, name, value):
+        if value is True:
+            return queryset.filter(warranty_days__gt=0)
+        return queryset
     
     def filter_search(self, queryset, name, value):
         """Filter by search term across multiple fields."""
