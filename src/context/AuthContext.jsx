@@ -7,7 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 /** API dan kelgan user obyektini frontend uchun normalizatsiya: name (ism), avatar (to'liq URL) */
 function normalizeUser(data) {
     if (!data) return null;
-    const name = data.display_name ?? data.full_name ?? data.name ?? data.username ?? (data.email ? data.email.split('@')[0] : '') || 'User';
+    const name = data.display_name ?? data.full_name ?? data.name ?? data.username ?? ((data.email ? data.email.split('@')[0] : '') || 'User');
     let avatar = data.avatar ?? null;
     if (avatar && typeof avatar === 'string' && avatar.startsWith('/') && !avatar.startsWith('//')) {
         const origin = typeof window !== 'undefined' ? window.location.origin : '';
