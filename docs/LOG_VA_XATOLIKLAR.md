@@ -95,7 +95,7 @@ Bu logdagi “noto‘g‘ri” URL xatolarini kamaytiradi va backend uchun ham y
 - **entrypoint.sh** da avval `makemigrations`, keyin `migrate` ishlatiladi — deploy paytida jadvallar yaratiladi.  
 - Repoda migratsiyalar bor bo‘lgani uchun har safar deployda `migrate` yetarli.
 
-**Siz qilishingiz kerak:** Backend ni **qayta deploy** qiling. Railway logda “Applying migrations” ko‘rinsin; shundan keyin `/api/v1/listings/`, `/api/v1/games/` va admin 500 bermasligi kerak. Agar jadval yo‘q bo‘lsa, admin bo‘sh ro‘yxat ko‘rsatadi.
+**Siz qilishingiz kerak:** Backend ni **qayta deploy** qiling. Railway logda “Applying migrations” ko‘rinsin; shundan keyin `/api/v1/listings/`, `/api/v1/games/` va admin 500 bermasligi kerak. **Qo‘shimcha:** Railway Backend servisida Root Directory = `wibestore_backend` va DATABASE_URL o‘rnatilgan bo‘lishi kerak. Migrate xato bersa logda "FATAL: migrate failed" chiqadi.
 
 ### 3. 401 (Unauthorized) — xato emas
 

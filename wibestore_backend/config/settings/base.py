@@ -352,6 +352,7 @@ AXES_COOLOFF_TIME = timedelta(minutes=15)
 AXES_LOCKOUT_PARAMETERS = ["ip_address", "username"]
 AXES_RESET_ON_SUCCESS = True
 AXES_HANDLER = "axes.handlers.cache.AxesCacheHandler"
+AXES_CACHE = "default"  # Use default cache (LocMem in dev, Redis in prod when set)
 
 # ============================================================
 # ENCRYPTION (for sensitive data like account credentials)

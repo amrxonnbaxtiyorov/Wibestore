@@ -3,7 +3,7 @@
 ## 1. Loyihani Railway’ga ulash
 
 - Repo’ni Railway’ga import qiling yoki GitHub’dan deploy qiling.
-- **Root Directory**: frontend uchun loyiha **ildizi** bo‘lishi kerak (yoki faqat frontend fayllari bo‘lgan joy). Agar backend boshqa papkada bo‘lsa, bitta repo’da ikkita **Service** yarating: biri frontend (root), ikkinchisi backend (`wibestore_backend`).
+- **Root Directory**: frontend uchun loyiha **ildizi** bo‘lishi kerak. Backend uchun **Root Directory** = `wibestore_backend` qo‘ying (shu papkadagi Dockerfile va entrypoint.sh har deployda migrate ishlatadi). Bitta repo’da ikkita Service: frontend (root), backend (`wibestore_backend`).
 
 ## 2. Build usuli
 

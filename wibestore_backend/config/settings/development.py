@@ -77,6 +77,9 @@ CACHES = {
     }
 }
 
+# Axes: use database handler in dev (LocMemCache is not recommended for axes)
+AXES_HANDLER = "axes.handlers.database.AxesDatabaseHandler"
+
 # ============================================================
 # CHANNEL LAYERS (in-memory for development)
 # ============================================================
