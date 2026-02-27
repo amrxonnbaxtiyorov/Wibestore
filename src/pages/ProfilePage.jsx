@@ -354,8 +354,8 @@ const ProfilePage = () => {
                                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     }}
                                                 >
-                                                    {listing.images?.[0] ? (
-                                                        <img src={listing.images[0]} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    {(listing.images?.[0]?.image ?? listing.image ?? listing.primary_image) ? (
+                                                        <img src={listing.images?.[0]?.image ?? listing.image ?? listing.primary_image} alt={listing.title ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                     ) : (
                                                         <div className="flex items-center justify-center" style={{ width: '100%', height: '100%' }}>
                                                             {getGameImage(listing.gameId) ? (

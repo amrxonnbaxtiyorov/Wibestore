@@ -146,7 +146,7 @@
         "phone": "Telefon raqam",
         "phone_placeholder": "+998 90 123 45 67",
         "password": "Parol",
-        "password_placeholder": "Kamida 6 ta belgi",
+        "password_placeholder": "Kamida 8 ta belgi",
         "confirm_password": "Parolni tasdiqlang",
         "confirm_placeholder": "Parolni qaytadan kiriting",
         "terms": "Foydalanish shartlari",
@@ -157,7 +157,7 @@
         "has_account": "Hisobingiz bormi?",
         "login_link": "Kirish",
         "password_mismatch": "Parollar mos kelmaydi",
-        "password_short": "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
+        "password_short": "Parol kamida 8 ta belgidan iborat bo'lishi kerak",
         "agree_terms": "Foydalanish shartlariga rozilik bering",
         "google": "Google bilan ro'yxatdan o'tish"
     },
@@ -215,7 +215,7 @@
         "password_changed": "Parol muvaffaqiyatli o'zgartirildi!",
         "fill_all": "Barcha maydonlarni to'ldiring",
         "passwords_mismatch": "Yangi parollar bir xil emas",
-        "password_short": "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
+        "password_short": "Parol kamida 8 ta belgidan iborat bo'lishi kerak",
         "twofa": "Ikki bosqichli autentifikatsiya (2FA)",
         "twofa_desc": "Qo'shimcha xavfsizlik uchun 2FA yoqing",
         "enable": "Yoqish",
@@ -312,7 +312,12 @@
         "try_another": "Boshqa email urinib ko'ring",
         "reset_title": "Parolni tiklash",
         "reset_subtitle": "Email kiriting, sizga tiklash havolasini yuboramiz",
-        "send_link": "Havolani yuborish"
+        "send_link": "Havolani yuborish",
+        "reset_confirm_title": "Yangi parol kiriting",
+        "reset_desc": "Parolni tiklash uchun yangi parol kiriting.",
+        "reset_success_title": "Parol yangilandi",
+        "reset_success_desc": "Yangi parol bilan tizimga kiring.",
+        "reset_confirm_btn": "Parolni yangilash"
     },
     "game": {
         "not_found": "O'yin topilmadi",
@@ -420,7 +425,28 @@
         "submit_btn": "E'lonni yuborish",
         "submitting": "Yuborilmoqda...",
         "weapon_type": "Qurol turi (skin)",
-        "weapon_type_placeholder": "Tanlang (ixtiyoriy)"
+        "weapon_type_placeholder": "Tanlang (ixtiyoriy)",
+        "err_select_game": "O'yinni tanlang",
+        "err_enter_title": "Sarlavha kiriting",
+        "err_enter_price": "Narxni kiriting",
+        "err_enter_description": "Tavsif kiriting",
+        "err_enter_account_email": "Akkaunt emailini kiriting",
+        "err_enter_account_password": "Akkaunt parolini kiriting",
+        "feature_original_email": "Original email",
+        "feature_email_change": "Email o'zgartirish mumkin",
+        "feature_phone_linked": "Telefon bog'langan",
+        "feature_google_linked": "Google bog'langan",
+        "feature_no_ban": "Ban yo'q",
+        "feature_never_sold": "Hech qachon sotilmagan",
+        "feature_premium_vip": "Premium/VIP",
+        "feature_skins": "Maxsus skinlar",
+        "feature_2fa": "2FA yoqilgan",
+        "feature_all_weapons": "Hamma qurollar ochiq",
+        "placeholder_description": "Akkaunt haqida batafsil ma'lumot: skinlar, qurollar...",
+        "more_games_btn": "Boshqa o'yinlarni ko'rish",
+        "success_listing_created": "Listing yaratildi. Moderatsiyadan keyin ko'rinadi.",
+        "error_listing_create": "Listing yaratishda xatolik yuz berdi",
+        "image_size_error": "Rasm hajmi 5MB dan oshmasligi kerak"
     },
     "terms": {
         "title": "Foydalanish shartlari",
@@ -557,5 +583,24 @@
         "time_minutes_ago": "{n} daqiqa oldin",
         "time_hours_ago": "{n} soat oldin",
         "time_days_ago": "{n} kun oldin"
+    },
+    "admin": {
+        "panel_title": "Admin Panel",
+        "panel_subtitle": "WibeStore boshqaruv paneli",
+        "login_label": "Login",
+        "password_label": "Parol",
+        "login_btn": "Kirish",
+        "login_loading": "Kirish...",
+        "back_home": "Bosh sahifaga qaytish",
+        "error_invalid": "Login yoki parol noto'g'ri!",
+        "error_not_configured": "Admin paroli so'zlanmagan! Iltimos, .env faylga VITE_ADMIN_PASSWORD ni kiriting.",
+        "secure_note": "Xavfsiz ulanish orqali himoyalangan"
+    },
+    "error_boundary": {
+        "title": "Xatolik yuz berdi",
+        "description": "Kutilmagan xatolik. Tuzatish ustida ishlayapmiz.",
+        "details_label": "Tafsilotlar (ishlab chiquvchilar uchun)",
+        "retry": "Sahifani yangilash",
+        "home": "Bosh sahifaga"
     }
 }

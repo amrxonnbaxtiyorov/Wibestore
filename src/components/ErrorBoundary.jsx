@@ -1,8 +1,24 @@
 import { Component } from 'react';
+import uz from '../locales/uz.json';
+import en from '../locales/en.json';
+import ru from '../locales/ru.json';
+
+const LOCALES = { uz, en, ru };
+
+function getErrorBoundaryMessages() {
+    const lang = (typeof window !== 'undefined' && localStorage.getItem('wibeLanguage')) || 'uz';
+    const L = LOCALES[lang]?.error_boundary || LOCALES.uz?.error_boundary || {};
+    return {
+        title: L.title || 'Xatolik yuz berdi',
+        description: L.description || 'Kutilmagan xatolik.',
+        details_label: L.details_label || 'Tafsilotlar',
+        retry: L.retry || 'Sahifani yangilash',
+        home: L.home || 'Bosh sahifaga',
+    };
+}
 
 /**
- * Error Boundary компонент для ловли ошибок рендеринга
- * Отправляет ошибки в Sentry и показывает fallback UI
+ * Error Boundary — render xatolarini ushlaydi, Sentry ga yuboradi, i18n fallback UI ko'rsatadi
  */
 class ErrorBoundary extends Component {
     constructor(props) {
@@ -46,6 +62,7 @@ class ErrorBoundary extends Component {
 
     render() {
         if (this.state.hasError) {
+            const msg = getErrorBoundaryMessages();
             return (
                 <div
                     style={{
@@ -54,14 +71,14 @@ class ErrorBoundary extends Component {
                         alignItems: 'center',
                         justifyContent: 'center',
                         padding: '20px',
-                        backgroundColor: '#f5f5f5',
+                        backgroundColor: 'var(--color-bg-secondary, #f5f5f5)',
                     }}
                 >
                     <div
                         style={{
                             maxWidth: '500px',
                             padding: '32px',
-                            backgroundColor: 'white',
+                            backgroundColor: 'var(--color-bg-primary, white)',
                             borderRadius: '12px',
                             boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                         }}
@@ -70,22 +87,22 @@ class ErrorBoundary extends Component {
                             style={{
                                 fontSize: '24px',
                                 fontWeight: '700',
-                                color: '#dc2626',
+                                color: 'var(--color-error, #dc2626)',
                                 marginBottom: '16px',
                             }}
                         >
-                            Упс! Что-то пошло не так
+                            {msg.title}
                         </h1>
                         
                         <p
                             style={{
                                 fontSize: '16px',
-                                color: '#6b7280',
+                                color: 'var(--color-text-secondary, #6b7280)',
                                 marginBottom: '24px',
                                 lineHeight: '1.5',
                             }}
                         >
-                            Произошла непредвиденная ошибка. Мы уже работаем над исправлением.
+                            {msg.description}
                         </p>
                         
                         {import.meta.env.DEV && this.state.error && (
@@ -93,7 +110,7 @@ class ErrorBoundary extends Component {
                                 style={{
                                     marginBottom: '24px',
                                     padding: '16px',
-                                    backgroundColor: '#fef2f2',
+                                    backgroundColor: 'var(--color-error-bg, #fef2f2)',
                                     borderRadius: '8px',
                                     fontSize: '12px',
                                 }}
@@ -102,10 +119,10 @@ class ErrorBoundary extends Component {
                                     style={{
                                         cursor: 'pointer',
                                         fontWeight: '600',
-                                        color: '#dc2626',
+                                        color: 'var(--color-error, #dc2626)',
                                     }}
                                 >
-                                    Детали ошибки (для разработчиков)
+                                    {msg.details_label}
                                 </summary>
                                 <pre
                                     style={{
@@ -145,7 +162,7 @@ class ErrorBoundary extends Component {
                                 onMouseOver={(e) => e.target.style.backgroundColor = '#1d4ed8'}
                                 onMouseOut={(e) => e.target.style.backgroundColor = '#2563eb'}
                             >
-                                Обновить страницу
+                                {msg.retry}
                             </button>
                             
                             <button
@@ -165,7 +182,7 @@ class ErrorBoundary extends Component {
                                 onMouseOver={(e) => e.target.style.backgroundColor = '#e5e7eb'}
                                 onMouseOut={(e) => e.target.style.backgroundColor = '#f3f4f6'}
                             >
-                                На главную
+                                {msg.home}
                             </button>
                         </div>
                     </div>

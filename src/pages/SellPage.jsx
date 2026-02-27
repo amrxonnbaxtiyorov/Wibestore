@@ -87,24 +87,31 @@ const SellPage = () => {
     }
 
     const featureOptions = [
-        'Original email', "Email o'zgartirish mumkin", "Telefon bog'langan",
-        "Google bog'langan", "Ban yo'q", 'Hech qachon sotilmagan',
-        'Premium/VIP', 'Maxsus skinlar', '2FA yoqilgan', 'Hamma qurollar ochiq'
+        { value: 'Original email', labelKey: 'sell.feature_original_email' },
+        { value: "Email o'zgartirish mumkin", labelKey: 'sell.feature_email_change' },
+        { value: "Telefon bog'langan", labelKey: 'sell.feature_phone_linked' },
+        { value: "Google bog'langan", labelKey: 'sell.feature_google_linked' },
+        { value: "Ban yo'q", labelKey: 'sell.feature_no_ban' },
+        { value: 'Hech qachon sotilmagan', labelKey: 'sell.feature_never_sold' },
+        { value: 'Premium/VIP', labelKey: 'sell.feature_premium_vip' },
+        { value: 'Maxsus skinlar', labelKey: 'sell.feature_skins' },
+        { value: '2FA yoqilgan', labelKey: 'sell.feature_2fa' },
+        { value: 'Hamma qurollar ochiq', labelKey: 'sell.feature_all_weapons' },
     ];
 
     const validateStep = (stepNum) => {
         const newErrors = {};
         if (stepNum === 1) {
-            if (!formData.gameId) newErrors.gameId = "O'yinni tanlang";
-            if (!formData.title.trim()) newErrors.title = 'Sarlavha kiriting';
-            if (!formData.price || formData.price <= 0) newErrors.price = 'Narxni kiriting';
+            if (!formData.gameId) newErrors.gameId = t('sell.err_select_game') || "O'yinni tanlang";
+            if (!formData.title.trim()) newErrors.title = t('sell.err_enter_title') || 'Sarlavha kiriting';
+            if (!formData.price || formData.price <= 0) newErrors.price = t('sell.err_enter_price') || 'Narxni kiriting';
         }
         if (stepNum === 2) {
-            if (!formData.description.trim()) newErrors.description = 'Tavsif kiriting';
+            if (!formData.description.trim()) newErrors.description = t('sell.err_enter_description') || 'Tavsif kiriting';
         }
         if (stepNum === 3) {
-            if (!formData.accountEmail.trim()) newErrors.accountEmail = 'Akkaunt emailini kiriting';
-            if (!formData.accountPassword.trim()) newErrors.accountPassword = 'Akkaunt parolini kiriting';
+            if (!formData.accountEmail.trim()) newErrors.accountEmail = t('sell.err_enter_account_email') || 'Akkaunt emailini kiriting';
+            if (!formData.accountPassword.trim()) newErrors.accountPassword = t('sell.err_enter_account_password') || 'Akkaunt parolini kiriting';
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -147,16 +154,16 @@ const SellPage = () => {
                 onSuccess: () => {
                     addToast({
                         type: 'success',
-                        title: 'Muvaffaqiyatli!',
-                        message: 'Listing yaratildi. Moderatsiyadan keyin ko\'rinadi.',
+                        title: t('common.success') || 'Muvaffaqiyatli!',
+                        message: t('sell.success_listing_created') || 'Listing yaratildi. Moderatsiyadan keyin ko\'rinadi.',
                     });
                     setSubmitted(true);
                 },
                 onError: (error) => {
                     addToast({
                         type: 'error',
-                        title: 'Xatolik',
-                        message: error?.message || 'Listing yaratishda xatolik yuz berdi',
+                        title: t('common.error') || 'Xatolik',
+                        message: error?.message || t('sell.error_listing_create') || 'Listing yaratishda xatolik yuz berdi',
                     });
                 },
                 onSettled: () => {
@@ -166,8 +173,8 @@ const SellPage = () => {
         } catch (error) {
             addToast({
                 type: 'error',
-                title: 'Xatolik',
-                message: error?.message || 'Noma\'lum xatolik',
+title: t('common.error') || 'Xatolik',
+                        message: error?.message || t('settings.generic_error') || 'Noma\'lum xatolik',
             });
             setIsSubmitting(false);
         }
@@ -356,7 +363,7 @@ const SellPage = () => {
                                         }}
                                     >
                                         <Plus className="w-4 h-4" />
-                                        Boshqa o'yinlarni ko'rish ({allGames.length} ta)
+                                        {t('sell.more_games_btn') || "Boshqa o'yinlarni ko'rish"} ({allGames.length} ta)
                                     </button>
                                     {errors.gameId && <p style={errorStyle}>{errors.gameId}</p>}
                                 </div>
@@ -438,7 +445,7 @@ const SellPage = () => {
                                     <textarea
                                         value={formData.description}
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        placeholder="Akkaunt haqida batafsil ma'lumot: skinlar, qurollar, yutuqlar..."
+                                        placeholder={t('sell.placeholder_description') || "Akkaunt haqida batafsil ma'lumot: skinlar, qurollar, yutuqlar..."}
                                         rows={5}
                                         className="input"
                                         style={{ height: 'auto', padding: '12px 16px', resize: 'none' }}
@@ -450,18 +457,18 @@ const SellPage = () => {
                                 <div style={{ marginBottom: '20px' }}>
                                     <label className="input-label">Xususiyatlar</label>
                                     <div className="flex flex-wrap" style={{ gap: '8px' }}>
-                                        {featureOptions.map((feature) => (
-                                            <button key={feature} type="button" onClick={() => toggleFeature(feature)}
+                                        {featureOptions.map((opt) => (
+                                            <button key={opt.value} type="button" onClick={() => toggleFeature(opt.value)}
                                                 style={{
                                                     padding: '6px 14px', borderRadius: 'var(--radius-full)',
                                                     fontSize: 'var(--font-size-sm)',
-                                                    backgroundColor: formData.features.includes(feature) ? 'var(--color-accent-blue)' : 'var(--color-bg-tertiary)',
-                                                    color: formData.features.includes(feature) ? '#ffffff' : 'var(--color-text-secondary)',
-                                                    border: `1px solid ${formData.features.includes(feature) ? 'var(--color-accent-blue)' : 'var(--color-border-default)'}`,
+                                                    backgroundColor: formData.features.includes(opt.value) ? 'var(--color-accent-blue)' : 'var(--color-bg-tertiary)',
+                                                    color: formData.features.includes(opt.value) ? '#ffffff' : 'var(--color-text-secondary)',
+                                                    border: `1px solid ${formData.features.includes(opt.value) ? 'var(--color-accent-blue)' : 'var(--color-border-default)'}`,
                                                     cursor: 'pointer', transition: 'all 0.15s ease',
                                                 }}
                                             >
-                                                {feature}
+                                                {t(opt.labelKey)}
                                             </button>
                                         ))}
                                     </div>
@@ -514,7 +521,7 @@ const SellPage = () => {
                                                     const remainingSlots = 5 - formData.images.length;
                                                     const filesToAdd = files.slice(0, remainingSlots);
                                                     filesToAdd.forEach(file => {
-                                                        if (file.size > 5 * 1024 * 1024) { alert('Rasm hajmi 5MB dan oshmasligi kerak'); return; }
+                                                        if (file.size > 5 * 1024 * 1024) { alert(t('sell.image_size_error') || 'Rasm hajmi 5MB dan oshmasligi kerak'); return; }
                                                         const reader = new FileReader();
                                                         reader.onload = (event) => {
                                                             setFormData(prev => ({ ...prev, images: [...prev.images, event.target.result] }));

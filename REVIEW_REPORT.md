@@ -6,9 +6,8 @@
 - **Muammo:** `/forgot-password` sahifasida form yuborilganda haqiqiy API chaqirilmaydi edi.
 - **Tuzatildi:** ForgotPasswordPage endi `useAuth().resetPassword(email)` chaqiradi; xato bo‘lsa foydalanuvchiga ko‘rsatiladi.
 
-### 1.2 Parol uzunligi nomuvofiqlik
-- **Muammo:** Ro‘yxatdan o‘tishda parol **kamida 8 ta** belgi talab qilinadi (`SignupPage.jsx`), sozlamalarda parol o‘zgartirishda esa **6 ta** (`SettingsPage.jsx` va tarjimalar "kamida 6 ta belgi").
-- **Yechim:** Bir xil qoida keltirish kerak: masalan, hamma joyda 8 ta (yoki backend qoidalariga qarab 6 ta) va tarjimalarni moslashtirish.
+### 1.2 ~~Parol uzunligi nomuvofiqlik~~ ✅ Tuzatildi
+- **Tuzatildi:** Hammada parol **8 ta** belgidan kam bo‘lmasligi qabul qilindi. SettingsPage validatsiyasi 8 ga o‘zgartirildi, uz/en/ru tarjimalarida "kamida 8 ta belgi" qo‘yildi.
 
 ---
 
@@ -17,9 +16,8 @@
 ### 2.1 ~~Yo‘q kalitlar (sort_views, load_more)~~ ✅ Tuzatildi
 - **products.sort_views** va **products.load_more** — uz, en, ru locale’larga qo‘shildi.
 
-### 2.2 ErrorBoundary matnlari
-- **Muammo:** Xato yuz berganda chiqadigan matnlar qattiq kodlangan ruscha: "Упс! Что-то пошло не так", "Обновить страницу", "На главную".
-- **Yechim:** ErrorBoundary da `useLanguage`/`t()` ishlatish mumkin emas (class component). Tarjima uchun alohida locale faylidan o‘qish yoki context’dan o‘qish kerak (masalan, render prop orqali).
+### 2.2 ~~ErrorBoundary matnlari~~ ✅ Tuzatildi
+- **Tuzatildi:** `error_boundary` bo‘limi uz/en/ru locale’larga qo‘shildi. ErrorBoundary `localStorage['wibeLanguage']` orqali tilni oladi va mos matnlarni ko‘rsatadi.
 
 ---
 
@@ -60,16 +58,21 @@
 
 ---
 
-## 6. Qisqacha tavsiyalar
+## 6. Qisqacha tavsiyalar (bajarilganlar belgilandi)
 
-| Tartib | Narsa | Harakat |
+| Tartib | Narsa | Holat |
 |--------|--------|--------|
-| 1 | ForgotPasswordPage | `resetPassword(email)` API bilan ulash |
-| 2 | Parol uzunligi | Signup va Settings + tarjimalarni 6 yoki 8 ga birlashtirish |
-| 3 | products.sort_views, products.load_more | Uz/En/Ru locale’larga qo‘shish |
-| 4 | ErrorBoundary | Xabar matnlarini i18n yoki locale orqali ko‘rsatish |
-| 5 | Statistics | Kerak bo‘lsa AuthGuard qo‘shish |
+| 1 | ForgotPasswordPage | ✅ API bilan ulandi |
+| 2 | Parol uzunligi | ✅ 8 ga birlashtirildi |
+| 3 | products.sort_views, load_more | ✅ Tarjimalar qo‘shildi |
+| 4 | ErrorBoundary | ✅ error_boundary i18n qo‘shildi |
+| 5 | ProfilePage listing image | ✅ images[0].image ishlatiladi |
+| 6 | Login ?redirect= | ✅ Query param qo‘llaniladi |
+| 7 | Reset password confirm | ✅ /reset-password sahifa va route |
+| 8 | SellPage i18n | ✅ Validatsiya va featureOptions t() |
+| 9 | AdminLogin i18n | ✅ admin.* tarjimalar |
+| 10 | Statistics | Kerak bo‘lsa AuthGuard qo‘shish (ixtiyoriy) |
 
 ---
 
-*Hisobot sana: 2026-02-28*
+*Hisobot yangilandi: 2026-02-28*

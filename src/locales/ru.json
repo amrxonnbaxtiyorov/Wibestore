@@ -146,7 +146,7 @@
         "phone": "Номер телефона",
         "phone_placeholder": "+998 90 123 45 67",
         "password": "Пароль",
-        "password_placeholder": "Минимум 6 символов",
+        "password_placeholder": "Минимум 8 символов",
         "confirm_password": "Подтвердите пароль",
         "confirm_placeholder": "Введите пароль ещё раз",
         "terms": "Условия использования",
@@ -157,7 +157,7 @@
         "has_account": "Уже есть аккаунт?",
         "login_link": "Войти",
         "password_mismatch": "Пароли не совпадают",
-        "password_short": "Пароль должен содержать минимум 6 символов",
+        "password_short": "Пароль должен содержать минимум 8 символов",
         "agree_terms": "Примите условия использования",
         "google": "Регистрация через Google"
     },
@@ -215,7 +215,7 @@
         "password_changed": "Пароль успешно изменён!",
         "fill_all": "Заполните все поля",
         "passwords_mismatch": "Новые пароли не совпадают",
-        "password_short": "Пароль должен содержать минимум 6 символов",
+        "password_short": "Пароль должен содержать минимум 8 символов",
         "twofa": "Двухфакторная аутентификация (2FA)",
         "twofa_desc": "Включите 2FA для дополнительной безопасности",
         "enable": "Включить",
@@ -312,7 +312,12 @@
         "try_another": "Попробуйте другой email",
         "reset_title": "Сброс пароля",
         "reset_subtitle": "Введите email — мы отправим ссылку для сброса",
-        "send_link": "Отправить ссылку"
+        "send_link": "Отправить ссылку",
+        "reset_confirm_title": "Введите новый пароль",
+        "reset_desc": "Введите новый пароль для сброса.",
+        "reset_success_title": "Пароль обновлён",
+        "reset_success_desc": "Войдите с новым паролем.",
+        "reset_confirm_btn": "Обновить пароль"
     },
     "game": {
         "not_found": "Игра не найдена",
@@ -420,7 +425,28 @@
         "submit_btn": "Отправить объявление",
         "submitting": "Отправка...",
         "weapon_type": "Тип оружия (скин)",
-        "weapon_type_placeholder": "Выберите (необязательно)"
+        "weapon_type_placeholder": "Выберите (необязательно)",
+        "err_select_game": "Выберите игру",
+        "err_enter_title": "Введите название",
+        "err_enter_price": "Введите цену",
+        "err_enter_description": "Введите описание",
+        "err_enter_account_email": "Введите email аккаунта",
+        "err_enter_account_password": "Введите пароль аккаунта",
+        "feature_original_email": "Оригинальный email",
+        "feature_email_change": "Email можно изменить",
+        "feature_phone_linked": "Привязан телефон",
+        "feature_google_linked": "Привязан Google",
+        "feature_no_ban": "Нет бана",
+        "feature_never_sold": "Никогда не продавался",
+        "feature_premium_vip": "Premium/VIP",
+        "feature_skins": "Особые скины",
+        "feature_2fa": "2FA включена",
+        "feature_all_weapons": "Все оружие открыто",
+        "placeholder_description": "Подробности аккаунта: скины, оружие...",
+        "more_games_btn": "Другие игры",
+        "success_listing_created": "Объявление создано. Появится после модерации.",
+        "error_listing_create": "Ошибка создания объявления",
+        "image_size_error": "Размер изображения не более 5MB"
     },
     "terms": {
         "title": "Условия использования",
@@ -557,5 +583,24 @@
         "time_minutes_ago": "{n} мин назад",
         "time_hours_ago": "{n} ч назад",
         "time_days_ago": "{n} дн назад"
+    },
+    "admin": {
+        "panel_title": "Админ-панель",
+        "panel_subtitle": "Панель управления WibeStore",
+        "login_label": "Логин",
+        "password_label": "Пароль",
+        "login_btn": "Войти",
+        "login_loading": "Вход...",
+        "back_home": "На главную",
+        "error_invalid": "Неверный логин или пароль!",
+        "error_not_configured": "Пароль админа не настроен. Укажите VITE_ADMIN_PASSWORD в .env.",
+        "secure_note": "Защищённое соединение"
+    },
+    "error_boundary": {
+        "title": "Что-то пошло не так",
+        "description": "Произошла непредвиденная ошибка. Мы уже работаем над исправлением.",
+        "details_label": "Детали (для разработчиков)",
+        "retry": "Обновить страницу",
+        "home": "На главную"
     }
 }

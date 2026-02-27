@@ -109,7 +109,7 @@ const SettingsPage = () => {
         if (passwordData.newPassword !== passwordData.confirmPassword) {
             setMessage({ type: 'error', text: t('settings.passwords_mismatch') }); return;
         }
-        if (passwordData.newPassword.length < 6) {
+        if (passwordData.newPassword.length < 8) {
             setMessage({ type: 'error', text: t('settings.password_short') }); return;
         }
 

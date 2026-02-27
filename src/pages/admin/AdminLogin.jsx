@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, Shield, AlertCircle } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Admin credentials from environment variables (not hardcoded)
 const ADMIN_USERNAME = import.meta.env.VITE_ADMIN_USERNAME || 'admin';
@@ -11,6 +12,7 @@ const isAdminConfigured = ADMIN_PASSWORD && ADMIN_PASSWORD !== '';
 
 const AdminLogin = () => {
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
@@ -28,7 +30,7 @@ const AdminLogin = () => {
 
         // Warn if admin password is not configured
         if (!isAdminConfigured) {
-            setError("Admin paroli so'zlanmagan! Iltimos, .env faylga VITE_ADMIN_PASSWORD ni kiriting.");
+            setError(t('admin.error_not_configured') || "Admin paroli so'zlanmagan! Iltimos, .env faylga VITE_ADMIN_PASSWORD ni kiriting.");
             setIsLoading(false);
             return;
         }
@@ -47,7 +49,7 @@ const AdminLogin = () => {
                 }));
                 navigate('/admin');
             } else {
-                setError("Login yoki parol noto'g'ri!");
+                setError(t('admin.error_invalid') || "Login yoki parol noto'g'ri!");
             }
             setIsLoading(false);
         }, 500);
@@ -104,10 +106,10 @@ const AdminLogin = () => {
                         color: 'var(--color-text-primary)',
                         marginBottom: '8px',
                     }}>
-                        Admin Panel
+                        {t('admin.panel_title') || 'Admin Panel'}
                     </h1>
                     <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-base)' }}>
-                        WibeStore boshqaruv paneli
+                        {t('admin.panel_subtitle') || 'WibeStore boshqaruv paneli'}
                     </p>
                 </div>
 
@@ -131,7 +133,7 @@ const AdminLogin = () => {
 
                         {/* Username */}
                         <div className="form-field" style={{ marginBottom: 0 }}>
-                            <label className="input-label" htmlFor="admin-username">Login</label>
+                            <label className="input-label" htmlFor="admin-username">{t('admin.login_label') || 'Login'}</label>
                             <div style={{ position: 'relative' }}>
                                 <User
                                     style={{
@@ -161,7 +163,7 @@ const AdminLogin = () => {
 
                         {/* Password */}
                         <div className="form-field" style={{ marginBottom: 0 }}>
-                            <label className="input-label" htmlFor="admin-password">Parol</label>
+                            <label className="input-label" htmlFor="admin-password">{t('admin.password_label') || 'Parol'}</label>
                             <div style={{ position: 'relative' }}>
                                 <Lock
                                     style={{
@@ -218,10 +220,10 @@ const AdminLogin = () => {
                             {isLoading ? (
                                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                                     <span className="spinner" />
-                                    Kirish...
+                                    {t('admin.login_loading') || 'Kirish...'}
                                 </span>
                             ) : (
-                                'Kirish'
+                                t('admin.login_btn') || 'Kirish'
                             )}
                         </button>
                     </form>
@@ -235,7 +237,7 @@ const AdminLogin = () => {
                                 fontSize: 'var(--font-size-sm)',
                             }}
                         >
-                            ← Bosh sahifaga qaytish
+                            ← {t('admin.back_home') || 'Bosh sahifaga qaytish'}
                         </a>
                     </div>
                 </div>
@@ -247,7 +249,7 @@ const AdminLogin = () => {
                     color: 'var(--color-text-muted)',
                     marginTop: '24px',
                 }}>
-                    🔒 Xavfsiz ulanish orqali himoyalangan
+                    🔒 {t('admin.secure_note') || 'Xavfsiz ulanish orqali himoyalangan'}
                 </p>
             </div >
         </div >

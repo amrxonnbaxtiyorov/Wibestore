@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Gamepad2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useGoogleAuthEnabled } from '../context/GoogleAuthContext';
@@ -12,6 +12,7 @@ const LoginPage = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const [searchParams] = useSearchParams();
     const { addToast } = useToast();
 
     const [email, setEmail] = useState('');
@@ -20,8 +21,9 @@ const LoginPage = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Get redirect path from location state
-    const from = location.state?.from?.pathname || '/';
+    // Redirect: state (AuthGuard) yoki ?redirect= query (masalan /login?redirect=/account/123)
+    const redirectRaw = location.state?.from?.pathname || searchParams.get('redirect') || '';
+    const from = (redirectRaw && redirectRaw.startsWith('/') && !redirectRaw.startsWith('//')) ? redirectRaw : '/';
 
     const handleSubmit = async (e) => {
         e.preventDefault();

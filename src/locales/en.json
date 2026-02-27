@@ -146,7 +146,7 @@
         "phone": "Phone Number",
         "phone_placeholder": "+998 90 123 45 67",
         "password": "Password",
-        "password_placeholder": "At least 6 characters",
+        "password_placeholder": "At least 8 characters",
         "confirm_password": "Confirm Password",
         "confirm_placeholder": "Enter password again",
         "terms": "Terms of Service",
@@ -157,7 +157,7 @@
         "has_account": "Already have an account?",
         "login_link": "Log In",
         "password_mismatch": "Passwords do not match",
-        "password_short": "Password must be at least 6 characters",
+        "password_short": "Password must be at least 8 characters",
         "agree_terms": "Please accept the terms of service",
         "google": "Sign up with Google"
     },
@@ -215,7 +215,7 @@
         "password_changed": "Password changed successfully!",
         "fill_all": "Fill in all fields",
         "passwords_mismatch": "New passwords do not match",
-        "password_short": "Password must be at least 6 characters",
+        "password_short": "Password must be at least 8 characters",
         "twofa": "Two-Factor Authentication (2FA)",
         "twofa_desc": "Enable 2FA for additional security",
         "enable": "Enable",
@@ -312,7 +312,12 @@
         "try_another": "Try another email",
         "reset_title": "Reset your password",
         "reset_subtitle": "Enter your email and we'll send you a reset link",
-        "send_link": "Send reset link"
+        "send_link": "Send reset link",
+        "reset_confirm_title": "Enter new password",
+        "reset_desc": "Enter a new password to reset.",
+        "reset_success_title": "Password updated",
+        "reset_success_desc": "You can now sign in with your new password.",
+        "reset_confirm_btn": "Update password"
     },
     "game": {
         "not_found": "Game not found",
@@ -420,7 +425,28 @@
         "submit_btn": "Submit listing",
         "submitting": "Submitting...",
         "weapon_type": "Weapon type (skin)",
-        "weapon_type_placeholder": "Select (optional)"
+        "weapon_type_placeholder": "Select (optional)",
+        "err_select_game": "Select a game",
+        "err_enter_title": "Enter title",
+        "err_enter_price": "Enter price",
+        "err_enter_description": "Enter description",
+        "err_enter_account_email": "Enter account email",
+        "err_enter_account_password": "Enter account password",
+        "feature_original_email": "Original email",
+        "feature_email_change": "Email changeable",
+        "feature_phone_linked": "Phone linked",
+        "feature_google_linked": "Google linked",
+        "feature_no_ban": "No ban",
+        "feature_never_sold": "Never sold",
+        "feature_premium_vip": "Premium/VIP",
+        "feature_skins": "Special skins",
+        "feature_2fa": "2FA enabled",
+        "feature_all_weapons": "All weapons unlocked",
+        "placeholder_description": "Account details: skins, weapons, achievements...",
+        "more_games_btn": "View more games",
+        "success_listing_created": "Listing created. It will appear after moderation.",
+        "error_listing_create": "Failed to create listing",
+        "image_size_error": "Image size must not exceed 5MB"
     },
     "terms": {
         "title": "Terms of Service",
@@ -557,5 +583,24 @@
         "time_minutes_ago": "{n} min ago",
         "time_hours_ago": "{n} hours ago",
         "time_days_ago": "{n} days ago"
+    },
+    "admin": {
+        "panel_title": "Admin Panel",
+        "panel_subtitle": "WibeStore admin panel",
+        "login_label": "Login",
+        "password_label": "Password",
+        "login_btn": "Sign in",
+        "login_loading": "Signing in...",
+        "back_home": "Back to home",
+        "error_invalid": "Invalid login or password!",
+        "error_not_configured": "Admin password not configured. Set VITE_ADMIN_PASSWORD in .env.",
+        "secure_note": "Secured connection"
+    },
+    "error_boundary": {
+        "title": "Something went wrong",
+        "description": "An unexpected error occurred. We're working on it.",
+        "details_label": "Details (for developers)",
+        "retry": "Reload page",
+        "home": "Go to home"
     }
 }
