@@ -14,7 +14,6 @@ export {
     useAddToFavorites,
     useRemoveFromFavorites,
     useTrackView,
-    useCompareListings,
     useApplyPromo,
 } from './useListings';
 export {

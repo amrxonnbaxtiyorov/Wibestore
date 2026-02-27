@@ -48,22 +48,6 @@ export const useListings = (filters = {}) => {
 };
 
 /**
- * Compare listings by IDs (max 4)
- */
-export const useCompareListings = (ids = []) => {
-    const idList = Array.isArray(ids) ? ids.filter(Boolean).slice(0, 4) : [];
-    return useQuery({
-        queryKey: ['listings', 'compare', idList.join(',')],
-        queryFn: async () => {
-            const { data } = await apiClient.get(`/listings/compare/?ids=${idList.join(',')}`);
-            return data;
-        },
-        enabled: idList.length > 0,
-        staleTime: 2 * 60 * 1000,
-    });
-};
-
-/**
  * Apply promo code (returns discount, final_amount)
  */
 export const useApplyPromo = () => {
@@ -214,6 +198,5 @@ export default {
     useAddToFavorites,
     useRemoveFromFavorites,
     useTrackView,
-    useCompareListings,
     useApplyPromo,
 };

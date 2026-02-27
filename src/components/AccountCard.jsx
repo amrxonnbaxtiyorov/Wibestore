@@ -1,17 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Star, Crown, Heart, GitCompare } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Star, Crown, Heart } from 'lucide-react';
 import { formatPrice } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { addToCompare } from '../pages/ComparePage';
-import { useToast } from './ToastProvider';
 
 const AccountCard = ({ account, featured = false }) => {
     const { user, isAuthenticated } = useAuth();
     const { t } = useLanguage();
-    const navigate = useNavigate();
-    const { addToast } = useToast();
     const [isLiked, setIsLiked] = useState(false);
 
     useEffect(() => {
@@ -40,14 +36,6 @@ const AccountCard = ({ account, featured = false }) => {
 
         localStorage.setItem(`wibeLikes_${user.id}`, JSON.stringify(likedIds));
         setIsLiked(!isLiked);
-    };
-
-    const handleAddToCompare = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        addToCompare(accountId);
-        addToast({ type: 'success', title: t('compare.added') || 'Added to compare', message: '' });
-        navigate('/compare');
     };
 
     // Fallback for missing data
@@ -163,26 +151,6 @@ const AccountCard = ({ account, featured = false }) => {
                         <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
                     </button>
                 )}
-
-                {/* Compare Button */}
-                <button
-                    onClick={handleAddToCompare}
-                    className="absolute flex items-center justify-center rounded-full transition-all"
-                    style={{
-                        top: '12px',
-                        left: isAuthenticated ? '50px' : '12px',
-                        width: '32px',
-                        height: '32px',
-                        backgroundColor: 'rgba(0,0,0,0.5)',
-                        backdropFilter: 'blur(4px)',
-                        color: '#fff',
-                        border: 'none',
-                        cursor: 'pointer',
-                    }}
-                    aria-label={t('compare.add') || 'Add to compare'}
-                >
-                    <GitCompare className="w-3.5 h-3.5" />
-                </button>
 
                 {/* Premium Badge */}
                 {accountIsPremium && (

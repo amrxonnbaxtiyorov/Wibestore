@@ -33,7 +33,6 @@ const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
 const CoinsPage = lazy(() => import('./pages/CoinsPage'));
-const ComparePage = lazy(() => import('./pages/ComparePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Admin pages
@@ -211,11 +210,6 @@ function App() {
                         <Route path="/products" element={
                           <Suspense fallback={<PageLoader />}>
                             <PublicLayout><ProductsPage /></PublicLayout>
-                          </Suspense>
-                        } />
-                        <Route path="/compare" element={
-                          <Suspense fallback={<PageLoader />}>
-                            <PublicLayout><ComparePage /></PublicLayout>
                           </Suspense>
                         } />
                         <Route path="/premium" element={

@@ -252,33 +252,6 @@ class ListingReviewsView(generics.ListAPIView):
 
 
 @extend_schema(tags=["Listings"])
-class CompareListingsView(APIView):
-    """GET /api/v1/listings/compare/?ids=uuid1,uuid2,uuid3 — Listings for comparison (max 4)."""
-
-    permission_classes = [permissions.AllowAny]
-
-    def get(self, request):
-        ids_param = request.query_params.get("ids", "")
-        if not ids_param:
-            return Response(
-                {"results": [], "error": "ids query param required (comma-separated UUIDs)"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        ids = [x.strip() for x in ids_param.split(",") if x.strip()][:4]
-        if not ids:
-            return Response({"results": []})
-        qs = (
-            Listing.objects.filter(id__in=ids, status="active", deleted_at__isnull=True)
-            .select_related("game", "seller")
-            .prefetch_related("images")
-        )
-        order = {uuid: i for i, uuid in enumerate(ids)}
-        items = sorted(list(qs), key=lambda x: order.get(str(x.id), 999))
-        serializer = ListingSerializer(items, many=True, context={"request": request})
-        return Response({"results": serializer.data})
-
-
-@extend_schema(tags=["Listings"])
 class ApplyPromoView(APIView):
     """POST /api/v1/listings/promo/apply/ — Apply promo code; body: { code, amount } or { code, listing_id }."""
 
