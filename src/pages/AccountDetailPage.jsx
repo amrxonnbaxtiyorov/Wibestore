@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Heart, Share2, Shield, Star, MessageCircle, CheckCircle,
     AlertCircle, ChevronLeft, ChevronRight, Copy, Check,
@@ -387,6 +387,21 @@ const AccountDetailPage = () => {
         { id: 'reviews', label: t('detail.reviews') || 'Sharhlar' },
     ];
 
+    // Sotuvchiga tegishli so'nggi 2 ta sharh (localStorage — API ulansa o'zgaradi)
+    const recentSellerReviews = useMemo(() => {
+        const sellerId = listing?.seller?.id;
+        if (!sellerId) return [];
+        try {
+            const raw = localStorage.getItem('wibeReviews');
+            if (!raw) return [];
+            const all = JSON.parse(raw);
+            const forSeller = all.filter((r) => String(r.sellerId) === String(sellerId));
+            return forSeller.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 2);
+        } catch {
+            return [];
+        }
+    }, [listing?.seller?.id]);
+
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '80px' }}>
             {showBuyerRulesModal && (
@@ -596,11 +611,35 @@ const AccountDetailPage = () => {
                                                 <Star style={{ width: '13px', height: '13px', fill: 'var(--color-premium-gold-light)', color: 'var(--color-premium-gold-light)' }} />
                                                 {listing.seller?.rating || '5.0'}
                                             </span>
-                                            <span>•</span>
+                                            <span>·</span>
                                             <span>{listing.seller?.total_sales || 0} {t('detail.sales_count')}</span>
                                         </div>
                                     </div>
                                 </div>
+                                {recentSellerReviews.length > 0 && (
+                                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--color-border-muted)' }}>
+                                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: '8px', fontWeight: 'var(--font-weight-medium)' }}>
+                                            {t('detail.recent_reviews') || 'So\'nggi sharhlar'}
+                                        </p>
+                                        {recentSellerReviews.map((rev) => (
+                                            <div key={rev.id || rev.createdAt} style={{ marginBottom: '8px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                                                    {[1, 2, 3, 4, 5].map((s) => (
+                                                        <Star key={s} className="w-3 h-3" style={{ color: s <= (rev.rating || 0) ? 'var(--color-premium-gold-light)' : 'var(--color-text-muted)', fill: s <= (rev.rating || 0) ? 'currentColor' : 'none' }} />
+                                                    ))}
+                                                    <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                                                        {rev.reviewerName || 'Foydalanuvchi'}
+                                                    </span>
+                                                </div>
+                                                {rev.comment && (
+                                                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', lineHeight: 1.35, margin: 0 }} className="line-clamp-2">
+                                                        {rev.comment}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </Link>
                         ) : (
                             <div style={{

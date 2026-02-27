@@ -46,7 +46,9 @@ const AccountCard = ({ account, featured = false }) => {
     const accountDescription = account.description || '';
     const accountImage = account.image;
     const accountIsPremium = account.isPremium || account.is_premium || false;
-    const seller = account.seller || { rating: 5.0, isPremium: false };
+    const seller = account.seller || { rating: 5.0, isPremium: false, total_sales: 0, sales_count: 0 };
+    const sellerRating = Number(seller.rating) || 5;
+    const sellerSales = seller.total_sales ?? seller.sales_count ?? 0;
     const warrantyDays = account.warranty_days ?? 0;
     const salePercent = account.sale_percent ?? 0;
     const saleEndsAt = account.sale_ends_at ? new Date(account.sale_ends_at) : null;
@@ -227,16 +229,33 @@ const AccountCard = ({ account, featured = false }) => {
                         {formatPrice(accountPrice)}
                     </span>
 
-                    {/* Seller Info */}
+                    {/* Seller: yulduzcha reyting + sotuvlar soni */}
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                            <Star className="w-3.5 h-3.5 fill-current" style={{ color: 'var(--color-premium-gold-light)' }} />
-                            <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-                                {seller.rating}
-                            </span>
+                        <div className="flex items-center gap-0.5" title={`${sellerRating} / 5`}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                    key={star}
+                                    className="w-3 h-3 flex-shrink-0"
+                                    style={{
+                                        color: star <= Math.round(sellerRating) ? 'var(--color-premium-gold-light)' : 'var(--color-text-muted)',
+                                        fill: star <= Math.round(sellerRating) ? 'currentColor' : 'none',
+                                    }}
+                                />
+                            ))}
                         </div>
+                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                            {sellerRating}
+                        </span>
+                        {sellerSales > 0 && (
+                            <>
+                                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>·</span>
+                                <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                    {sellerSales} {t('profile.sales_count') || 'sotuv'}
+                                </span>
+                            </>
+                        )}
                         {seller.isPremium && (
-                            <Crown className="w-3.5 h-3.5" style={{ color: 'var(--color-premium-gold-light)' }} />
+                            <Crown className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--color-premium-gold-light)' }} />
                         )}
                     </div>
                 </div>
