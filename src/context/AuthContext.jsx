@@ -2,6 +2,22 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import apiClient, { setTokens, getStoredTokens, removeTokens } from '../lib/apiClient';
 import { createPublicClient } from '../lib/apiClient';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
+/** API dan kelgan user obyektini frontend uchun normalizatsiya: name (ism), avatar (to'liq URL) */
+function normalizeUser(data) {
+    if (!data) return null;
+    const name = data.display_name ?? data.full_name ?? data.name ?? data.username ?? (data.email ? data.email.split('@')[0] : '') || 'User';
+    let avatar = data.avatar ?? null;
+    if (avatar && typeof avatar === 'string' && avatar.startsWith('/') && !avatar.startsWith('//')) {
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const base = origin.replace(/\/$/, '');
+        const apiOrigin = API_BASE_URL.startsWith('http') ? new URL(API_BASE_URL).origin : origin;
+        avatar = `${apiOrigin}${avatar}`;
+    }
+    return { ...data, name, avatar };
+}
+
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -21,9 +37,8 @@ export const AuthProvider = ({ children }) => {
             }
 
             try {
-                // Получаем данные текущего пользователя
                 const { data } = await apiClient.get('/auth/me/');
-                setUser(data);
+                setUser(normalizeUser(data));
             } catch (error) {
                 console.error('[Auth] Failed to fetch user:', error);
                 // Токен недействителен - очищаем
@@ -62,8 +77,8 @@ export const AuthProvider = ({ children }) => {
                 const { data: me } = await apiClient.get('/auth/me/');
                 userData = me;
             }
-            setUser(userData);
-            return userData;
+            setUser(normalizeUser(userData));
+            return normalizeUser(userData);
         } catch (error) {
             console.error('[Auth] Login failed:', error);
             throw error.response?.data?.error || error.response?.data || new Error('Login failed');
@@ -79,11 +94,9 @@ export const AuthProvider = ({ children }) => {
             // Backend returns: { success: true, data: { user, tokens: { access, refresh } } }
             const { user: newUser, tokens } = data.data || data;
             
-            // Сохраняем токены
             setTokens({ access: tokens.access, refresh: tokens.refresh });
-            setUser(newUser);
-            
-            return newUser;
+            setUser(normalizeUser(newUser));
+            return normalizeUser(newUser);
         } catch (error) {
             console.error('[Auth] Register failed:', error);
             throw error.response?.data?.error || error.response?.data || new Error('Register failed');
@@ -96,14 +109,10 @@ export const AuthProvider = ({ children }) => {
             const publicClient = createPublicClient();
             const { data } = await publicClient.post('/auth/google/', { access_token: credential });
             
-            // Backend returns: { success: true, data: { user, tokens: { access, refresh } } }
             const { user: userData, tokens } = data.data || data;
-            
-            // Сохраняем токены
             setTokens({ access: tokens.access, refresh: tokens.refresh });
-            setUser(userData);
-            
-            return userData;
+            setUser(normalizeUser(userData));
+            return normalizeUser(userData);
         } catch (error) {
             console.error('[Auth] Google login failed:', error);
             const data = error.response?.data;
@@ -139,8 +148,8 @@ export const AuthProvider = ({ children }) => {
     const refreshUser = useCallback(async () => {
         try {
             const { data } = await apiClient.get('/auth/me/');
-            setUser(data);
-            return data;
+            setUser(normalizeUser(data));
+            return normalizeUser(data);
         } catch (error) {
             console.error('[Auth] Failed to refresh user:', error);
             throw error;
@@ -150,9 +159,11 @@ export const AuthProvider = ({ children }) => {
     // Update профиля
     const updateProfile = async (updates) => {
         try {
-            const { data } = await apiClient.patch('/auth/me/', updates);
-            setUser(data);
-            return data;
+            const isFormData = updates instanceof FormData;
+            const config = isFormData ? {} : {};
+            const { data } = await apiClient.patch('/auth/me/', updates, config);
+            setUser(normalizeUser(data));
+            return normalizeUser(data);
         } catch (error) {
             console.error('[Auth] Profile update failed:', error);
             throw error.response?.data || new Error('Profile update failed');

@@ -13,11 +13,23 @@ const SettingsPage = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
 
     const [profileData, setProfileData] = useState({
-        name: user?.name || '',
-        email: user?.email || '',
-        phone: user?.phone || '',
-        bio: user?.bio || ''
+        name: user?.name ?? user?.display_name ?? user?.full_name ?? '',
+        email: user?.email ?? '',
+        phone: user?.phone_number ?? user?.phone ?? '',
+        bio: user?.bio ?? ''
     });
+
+    useEffect(() => {
+        if (user) {
+            setProfileData(prev => ({
+                ...prev,
+                name: user.name ?? user.display_name ?? user.full_name ?? prev.name,
+                email: user.email ?? prev.email,
+                phone: user.phone_number ?? user.phone ?? prev.phone,
+                bio: user.bio ?? prev.bio
+            }));
+        }
+    }, [user?.id, user?.name, user?.email, user?.phone_number, user?.full_name]);
 
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
@@ -28,10 +40,33 @@ const SettingsPage = () => {
     const [notifications, setNotifications] = useState({
         email: true, push: true, sales: true, messages: true, updates: false
     });
+    const [avatarUploading, setAvatarUploading] = useState(false);
 
     useEffect(() => {
         if (!isAuthenticated) navigate('/login');
     }, [isAuthenticated, navigate]);
+
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file || !file.type.startsWith('image/')) return;
+        if (file.size > 5 * 1024 * 1024) {
+            setMessage({ type: 'error', text: t('settings.avatar_too_large') || 'Rasm 5MB dan oshmasin' });
+            return;
+        }
+        setAvatarUploading(true);
+        setMessage({ type: '', text: '' });
+        try {
+            const form = new FormData();
+            form.append('avatar', file);
+            await updateProfile(form);
+            setMessage({ type: 'success', text: t('settings.profile_updated') || 'Profil yangilandi' });
+        } catch (err) {
+            setMessage({ type: 'error', text: err?.message || t('settings.generic_error') });
+        } finally {
+            setAvatarUploading(false);
+            e.target.value = '';
+        }
+    };
 
     if (!isAuthenticated) return null;
 
@@ -46,10 +81,17 @@ const SettingsPage = () => {
     const handleProfileSave = async () => {
         setIsSaving(true);
         setMessage({ type: '', text: '' });
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        updateProfile(profileData);
-        setMessage({ type: 'success', text: t('settings.profile_updated') });
-        setIsSaving(false);
+        try {
+            await updateProfile({
+                full_name: profileData.name,
+                phone_number: profileData.phone || null
+            });
+            setMessage({ type: 'success', text: t('settings.profile_updated') });
+        } catch (err) {
+            setMessage({ type: 'error', text: err?.message || t('settings.generic_error') });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handlePasswordChange = async () => {
@@ -188,31 +230,37 @@ const SettingsPage = () => {
                                         {t('settings.profile_info')}
                                     </h2>
 
-                                    {/* Avatar */}
+                                    {/* Avatar — rasm bor bo'lsa rasm, yo'q bo'lsa ismning birinchi harfi */}
                                     <div className="flex items-center gap-4" style={{ marginBottom: '24px' }}>
                                         <div className="relative">
                                             <div style={{
                                                 width: '64px', height: '64px',
-                                                background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                                background: user?.avatar ? 'transparent' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
                                                 borderRadius: 'var(--radius-xl)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 fontSize: '24px', fontWeight: 'var(--font-weight-bold)', color: '#fff',
+                                                overflow: 'hidden',
                                             }}>
-                                                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                                                {user?.avatar ? (
+                                                    <img src={user.avatar} alt={user?.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    (user?.name || 'U').charAt(0).toUpperCase()
+                                                )}
                                             </div>
-                                            <button style={{
+                                            <label style={{
                                                 position: 'absolute', bottom: '-4px', right: '-4px',
                                                 width: '24px', height: '24px',
                                                 backgroundColor: 'var(--color-accent-blue)',
                                                 borderRadius: 'var(--radius-md)', border: '2px solid var(--color-bg-primary)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                cursor: 'pointer', color: '#fff',
+                                                cursor: avatarUploading ? 'wait' : 'pointer', color: '#fff',
                                             }}>
-                                                <Camera className="w-3 h-3" />
-                                            </button>
+                                                <input type="file" accept="image/*" className="hidden" style={{ display: 'none' }} onChange={handleAvatarChange} disabled={avatarUploading} />
+                                                {avatarUploading ? <span className="animate-pulse" style={{ fontSize: 10 }}>...</span> : <Camera className="w-3 h-3" />}
+                                            </label>
                                         </div>
                                         <div>
-                                            <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{user?.name}</p>
+                                            <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{user?.name || user?.display_name || user?.email}</p>
                                             <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>{user?.email}</p>
                                         </div>
                                     </div>

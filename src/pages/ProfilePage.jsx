@@ -131,20 +131,25 @@ const ProfilePage = () => {
                     }}
                 >
                     <div className="flex flex-col md:flex-row items-center gap-5">
-                        {/* Avatar */}
+                        {/* Avatar — yuklangan rasm yoki ismning birinchi harfi */}
                         <div className="relative">
                             <div
                                 className="avatar"
                                 style={{
                                     width: '80px', height: '80px',
-                                    background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                    background: user.avatar ? 'transparent' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
                                     fontSize: '32px', fontWeight: 'var(--font-weight-bold)',
                                     color: '#ffffff',
                                     borderRadius: 'var(--radius-full)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    overflow: 'hidden',
                                 }}
                             >
-                                {user.name?.charAt(0) || 'U'}
+                                {user.avatar ? (
+                                    <img src={user.avatar} alt={user.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    (user.name || user.display_name || 'U').charAt(0).toUpperCase()
+                                )}
                             </div>
                             <button
                                 style={{
@@ -164,7 +169,7 @@ const ProfilePage = () => {
                         {/* Info */}
                         <div className="flex-1 text-center md:text-left">
                             <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-                                {user.name}
+                                {user.name || user.display_name || user.email}
                             </h1>
                             <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginBottom: '12px' }}>
                                 {user.email}
