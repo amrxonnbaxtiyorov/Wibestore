@@ -3,8 +3,10 @@ import { useState, useEffect, useMemo } from 'react';
 import {
     Heart, Share2, Shield, Star, MessageCircle, CheckCircle,
     AlertCircle, ChevronLeft, ChevronRight, Copy, Check,
-    Gamepad2, Trophy, Swords, Layers, ArrowLeft
+    Gamepad2, Trophy, Swords, Layers, ArrowLeft, Send
 } from 'lucide-react';
+
+const TELEGRAM_URL = 'https://t.me/wibestoreuz';
 import { useListing, useAddToFavorites, useRemoveFromFavorites, useListings } from '../hooks';
 import ReviewList from '../components/ReviewList';
 import AccountCard from '../components/AccountCard';
@@ -334,6 +336,17 @@ const AccountDetailPage = () => {
         setShowBuyerRulesModal(true);
     };
 
+    /** Qoidalar o‘tkazilgach: Telegramga yo‘naltirish, to‘lov adminiga Telegram orqali */
+    const handleBuyPassRedirectToTelegram = () => {
+        setShowBuyerRulesModal(false);
+        const title = listing?.title || '';
+        const price = listing?.price != null ? new Intl.NumberFormat('uz-UZ').format(listing.price) + ' so\'m' : '';
+        const text = [title && `"${title}"`, 'akkauntini sotib olmoqchiman.', price && `Narx: ${price}`].filter(Boolean).join(' ');
+        const url = text ? `${TELEGRAM_URL}?text=${encodeURIComponent(text)}` : TELEGRAM_URL;
+        window.open(url, '_blank', 'noopener,noreferrer');
+        addToast({ type: 'info', title: t('detail.buy_telegram_redirect'), duration: 6000 });
+    };
+
     const handleContactSeller = () => {
         if (!isAuthenticated || !user) {
             addToast({ type: 'info', title: t('detail.contact_seller') || 'Sotuvchi bilan bog\'lanish uchun kirish qiling' });
@@ -407,10 +420,7 @@ const AccountDetailPage = () => {
             {showBuyerRulesModal && (
                 <BuyerRulesQuiz
                     inModal
-                    onPass={() => {
-                        setShowBuyerRulesModal(false);
-                        handleContactSeller();
-                    }}
+                    onPass={handleBuyPassRedirectToTelegram}
                     onClose={() => setShowBuyerRulesModal(false)}
                 />
             )}
@@ -552,6 +562,10 @@ const AccountDetailPage = () => {
                                 <button type="button" onClick={handleBuyClick} className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center' }}>
                                     {t('detail.buy_now') || 'Sotib olish'}
                                 </button>
+                                <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <Send style={{ width: '14px', height: '14px', flexShrink: 0 }} />
+                                    {t('detail.payment_via_telegram')}
+                                </p>
                                 <button
                                     type="button"
                                     onClick={handleContactSeller}

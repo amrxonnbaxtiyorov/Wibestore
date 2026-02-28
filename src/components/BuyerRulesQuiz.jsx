@@ -104,6 +104,9 @@ export default function BuyerRulesQuiz({ onPass, onClose, inModal = true }) {
                         );
                     })}
                 </div>
+                <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginBottom: '12px', padding: '8px 12px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-info-bg)' }}>
+                    {t('detail.payment_via_telegram')}
+                </p>
                 <label className="flex items-start gap-3" style={{ cursor: 'pointer', marginBottom: '12px' }}>
                     <input type="checkbox" checked={readConfirmed} onChange={(e) => setReadConfirmed(e.target.checked)} style={{ marginTop: '4px', width: '18px', height: '18px', accentColor: 'var(--color-accent-blue)' }} />
                     <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
