@@ -16,9 +16,10 @@ Log'dagi xatoliklar ko‘pincha **o‘rnatilmagan env o‘zgaruvchilar** tufayli
    Railway loyihangizda: **+ New** → **Database** → **PostgreSQL**.  
    Avtomatik `DATABASE_PUBLIC_URL` (va ba’zan `DATABASE_URL`) yaratiladi.
 
-2. **Backend servisiga Variable ulang**  
-   Backend servisini oching → **Variables** → **+ New Variable** yoki **Add Reference**:
-   - `DATABASE_URL` = Postgres servisidagi **Variables** → `DATABASE_PUBLIC_URL` (yoki `DATABASE_URL`) qiymatini nusxalang, yoki Reference orqali ulang.
+2. **Backend servisiga DB ulang**  
+   Backend servisini oching → **Variables** → **Reference** (yoki **+ New Variable**):
+   - **Variant A:** **Add Reference** → Postgres servisini tanlang → `DATABASE_PUBLIC_URL` (yoki `DATABASE_URL`) ni tanlang. Backend entrypoint avtomatik ravishda `DATABASE_PUBLIC_URL` ni `DATABASE_URL` ga o‘tkazadi.
+   - **Variant B:** Postgres servisidagi **Variables** dan `DATABASE_PUBLIC_URL` qiymatini nusxalab, Backend’da `DATABASE_URL` yoki `DATABASE_PUBLIC_URL` deb qo‘ying.
 
 3. **Boshqa majburiy o‘zgaruvchilar (Backend)**
 
@@ -28,7 +29,7 @@ Log'dagi xatoliklar ko‘pincha **o‘rnatilmagan env o‘zgaruvchilar** tufayli
    | `SECRET_KEY` | Django secret (generatsiya: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`) |
    | `TELEGRAM_BOT_SECRET` | Bot bilan bir xil maxfiy kalit (bot’dagi `BOT_SECRET_KEY` bilan bir xil) |
    | `CORS_ALLOWED_ORIGINS` | Frontend manzili, masalan `https://your-app.up.railway.app` |
-   | `ALLOWED_HOSTS` | Backend domeni, masalan `*.railway.app,your-backend.up.railway.app` |
+   | `ALLOWED_HOSTS` | Ixtiyoriy — production’da `.railway.app` avtomatik qo‘shiladi; kerak bo‘lsa qo‘shimcha domenlar |
 
 4. **Ixtiyoriy:** `FERNET_KEY` (maxfiy ma’lumotlar shifrlash uchun).
 

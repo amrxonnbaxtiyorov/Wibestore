@@ -11,6 +11,12 @@ set -e
 # Railway injects PORT dynamically; default to 8000 for local dev
 export PORT="${PORT:-8000}"
 
+# Railway: Postgres often exposes DATABASE_PUBLIC_URL; Django/env may expect DATABASE_URL
+if [ -z "${DATABASE_URL}" ] && [ -n "${DATABASE_PUBLIC_URL}" ]; then
+    export DATABASE_URL="${DATABASE_PUBLIC_URL}"
+    echo "==> Using DATABASE_PUBLIC_URL as DATABASE_URL"
+fi
+
 echo "==> WibeStore Entrypoint Started (PORT=$PORT)"
 
 echo "==> Creating migrations if needed..."
