@@ -159,7 +159,14 @@
         "password_mismatch": "Passwords do not match",
         "password_short": "Password must be at least 8 characters",
         "agree_terms": "Please accept the terms of service",
-        "google": "Sign up with Google"
+        "google": "Sign up with Google",
+        "telegram_hint": "Get a code from our Telegram bot, then enter your phone and code below.",
+        "telegram_open_bot": "@wibestorebot — Get code",
+        "telegram_code": "6-digit code",
+        "telegram_submit": "Sign up via Telegram",
+        "telegram_success": "You have signed up successfully via Telegram!",
+        "telegram_phone_required": "Enter your phone number",
+        "telegram_code_required": "Enter the 6-digit code from the bot"
     },
     "products": {
         "title": "All Products",

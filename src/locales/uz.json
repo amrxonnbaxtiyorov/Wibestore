@@ -159,7 +159,14 @@
         "password_mismatch": "Parollar mos kelmaydi",
         "password_short": "Parol kamida 8 ta belgidan iborat bo'lishi kerak",
         "agree_terms": "Foydalanish shartlariga rozilik bering",
-        "google": "Google bilan ro'yxatdan o'tish"
+        "google": "Google bilan ro'yxatdan o'tish",
+        "telegram_hint": "Telegram bot orqali kod oling, keyin quyida telefon va kodni kiriting.",
+        "telegram_open_bot": "@wibestorebot — Kod olish",
+        "telegram_code": "6 xonali kod",
+        "telegram_submit": "Telegram orqali ro'yxatdan o'tish",
+        "telegram_success": "Telegram orqali muvaffaqiyatli ro'yxatdan o'tdingiz!",
+        "telegram_phone_required": "Telefon raqamni kiriting",
+        "telegram_code_required": "Botdan olgan 6 xonali kodni kiriting"
     },
     "products": {
         "title": "Barcha mahsulotlar",

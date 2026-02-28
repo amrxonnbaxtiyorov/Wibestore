@@ -103,6 +103,29 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Telegram orqali ro'yxatdan o'tish (botdan kod olib, telefon + kod yuborish)
+    const registerWithTelegram = async (phone, code) => {
+        try {
+            const publicClient = createPublicClient();
+            const { data } = await publicClient.post('/auth/register/telegram/', {
+                phone: String(phone).trim(),
+                code: String(code).trim(),
+            }, { withCredentials: true });
+            
+            const payload = data?.data || data;
+            const tokens = payload?.tokens || {};
+            if (tokens.access) setTokens({ access: tokens.access, refresh: tokens.refresh || '' });
+            const newUser = payload?.user;
+            setUser(normalizeUser(newUser));
+            return normalizeUser(newUser);
+        } catch (error) {
+            console.error('[Auth] Telegram register failed:', error);
+            const res = error.response?.data;
+            const msg = res?.error?.message || (typeof res?.error === 'string' ? res.error : null) || res?.detail;
+            throw new Error(msg || 'Kod noto\'g\'ri yoki muddati tugagan. Botdan yangi kod oling.');
+        }
+    };
+
     // Google OAuth login/register
     const loginWithGoogle = async (credential) => {
         try {
@@ -232,6 +255,7 @@ export const AuthProvider = ({ children }) => {
         login,
         loginWithGoogle,
         register,
+        registerWithTelegram,
         logout,
         updateProfile,
         refreshUser,

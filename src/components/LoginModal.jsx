@@ -93,7 +93,9 @@ const LoginModal = ({ isOpen, onClose, onSuccess, message }) => {
     };
 
     const handleTelegramClick = () => {
-        window.open('https://t.me/wibestoreuz', '_blank');
+        const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'wibestorebot';
+        const url = botUsername.startsWith('http') ? botUsername : `https://t.me/${botUsername}`;
+        window.open(url, '_blank');
     };
 
     const handleGoToSignup = () => {

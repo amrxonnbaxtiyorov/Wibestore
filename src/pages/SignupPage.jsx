@@ -7,9 +7,12 @@ import GoogleLoginButton from '../components/GoogleLoginButton';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 
+const TELEGRAM_BOT_USERNAME = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'wibestorebot';
+const TELEGRAM_BOT_URL = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
+
 const SignupPage = () => {
     const navigate = useNavigate();
-    const { register } = useAuth();
+    const { register, registerWithTelegram } = useAuth();
     const googleEnabled = useGoogleAuthEnabled();
     const { t } = useLanguage();
     const { addToast } = useToast();
@@ -24,6 +27,9 @@ const SignupPage = () => {
         confirmPassword: '',
         agreeTerms: false
     });
+    const [telegramPhone, setTelegramPhone] = useState('');
+    const [telegramCode, setTelegramCode] = useState('');
+    const [telegramLoading, setTelegramLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -73,6 +79,37 @@ const SignupPage = () => {
 
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleTelegramSignup = async (e) => {
+        e.preventDefault();
+        setError('');
+        const phone = telegramPhone.trim();
+        const code = telegramCode.trim().replace(/\D/g, '').slice(0, 6);
+        if (!phone || phone.length < 9) {
+            setError(t('signup.telegram_phone_required') || 'Telefon raqamni kiriting');
+            return;
+        }
+        if (code.length !== 6) {
+            setError(t('signup.telegram_code_required') || 'Botdan olgan 6 xonali kodni kiriting');
+            return;
+        }
+        setTelegramLoading(true);
+        try {
+            await registerWithTelegram(phone, code);
+            addToast({
+                type: 'success',
+                title: t('auth.success_title'),
+                message: t('signup.telegram_success') || "Telegram orqali ro'yxatdan o'tdingiz!",
+            });
+            navigate('/');
+        } catch (err) {
+            const msg = err?.message || t('auth.signup_error');
+            setError(msg);
+            addToast({ type: 'error', title: t('auth.error_title'), message: msg });
+        } finally {
+            setTelegramLoading(false);
+        }
     };
 
     return (
@@ -314,6 +351,75 @@ const SignupPage = () => {
                             </div>
                         </>
                     )}
+
+                    {/* Telegram orqali ro'yxatdan o'tish */}
+                    <div className="flex items-center gap-3" style={{ margin: '20px 0' }}>
+                        <div className="divider flex-1" />
+                        <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                            {t('auth.or') || 'Yoki'}
+                        </span>
+                        <div className="divider flex-1" />
+                    </div>
+                    <div
+                        style={{
+                            padding: '16px',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--color-border-muted)',
+                            backgroundColor: 'var(--color-bg-primary)',
+                            marginBottom: '16px',
+                        }}
+                    >
+                        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
+                            {t('signup.telegram_hint') || "Telegram bot orqali kod oling, keyin quyida telefon va kodni kiriting."}
+                        </p>
+                        <a
+                            href={TELEGRAM_BOT_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-secondary btn-md w-full"
+                            style={{ gap: '8px', marginBottom: '16px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0z" fill="#2AABEE" />
+                                <path d="M5.432 11.873l8.772-3.63c.65-.233 2.82-.935 2.82-.935s1.005-.39.922.558c-.027.39-.243 1.766-.458 3.256l-.676 4.403s-.057.65-.536.758c-.479.108-1.267-.39-1.404-.498-.108-.081-2.024-1.296-2.72-1.892-.19-.163-.406-.49.027-.87l2.845-2.72c.325-.307.65-1.024-.703-.152l-3.804 2.575s-.46.284-1.318.027c-.858-.257-1.857-.603-1.857-.603s-.693-.433.487-.893z" fill="#fff" />
+                            </svg>
+                            {t('signup.telegram_open_bot') || '@wibestorebot — Kod olish'}
+                        </a>
+                        <form onSubmit={handleTelegramSignup}>
+                            <div style={{ marginBottom: '12px' }}>
+                                <label className="input-label" style={{ fontSize: 'var(--font-size-sm)' }}>{t('signup.phone') || 'Telefon'}</label>
+                                <input
+                                    type="tel"
+                                    value={telegramPhone}
+                                    onChange={(e) => setTelegramPhone(e.target.value)}
+                                    placeholder="+998 90 123 45 67"
+                                    className="input input-md"
+                                    style={{ paddingLeft: '12px' }}
+                                />
+                            </div>
+                            <div style={{ marginBottom: '12px' }}>
+                                <label className="input-label" style={{ fontSize: 'var(--font-size-sm)' }}>{t('signup.telegram_code') || '6 xonali kod'}</label>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={6}
+                                    value={telegramCode}
+                                    onChange={(e) => setTelegramCode(e.target.value.replace(/\D/g, ''))}
+                                    placeholder="123456"
+                                    className="input input-md"
+                                    style={{ paddingLeft: '12px', letterSpacing: '4px', fontVariantNumeric: 'tabular-nums' }}
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={telegramLoading}
+                                className="btn btn-primary btn-md w-full"
+                            >
+                                {telegramLoading && <span className="spinner" style={{ marginRight: '8px' }} />}
+                                {t('signup.telegram_submit') || "Telegram orqali ro'yxatdan o'tish"}
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 {/* Login Link */}

@@ -159,7 +159,14 @@
         "password_mismatch": "Пароли не совпадают",
         "password_short": "Пароль должен содержать минимум 8 символов",
         "agree_terms": "Примите условия использования",
-        "google": "Регистрация через Google"
+        "google": "Регистрация через Google",
+        "telegram_hint": "Получите код в нашем Telegram-боте, затем введите телефон и код ниже.",
+        "telegram_open_bot": "@wibestorebot — Получить код",
+        "telegram_code": "6-значный код",
+        "telegram_submit": "Регистрация через Telegram",
+        "telegram_success": "Вы успешно зарегистрировались через Telegram!",
+        "telegram_phone_required": "Введите номер телефона",
+        "telegram_code_required": "Введите 6-значный код из бота"
     },
     "products": {
         "title": "Все товары",
