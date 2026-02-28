@@ -1,4 +1,4 @@
-# TelegramRegistrationCode: full_name field + index fix
+# TelegramRegistrationCode: full_name field qo'shish
 
 from django.db import migrations, models
 
@@ -10,11 +10,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Fix: 0003 dagi index yaratilmagan bo'lsa, avval yaratamiz
-        migrations.RunSQL(
-            sql='CREATE INDEX IF NOT EXISTS "telegram_re_code_8a0b0d_idx" ON "telegram_registration_codes" ("code", "is_used");',
-            reverse_sql='DROP INDEX IF EXISTS "telegram_re_code_8a0b0d_idx";',
-        ),
         migrations.AddField(
             model_name="telegramregistrationcode",
             name="full_name",

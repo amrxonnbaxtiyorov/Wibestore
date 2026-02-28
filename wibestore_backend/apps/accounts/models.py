@@ -205,9 +205,7 @@ class TelegramRegistrationCode(models.Model):
     class Meta:
         db_table = "telegram_registration_codes"
         ordering = ["-created_at"]
-        indexes = [
-            models.Index(fields=["code", "is_used"]),
-        ]
+        # Index (code, is_used) managed via RunSQL in migration 0003
 
     def __str__(self) -> str:
         return f"Code {self.code} for telegram_id={self.telegram_id}"

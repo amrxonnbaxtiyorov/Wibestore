@@ -31,8 +31,8 @@ class Migration(migrations.Migration):
                 "ordering": ["-created_at"],
             },
         ),
-        migrations.AddIndex(
-            model_name="telegramregistrationcode",
-            index=models.Index(fields=["code", "is_used"], name="telegram_re_code_8a0b0d_idx"),
+        migrations.RunSQL(
+            sql='CREATE INDEX IF NOT EXISTS "telegram_re_code_8a0b0d_idx" ON "telegram_registration_codes" ("code", "is_used");',
+            reverse_sql='DROP INDEX IF EXISTS "telegram_re_code_8a0b0d_idx";',
         ),
     ]
