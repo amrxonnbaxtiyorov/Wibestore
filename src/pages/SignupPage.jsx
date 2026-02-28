@@ -89,23 +89,36 @@ const SignupPage = () => {
                     </p>
                 </div>
 
-                {/* Features Badge */}
+                {/* Features & Commission Info */}
                 <div
                     style={{
-                        padding: '12px 16px',
+                        padding: '16px',
                         borderRadius: 'var(--radius-lg)',
                         backgroundColor: 'var(--color-info-bg)',
                         border: '1px solid var(--color-border-muted)',
                         marginBottom: '20px',
                     }}
                 >
-                    <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
-                        <CheckCircle className="w-4 h-4" style={{ color: 'var(--color-accent-green)' }} />
-                        <span>{t('signup.feature1') || 'Free account'} <span style={{ color: 'var(--color-text-accent)', fontWeight: 500 }}>{t('signup.feature1_and') || '& instant access'}</span></span>
+                    <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
+                        <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-accent-green)' }} />
+                        <span>{t('signup.feature1')} <span style={{ color: 'var(--color-text-accent)', fontWeight: 500 }}>{t('signup.feature1_and')}</span> {t('signup.feature1_end')}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                        <CheckCircle className="w-4 h-4" style={{ color: 'var(--color-accent-green)' }} />
-                        <span>{t('signup.feature2') || 'Secure transactions'}</span>
+                    <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
+                        <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-accent-green)' }} />
+                        <span>{t('signup.feature2')}</span>
+                    </div>
+                    <div style={{ borderTop: '1px solid var(--color-border-muted)', paddingTop: '12px', marginTop: '4px' }}>
+                        <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, color: 'var(--color-text-primary)', margin: '0 0 6px 0' }}>
+                            {t('signup.commission_title')}
+                        </p>
+                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: '0 0 8px 0', lineHeight: 1.4 }}>
+                            {t('signup.commission_intro')}
+                        </p>
+                        <ul style={{ margin: 0, paddingLeft: '18px', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                            <li>{t('signup.commission_free')}</li>
+                            <li>{t('signup.commission_premium')}</li>
+                            <li>{t('signup.commission_pro')}</li>
+                        </ul>
                     </div>
                 </div>
 
