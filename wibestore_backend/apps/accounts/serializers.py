@@ -205,15 +205,16 @@ class OTPVerifySerializer(serializers.Serializer):
 
 
 class TelegramOTPCreateSerializer(serializers.Serializer):
-    """Bot uchun OTP kod yaratish (secret_key, telegram_id, phone_number)."""
+    """Bot uchun OTP kod yaratish (secret_key, telegram_id, phone_number, full_name)."""
 
     secret_key = serializers.CharField(write_only=True)
     telegram_id = serializers.IntegerField(min_value=1)
     phone_number = serializers.CharField(max_length=20)
+    full_name = serializers.CharField(max_length=150, required=False, default="")
 
 
 class TelegramRegisterSerializer(serializers.Serializer):
     """Saytda telefon + kod orqali ro'yxatdan o'tish."""
 
     phone = serializers.CharField(max_length=20)
-    code = serializers.CharField(min_length=4, max_length=6)
+    code = serializers.CharField(min_length=4, max_length=10)

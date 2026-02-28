@@ -72,7 +72,7 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(TelegramRegistrationCode)
 class TelegramRegistrationCodeAdmin(admin.ModelAdmin):
-    list_display = ["telegram_id", "phone_number", "code", "is_used", "expires_at", "created_at"]
+    list_display = ["telegram_id", "phone_number", "full_name", "code", "is_used", "expires_at", "created_at"]
     list_filter = ["is_used", "created_at"]
     search_fields = ["phone_number", "code"]
     readonly_fields = ["created_at"]

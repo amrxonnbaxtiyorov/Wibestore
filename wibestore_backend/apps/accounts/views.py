@@ -309,6 +309,7 @@ class BotCreateOTPView(APIView):
             otp_record = AuthService.create_telegram_otp(
                 telegram_id=data["telegram_id"],
                 phone_number=data["phone_number"],
+                full_name=data.get("full_name", ""),
             )
         except BusinessLogicError as e:
             return Response(
@@ -317,12 +318,16 @@ class BotCreateOTPView(APIView):
             )
 
         remaining = max(0, int((otp_record.expires_at - timezone.now()).total_seconds()))
+        code_length = getattr(settings, "TELEGRAM_OTP_CODE_LENGTH", 6)
+        expire_minutes = getattr(settings, "TELEGRAM_OTP_EXPIRE_MINUTES", 10)
         return Response(
             {
                 "success": True,
                 "code": otp_record.code,
                 "expires_at": otp_record.expires_at.isoformat(),
                 "remaining_seconds": remaining,
+                "code_length": code_length,
+                "expire_minutes": expire_minutes,
             },
             status=status.HTTP_200_OK,
         )

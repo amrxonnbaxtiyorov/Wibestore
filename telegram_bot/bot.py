@@ -9,9 +9,11 @@ Ishga tushirish:
     python bot.py
 """
 
+import asyncio
 import json
 import logging
 import os
+import time as _time
 import urllib.error
 import urllib.request
 import warnings
@@ -29,7 +31,7 @@ except ImportError:
     pass
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
-from telegram.error import Conflict as TelegramConflict
+from telegram.error import Conflict as TelegramConflict, BadRequest
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -59,6 +61,9 @@ REGISTER_URL = os.getenv('REGISTER_URL', 'http://localhost:5173/register')  # Fr
 # Conversation states: faqat telefon orqali kod olish
 WAITING_PHONE, CONFIRMING = range(2)
 
+# Countdown update interval (seconds)
+COUNTDOWN_INTERVAL = 30
+
 
 # ===== HELPER FUNCTIONS =====
 
@@ -74,7 +79,7 @@ def _normalize_phone(phone: str) -> str:
     return "+" + cleaned if not phone.strip().startswith("+") else phone.strip()
 
 
-def create_otp_via_api(telegram_id: int, phone: str) -> dict:
+def create_otp_via_api(telegram_id: int, phone: str, full_name: str = "") -> dict:
     """Backend API orqali OTP kod yaratish (urllib — qo'shimcha paket kerak emas)."""
     if not BOT_SECRET_KEY:
         logger.error("BOT_SECRET_KEY yoki TELEGRAM_BOT_SECRET o'rnatilmagan")
@@ -86,6 +91,7 @@ def create_otp_via_api(telegram_id: int, phone: str) -> dict:
         "secret_key": BOT_SECRET_KEY,
         "telegram_id": telegram_id,
         "phone_number": phone,
+        "full_name": full_name,
     }).encode("utf-8")
     req = urllib.request.Request(
         url,
@@ -114,22 +120,110 @@ def create_otp_via_api(telegram_id: int, phone: str) -> dict:
         return None
 
 
-def format_otp_message(code: str, seconds: int, register_url: str) -> str:
-    """OTP xabar formatlash (kod 10 daqiqa amal qiladi)"""
-    minutes = seconds // 60
-    secs = seconds % 60
+def _make_progress_bar(remaining: int, total: int) -> str:
+    """Progress bar yaratish: ████████░░ 80%"""
+    if total <= 0:
+        return "░░░░░░░░░░ 0%"
+    ratio = max(0.0, min(1.0, remaining / total))
+    filled = round(ratio * 10)
+    empty = 10 - filled
+    percent = round(ratio * 100)
+    return f"{'█' * filled}{'░' * empty} {percent}%"
+
+
+def format_otp_message(code: str, remaining: int, total: int, register_url: str) -> str:
+    """OTP xabar formatlash (countdown + progress bar)"""
+    minutes = remaining // 60
+    secs = remaining % 60
     time_str = f"{minutes}:{secs:02d}"
+    progress = _make_progress_bar(remaining, total)
+
+    if remaining <= 0:
+        return (
+            f"🔐 <b>Tasdiqlash kodi</b>\n\n"
+            f"<code>┌─────────────┐\n"
+            f"│  {code}  │\n"
+            f"└─────────────┘</code>\n\n"
+            f"❌ <b>Kod muddati tugadi!</b>\n"
+            f"Yangi kod olish uchun 🔄 tugmasini bosing."
+        )
+
     return (
         f"🔐 <b>Tasdiqlash kodi</b>\n\n"
         f"Sizning bir martalik kodingiz:\n\n"
         f"<code>┌─────────────┐\n"
         f"│  {code}  │\n"
         f"└─────────────┘</code>\n\n"
-        f"⏱ <b>Muddati:</b> {time_str} (10 daqiqa)\n\n"
+        f"⏱ <b>Qolgan vaqt:</b> {time_str}\n"
+        f"<code>{progress}</code>\n\n"
         f"📌 Ushbu kodni saytda ro'yxatdan o'tishda <b>telefon raqam</b> bilan birga kiriting:\n"
         f"🔗 <a href='{register_url}'>{register_url}</a>\n\n"
         f"⚠️ Kodni hech kimga bermang! Bir marta ishlatiladi."
     )
+
+
+# ===== COUNTDOWN TASK =====
+
+async def _countdown_updater(context: ContextTypes.DEFAULT_TYPE):
+    """Har COUNTDOWN_INTERVAL sekundda OTP xabarni yangilash (countdown + progress bar)."""
+    job_data = context.job.data
+    chat_id = job_data["chat_id"]
+    message_id = job_data["message_id"]
+    code = job_data["code"]
+    total_seconds = job_data["total_seconds"]
+    started_at = job_data["started_at"]
+    register_url = job_data["register_url"]
+    reply_markup = job_data.get("reply_markup")
+
+    elapsed = _time.time() - started_at
+    remaining = max(0, int(total_seconds - elapsed))
+
+    new_text = format_otp_message(code, remaining, total_seconds, register_url)
+
+    try:
+        await context.bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=message_id,
+            text=new_text,
+            parse_mode="HTML",
+            reply_markup=reply_markup if remaining > 0 else None,
+            disable_web_page_preview=True,
+        )
+    except BadRequest:
+        # Xabar o'zgartirilmagan (matn bir xil) yoki topilmagan
+        pass
+
+    if remaining <= 0:
+        context.job.schedule_removal()
+
+
+def _schedule_countdown(context: ContextTypes.DEFAULT_TYPE, chat_id: int, message_id: int,
+                        code: str, total_seconds: int, reply_markup=None):
+    """Countdown job'larni rejalashtirish."""
+    # Oldingi countdown joblarini tozalash
+    current_jobs = context.job_queue.get_jobs_by_name(f"countdown_{chat_id}")
+    for job in current_jobs:
+        job.schedule_removal()
+
+    job_data = {
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "code": code,
+        "total_seconds": total_seconds,
+        "started_at": _time.time(),
+        "register_url": REGISTER_URL,
+        "reply_markup": reply_markup,
+    }
+
+    # Har COUNTDOWN_INTERVAL sekundda yangilash
+    intervals = list(range(COUNTDOWN_INTERVAL, total_seconds + COUNTDOWN_INTERVAL, COUNTDOWN_INTERVAL))
+    for sec in intervals:
+        context.job_queue.run_once(
+            _countdown_updater,
+            when=sec,
+            data=job_data,
+            name=f"countdown_{chat_id}",
+        )
 
 
 # ===== HANDLERS =====
@@ -169,19 +263,24 @@ async def receive_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     user = update.effective_user
     telegram_id = user.id
+    full_name = user.full_name or ""
     phone_normalized = _normalize_phone(phone)
 
     wait_msg = await update.message.reply_html("⏳ Kod tayyorlanmoqda...")
 
-    result = create_otp_via_api(telegram_id=telegram_id, phone=phone_normalized)
+    result = create_otp_via_api(
+        telegram_id=telegram_id,
+        phone=phone_normalized,
+        full_name=full_name,
+    )
 
     await wait_msg.delete()
 
     if result and result.get("success"):
         code = result["code"]
-        remaining = result.get("remaining_seconds", 600)
+        total_seconds = result.get("remaining_seconds", 600)
 
-        otp_msg = format_otp_message(code, remaining, REGISTER_URL)
+        otp_msg = format_otp_message(code, total_seconds, total_seconds, REGISTER_URL)
         keyboard = [
             [InlineKeyboardButton("🔄 Yangi kod olish", callback_data='new_code')],
             [InlineKeyboardButton("🌐 Saytga o'tish", url=REGISTER_URL)],
@@ -190,11 +289,20 @@ async def receive_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         context.user_data["phone"] = phone_normalized
 
         from telegram import ReplyKeyboardRemove
-        await update.message.reply_html(otp_msg, reply_markup=reply_markup)
+        sent_msg = await update.message.reply_html(
+            otp_msg,
+            reply_markup=reply_markup,
+            disable_web_page_preview=True,
+        )
         await update.effective_chat.send_message(
             "✅ Yuqoridagi kodni saytda telefon raqam bilan birga kiriting.",
             reply_markup=ReplyKeyboardRemove(),
         )
+
+        # Countdown boshlash
+        _schedule_countdown(context, sent_msg.chat_id, sent_msg.message_id,
+                            code, total_seconds, reply_markup)
+
         return CONFIRMING
     await update.message.reply_html(
         "❌ <b>Backend bilan bog'lanib bo'lmadi.</b>\n\n"
@@ -212,15 +320,30 @@ async def new_code_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if not phone:
         await query.edit_message_text("❌ Telefon raqam yo'q. /start dan qayta boshlang.")
         return ConversationHandler.END
-    result = create_otp_via_api(telegram_id=update.effective_user.id, phone=phone)
+
+    user = update.effective_user
+    full_name = user.full_name or ""
+
+    result = create_otp_via_api(
+        telegram_id=user.id,
+        phone=phone,
+        full_name=full_name,
+    )
     if result and result.get('success'):
-        remaining = result.get('remaining_seconds', 600)
-        otp_msg = format_otp_message(result['code'], remaining, REGISTER_URL)
+        total_seconds = result.get('remaining_seconds', 600)
+        code = result['code']
+        otp_msg = format_otp_message(code, total_seconds, total_seconds, REGISTER_URL)
         keyboard = [
             [InlineKeyboardButton("🔄 Yangi kod olish", callback_data='new_code')],
             [InlineKeyboardButton("🌐 Saytga o'tish", url=REGISTER_URL)],
         ]
-        await query.edit_message_text(otp_msg, parse_mode='HTML', reply_markup=InlineKeyboardMarkup(keyboard))
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(otp_msg, parse_mode='HTML', reply_markup=reply_markup,
+                                      disable_web_page_preview=True)
+
+        # Countdown boshlash
+        _schedule_countdown(context, query.message.chat_id, query.message.message_id,
+                            code, total_seconds, reply_markup)
     else:
         await query.edit_message_text("❌ Xatolik. /start yozing.")
     return CONFIRMING
@@ -245,7 +368,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "❓ <b>Qanday ishlaydi?</b>\n"
         "1. /start yozing\n"
         "2. Telefon raqamingizni yuboring\n"
-        "3. 6 xonali kod olasiz (10 daqiqa)\n"
+        "3. Tasdiqlash kodi olasiz (vaqt chegarasi bilan)\n"
         f"4. <a href='{REGISTER_URL}'>Saytda</a> telefon + kodni kiriting va ro'yxatdan o'ting"
     )
 

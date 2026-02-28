@@ -197,7 +197,6 @@ class AuthService:
         return True
 
     # ----- Telegram bot orqali ro'yxatdan o'tish -----
-    TELEGRAM_OTP_EXPIRE_MINUTES = 10
 
     @staticmethod
     def _normalize_phone(phone: str) -> str:
@@ -210,9 +209,13 @@ class AuthService:
         return phone if phone.startswith("+") else "+" + phone
 
     @staticmethod
-    def create_telegram_otp(*, telegram_id: int, phone_number: str) -> "TelegramRegistrationCode":
-        """Bot uchun bir martalik kod yaratish (10 daqiqa amal qiladi)."""
+    def create_telegram_otp(*, telegram_id: int, phone_number: str, full_name: str = "") -> "TelegramRegistrationCode":
+        """Bot uchun bir martalik kod yaratish. Uzunlik va muddat settings dan olinadi."""
+        from django.conf import settings as django_settings
         from core.utils import generate_otp
+
+        code_length = getattr(django_settings, "TELEGRAM_OTP_CODE_LENGTH", 6)
+        expire_minutes = getattr(django_settings, "TELEGRAM_OTP_EXPIRE_MINUTES", 10)
 
         phone_normalized = AuthService._normalize_phone(phone_number)
         digits_only = "".join(c for c in phone_normalized if c.isdigit())
@@ -223,13 +226,12 @@ class AuthService:
             telegram_id=telegram_id, is_used=False
         ).update(is_used=True)
 
-        code = generate_otp(6)
-        expires_at = timezone.now() + timezone.timedelta(
-            minutes=AuthService.TELEGRAM_OTP_EXPIRE_MINUTES
-        )
+        code = generate_otp(code_length)
+        expires_at = timezone.now() + timezone.timedelta(minutes=expire_minutes)
         return TelegramRegistrationCode.objects.create(
             telegram_id=telegram_id,
             phone_number=phone_normalized,
+            full_name=(full_name or "").strip()[:150],
             code=code,
             expires_at=expires_at,
         )
@@ -287,6 +289,7 @@ class AuthService:
             password=None,
             phone_number=phone_normalized,
             telegram_id=record.telegram_id,
+            full_name=record.full_name or "",
             is_verified=True,
         )
 

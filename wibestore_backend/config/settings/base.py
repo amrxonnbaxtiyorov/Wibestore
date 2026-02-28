@@ -495,3 +495,9 @@ ESCROW_DISPUTE_WINDOW_HOURS = 48
 # SUBSCRIPTION SETTINGS
 # ============================================================
 SUBSCRIPTION_EXPIRY_WARNING_DAYS = 3
+
+# ============================================================
+# TELEGRAM OTP SETTINGS
+# ============================================================
+TELEGRAM_OTP_CODE_LENGTH = env.int("TELEGRAM_OTP_CODE_LENGTH", default=6)
+TELEGRAM_OTP_EXPIRE_MINUTES = env.int("TELEGRAM_OTP_EXPIRE_MINUTES", default=10)
