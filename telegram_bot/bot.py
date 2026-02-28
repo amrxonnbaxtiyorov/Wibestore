@@ -3,15 +3,25 @@ Telegram Bot - OTP orqali ro'yxatdan o'tish
 Bu bot websitega ro'yxatdan o'tish uchun OTP kod beradi.
 
 O'rnatish:
-    pip install python-telegram-bot==20.7 requests
+    pip install python-telegram-bot==20.7 python-dotenv
 
 Ishga tushirish:
     python bot.py
 """
 
+import json
 import logging
 import os
-import requests
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent / ".env")
+except ImportError:
+    pass
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import (
     Application,
@@ -43,26 +53,32 @@ WAITING_PHONE, CONFIRMING = range(2)
 # ===== HELPER FUNCTIONS =====
 
 def create_otp_via_api(telegram_id: int, phone: str) -> dict:
-    """Backend API orqali OTP kod yaratish (WibeStore: POST /api/v1/auth/telegram/otp/create/)"""
+    """Backend API orqali OTP kod yaratish (urllib — qo'shimcha paket kerak emas)."""
     if not BOT_SECRET_KEY:
         logger.error("BOT_SECRET_KEY yoki TELEGRAM_BOT_SECRET o'rnatilmagan")
         return None
+    url = f"{WEBSITE_URL}/api/v1/auth/telegram/otp/create/"
+    body = json.dumps({
+        "secret_key": BOT_SECRET_KEY,
+        "telegram_id": telegram_id,
+        "phone_number": phone,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
     try:
-        response = requests.post(
-            f'{WEBSITE_URL}/api/v1/auth/telegram/otp/create/',
-            json={
-                'secret_key': BOT_SECRET_KEY,
-                'telegram_id': telegram_id,
-                'phone_number': phone,
-            },
-            timeout=10,
-            headers={'Content-Type': 'application/json'},
-        )
-        if response.status_code == 200:
-            return response.json()
-        logger.error(f"API error: {response.status_code} - {response.text}")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status == 200:
+                return json.loads(resp.read().decode("utf-8"))
+            logger.error(f"API error: {resp.status} - {resp.read().decode()}")
+            return None
+    except urllib.error.HTTPError as e:
+        logger.error(f"API HTTP error: {e.code} - {e.read().decode() if e.fp else ''}")
         return None
-    except requests.exceptions.RequestException as e:
+    except (urllib.error.URLError, OSError) as e:
         logger.error(f"Request failed: {e}")
         return None
 
