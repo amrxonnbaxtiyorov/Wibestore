@@ -8,6 +8,7 @@ import { useToast } from '../components/ToastProvider';
 const TELEGRAM_BOT_USERNAME = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'wibestorebot';
 const TELEGRAM_BOT_URL = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
 
+// Kirish faqat Telegram orqali: telefon + botdan kod. Email/parol ishlatilmaydi.
 const LoginPage = () => {
     const { t } = useLanguage();
     const { loginWithTelegram } = useAuth();
