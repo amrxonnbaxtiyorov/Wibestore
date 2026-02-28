@@ -215,6 +215,9 @@ class AuthService:
         from core.utils import generate_otp
 
         phone_normalized = AuthService._normalize_phone(phone_number)
+        digits_only = "".join(c for c in phone_normalized if c.isdigit())
+        if len(digits_only) < 9:
+            raise BusinessLogicError("Telefon raqam noto'g'ri yoki juda qisqa.")
         # Eski ishlatilmagan kodlarni bekor qilish
         TelegramRegistrationCode.objects.filter(
             telegram_id=telegram_id, is_used=False
@@ -240,6 +243,9 @@ class AuthService:
         from .models import TelegramRegistrationCode
 
         phone_normalized = AuthService._normalize_phone(phone_number)
+        digits_only = "".join(c for c in phone_normalized if c.isdigit())
+        if len(digits_only) < 9:
+            raise BusinessLogicError("Telefon raqam noto'g'ri yoki juda qisqa.")
         code_clean = code.strip()
 
         record = (

@@ -84,9 +84,10 @@ const SignupPage = () => {
     const handleTelegramSignup = async (e) => {
         e.preventDefault();
         setError('');
-        const phone = telegramPhone.trim();
+        const rawPhone = telegramPhone.trim();
+        const digitsOnly = rawPhone.replace(/\D/g, '');
         const code = telegramCode.trim().replace(/\D/g, '').slice(0, 6);
-        if (!phone || phone.length < 9) {
+        if (!digitsOnly || digitsOnly.length < 9) {
             setError(t('signup.telegram_phone_required') || 'Telefon raqamni kiriting');
             return;
         }
@@ -94,9 +95,12 @@ const SignupPage = () => {
             setError(t('signup.telegram_code_required') || 'Botdan olgan 6 xonali kodni kiriting');
             return;
         }
+        const phoneToSend = rawPhone.startsWith('+') ? rawPhone
+            : (digitsOnly.startsWith('998') && digitsOnly.length === 12) ? `+${digitsOnly}`
+            : (digitsOnly.length === 9 && digitsOnly[0] === '9') ? `+998${digitsOnly}` : `+${digitsOnly}`;
         setTelegramLoading(true);
         try {
-            await registerWithTelegram(phone, code);
+            await registerWithTelegram(phoneToSend, code);
             addToast({
                 type: 'success',
                 title: t('auth.success_title'),

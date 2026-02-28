@@ -294,16 +294,28 @@ class BotCreateOTPView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        if data["secret_key"] != getattr(settings, "TELEGRAM_BOT_SECRET", ""):
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or data["secret_key"] != secret:
             return Response(
-                {"success": False, "error": "Unauthorized"},
+                {
+                    "success": False,
+                    "error": "Unauthorized",
+                    "detail": "TELEGRAM_BOT_SECRET noto'g'ri yoki backend'da o'rnatilmagan.",
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        otp_record = AuthService.create_telegram_otp(
-            telegram_id=data["telegram_id"],
-            phone_number=data["phone_number"],
-        )
+        try:
+            otp_record = AuthService.create_telegram_otp(
+                telegram_id=data["telegram_id"],
+                phone_number=data["phone_number"],
+            )
+        except BusinessLogicError as e:
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         remaining = max(0, int((otp_record.expires_at - timezone.now()).total_seconds()))
         return Response(
             {
