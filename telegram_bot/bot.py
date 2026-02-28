@@ -45,8 +45,9 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-# Conflict (409) da telegram kutubxonasi ERROR yozadi — faqat bizning WARNING chiqadi
+# Conflict (409) va httpx logini kamaytirish — faqat bizning WARNING chiqadi
 logging.getLogger("telegram.ext.Updater").setLevel(logging.CRITICAL)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 # ===== KONFIGURATSIYA =====
 BOT_TOKEN = os.getenv('BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE')
@@ -285,13 +286,18 @@ def main():
     app.add_handler(CommandHandler('help', help_command))
     app.add_handler(MessageHandler(filters.COMMAND, unknown))
 
-    # Conflict xatosida aniq xabar (bitta bot instance bo'lishi kerak)
+    # Conflict (409): logni to'ldirmaslik uchun 5 daqiqada bir marta xabar
+    _last_conflict_log = [0.0]  # [timestamp]
+
     async def error_handler(update, context):
         if isinstance(context.error, TelegramConflict):
-            logger.warning(
-                "Conflict: Bot boshqa joyda ham ishlayapti. Faqat bitta instance ishlashi kerak "
-                "(Railway yoki kompyuteringizda, ikkovi emas)."
-            )
+            import time
+            now = time.time()
+            if now - _last_conflict_log[0] >= 300:  # 5 daqiqa
+                _last_conflict_log[0] = now
+                logger.warning(
+                    "Conflict: Bot boshqa joyda ham ishlayapti. Faqat bitta instance (Railway yoki kompyuter)."
+                )
             return
         logger.exception("Kutilmagan xato: %s", context.error)
 

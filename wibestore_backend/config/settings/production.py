@@ -23,22 +23,16 @@ _raw_secret = os.environ.get("SECRET_KEY", "").strip()
 if _raw_secret in ("", "django-insecure-change-me-in-production"):
     from django.core.management.utils import get_random_secret_key
     SECRET_KEY = get_random_secret_key()
-    logger.critical(
-        "SECRET_KEY o'rnatilmagan! Vaqtincha random kalit ishlatilmoqda. "
-        "Railway: Backend servisida Variables → SECRET_KEY qo'shing (yangi kalit: "
-        "python -c \"from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())\"). "
-        "Aks holda har restartda sessiyalar yangilanadi."
+    logger.debug(
+        "SECRET_KEY o'rnatilmagan; vaqtincha random. Railway: Variables → SECRET_KEY. "
+        "Kalit: python -c \"from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())\""
     )
 else:
     SECRET_KEY = _raw_secret
 
-# FERNET_KEY: base.py sets a dummy if unset; in production we only warn
+# FERNET_KEY: logni toza qoldirish — ogohlantirish faqat hujjatda (RAILWAY_VARIABLES.md)
 if not os.environ.get("FERNET_KEY", "").strip() or FERNET_KEY == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=":  # noqa: F405
-    warnings.warn(
-        "FERNET_KEY is not set or is dummy in production. Set FERNET_KEY in env. "
-        "Generate: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\"",
-        UserWarning,
-    )
+    pass  # FERNET o'rnatish RAILWAY_VARIABLES.md da
 
 # Production da DB: Railway'da Postgres qo'shib, DATABASE_URL yoki DATABASE_PUBLIC_URL o'rnating
 _db_url = (os.environ.get("DATABASE_PUBLIC_URL") or os.environ.get("DATABASE_URL") or "").strip()
