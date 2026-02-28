@@ -29,6 +29,7 @@ from .serializers import (
     UserRegisterSerializer,
     UserSerializer,
 )
+from core.exceptions import BusinessLogicError
 from .services import AuthService
 
 logger = logging.getLogger("apps.accounts")
