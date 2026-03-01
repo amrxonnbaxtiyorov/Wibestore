@@ -14,7 +14,7 @@ const Logo = ({ height = 38 }) => {
                 width: `${width}px`,
                 height: `${height}px`,
                 backgroundColor: bg,
-                backgroundImage: 'url(/logo.png)',
+                backgroundImage: 'url(/logo-transparent.png)',
                 backgroundSize: 'contain',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
