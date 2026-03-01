@@ -13,7 +13,6 @@ import SkeletonLoader from '../components/SkeletonLoader';
 import EmptyState from '../components/EmptyState';
 
 const ProfilePage = () => {
-        const [avatarModalOpen, setAvatarModalOpen] = useState(false);
     const { t } = useLanguage();
     const navigate = useNavigate();
     const { user, isAuthenticated, logout } = useAuth();
@@ -160,22 +159,11 @@ const ProfilePage = () => {
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     cursor: 'pointer', color: '#fff',
                                 }}
-                                onClick={() => setAvatarModalOpen(true)}
                             >
                                 <Edit2 className="w-3 h-3" />
                             </button>
                         </div>
     // Avatar saqlash handler
-    const handleAvatarSave = async (croppedDataUrl) => {
-        // TODO: APIga yuborish va user.avatar yangilash
-        // Misol uchun:
-        // await apiClient.post('/profile/avatar/', { avatar: croppedDataUrl });
-        // setUser({ ...user, avatar: croppedDataUrl });
-        setAvatarModalOpen(false);
-        addToast({ type: 'success', title: "Profil rasmi yangilandi" });
-    };
-    <AvatarEditModal open={avatarModalOpen} onClose={() => setAvatarModalOpen(false)} onSave={handleAvatarSave} />
-
                         {/* Info — ism ostida faqat Telegram ID */}
                         <div className="flex-1 text-center md:text-left">
                             <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
