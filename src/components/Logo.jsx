@@ -15,7 +15,7 @@ const Logo = ({ height = 56 }) => {
                 height: `${height}px`,
                 backgroundColor: bg,
                 backgroundImage: `url(${LOGO_SRC})`,
-                backgroundSize: 'contain',
+                backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
             }}
