@@ -150,7 +150,7 @@ export default function SellerRulesQuiz({ onPass }) {
                                 </p>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     {(getOptions(q) || q.optionsEn).map((opt, optIndex) => (
-                                        <label key={optIndex} className="flex items-center gap-3" style={{ cursor: 'pointer' }}>
+                                        <label key={optIndex} className="flex items-center gap-3" style={{ cursor: 'pointer', padding: '10px', width: '100%', boxSizing: 'border-box', minWidth: 0 }}>
                                             <input
                                                 type="radio"
                                                 name={q.id}
@@ -158,7 +158,7 @@ export default function SellerRulesQuiz({ onPass }) {
                                                 onChange={() => setAnswer(q.id, optIndex)}
                                                 style={{ width: '18px', height: '18px', accentColor: 'var(--color-accent-blue)' }}
                                             />
-                                            <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>{opt}</span>
+                                            <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', width: '100%' }}>{opt}</span>
                                         </label>
                                     ))}
                                 </div>
