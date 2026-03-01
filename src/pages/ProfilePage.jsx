@@ -4,6 +4,7 @@ import { ShoppingBag, Tag, Heart, Settings, Edit2, LogOut, Package, Clock, Check
 import { useAuth } from '../context/AuthContext';
 import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing, useSellerDashboard, useReferral } from '../hooks';
 import AccountCard from '../components/AccountCard';
+import AvatarEditModal from '../components/AvatarEditModal';
 import ReviewList from '../components/ReviewList';
 import { games, formatPrice } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
@@ -12,6 +13,7 @@ import SkeletonLoader from '../components/SkeletonLoader';
 import EmptyState from '../components/EmptyState';
 
 const ProfilePage = () => {
+        const [avatarModalOpen, setAvatarModalOpen] = useState(false);
     const { t } = useLanguage();
     const navigate = useNavigate();
     const { user, isAuthenticated, logout } = useAuth();
@@ -158,9 +160,20 @@ const ProfilePage = () => {
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     cursor: 'pointer', color: '#fff',
                                 }}
+                                onClick={() => setAvatarModalOpen(true)}
                             >
                                 <Edit2 className="w-3 h-3" />
                             </button>
+                            // Avatar saqlash handler
+                            const handleAvatarSave = async (croppedDataUrl) => {
+                                // TODO: APIga yuborish va user.avatar yangilash
+                                // Misol uchun:
+                                // await apiClient.post('/profile/avatar/', { avatar: croppedDataUrl });
+                                // setUser({ ...user, avatar: croppedDataUrl });
+                                setAvatarModalOpen(false);
+                                addToast({ type: 'success', title: "Profil rasmi yangilandi" });
+                            };
+                            <AvatarEditModal open={avatarModalOpen} onClose={() => setAvatarModalOpen(false)} onSave={handleAvatarSave} />
                         </div>
 
                         {/* Info — ism ostida faqat Telegram ID */}
