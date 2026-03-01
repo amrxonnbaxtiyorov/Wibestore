@@ -8,16 +8,16 @@ export const ChatProvider = ({ children }) => {
     const [conversations, setConversations] = useState(() => {
         // Lazy initialization - birinchi renderda localStorage dan o'qish
         if (typeof window !== 'undefined') {
-            const currentUser = JSON.parse(localStorage.getItem('wibeUser') || 'null');
-            if (currentUser) {
-                const savedConversations = localStorage.getItem(`wibeChats_${currentUser.id}`);
-                if (savedConversations) {
-                    try {
+            try {
+                const currentUser = JSON.parse(localStorage.getItem('wibeUser') || 'null');
+                if (currentUser) {
+                    const savedConversations = localStorage.getItem(`wibeChats_${currentUser.id}`);
+                    if (savedConversations) {
                         return JSON.parse(savedConversations);
-                    } catch {
-                        return [];
                     }
                 }
+            } catch {
+                // JSON parse xatosi bo'lsa default qaytariladi
             }
         }
         return [];
@@ -38,7 +38,11 @@ export const ChatProvider = ({ children }) => {
     // Save conversations when they change
     useEffect(() => {
         if (user && conversations.length > 0) {
-            localStorage.setItem(`wibeChats_${user.id}`, JSON.stringify(conversations));
+            try {
+                localStorage.setItem(`wibeChats_${user.id}`, JSON.stringify(conversations));
+            } catch {
+                // localStorage yozishda xato bo'lsa ignore qilinadi
+            }
         }
     }, [conversations, user]);
 

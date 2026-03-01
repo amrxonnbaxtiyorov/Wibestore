@@ -227,7 +227,7 @@ class AuthService:
         ).update(is_used=True)
 
         code = generate_otp(code_length)
-        expires_at = timezone.now() + timezone.timedelta(minutes=expire_minutes)
+        expires_at = timezone.now() + timedelta(minutes=expire_minutes)
         return TelegramRegistrationCode.objects.create(
             telegram_id=telegram_id,
             phone_number=phone_normalized,

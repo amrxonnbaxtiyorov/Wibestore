@@ -34,7 +34,7 @@ export const useUpdateProfile = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['profile']);
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
         },
     });
 };
@@ -161,7 +161,7 @@ export const useCreateSavedSearch = () => {
             const { data } = await apiClient.post('/profile/saved-searches/', body);
             return data;
         },
-        onSuccess: () => queryClient.invalidateQueries(['profile', 'saved-searches']),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile', 'saved-searches'] }),
     });
 };
 
@@ -171,7 +171,7 @@ export const useDeleteSavedSearch = (id) => {
         mutationFn: async () => {
             await apiClient.delete(`/profile/saved-searches/${id}/`);
         },
-        onSuccess: () => queryClient.invalidateQueries(['profile', 'saved-searches']),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile', 'saved-searches'] }),
     });
 };
 

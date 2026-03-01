@@ -42,10 +42,15 @@ export const useChatMessages = (chatId) => {
             return data;
         },
         enabled: !!chatId,
+        initialPageParam: 1,
         getNextPageParam: (lastPage) => {
-            if (lastPage.next) {
-                const url = new URL(lastPage.next);
-                return url.searchParams.get('page');
+            if (lastPage?.next) {
+                try {
+                    const url = new URL(lastPage.next);
+                    return url.searchParams.get('page') || undefined;
+                } catch {
+                    return undefined;
+                }
             }
             return undefined;
         },
@@ -65,7 +70,7 @@ export const useCreateChat = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['chats']);
+            queryClient.invalidateQueries({ queryKey: ['chats'] });
         },
     });
 };
@@ -82,8 +87,8 @@ export const useSendMessage = (chatId) => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['chats', chatId, 'messages']);
-            queryClient.invalidateQueries(['chats']);
+            queryClient.invalidateQueries({ queryKey: ['chats', chatId, 'messages'] });
+            queryClient.invalidateQueries({ queryKey: ['chats'] });
         },
     });
 };

@@ -1,25 +1,29 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const CoinContext = createContext(null);
 
 export const CoinProvider = ({ children }) => {
     const [coinState, setCoinState] = useState(() => {
-        const saved = localStorage.getItem('wibeCoinState');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            // Check if it's a new month
-            const currentMonth = new Date().getMonth();
-            const savedMonth = parsed.lastResetMonth;
-            if (currentMonth !== savedMonth) {
-                return {
-                    balance: parsed.balance,
-                    monthlyTransactions: 0,
-                    monthlyEarned: 0,
-                    lastResetMonth: currentMonth,
-                    history: parsed.history || []
-                };
+        try {
+            const saved = localStorage.getItem('wibeCoinState');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Check if it's a new month
+                const currentMonth = new Date().getMonth();
+                const savedMonth = parsed.lastResetMonth;
+                if (currentMonth !== savedMonth) {
+                    return {
+                        balance: parsed.balance,
+                        monthlyTransactions: 0,
+                        monthlyEarned: 0,
+                        lastResetMonth: currentMonth,
+                        history: parsed.history || []
+                    };
+                }
+                return parsed;
             }
-            return parsed;
+        } catch {
+            // localStorage o'qishda xato bo'lsa default qiymat qaytariladi
         }
         return {
             balance: 0,
@@ -31,10 +35,12 @@ export const CoinProvider = ({ children }) => {
     });
 
     useEffect(() => {
-        localStorage.setItem('wibeCoinState', JSON.stringify(coinState));
+        try {
+            localStorage.setItem('wibeCoinState', JSON.stringify(coinState));
+        } catch {
+            // localStorage yozishda xato bo'lsa ignore qilinadi
+        }
     }, [coinState]);
-
-    const spendResultRef = useRef(false);
 
     // Add coins for selling/buying account (max 5 transactions = 100 coins per month)
     const addCoins = useCallback((amount, reason) => {
@@ -59,28 +65,28 @@ export const CoinProvider = ({ children }) => {
         });
     }, []);
 
-    // Spend coins (for premium) — uses ref to avoid stale closure
+    // Spend coins (for premium) — returns Promise<boolean> for reliable result
     const spendCoins = useCallback((amount, reason) => {
-        spendResultRef.current = false;
-        setCoinState(prev => {
-            if (prev.balance < amount) {
-                spendResultRef.current = false;
-                return prev;
-            }
-            spendResultRef.current = true;
-            return {
-                ...prev,
-                balance: prev.balance - amount,
-                history: [...prev.history, {
-                    id: crypto.randomUUID(),
-                    amount: -amount,
-                    reason,
-                    date: new Date().toISOString(),
-                    type: 'spent'
-                }]
-            };
+        return new Promise((resolve) => {
+            setCoinState(prev => {
+                if (prev.balance < amount) {
+                    resolve(false);
+                    return prev;
+                }
+                resolve(true);
+                return {
+                    ...prev,
+                    balance: prev.balance - amount,
+                    history: [...prev.history, {
+                        id: crypto.randomUUID(),
+                        amount: -amount,
+                        reason,
+                        date: new Date().toISOString(),
+                        type: 'spent'
+                    }]
+                };
+            });
         });
-        return spendResultRef.current;
     }, []);
 
     // Can earn more coins this month?

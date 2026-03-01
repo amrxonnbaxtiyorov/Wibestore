@@ -27,12 +27,12 @@ export const useCreateReview = () => {
             const { data } = await apiClient.post('/reviews/', { escrow_id, rating, comment });
             return data;
         },
-        onSuccess: (_, variables) => {
+        onSuccess: (_data, variables) => {
             if (variables.listing_id) {
-                queryClient.invalidateQueries(['reviews', 'listing', variables.listing_id]);
-                queryClient.invalidateQueries(['listings', variables.listing_id]);
+                queryClient.invalidateQueries({ queryKey: ['reviews', 'listing', variables.listing_id] });
+                queryClient.invalidateQueries({ queryKey: ['listings', variables.listing_id] });
             }
-            queryClient.invalidateQueries(['reviews']);
+            queryClient.invalidateQueries({ queryKey: ['reviews'] });
         },
     });
 };
@@ -49,7 +49,7 @@ export const useUpdateReview = (reviewId) => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['reviews', reviewId]);
+            queryClient.invalidateQueries({ queryKey: ['reviews', reviewId] });
         },
     });
 };
@@ -65,7 +65,7 @@ export const useDeleteReview = (reviewId) => {
             await apiClient.delete(`/reviews/${reviewId}/`);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['reviews', reviewId]);
+            queryClient.invalidateQueries({ queryKey: ['reviews', reviewId] });
         },
     });
 };
@@ -81,8 +81,8 @@ export const useReviewResponse = () => {
             const { data } = await apiClient.post(`/reviews/${reviewId}/reply/`, { reply });
             return data;
         },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries(['reviews', variables.reviewId]);
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['reviews', variables.reviewId] });
         },
     });
 };
@@ -98,8 +98,8 @@ export const useMarkReviewHelpful = () => {
             const { data } = await apiClient.post(`/reviews/${reviewId}/helpful/`);
             return data;
         },
-        onSuccess: (_, reviewId) => {
-            queryClient.invalidateQueries(['reviews', reviewId]);
+        onSuccess: (_data, reviewId) => {
+            queryClient.invalidateQueries({ queryKey: ['reviews', reviewId] });
         },
     });
 };

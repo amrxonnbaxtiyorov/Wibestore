@@ -7,10 +7,11 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 export const useWebSocket = (url, options = {}) => {
     const wsRef = useRef(null);
     const reconnectTimeoutRef = useRef(null);
+    const retryCountRef = useRef(0);
+    const mountedRef = useRef(true);
     const [isConnected, setIsConnected] = useState(false);
     const [lastMessage, setLastMessage] = useState(null);
     const [error, setError] = useState(null);
-    const [retryCount, setRetryCount] = useState(0);
     const [readyState, setReadyState] = useState(3); // WebSocket.CLOSED
 
     const {
@@ -23,6 +24,17 @@ export const useWebSocket = (url, options = {}) => {
         protocols = [],
     } = options;
 
+    // Store callbacks in refs to avoid stale closures and dependency changes
+    const onOpenRef = useRef(onOpen);
+    const onMessageRef = useRef(onMessage);
+    const onCloseRef = useRef(onClose);
+    const onErrorRef = useRef(onError);
+
+    useEffect(() => { onOpenRef.current = onOpen; }, [onOpen]);
+    useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
+    useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+    useEffect(() => { onErrorRef.current = onError; }, [onError]);
+
     // Get auth token for WebSocket authentication
     const getAuthToken = useCallback(() => {
         try {
@@ -34,7 +46,8 @@ export const useWebSocket = (url, options = {}) => {
     }, []);
 
     const connect = useCallback(() => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
+        if (!mountedRef.current) return;
+        if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) {
             return;
         }
 
@@ -48,35 +61,42 @@ export const useWebSocket = (url, options = {}) => {
             setReadyState(WebSocket.CONNECTING);
 
             wsRef.current.onopen = (event) => {
+                if (!mountedRef.current) return;
                 setReadyState(WebSocket.OPEN);
                 setIsConnected(true);
                 setError(null);
-                setRetryCount(0);
-                if (onOpen) onOpen(event);
+                retryCountRef.current = 0;
+                if (onOpenRef.current) onOpenRef.current(event);
                 console.log('[WebSocket] Connected:', url);
             };
 
             wsRef.current.onmessage = (event) => {
+                if (!mountedRef.current) return;
                 try {
                     const data = JSON.parse(event.data);
                     setLastMessage(data);
-                    if (onMessage) onMessage(data);
+                    if (onMessageRef.current) onMessageRef.current(data);
                 } catch {
-                    if (onMessage) onMessage(event.data);
+                    if (onMessageRef.current) onMessageRef.current(event.data);
                 }
             };
 
             wsRef.current.onclose = (event) => {
+                if (!mountedRef.current) return;
                 setReadyState(WebSocket.CLOSED);
                 setIsConnected(false);
-                if (onClose) onClose(event);
+                if (onCloseRef.current) onCloseRef.current(event);
                 console.log('[WebSocket] Disconnected:', url);
 
                 // Attempt to reconnect
-                if (retryCount < maxReconnectAttempts) {
-                    console.log(`[WebSocket] Reconnecting in ${reconnectInterval}ms... (attempt ${retryCount + 1}/${maxReconnectAttempts})`);
+                if (retryCountRef.current < maxReconnectAttempts && mountedRef.current) {
+                    const currentRetry = retryCountRef.current;
+                    console.log(`[WebSocket] Reconnecting in ${reconnectInterval}ms... (attempt ${currentRetry + 1}/${maxReconnectAttempts})`);
                     reconnectTimeoutRef.current = setTimeout(() => {
-                        setRetryCount((prev) => prev + 1);
+                        if (mountedRef.current) {
+                            retryCountRef.current = currentRetry + 1;
+                            connect();
+                        }
                     }, reconnectInterval);
                 } else {
                     console.error('[WebSocket] Max reconnect attempts reached');
@@ -84,15 +104,16 @@ export const useWebSocket = (url, options = {}) => {
             };
 
             wsRef.current.onerror = (event) => {
+                if (!mountedRef.current) return;
                 setError(event);
-                if (onError) onError(event);
+                if (onErrorRef.current) onErrorRef.current(event);
                 console.error('[WebSocket] Error:', url);
             };
         } catch (err) {
             setError(err);
-            if (onError) onError(err);
+            if (onErrorRef.current) onErrorRef.current(err);
         }
-    }, [url, protocols, getAuthToken, onOpen, onMessage, onClose, onError, reconnectInterval, maxReconnectAttempts, retryCount]);
+    }, [url, protocols, getAuthToken, reconnectInterval, maxReconnectAttempts]);
 
     const disconnect = useCallback(() => {
         if (reconnectTimeoutRef.current) {
@@ -101,6 +122,7 @@ export const useWebSocket = (url, options = {}) => {
         }
 
         if (wsRef.current) {
+            wsRef.current.onclose = null; // Prevent reconnect on manual disconnect
             wsRef.current.close();
             wsRef.current = null;
         }
@@ -109,7 +131,7 @@ export const useWebSocket = (url, options = {}) => {
         setIsConnected(false);
         setLastMessage(null);
         setError(null);
-        setRetryCount(0);
+        retryCountRef.current = 0;
     }, []);
 
     const sendMessage = useCallback((data) => {
@@ -122,27 +144,22 @@ export const useWebSocket = (url, options = {}) => {
         return false;
     }, []);
 
-    // Auto-connect on mount (defer to avoid sync setState in effect)
+    // Auto-connect on mount, cleanup on unmount
     useEffect(() => {
-        queueMicrotask(() => connect());
+        mountedRef.current = true;
+        connect();
 
         return () => {
+            mountedRef.current = false;
             disconnect();
         };
     }, [connect, disconnect]);
-
-    // Retry connection when retryCount changes
-    useEffect(() => {
-        if (retryCount > 0 && retryCount <= maxReconnectAttempts && !isConnected) {
-            queueMicrotask(() => connect());
-        }
-    }, [retryCount, maxReconnectAttempts, isConnected, connect]);
 
     return {
         isConnected,
         lastMessage,
         error,
-        retryCount,
+        retryCount: retryCountRef.current,
         sendMessage,
         connect,
         disconnect,
@@ -156,11 +173,15 @@ export const useWebSocket = (url, options = {}) => {
 export const useChatWebSocket = (chatId, callbacks = {}) => {
     const wsUrl = `${import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000'}/ws/chat/${chatId}/`;
 
+    // Memoize callbacks to avoid recreating WebSocket connection
+    const callbacksRef = useRef(callbacks);
+    useEffect(() => { callbacksRef.current = callbacks; }, [callbacks]);
+
     const handleMessage = useCallback((data) => {
-        if (callbacks.onMessage) {
-            callbacks.onMessage(data);
+        if (callbacksRef.current.onMessage) {
+            callbacksRef.current.onMessage(data);
         }
-    }, [callbacks]);
+    }, []);
 
     return useWebSocket(wsUrl, {
         onMessage: handleMessage,
@@ -176,11 +197,15 @@ export const useChatWebSocket = (chatId, callbacks = {}) => {
 export const useNotificationWebSocket = (callbacks = {}) => {
     const wsUrl = `${import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000'}/ws/notifications/`;
 
+    // Memoize callbacks to avoid recreating WebSocket connection
+    const callbacksRef = useRef(callbacks);
+    useEffect(() => { callbacksRef.current = callbacks; }, [callbacks]);
+
     const handleMessage = useCallback((data) => {
-        if (callbacks.onMessage) {
-            callbacks.onMessage(data);
+        if (callbacksRef.current.onMessage) {
+            callbacksRef.current.onMessage(data);
         }
-    }, [callbacks]);
+    }, []);
 
     return useWebSocket(wsUrl, {
         onMessage: handleMessage,

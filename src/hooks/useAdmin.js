@@ -57,8 +57,8 @@ export const useAdminBanUser = (userId) => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['admin', 'users']);
-            queryClient.invalidateQueries(['admin', 'dashboard']);
+            queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+            queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
         },
     });
 };
@@ -88,8 +88,8 @@ export const useAdminApproveListing = () => {
             return data;
         },
         onSuccess: (_, listingId) => {
-            queryClient.invalidateQueries(['admin', 'listings']);
-            queryClient.invalidateQueries(['listings', listingId]);
+            queryClient.invalidateQueries({ queryKey: ['admin', 'listings'] });
+            queryClient.invalidateQueries({ queryKey: ['listings', listingId] });
         },
     });
 };
@@ -105,8 +105,8 @@ export const useAdminRejectListing = () => {
             return data;
         },
         onSuccess: (_, { listingId }) => {
-            queryClient.invalidateQueries(['admin', 'listings']);
-            queryClient.invalidateQueries(['listings', listingId]);
+            queryClient.invalidateQueries({ queryKey: ['admin', 'listings'] });
+            queryClient.invalidateQueries({ queryKey: ['listings', listingId] });
         },
     });
 };
@@ -156,8 +156,8 @@ export const useAdminResolveReport = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['admin', 'reports']);
-            queryClient.invalidateQueries(['admin', 'dashboard']);
+            queryClient.invalidateQueries({ queryKey: ['admin', 'reports'] });
+            queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
         },
     });
 };
@@ -187,8 +187,8 @@ export const useAdminResolveDispute = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['admin', 'disputes']);
-            queryClient.invalidateQueries(['admin', 'dashboard']);
+            queryClient.invalidateQueries({ queryKey: ['admin', 'disputes'] });
+            queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
         },
     });
 };

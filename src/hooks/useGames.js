@@ -37,15 +37,20 @@ export const useGameListings = (slug, filters = {}) => {
     return useInfiniteQuery({
         queryKey: ['games', slug, 'listings', filters],
         queryFn: async ({ pageParam = 1 }) => {
-            const params = new URLSearchParams({ page: pageParam, ...filters });
+            const params = new URLSearchParams({ page: String(pageParam), ...filters });
             const { data } = await apiClient.get(`/games/${slug}/listings/?${params}`);
             return data;
         },
         enabled: !!slug,
+        initialPageParam: 1,
         getNextPageParam: (lastPage) => {
-            if (lastPage.next) {
-                const url = new URL(lastPage.next);
-                return url.searchParams.get('page');
+            if (lastPage?.next) {
+                try {
+                    const url = new URL(lastPage.next);
+                    return url.searchParams.get('page') || undefined;
+                } catch {
+                    return undefined;
+                }
             }
             return undefined;
         },

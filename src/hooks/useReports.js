@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../lib/apiClient';
 
 /**
- * Hook для получения списка жалоб (admin)
+ * Hook для получения списка жалоб
  */
 export const useReports = () => {
     return useQuery({
@@ -32,7 +32,7 @@ export const useCreateReport = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['reports']);
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
         },
     });
 };
@@ -49,8 +49,8 @@ export const useUpdateReport = (reportId) => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['reports', reportId]);
-            queryClient.invalidateQueries(['reports']);
+            queryClient.invalidateQueries({ queryKey: ['reports', reportId] });
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
         },
     });
 };

@@ -93,9 +93,8 @@ export const useCreateListing = () => {
             return data;
         },
         onSuccess: () => {
-            // Инвалидация кэша listings и профиля
-            queryClient.invalidateQueries(['listings']);
-            queryClient.invalidateQueries(['profile', 'listings']);
+            queryClient.invalidateQueries({ queryKey: ['listings'] });
+            queryClient.invalidateQueries({ queryKey: ['profile', 'listings'] });
         },
     });
 };
@@ -112,9 +111,9 @@ export const useUpdateListing = (id) => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['listings', id]);
-            queryClient.invalidateQueries(['listings']);
-            queryClient.invalidateQueries(['profile', 'listings']);
+            queryClient.invalidateQueries({ queryKey: ['listings', id] });
+            queryClient.invalidateQueries({ queryKey: ['listings'] });
+            queryClient.invalidateQueries({ queryKey: ['profile', 'listings'] });
         },
     });
 };
@@ -129,10 +128,10 @@ export const useDeleteListing = () => {
         mutationFn: async (listingId) => {
             await apiClient.delete(`/listings/${listingId}/`);
         },
-        onSuccess: (data, listingId) => {
-            queryClient.invalidateQueries(['listings', listingId]);
-            queryClient.invalidateQueries(['listings']);
-            queryClient.invalidateQueries(['profile', 'listings']);
+        onSuccess: (_data, listingId) => {
+            queryClient.invalidateQueries({ queryKey: ['listings', listingId] });
+            queryClient.invalidateQueries({ queryKey: ['listings'] });
+            queryClient.invalidateQueries({ queryKey: ['profile', 'listings'] });
         },
     });
 };
@@ -148,10 +147,9 @@ export const useAddToFavorites = () => {
             const { data } = await apiClient.post(`/listings/${listingId}/favorite/`);
             return data;
         },
-        onSuccess: (data, listingId) => {
-            // Оптимистичное обновление
-            queryClient.invalidateQueries(['listings', listingId]);
-            queryClient.invalidateQueries(['profile', 'favorites']);
+        onSuccess: (_data, listingId) => {
+            queryClient.invalidateQueries({ queryKey: ['listings', listingId] });
+            queryClient.invalidateQueries({ queryKey: ['profile', 'favorites'] });
         },
     });
 };
@@ -166,9 +164,9 @@ export const useRemoveFromFavorites = () => {
         mutationFn: async (listingId) => {
             await apiClient.delete(`/listings/${listingId}/favorite/`);
         },
-        onSuccess: (data, listingId) => {
-            queryClient.invalidateQueries(['listings', listingId]);
-            queryClient.invalidateQueries(['profile', 'favorites']);
+        onSuccess: (_data, listingId) => {
+            queryClient.invalidateQueries({ queryKey: ['listings', listingId] });
+            queryClient.invalidateQueries({ queryKey: ['profile', 'favorites'] });
         },
     });
 };
@@ -183,8 +181,8 @@ export const useTrackView = () => {
         mutationFn: async (listingId) => {
             await apiClient.post(`/listings/${listingId}/view/`);
         },
-        onSuccess: (data, listingId) => {
-            queryClient.invalidateQueries(['listings', listingId]);
+        onSuccess: (_data, listingId) => {
+            queryClient.invalidateQueries({ queryKey: ['listings', listingId] });
         },
     });
 };

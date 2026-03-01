@@ -28,7 +28,7 @@ export const useMarkNotificationRead = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['notifications']);
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
         },
     });
 };
@@ -44,7 +44,7 @@ export const useMarkAllNotificationsRead = () => {
             await apiClient.post('/notifications/read-all/');
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['notifications']);
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
         },
     });
 };

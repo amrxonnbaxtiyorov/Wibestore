@@ -41,8 +41,8 @@ export const usePurchaseSubscription = () => {
             return data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['subscriptions', 'my']);
-            queryClient.invalidateQueries(['profile']);
+            queryClient.invalidateQueries({ queryKey: ['subscriptions', 'my'] });
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
         },
     });
 };
@@ -58,7 +58,7 @@ export const useCancelSubscription = () => {
             await apiClient.post(`/subscriptions/${subscriptionId}/cancel/`);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['subscriptions', 'my']);
+            queryClient.invalidateQueries({ queryKey: ['subscriptions', 'my'] });
         },
     });
 };
