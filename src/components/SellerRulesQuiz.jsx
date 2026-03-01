@@ -172,7 +172,7 @@ export default function SellerRulesQuiz({ onPass }) {
                         padding: '12px 16px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-error-bg)',
                         color: 'var(--color-error)', marginBottom: '12px', fontSize: 'var(--font-size-sm)', flexShrink: 0,
                     }}>
-                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        <AlertCircle className="w-4 h-4 shrink-0" />
                         {submitError}
                     </div>
                 )}
