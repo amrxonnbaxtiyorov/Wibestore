@@ -26,90 +26,20 @@ User = get_user_model()
 
 
 def seed_games():
-    """Seed initial game data."""
+    """Seed initial game data — faqat to'liq akkaunt sotuviga mos o'yinlar."""
     from apps.games.models import Category, Game
 
     games_data = [
-        {
-            "name": "PUBG Mobile",
-            "slug": "pubg-mobile",
-            "description": "PlayerUnknown's Battlegrounds Mobile - battle royale game",
-            "icon": "🎮",
-            "color": "#F59E0B",
-            "sort_order": 1,
-        },
-        {
-            "name": "Steam",
-            "slug": "steam",
-            "description": "Steam platform accounts with games library",
-            "icon": "🎯",
-            "color": "#1B2838",
-            "sort_order": 2,
-        },
-        {
-            "name": "Free Fire",
-            "slug": "free-fire",
-            "description": "Garena Free Fire - battle royale game",
-            "icon": "🔥",
-            "color": "#EF4444",
-            "sort_order": 3,
-        },
-        {
-            "name": "Standoff 2",
-            "slug": "standoff-2",
-            "description": "Standoff 2 - first-person shooter",
-            "icon": "🔫",
-            "color": "#8B5CF6",
-            "sort_order": 4,
-        },
-        {
-            "name": "Mobile Legends",
-            "slug": "mobile-legends",
-            "description": "Mobile Legends: Bang Bang - MOBA game",
-            "icon": "⚔️",
-            "color": "#3B82F6",
-            "sort_order": 5,
-        },
-        {
-            "name": "Clash of Clans",
-            "slug": "clash-of-clans",
-            "description": "Clash of Clans - strategy game",
-            "icon": "🏰",
-            "color": "#10B981",
-            "sort_order": 6,
-        },
-        {
-            "name": "Roblox",
-            "slug": "roblox",
-            "description": "Roblox - online game platform",
-            "icon": "🧱",
-            "color": "#DC2626",
-            "sort_order": 7,
-        },
-        {
-            "name": "Genshin Impact",
-            "slug": "genshin-impact",
-            "description": "Genshin Impact - open-world RPG",
-            "icon": "🌟",
-            "color": "#6366F1",
-            "sort_order": 8,
-        },
-        {
-            "name": "Fortnite",
-            "slug": "fortnite",
-            "description": "Fortnite - battle royale game",
-            "icon": "🏗️",
-            "color": "#2563EB",
-            "sort_order": 9,
-        },
-        {
-            "name": "Valorant",
-            "slug": "valorant",
-            "description": "Valorant - tactical FPS by Riot Games",
-            "icon": "🎯",
-            "color": "#FF4655",
-            "sort_order": 10,
-        },
+        {"name": "PUBG Mobile", "slug": "pubg-mobile", "description": "Battle royale — to'liq akkaunt sotiladi", "icon": "🎮", "color": "#F59E0B", "sort_order": 1},
+        {"name": "Steam", "slug": "steam", "description": "Steam platform — o'yinlar kutubxonasi bilan akkaunt", "icon": "🎯", "color": "#1B2838", "sort_order": 2},
+        {"name": "Free Fire", "slug": "free-fire", "description": "Garena Free Fire — to'liq akkaunt", "icon": "🔥", "color": "#EF4444", "sort_order": 3},
+        {"name": "Standoff 2", "slug": "standoff2", "description": "Standoff 2 — FPS, akkaunt sotuv", "icon": "🔫", "color": "#8B5CF6", "sort_order": 4},
+        {"name": "Mobile Legends", "slug": "mobile-legends", "description": "Mobile Legends — MOBA, to'liq akkaunt", "icon": "⚔️", "color": "#3B82FB", "sort_order": 5},
+        {"name": "Clash of Clans", "slug": "clash-of-clans", "description": "Clash of Clans — strategiya, akkaunt sotiladi", "icon": "🏰", "color": "#10B981", "sort_order": 6},
+        {"name": "Roblox", "slug": "roblox", "description": "Roblox — platforma akkauntlari", "icon": "🧱", "color": "#DC2626", "sort_order": 7},
+        {"name": "Genshin Impact", "slug": "genshin-impact", "description": "Genshin Impact — to'liq akkaunt sotuv", "icon": "🌟", "color": "#6366F1", "sort_order": 8},
+        {"name": "Fortnite", "slug": "fortnite", "description": "Fortnite — Epic akkaunt sotiladi", "icon": "🏗️", "color": "#2563EB", "sort_order": 9},
+        {"name": "Valorant", "slug": "valorant", "description": "Valorant — Riot akkaunt sotuv", "icon": "🎯", "color": "#FF4655", "sort_order": 10},
     ]
 
     created = 0
