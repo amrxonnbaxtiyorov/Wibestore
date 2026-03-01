@@ -21,9 +21,6 @@ const Logo = ({ height = 56 }) => {
                 imageRendering: 'crisp-edges',
                 WebkitBackfaceVisibility: 'hidden',
                 transform: 'translateZ(0)',
-                ...(isDark && {
-                    filter: 'brightness(0) invert(1)',
-                }),
             }}
             role="img"
             aria-label="WibeStore — Gaming Marketplace"
