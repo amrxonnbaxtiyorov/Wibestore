@@ -79,7 +79,22 @@ def _normalize_phone(phone: str) -> str:
     return "+" + cleaned if not phone.strip().startswith("+") else phone.strip()
 
 
-def create_otp_via_api(telegram_id: int, phone: str, full_name: str = "") -> dict:
+async def get_telegram_profile_photo_url(bot, user_id: int) -> str | None:
+    """Foydalanuvchi Telegram profil rasmi uchun to'liq URL olish."""
+    try:
+        photos = await bot.get_user_profile_photos(user_id, limit=1)
+        if not photos or not photos.photos:
+            return None
+        # photos.photos[0] — birinchi rasmning o'lchamlari ro'yxati (kichikdan kattaga), oxirgisi eng katta
+        file_id = photos.photos[0][-1].file_id
+        tg_file = await bot.get_file(file_id)
+        return f"https://api.telegram.org/file/bot{BOT_TOKEN}/{tg_file.file_path}"
+    except Exception as e:
+        logger.warning("Telegram profil rasmi olinmadi: %s", e)
+        return None
+
+
+def create_otp_via_api(telegram_id: int, phone: str, full_name: str = "", photo_url: str = "") -> dict:
     """Backend API orqali OTP kod yaratish (urllib — qo'shimcha paket kerak emas)."""
     if not BOT_SECRET_KEY:
         logger.error("BOT_SECRET_KEY yoki TELEGRAM_BOT_SECRET o'rnatilmagan")
@@ -87,12 +102,15 @@ def create_otp_via_api(telegram_id: int, phone: str, full_name: str = "") -> dic
     if "localhost" in WEBSITE_URL or "127.0.0.1" in WEBSITE_URL:
         logger.warning("WEBSITE_URL localhost — Railway'da backend manzilini (https://...) o'rnating!")
     url = f"{WEBSITE_URL.rstrip('/')}/api/v1/auth/telegram/otp/create/"
-    body = json.dumps({
+    payload = {
         "secret_key": BOT_SECRET_KEY,
         "telegram_id": telegram_id,
         "phone_number": phone,
         "full_name": full_name,
-    }).encode("utf-8")
+    }
+    if photo_url:
+        payload["photo_url"] = photo_url[:500]
+    body = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url,
         data=body,
@@ -265,6 +283,7 @@ async def receive_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     telegram_id = user.id
     full_name = user.full_name or ""
     phone_normalized = _normalize_phone(phone)
+    photo_url = await get_telegram_profile_photo_url(context.bot, user.id) or ""
 
     wait_msg = await update.message.reply_html("⏳ Kod tayyorlanmoqda...")
 
@@ -272,6 +291,7 @@ async def receive_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         telegram_id=telegram_id,
         phone=phone_normalized,
         full_name=full_name,
+        photo_url=photo_url,
     )
 
     await wait_msg.delete()
@@ -323,11 +343,13 @@ async def new_code_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     user = update.effective_user
     full_name = user.full_name or ""
+    photo_url = await get_telegram_profile_photo_url(context.bot, user.id) or ""
 
     result = create_otp_via_api(
         telegram_id=user.id,
         phone=phone,
         full_name=full_name,
+        photo_url=photo_url,
     )
     if result and result.get('success'):
         total_seconds = result.get('remaining_seconds', 600)

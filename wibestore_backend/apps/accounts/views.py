@@ -311,6 +311,7 @@ class BotCreateOTPView(APIView):
                 telegram_id=data["telegram_id"],
                 phone_number=data["phone_number"],
                 full_name=data.get("full_name", ""),
+                photo_url=data.get("photo_url") or None,
             )
         except BusinessLogicError as e:
             return Response(

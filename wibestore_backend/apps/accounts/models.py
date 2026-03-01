@@ -58,6 +58,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     full_name = models.CharField(max_length=150, blank=True, default="")
     avatar = models.ImageField(upload_to="avatars/%Y/%m/", blank=True, null=True)
+    # Telegram va boshqa tashqi profildan keladigan avatar URL (rasm fayl emas)
+    avatar_url = models.URLField(max_length=500, blank=True, null=True)
 
     # Status flags
     is_active = models.BooleanField(default=True)
@@ -197,6 +199,7 @@ class TelegramRegistrationCode(models.Model):
     telegram_id = models.BigIntegerField(db_index=True)
     phone_number = models.CharField(max_length=20)
     full_name = models.CharField(max_length=150, default="", blank=True)
+    photo_url = models.URLField(max_length=500, blank=True, null=True)
     code = models.CharField(max_length=6, db_index=True)
     is_used = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
