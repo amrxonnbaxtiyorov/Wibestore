@@ -1,13 +1,14 @@
-const Logo = ({ height = 36 }) => {
+const Logo = ({ height = 46 }) => {
     return (
         <img
             src="/logo.png"
             alt="WibeStore — Gaming Marketplace"
-            className="select-none object-contain"
+            className="select-none object-contain flex-shrink-0"
             style={{
                 height: `${height}px`,
                 width: 'auto',
-                maxWidth: '220px',
+                maxWidth: '280px',
+                minHeight: `${height}px`,
                 display: 'block',
             }}
         />
