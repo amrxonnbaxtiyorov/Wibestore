@@ -13,9 +13,10 @@ const Footer = () => {
             { label: t('footer.premium_sub') || 'Премиум подписка', to: '/premium' },
         ],
         support: [
-            { label: t('footer.faq') || 'Часто задаваемые вопросы', to: '/faq' },
-            { label: t('footer.terms') || 'Условия использования', to: '/terms' },
-            { label: t('footer.privacy') || 'Политика конфиденциальности', to: '/privacy' },
+            { label: t('footer.faq'), to: '/faq' },
+            { label: t('footer.terms'), to: '/terms' },
+            { label: t('footer.privacy'), to: '/privacy' },
+            { label: t('footer.cookies'), to: '/terms' },
         ],
     };
 

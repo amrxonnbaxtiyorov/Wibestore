@@ -280,6 +280,12 @@
         "sending": "Yuborilmoqda...",
         "cancel": "Bekor qilish"
     },
+    "cookie": {
+        "banner_label": "Cookie roziligi",
+        "message": "Sayt ishlashi va sizning qulayligingiz uchun cookie foydalanamiz. Saytda qolish orqali siz buni qabul qilasiz.",
+        "learn_more": "Batafsil",
+        "accept": "Qabul qilaman"
+    },
     "footer": {
         "description": "O'zbekistonning eng ishonchli o'yin akkauntlari savdo platformasi",
         "quick_links": "Tezkor havolalar",
@@ -291,6 +297,7 @@
         "faq": "Ko'p beriladigan savollar",
         "terms": "Foydalanish shartlari",
         "privacy": "Maxfiylik siyosati",
+        "cookies": "Cookie siyosati",
         "rights": "Barcha huquqlar himoyalangan."
     },
     "common": {

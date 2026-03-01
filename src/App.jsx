@@ -15,6 +15,7 @@ import ChatWidget from './components/ChatWidget';
 import CommandPalette from './components/CommandPalette';
 import ScrollToTop from './components/ScrollToTop';
 import OnboardingTour from './components/OnboardingTour';
+import CookieConsent from './components/CookieConsent';
 
 // Lazy-loaded pages for code-splitting & performance
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -131,6 +132,7 @@ const PublicLayout = ({ children }) => (
       {children}
     </main>
     <Footer />
+    <CookieConsent />
     <ChatWidget />
     <CommandPalette />
     <OnboardingTour />
