@@ -9,24 +9,19 @@ const Logo = ({ height = 38 }) => {
     const bg = isDark ? '#0d1117' : '#ffffff';
     return (
         <div
-            className="flex-shrink-0 overflow-hidden"
+            className="flex-shrink-0 select-none"
             style={{
                 width: `${width}px`,
                 height: `${height}px`,
                 backgroundColor: bg,
+                backgroundImage: 'url(/logo.png)',
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
             }}
-        >
-            <img
-                src="/logo.png"
-                alt="WibeStore — Gaming Marketplace"
-                className="select-none w-full h-full flex-shrink-0"
-                style={{
-                    objectFit: 'contain',
-                    objectPosition: 'center center',
-                    display: 'block',
-                }}
-            />
-        </div>
+            role="img"
+            aria-label="WibeStore — Gaming Marketplace"
+        />
     );
 };
 
