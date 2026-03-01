@@ -419,7 +419,13 @@ const Navbar = () => {
                                                     <img
                                                         src={user.avatar}
                                                         alt={user?.name || 'User'}
-                                                        className="w-full h-full object-cover"
+                                                        className="w-full h-full"
+                                                        style={{
+                                                            objectFit: 'cover',
+                                                            objectPosition: 'center',
+                                                            minWidth: '100%',
+                                                            minHeight: '100%',
+                                                        }}
                                                     />
                                                 ) : (
                                                     (user?.name || 'U').charAt(0).toUpperCase()
