@@ -1,17 +1,24 @@
-const Logo = ({ height = 46 }) => {
+// Oldingi SVG logoning o'lchamlari: viewBox 185×36, height 38 → width ≈ 195
+const LOGO_ASPECT = 185 / 36;
+
+const Logo = ({ height = 38 }) => {
+    const width = Math.round(height * LOGO_ASPECT);
     return (
-        <img
-            src="/logo.png"
-            alt="WibeStore — Gaming Marketplace"
-            className="select-none object-contain flex-shrink-0"
-            style={{
-                height: `${height}px`,
-                width: 'auto',
-                maxWidth: '280px',
-                minHeight: `${height}px`,
-                display: 'block',
-            }}
-        />
+        <div
+            className="flex-shrink-0 overflow-hidden"
+            style={{ width: `${width}px`, height: `${height}px` }}
+        >
+            <img
+                src="/logo.png"
+                alt="WibeStore — Gaming Marketplace"
+                className="select-none w-full h-full flex-shrink-0"
+                style={{
+                    objectFit: 'cover',
+                    objectPosition: 'center center',
+                    display: 'block',
+                }}
+            />
+        </div>
     );
 };
 
