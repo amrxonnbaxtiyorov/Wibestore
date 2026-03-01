@@ -3,7 +3,7 @@ import { useTheme } from '../context/ThemeContext';
 const LOGO_ASPECT = 185 / 36;
 const LOGO_SRC = '/logo-transparent.png';
 
-const Logo = ({ height = 48 }) => {
+const Logo = ({ height = 56 }) => {
     const { isDark } = useTheme();
     const width = Math.round(height * LOGO_ASPECT);
     const bg = isDark ? '#0d1117' : '#ffffff';
