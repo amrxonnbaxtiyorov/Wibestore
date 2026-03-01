@@ -1,19 +1,30 @@
 import { useState } from 'react';
 import { Star, X, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+
+const MIN_COMMENT_LENGTH = 10;
 
 const ReviewModal = ({ isOpen, onClose, seller, account, onSubmit }) => {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [commentError, setCommentError] = useState('');
 
     if (!isOpen) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setCommentError('');
         if (rating === 0) return;
+        const trimmed = (comment || '').trim();
+        if (trimmed.length < MIN_COMMENT_LENGTH) {
+            setCommentError(t('reviews.comment_required'));
+            return;
+        }
 
         setIsSubmitting(true);
 
@@ -76,7 +87,7 @@ const ReviewModal = ({ isOpen, onClose, seller, account, onSubmit }) => {
             <div className="modal-content" style={{ maxWidth: '440px' }}>
                 {/* Header */}
                 <div className="modal-header">
-                    <h2 className="modal-title">Baholash</h2>
+                    <h2 className="modal-title">{t('review_modal.title')}</h2>
                     <button
                         onClick={onClose}
                         className="btn btn-ghost btn-sm"
@@ -124,6 +135,11 @@ const ReviewModal = ({ isOpen, onClose, seller, account, onSubmit }) => {
                             </div>
                         </div>
 
+                        {t('review_modal.subtitle') && (
+                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
+                                {t('review_modal.subtitle')}
+                            </p>
+                        )}
                         {/* Star Rating */}
                         <div className="text-center">
                             <p style={{
@@ -131,7 +147,7 @@ const ReviewModal = ({ isOpen, onClose, seller, account, onSubmit }) => {
                                 color: 'var(--color-text-muted)',
                                 marginBottom: '12px',
                             }}>
-                                Bahoingizni bering
+                                {t('review_modal.rating_label')}
                             </p>
                             <div className="flex justify-center gap-2" style={{ marginBottom: '8px' }}>
                                 {[1, 2, 3, 4, 5].map((star) => (
@@ -174,19 +190,24 @@ const ReviewModal = ({ isOpen, onClose, seller, account, onSubmit }) => {
                             </p>
                         </div>
 
-                        {/* Comment */}
+                        {/* Comment — majburiy */}
                         <div>
                             <label className="input-label">
-                                Izoh (ixtiyoriy)
+                                {t('review_modal.comment_label')}
                             </label>
                             <textarea
                                 value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                                placeholder="Sotuvchi haqida fikringizni yozing..."
+                                onChange={(e) => { setComment(e.target.value); setCommentError(''); }}
+                                placeholder={t('reviews.comment_placeholder')}
                                 rows={4}
                                 className="input"
-                                style={{ resize: 'none', width: '100%' }}
+                                style={{ resize: 'none', width: '100%', borderColor: commentError ? 'var(--color-error)' : undefined }}
                             />
+                            {commentError && (
+                                <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-error)', marginTop: '6px', marginBottom: 0 }}>
+                                    {commentError}
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -194,12 +215,12 @@ const ReviewModal = ({ isOpen, onClose, seller, account, onSubmit }) => {
                     <div className="modal-footer">
                         <button
                             type="submit"
-                            disabled={rating === 0 || isSubmitting}
+                            disabled={rating === 0 || isSubmitting || (comment || '').trim().length < MIN_COMMENT_LENGTH}
                             className="btn btn-primary btn-lg w-full"
                             style={{ gap: '8px' }}
                         >
                             <Send className="w-5 h-5" />
-                            {isSubmitting ? 'Yuborilmoqda...' : 'Baholash'}
+                            {isSubmitting ? t('review_modal.submitting') : t('review_modal.submit')}
                         </button>
                     </div>
                 </form>

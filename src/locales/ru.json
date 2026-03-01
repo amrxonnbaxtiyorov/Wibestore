@@ -610,6 +610,9 @@
         "skins": "Скины",
         "sales_count": "продаж",
         "recent_reviews": "Последние отзывы",
+        "reputation": "Репутация",
+        "reputation_hint": "Рейтинг продавца и отзывы покупателей всегда видны.",
+        "reviews_empty_seller": "Пока нет отзывов",
         "share": "Поделиться",
         "copy_failed": "Не удалось скопировать",
         "added_to_favorites": "Добавлено в избранное",
@@ -632,7 +635,17 @@
         "empty_received": "Пока нет отзывов",
         "empty_given": "Вы ещё никого не оценили",
         "reviews_count": "отзывов",
-        "account_label": "Аккаунт"
+        "account_label": "Аккаунт",
+        "comment_required": "Комментарий обязателен — напишите отзыв о продавце.",
+        "comment_placeholder": "Опишите опыт покупки и продавца..."
+    },
+    "review_modal": {
+        "title": "Оставить отзыв",
+        "subtitle": "Спасибо за покупку! Оцените продавца — это поможет другим.",
+        "rating_label": "Оценка",
+        "comment_label": "Комментарий (обязательно)",
+        "submit": "Отправить",
+        "submitting": "Отправка..."
     },
     "notifications": {
         "title": "Уведомления",

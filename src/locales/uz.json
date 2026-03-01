@@ -610,6 +610,9 @@
         "skins": "Skinlar",
         "sales_count": "sotuv",
         "recent_reviews": "So'nggi sharhlar",
+        "reputation": "Reputatsiya",
+        "reputation_hint": "Sotuvchi reytingi va xaridorlar sharhlari har doim ko'rinadi.",
+        "reviews_empty_seller": "Hali sharhlar yo'q",
         "share": "Ulashish",
         "copy_failed": "Nusxalab bo'lmadi",
         "added_to_favorites": "Sevimlilarga qo'shildi",
@@ -632,7 +635,17 @@
         "empty_received": "Hali baholashlar yo'q",
         "empty_given": "Siz hali hech kimni baholamadingiz",
         "reviews_count": "ta baholash",
-        "account_label": "Akkaunt"
+        "account_label": "Akkaunt",
+        "comment_required": "Izoh majburiy — sotuvchi haqida fikringizni yozing.",
+        "comment_placeholder": "Sotuvchi va akkaunt haqida fikringizni yozing..."
+    },
+    "review_modal": {
+        "title": "Baholash",
+        "subtitle": "Sotib olganingiz uchun rahmat! Sotuvchini baholab, boshqalarga yordam bering.",
+        "rating_label": "Baho",
+        "comment_label": "Izoh (majburiy)",
+        "submit": "Yuborish",
+        "submitting": "Yuborilmoqda..."
     },
     "notifications": {
         "title": "Bildirishnomalar",

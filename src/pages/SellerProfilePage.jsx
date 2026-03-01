@@ -1,7 +1,8 @@
 import { useParams, Link, useLocation } from 'react-router-dom';
-import { Star, Shield, ArrowLeft, Package } from 'lucide-react';
+import { Star, Shield, ArrowLeft, Package, MessageSquare } from 'lucide-react';
 import { useListings } from '../hooks';
 import AccountCard from '../components/AccountCard';
+import ReviewList from '../components/ReviewList';
 import { useLanguage } from '../context/LanguageContext';
 import SkeletonLoader from '../components/SkeletonLoader';
 
@@ -105,6 +106,23 @@ const SellerProfilePage = () => {
                             {t('detail.back_to_products') || 'Mahsulotlarga qaytish'}
                         </Link>
                     </div>
+                </div>
+
+                {/* Sotuvchi reputatsiyasi — sharhlar har doim ko'rinadi */}
+                <div style={{ marginBottom: '32px' }}>
+                    <h2 style={{
+                        fontSize: 'var(--font-size-xl)',
+                        fontWeight: 'var(--font-weight-bold)',
+                        color: 'var(--color-text-primary)',
+                        marginBottom: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                    }}>
+                        <MessageSquare style={{ width: '24px', height: '24px', color: 'var(--color-accent-blue)' }} />
+                        {t('detail.reputation')} · {t('detail.reviews')}
+                    </h2>
+                    <ReviewList userId={seller?.id || userId} type="received" />
                 </div>
 
                 {/* Sotuvchining e'lonlari */}

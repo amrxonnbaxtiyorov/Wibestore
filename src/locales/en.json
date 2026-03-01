@@ -610,6 +610,9 @@
         "skins": "Skins",
         "sales_count": "sales",
         "recent_reviews": "Recent reviews",
+        "reputation": "Reputation",
+        "reputation_hint": "Seller rating and buyer reviews are always visible.",
+        "reviews_empty_seller": "No reviews yet",
         "share": "Share",
         "copy_failed": "Copy failed",
         "added_to_favorites": "Added to favorites",
@@ -632,7 +635,17 @@
         "empty_received": "No reviews yet",
         "empty_given": "You haven't reviewed anyone yet",
         "reviews_count": "reviews",
-        "account_label": "Account"
+        "account_label": "Account",
+        "comment_required": "Comment is required — please write your feedback about the seller.",
+        "comment_placeholder": "Share your experience with the seller and the account..."
+    },
+    "review_modal": {
+        "title": "Leave a review",
+        "subtitle": "Thanks for your purchase! Rate the seller to help others.",
+        "rating_label": "Rating",
+        "comment_label": "Comment (required)",
+        "submit": "Submit",
+        "submitting": "Submitting..."
     },
     "notifications": {
         "title": "Notifications",

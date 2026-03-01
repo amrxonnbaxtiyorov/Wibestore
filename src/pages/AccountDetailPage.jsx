@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { accounts as mockAccounts } from '../data/mockData';
 import BuyerRulesQuiz from '../components/BuyerRulesQuiz';
+import ReviewModal from '../components/ReviewModal';
 
 /* ─── Image Carousel ──────────────────────────────────────────── */
 const ImageCarousel = ({ images, title, noImageText, imageErrorText }) => {
@@ -337,8 +338,10 @@ const AccountDetailPage = () => {
     };
 
     const purchaseListing = usePurchaseListing();
+    const [showReviewAfterPurchase, setShowReviewAfterPurchase] = useState(false);
+    const [pendingChatRoomId, setPendingChatRoomId] = useState(null);
 
-    /** Qoidalar o‘tkazilgach: balance orqali xarid, muvaffaqiyatda chat ochiladi (sotuvchi + admin). */
+    /** Qoidalar o'tkazilgach: balance orqali xarid, muvaffaqiyatda majburiy baholash oynasi ochiladi, keyin chat. */
     const handleBuyPassRedirectToTelegram = () => {
         if (!listing?.id) return;
         purchaseListing.mutate(
@@ -348,8 +351,9 @@ const AccountDetailPage = () => {
                     setShowBuyerRulesModal(false);
                     const chatRoomId = data?.data?.chat_room_id;
                     if (chatRoomId) {
-                        addToast({ type: 'success', title: t('detail.purchase_success_chat') || 'Xarid tasdiqlandi. Chat ochildi.' });
-                        navigate(`/chat/${chatRoomId}`);
+                        setPendingChatRoomId(chatRoomId);
+                        setShowReviewAfterPurchase(true);
+                        addToast({ type: 'success', title: t('detail.purchase_success_chat') || 'Xarid tasdiqlandi. Endi sotuvchini baholang.' });
                     } else {
                         fallbackToTelegram();
                     }
@@ -455,6 +459,23 @@ const AccountDetailPage = () => {
                     inModal
                     onPass={handleBuyPassRedirectToTelegram}
                     onClose={() => setShowBuyerRulesModal(false)}
+                />
+            )}
+            {showReviewAfterPurchase && listing?.seller?.id && (
+                <ReviewModal
+                    isOpen={showReviewAfterPurchase}
+                    seller={listing.seller}
+                    account={{ id: listing.id, title: listing.title }}
+                    onClose={() => {
+                        setShowReviewAfterPurchase(false);
+                        if (pendingChatRoomId) navigate(`/chat/${pendingChatRoomId}`);
+                        setPendingChatRoomId(null);
+                    }}
+                    onSubmit={() => {
+                        setShowReviewAfterPurchase(false);
+                        if (pendingChatRoomId) navigate(`/chat/${pendingChatRoomId}`);
+                        setPendingChatRoomId(null);
+                    }}
                 />
             )}
             <div className="gh-container">
@@ -611,7 +632,15 @@ const AccountDetailPage = () => {
                             </div>
                         </div>
 
-                        {/* Seller card — profilga o'tish */}
+                        {/* Sotuvchi reputatsiyasi — har doim ko'rinadi */}
+                        <div style={{ marginBottom: '8px' }}>
+                            <p style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '2px' }}>
+                                {t('detail.reputation')}
+                            </p>
+                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: 0 }}>
+                                {t('detail.reputation_hint')}
+                            </p>
+                        </div>
                         {listing.seller?.id ? (
                             <Link
                                 to={`/seller/${listing.seller.id}`}
@@ -663,12 +692,12 @@ const AccountDetailPage = () => {
                                         </div>
                                     </div>
                                 </div>
-                                {recentSellerReviews.length > 0 && (
-                                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--color-border-muted)' }}>
-                                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: '8px', fontWeight: 'var(--font-weight-medium)' }}>
-                                            {t('detail.recent_reviews') || 'So\'nggi sharhlar'}
-                                        </p>
-                                        {recentSellerReviews.map((rev) => (
+                                <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--color-border-muted)' }}>
+                                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: '8px', fontWeight: 'var(--font-weight-medium)' }}>
+                                        {t('detail.recent_reviews')}
+                                    </p>
+                                    {recentSellerReviews.length > 0 ? (
+                                        recentSellerReviews.map((rev) => (
                                             <div key={rev.id || rev.createdAt} style={{ marginBottom: '8px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
                                                     {[1, 2, 3, 4, 5].map((s) => (
@@ -684,9 +713,13 @@ const AccountDetailPage = () => {
                                                     </p>
                                                 )}
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
+                                        ))
+                                    ) : (
+                                        <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: 0 }}>
+                                            {t('detail.reviews_empty_seller')}
+                                        </p>
+                                    )}
+                                </div>
                             </Link>
                         ) : (
                             <div style={{
