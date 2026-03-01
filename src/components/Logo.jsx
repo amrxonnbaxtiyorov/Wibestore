@@ -1,7 +1,7 @@
 import { useTheme } from '../context/ThemeContext';
 
-// Oldingi SVG logoning o'lchamlari: viewBox 185×36, height 38 → width ≈ 195
 const LOGO_ASPECT = 185 / 36;
+const LOGO_SRC = '/logo-transparent.png';
 
 const Logo = ({ height = 38 }) => {
     const { isDark } = useTheme();
@@ -14,7 +14,7 @@ const Logo = ({ height = 38 }) => {
                 width: `${width}px`,
                 height: `${height}px`,
                 backgroundColor: bg,
-                backgroundImage: 'url(/logo-transparent.png)',
+                backgroundImage: `url(${LOGO_SRC})`,
                 backgroundSize: 'contain',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
