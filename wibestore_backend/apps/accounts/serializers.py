@@ -65,6 +65,7 @@ class UserSerializer(serializers.ModelSerializer):
     """Full user serializer for profile views."""
 
     display_name = serializers.CharField(read_only=True)
+    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -100,11 +101,22 @@ class UserSerializer(serializers.ModelSerializer):
             "last_login",
         ]
 
+    def get_avatar(self, obj):
+        if obj.avatar_url:
+            return obj.avatar_url
+        request = self.context.get("request")
+        if obj.avatar:
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None
+
 
 class UserPublicSerializer(serializers.ModelSerializer):
     """Public user info (visible to other users)."""
 
     display_name = serializers.CharField(read_only=True)
+    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -117,6 +129,16 @@ class UserPublicSerializer(serializers.ModelSerializer):
             "total_sales",
             "created_at",
         ]
+
+    def get_avatar(self, obj):
+        if obj.avatar_url:
+            return obj.avatar_url
+        request = self.context.get("request")
+        if obj.avatar:
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
@@ -205,12 +227,13 @@ class OTPVerifySerializer(serializers.Serializer):
 
 
 class TelegramOTPCreateSerializer(serializers.Serializer):
-    """Bot uchun OTP kod yaratish (secret_key, telegram_id, phone_number, full_name)."""
+    """Bot uchun OTP kod yaratish (secret_key, telegram_id, phone_number, full_name, photo_url)."""
 
     secret_key = serializers.CharField(write_only=True)
     telegram_id = serializers.IntegerField(min_value=1)
     phone_number = serializers.CharField(max_length=20)
     full_name = serializers.CharField(max_length=150, required=False, default="")
+    photo_url = serializers.URLField(max_length=500, required=False, allow_blank=True)
 
 
 class TelegramRegisterSerializer(serializers.Serializer):

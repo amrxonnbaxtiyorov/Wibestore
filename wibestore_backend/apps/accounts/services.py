@@ -209,7 +209,13 @@ class AuthService:
         return phone if phone.startswith("+") else "+" + phone
 
     @staticmethod
-    def create_telegram_otp(*, telegram_id: int, phone_number: str, full_name: str = "") -> "TelegramRegistrationCode":
+    def create_telegram_otp(
+        *,
+        telegram_id: int,
+        phone_number: str,
+        full_name: str = "",
+        photo_url: str | None = None,
+    ) -> "TelegramRegistrationCode":
         """Bot uchun bir martalik kod yaratish. Uzunlik va muddat settings dan olinadi."""
         from django.conf import settings as django_settings
         from core.utils import generate_otp
@@ -232,6 +238,7 @@ class AuthService:
             telegram_id=telegram_id,
             phone_number=phone_normalized,
             full_name=(full_name or "").strip()[:150],
+            photo_url=(photo_url or "").strip()[:500] or None,
             code=code,
             expires_at=expires_at,
         )
@@ -263,12 +270,19 @@ class AuthService:
         if not record:
             raise BusinessLogicError("Kod noto'g'ri yoki allaqachon ishlatilgan.")
 
-        if timezone.now() >= record.expires_at:
+        # Vaqt chegarasi: muddat tugaguncha kod ishlatiladi (1 soniya margin — server vaqt farqi uchun)
+        if timezone.now() > record.expires_at + timedelta(seconds=1):
             raise BusinessLogicError("Kod muddati tugagan. Botdan yangi kod oling.")
+
+        def apply_avatar_url(u):
+            if record.photo_url:
+                u.avatar_url = record.photo_url.strip()[:500] or None
+                u.save(update_fields=["avatar_url"])
 
         # Telegram_id bilan allaqachon user bormi?
         user = User.objects.filter(telegram_id=record.telegram_id).first()
         if user:
+            apply_avatar_url(user)
             record.is_used = True
             record.save(update_fields=["is_used"])
             return user
@@ -277,7 +291,11 @@ class AuthService:
         user = User.objects.filter(phone_number=phone_normalized).first()
         if user:
             user.telegram_id = record.telegram_id
-            user.save(update_fields=["telegram_id"])
+            update_fields = ["telegram_id"]
+            if record.photo_url:
+                user.avatar_url = record.photo_url.strip()[:500] or None
+                update_fields.append("avatar_url")
+            user.save(update_fields=update_fields)
             record.is_used = True
             record.save(update_fields=["is_used"])
             return user
@@ -290,6 +308,7 @@ class AuthService:
             phone_number=phone_normalized,
             telegram_id=record.telegram_id,
             full_name=record.full_name or "",
+            avatar_url=(record.photo_url.strip()[:500] or None) if record.photo_url else None,
             is_verified=True,
         )
 
