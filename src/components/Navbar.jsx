@@ -466,9 +466,13 @@ const Navbar = () => {
                                                 </div>
                                                 <div
                                                     className="text-[12px] truncate mb-1"
-                                                    style={{ color: isDark ? '#484f58' : '#8c959f', paddingTop: user?.email ? '2px' : '0', paddingBottom: '4px' }}
+                                                    style={{ color: isDark ? '#484f58' : '#8c959f', paddingTop: (user?.telegram_id || user?.email?.startsWith?.('tg_')) ? '2px' : '0', paddingBottom: '4px' }}
                                                 >
-                                                    {user?.email || user?.telegram || ''}
+                                                    {user?.telegram_id
+                                                        ? String(user.telegram_id)
+                                                        : (user?.email && String(user.email).startsWith('tg_'))
+                                                            ? String(user.email).replace(/^tg_(\d+).*$/, '$1')
+                                                            : (user?.telegram || user?.email || '')}
                                                 </div>
                                                 {coins > 0 && (
                                                     <div className="flex items-center gap-1 mt-2 mb-1">
