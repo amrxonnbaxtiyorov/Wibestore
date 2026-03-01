@@ -61,6 +61,7 @@ const PremiumPage = () => {
             id: 'premium',
             name: 'Premium',
             priceUSD: 9.99,
+            regularPriceUSD: 19.98,
             icon: '⭐',
             description: t('premium.premium_desc') || 'More visibility',
             features: features.premium,
@@ -69,6 +70,7 @@ const PremiumPage = () => {
             id: 'pro',
             name: 'Pro',
             priceUSD: 24.99,
+            regularPriceUSD: 49.98,
             icon: '💎',
             description: t('premium.pro_desc') || 'Maximum benefits',
             features: features.pro,
@@ -297,6 +299,11 @@ const PremiumPage = () => {
                                         <p style={{ marginTop: '6px', fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-green)', fontWeight: 600 }}>
                                             {t('premium.first_month_discount') || '50% off first month'}
                                         </p>
+                                        {plan.regularPriceUSD != null && (
+                                            <p style={{ marginTop: '4px', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                                {(t('premium.from_next_month') || 'From next month: {price}/mo').replace('{price}', `$${plan.regularPriceUSD}`)}
+                                            </p>
+                                        )}
                                     </>
                                 ) : (
                                     <span style={{

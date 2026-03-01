@@ -100,6 +100,7 @@
         "feat_manager": "Shaxsiy menejer",
         "subscribe_now": "Obuna bo'lish",
         "first_month_discount": "Birinchi oy 50% chegirma",
+        "from_next_month": "Keyingi oydan chegirmasiz: {price}/oy",
         "current_plan": "Joriy reja",
         "login_required": "Obuna uchun avval tizimga kiring",
         "buy_telegram": "Telegram orqali sotib olish",

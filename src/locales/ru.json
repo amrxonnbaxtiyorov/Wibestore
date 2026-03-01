@@ -100,6 +100,7 @@
         "feat_manager": "Персональный менеджер",
         "subscribe_now": "Подписаться",
         "first_month_discount": "Скидка 50% на первый месяц",
+        "from_next_month": "Со следующего месяца: {price}/мес",
         "current_plan": "Текущий план",
         "login_required": "Войдите, чтобы оформить подписку",
         "buy_telegram": "Купить через Telegram",

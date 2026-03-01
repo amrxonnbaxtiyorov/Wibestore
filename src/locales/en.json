@@ -100,6 +100,7 @@
         "feat_manager": "Personal manager",
         "subscribe_now": "Subscribe now",
         "first_month_discount": "50% off first month",
+        "from_next_month": "From next month: {price}/mo",
         "current_plan": "Current plan",
         "login_required": "Please sign in first to subscribe",
         "buy_telegram": "Buy via Telegram",
