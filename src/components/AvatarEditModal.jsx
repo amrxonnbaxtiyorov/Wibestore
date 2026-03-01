@@ -2,7 +2,8 @@ import { useState } from 'react';
 import Modal from './ConfirmDialog'; // Reuse modal if available
 
 export default function AvatarEditModal({ open, onClose, onSave }) {
-    const [image, setImage] = useState(null);
+    // Removed unused image state
+    // bu joyda preview va cropped image uchun state lar qo'shildi, real cropper bilan almashtirish mumkin
     const [preview, setPreview] = useState(null);
     const [cropped, setCropped] = useState(null);
 
@@ -17,7 +18,6 @@ export default function AvatarEditModal({ open, onClose, onSave }) {
             const reader = new FileReader();
             reader.onload = (ev) => setPreview(ev.target.result);
             reader.readAsDataURL(file);
-            setImage(file);
         }
     };
 
