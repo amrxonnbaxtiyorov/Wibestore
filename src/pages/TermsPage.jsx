@@ -97,13 +97,13 @@ const TermsPage = () => {
                                     </tr>
                                     <tr>
                                         <td style={{ textAlign: 'center' }}>Premium</td>
-                                        <td style={{ textAlign: 'center', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-accent-orange)' }}>10%</td>
-                                        <td style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>+ Yuqori ko'rinish</td>
+                                        <td style={{ textAlign: 'center', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-accent-orange)' }}>8%</td>
+                                        <td style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Obuna bilan, yuqori ko'rinish</td>
                                     </tr>
                                     <tr>
                                         <td style={{ textAlign: 'center' }}>Pro</td>
-                                        <td style={{ textAlign: 'center', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-accent-green)' }}>0%</td>
-                                        <td style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Komissiyasiz</td>
+                                        <td style={{ textAlign: 'center', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-accent-green)' }}>5%</td>
+                                        <td style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Eng past stavka</td>
                                     </tr>
                                 </tbody>
                             </table>
