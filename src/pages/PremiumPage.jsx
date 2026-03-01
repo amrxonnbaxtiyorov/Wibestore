@@ -294,6 +294,9 @@ const PremiumPage = () => {
                                             ${plan.priceUSD}
                                         </span>
                                         <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>/mo</span>
+                                        <p style={{ marginTop: '6px', fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-green)', fontWeight: 600 }}>
+                                            {t('premium.first_month_discount') || '50% off first month'}
+                                        </p>
                                     </>
                                 ) : (
                                     <span style={{

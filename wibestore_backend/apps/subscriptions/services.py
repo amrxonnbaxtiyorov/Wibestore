@@ -33,6 +33,15 @@ class SubscriptionService:
         # Calculate price
         price = plan.price_monthly if billing_period == "monthly" else plan.price_yearly
 
+        # First month 50% discount: only for first-ever paid subscription (premium/pro)
+        if plan_slug in ("premium", "pro") and billing_period == "monthly":
+            has_ever_paid = UserSubscription.objects.filter(
+                user=user,
+                plan__slug__in=["premium", "pro"],
+            ).exists()
+            if not has_ever_paid:
+                price = (price * Decimal("0.5")).quantize(Decimal("0.01"))
+
         if user.balance < price:
             raise InsufficientFundsError("Insufficient balance for subscription.")
 

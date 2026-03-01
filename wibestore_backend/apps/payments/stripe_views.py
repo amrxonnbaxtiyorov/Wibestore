@@ -46,6 +46,16 @@ class StripeCreateCheckoutSessionView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # First month 50% discount: apply if user has never had a paid subscription
+        from apps.subscriptions.models import UserSubscription
+        has_ever_paid = UserSubscription.objects.filter(
+            user=request.user,
+            plan__slug__in=["premium", "pro"],
+        ).exists()
+        amount_cents = price_config["amount"]
+        if not has_ever_paid:
+            amount_cents = max(1, int(amount_cents * 0.5))  # 50% off first month
+
         # Initialize Stripe
         stripe.api_key = settings.STRIPE_SECRET_KEY
         if not stripe.api_key:
@@ -64,9 +74,10 @@ class StripeCreateCheckoutSessionView(APIView):
                             "currency": price_config["currency"],
                             "product_data": {
                                 "name": price_config["name"],
-                                "description": f"WibeStore {plan_slug.capitalize()} monthly subscription",
+                                "description": f"WibeStore {plan_slug.capitalize()} monthly subscription"
+                                + (" (50% off first month)" if not has_ever_paid else ""),
                             },
-                            "unit_amount": price_config["amount"],
+                            "unit_amount": amount_cents,
                         },
                         "quantity": 1,
                     }
