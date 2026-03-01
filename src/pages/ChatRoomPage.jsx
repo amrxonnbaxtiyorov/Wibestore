@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Send, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Send, MessageCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChatMessages, useSendMessage } from '../hooks/useChat.js';
 import { useLanguage } from '../context/LanguageContext';
@@ -60,6 +60,31 @@ export default function ChatRoomPage() {
                         <h1 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', margin: 0 }}>
                             {t('detail.order_chat') || 'Buyurtma chat'}
                         </h1>
+                    </div>
+                </div>
+
+                {/* Ogohlantirish: firibgarlardan ehtiyot bo'lish */}
+                <div
+                    role="alert"
+                    style={{
+                        marginBottom: '16px',
+                        padding: '14px 16px',
+                        backgroundColor: 'var(--color-warning-bg, #fef3c7)',
+                        border: '1px solid var(--color-warning-border, #f59e0b)',
+                        borderRadius: 'var(--radius-xl)',
+                        display: 'flex',
+                        gap: '12px',
+                        alignItems: 'flex-start',
+                    }}
+                >
+                    <AlertTriangle style={{ width: '22px', height: '22px', color: 'var(--color-warning, #d97706)', flexShrink: 0, marginTop: '2px' }} />
+                    <div>
+                        <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', margin: '0 0 6px 0', fontSize: 'var(--font-size-sm)' }}>
+                            {t('detail.chat_safety_title') || 'Firibgarlardan (mashenniklardan) ehtiyot bo\'ling'}
+                        </p>
+                        <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.45 }}>
+                            {t('detail.chat_safety_warning')}
+                        </p>
                     </div>
                 </div>
 

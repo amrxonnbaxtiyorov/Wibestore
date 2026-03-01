@@ -623,6 +623,8 @@
         "image_load_failed": "Rasm yuklanmadi",
         "chat_coming_soon": "Sotuvchi bilan chat tez orada ulanadi.",
         "order_chat": "Buyurtma chat",
+        "chat_safety_title": "Firibgarlardan (mashenniklardan) ehtiyot bo'ling",
+        "chat_safety_warning": "Platforma tashqarisida to'lov qilmang va parol, karta raqami yoki boshqa shaxsiy ma'lumotlaringizni hech kimga yubormang. Barcha to'lovlar va savdolar faqat WibeStore orqali amalga oshirilishi kerak. Agar kimdir sizdan tashqarida to'lov yoki ma'lumot so'rasa, darhol qo'llab-quvvatlashga murojaat qiling.",
         "purchase_success_chat": "Xarid tasdiqlandi. Sotuvchi va admin bilan chat ochildi.",
         "insufficient_balance": "Balans yetarli emas. Hamyonni to'ldiring yoki Telegram orqali to'lang.",
         "purchase_error": "Xarid amalga oshmadi.",

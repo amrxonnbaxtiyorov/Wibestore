@@ -623,6 +623,8 @@
         "image_load_failed": "Image failed to load",
         "chat_coming_soon": "Chat with seller will be available soon.",
         "order_chat": "Order chat",
+        "chat_safety_title": "Beware of scammers",
+        "chat_safety_warning": "Do not pay outside the platform or share your password, card details, or other personal information with anyone. All payments and transactions must be made only through WibeStore. If someone asks you to pay or share details outside the site, contact support immediately.",
         "purchase_success_chat": "Purchase confirmed. Chat with seller and admin opened.",
         "insufficient_balance": "Insufficient balance. Top up your wallet or pay via Telegram.",
         "purchase_error": "Purchase could not be completed.",

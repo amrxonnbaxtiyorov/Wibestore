@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, ArrowLeft, Star } from 'lucide-react';
+import { MessageCircle, X, Send, ArrowLeft, Star, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
-import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const ChatWidget = () => {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const {
         conversations,
         activeChat,
@@ -188,6 +189,30 @@ const ChatWidget = () => {
                         {activeChat ? (
                             // Messages View
                             <div style={{ padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {/* Ogohlantirish: firibgarlardan ehtiyot bo'lish */}
+                                <div
+                                    role="alert"
+                                    style={{
+                                        padding: '10px 12px',
+                                        backgroundColor: 'var(--color-warning-bg, #fef3c7)',
+                                        border: '1px solid var(--color-warning-border, #f59e0b)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        display: 'flex',
+                                        gap: '8px',
+                                        alignItems: 'flex-start',
+                                        marginBottom: '4px',
+                                    }}
+                                >
+                                    <AlertTriangle style={{ width: '18px', height: '18px', color: 'var(--color-warning, #d97706)', flexShrink: 0, marginTop: '1px' }} />
+                                    <div>
+                                        <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', margin: '0 0 4px 0', fontSize: 'var(--font-size-xs)' }}>
+                                            {t('detail.chat_safety_title') || 'Firibgarlardan ehtiyot bo\'ling'}
+                                        </p>
+                                        <p style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>
+                                            {t('detail.chat_safety_warning')}
+                                        </p>
+                                    </div>
+                                </div>
                                 {/* Account Info */}
                                 <div
                                     className="flex items-center gap-3"
