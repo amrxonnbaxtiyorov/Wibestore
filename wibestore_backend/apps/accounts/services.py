@@ -270,7 +270,8 @@ class AuthService:
         if not record:
             raise BusinessLogicError("Kod noto'g'ri yoki allaqachon ishlatilgan.")
 
-        if timezone.now() >= record.expires_at:
+        # Vaqt chegarasi: muddat tugaguncha kod ishlatiladi (1 soniya margin — server vaqt farqi uchun)
+        if timezone.now() > record.expires_at + timedelta(seconds=1):
             raise BusinessLogicError("Kod muddati tugagan. Botdan yangi kod oling.")
 
         def apply_avatar_url(u):

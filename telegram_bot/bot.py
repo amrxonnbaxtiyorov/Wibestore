@@ -61,8 +61,8 @@ REGISTER_URL = os.getenv('REGISTER_URL', 'http://localhost:5173/register')  # Fr
 # Conversation states: faqat telefon orqali kod olish
 WAITING_PHONE, CONFIRMING = range(2)
 
-# Countdown update interval (seconds)
-COUNTDOWN_INTERVAL = 30
+# Countdown update interval (seconds) — har soniyada teskari sanoq
+COUNTDOWN_INTERVAL = 1
 
 
 # ===== HELPER FUNCTIONS =====
@@ -150,11 +150,12 @@ def _make_progress_bar(remaining: int, total: int) -> str:
 
 
 def format_otp_message(code: str, remaining: int, total: int, register_url: str) -> str:
-    """OTP xabar formatlash (countdown + progress bar)"""
+    """OTP xabar formatlash — teskari sanoq har soniya, foiz orqaga qaytadi."""
     minutes = remaining // 60
     secs = remaining % 60
     time_str = f"{minutes}:{secs:02d}"
     progress = _make_progress_bar(remaining, total)
+    percent = round((remaining / total) * 100) if total > 0 else 0
 
     if remaining <= 0:
         return (
@@ -172,7 +173,7 @@ def format_otp_message(code: str, remaining: int, total: int, register_url: str)
         f"<code>┌─────────────┐\n"
         f"│  {code}  │\n"
         f"└─────────────┘</code>\n\n"
-        f"⏱ <b>Qolgan vaqt:</b> {time_str}\n"
+        f"⏱ <b>Qolgan vaqt:</b> {time_str} <b>({percent}%)</b>\n"
         f"<code>{progress}</code>\n\n"
         f"📌 Ushbu kodni saytda ro'yxatdan o'tishda <b>telefon raqam</b> bilan birga kiriting:\n"
         f"🔗 <a href='{register_url}'>{register_url}</a>\n\n"
