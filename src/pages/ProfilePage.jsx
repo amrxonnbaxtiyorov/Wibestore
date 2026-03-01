@@ -164,17 +164,17 @@ const ProfilePage = () => {
                             >
                                 <Edit2 className="w-3 h-3" />
                             </button>
-                            // Avatar saqlash handler
-                            const handleAvatarSave = async (croppedDataUrl) => {
-                                // TODO: APIga yuborish va user.avatar yangilash
-                                // Misol uchun:
-                                // await apiClient.post('/profile/avatar/', { avatar: croppedDataUrl });
-                                // setUser({ ...user, avatar: croppedDataUrl });
-                                setAvatarModalOpen(false);
-                                addToast({ type: 'success', title: "Profil rasmi yangilandi" });
-                            };
-                            <AvatarEditModal open={avatarModalOpen} onClose={() => setAvatarModalOpen(false)} onSave={handleAvatarSave} />
                         </div>
+    // Avatar saqlash handler
+    const handleAvatarSave = async (croppedDataUrl) => {
+        // TODO: APIga yuborish va user.avatar yangilash
+        // Misol uchun:
+        // await apiClient.post('/profile/avatar/', { avatar: croppedDataUrl });
+        // setUser({ ...user, avatar: croppedDataUrl });
+        setAvatarModalOpen(false);
+        addToast({ type: 'success', title: "Profil rasmi yangilandi" });
+    };
+    <AvatarEditModal open={avatarModalOpen} onClose={() => setAvatarModalOpen(false)} onSave={handleAvatarSave} />
 
                         {/* Info — ism ostida faqat Telegram ID */}
                         <div className="flex-1 text-center md:text-left">
