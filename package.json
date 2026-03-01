@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "logo:transparent": "node scripts/logo-remove-checkered.js",
+    "logo:dark": "node scripts/logo-dark-mode.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "dev:backend": "cd wibestore_backend && python manage.py runserver",
