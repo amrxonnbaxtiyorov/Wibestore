@@ -163,7 +163,6 @@ const ProfilePage = () => {
                                 <Edit2 className="w-3 h-3" />
                             </button>
                         </div>
-    // Avatar saqlash handler
                         {/* Info — ism ostida faqat Telegram ID */}
                         <div className="flex-1 text-center md:text-left">
                             <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
