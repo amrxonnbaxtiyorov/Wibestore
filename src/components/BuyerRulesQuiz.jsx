@@ -81,14 +81,14 @@ export default function BuyerRulesQuiz({ onPass, onClose, inModal = true }) {
                 <div
                     key={`buyer-rules-${lang}`}
                     style={{
-                    border: '1px solid var(--color-border-default)',
-                    borderRadius: 'var(--radius-lg)',
-                    padding: '16px',
-                    maxHeight: '240px',
-                    overflowY: 'auto',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    marginBottom: '16px',
-                }}>
+                        border: '1px solid var(--color-border-default)',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '16px',
+                        maxHeight: '240px',
+                        overflowY: 'auto',
+                        backgroundColor: 'var(--color-bg-secondary)',
+                        marginBottom: '16px',
+                    }}>
                     {buyerRulesSectionsUz.map((section, idx) => {
                         const title = (isRu && section.titleRu) ? section.titleRu : section.title;
                         const items = (isRu && section.itemsRu && section.itemsRu.length) ? section.itemsRu : section.items;
@@ -113,7 +113,7 @@ export default function BuyerRulesQuiz({ onPass, onClose, inModal = true }) {
                         {t('buyer_rules.read_confirm') || "Men barcha qoidalarni to'liq o'qidim va qabul qilaman."}
                     </span>
                 </label>
-                <button type="button" onClick={handleStartQuiz} disabled={!readConfirmed} className="btn btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <button type="button" onClick={handleStartQuiz} disabled={!readConfirmed} className="btn btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 24px' }}>
                     {t('buyer_rules.start_quiz') || "Savollarni boshlash"}
                     <ChevronRight className="w-4 h-4" />
                 </button>
@@ -151,8 +151,8 @@ export default function BuyerRulesQuiz({ onPass, onClose, inModal = true }) {
                     </div>
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
-                    <button type="button" onClick={() => setPhase('rules')} className="btn btn-secondary" style={{ flex: 1 }}>{t('common.back') || 'Orqaga'}</button>
-                    <button type="button" onClick={handleSubmitQuiz} className="btn btn-primary" style={{ flex: 2 }}>{t('buyer_rules.submit_quiz') || "Javoblarni yuborish"}</button>
+                    <button type="button" onClick={() => setPhase('rules')} className="btn btn-secondary" style={{ flex: 1, padding: '12px 24px' }}>{t('common.back') || 'Orqaga'}</button>
+                    <button type="button" onClick={handleSubmitQuiz} className="btn btn-primary" style={{ flex: 2, padding: '12px 24px' }}>{t('buyer_rules.submit_quiz') || "Javoblarni yuborish"}</button>
                 </div>
             </div>
         );
