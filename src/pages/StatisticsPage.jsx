@@ -50,7 +50,7 @@ const StatisticsPage = () => {
         { icon: Users, label: t('stats.total_users') || 'Total Users', value: '1,234', color: 'var(--color-accent-blue)' },
         { icon: ShoppingBag, label: t('stats.total_sales') || 'Total Sales', value: '5,678', color: 'var(--color-accent-green)' },
         { icon: Star, label: t('stats.avg_rating') || 'Avg Rating', value: '4.8', color: 'var(--color-premium-gold-light)' },
-        { icon: TrendingUp, label: t('stats.growth') || 'Monthly Growth', value: '+23%', color: 'var(--color-accent-blue)' },
+
     ];
 
     return (
@@ -86,7 +86,7 @@ const StatisticsPage = () => {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4" style={{ gap: '16px', marginBottom: '40px' }}>
+                <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap: '16px', marginBottom: '40px' }}>
                     {stats.map((stat, idx) => (
                         <div
                             key={idx}
