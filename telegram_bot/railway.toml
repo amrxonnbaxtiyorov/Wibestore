@@ -1,0 +1,4 @@
+# Railway: Dockerfile orqali build (mise/python 3.12.13 xatosini oldini oladi)
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
