@@ -281,6 +281,9 @@ CORS_ALLOW_CREDENTIALS = True
 # Telegram bot: bot create-otp endpoint uchun maxfiy kalit (env da TELEGRAM_BOT_SECRET yoki BOT_SECRET_KEY)
 TELEGRAM_BOT_SECRET = os.environ.get("TELEGRAM_BOT_SECRET") or os.environ.get("BOT_SECRET_KEY", "")
 
+# Frontend base URL — parol tiklash / email tasdiq havolalari uchun (env da FRONTEND_URL)
+FRONTEND_URL = env("FRONTEND_URL", default="https://wibestore.uz").rstrip("/")
+
 CORS_ALLOW_HEADERS = [
     "accept",
     "authorization",

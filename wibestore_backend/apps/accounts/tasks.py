@@ -47,7 +47,8 @@ def send_email_verification_task(user_id: str, token: str) -> None:
 
     try:
         user = User.objects.get(id=user_id)
-        verification_url = f"https://wibestore.uz/verify-email?token={token}"
+        frontend_url = getattr(settings, "FRONTEND_URL", "https://wibestore.uz").rstrip("/")
+        verification_url = f"{frontend_url}/verify-email?token={token}"
 
         send_mail(
             subject="Verify your WibeStore email",
@@ -70,7 +71,8 @@ def send_password_reset_email(user_id: str, token: str) -> None:
 
     try:
         user = User.objects.get(id=user_id)
-        reset_url = f"https://wibestore.uz/reset-password?token={token}"
+        frontend_url = getattr(settings, "FRONTEND_URL", "https://wibestore.uz").rstrip("/")
+        reset_url = f"{frontend_url}/reset-password?token={token}"
 
         html_message = render_to_string(
             "emails/password_reset.html",
