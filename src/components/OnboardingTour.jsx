@@ -15,14 +15,16 @@ export default function OnboardingTour() {
             const timer = setTimeout(() => setVisible(true), 800);
             return () => clearTimeout(timer);
         } catch {
-            setVisible(false);
+            // localStorage not available (e.g. private mode) — keep visible false
         }
     }, []);
 
     const finish = () => {
         try {
             localStorage.setItem(STORAGE_KEY, 'true');
-        } catch {}
+        } catch {
+            // ignore storage errors
+        }
         setVisible(false);
     };
 

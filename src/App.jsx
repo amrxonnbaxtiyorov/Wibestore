@@ -31,6 +31,7 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const SellPage = lazy(() => import('./pages/SellPage'));
 const FAQPage = lazy(() => import('./pages/FAQPage'));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
 const CoinsPage = lazy(() => import('./pages/CoinsPage'));
@@ -256,7 +257,11 @@ function App() {
                             <PublicLayout><FAQPage /></PublicLayout>
                           </Suspense>
                         } />
-                        <Route path="/forgot-password" element={<Navigate to="/login" replace />} />
+                        <Route path="/forgot-password" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <PublicLayout><ForgotPasswordPage /></PublicLayout>
+                          </Suspense>
+                        } />
                         <Route path="/reset-password" element={
                           <Suspense fallback={<PageLoader />}>
                             <PublicLayout><ResetPasswordPage /></PublicLayout>

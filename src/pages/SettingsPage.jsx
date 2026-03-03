@@ -27,7 +27,7 @@ const SettingsPage = () => {
                 bio: user.bio ?? prev.bio
             }));
         }
-    }, [user?.id, user?.name, user?.phone_number, user?.full_name]);
+    }, [user]);
 
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',

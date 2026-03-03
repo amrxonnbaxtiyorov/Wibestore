@@ -11,7 +11,6 @@ function normalizeUser(data) {
     let avatar = data.avatar ?? null;
     if (avatar && typeof avatar === 'string' && avatar.startsWith('/') && !avatar.startsWith('//')) {
         const origin = typeof window !== 'undefined' ? window.location.origin : '';
-        const base = origin.replace(/\/$/, '');
         const apiOrigin = API_BASE_URL.startsWith('http') ? new URL(API_BASE_URL).origin : origin;
         avatar = `${apiOrigin}${avatar}`;
     }

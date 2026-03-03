@@ -225,6 +225,24 @@ const AccountDetailPage = () => {
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState('description');
     const [showBuyerRulesModal, setShowBuyerRulesModal] = useState(false);
+    const purchaseListing = usePurchaseListing();
+    const [showReviewAfterPurchase, setShowReviewAfterPurchase] = useState(false);
+    const [pendingChatRoomId, setPendingChatRoomId] = useState(null);
+
+    // Sotuvchiga tegishli so'nggi 2 ta sharh (localStorage — API ulansa o'zgaradi)
+    const recentSellerReviews = useMemo(() => {
+        const sellerId = listing?.seller?.id;
+        if (!sellerId) return [];
+        try {
+            const raw = localStorage.getItem('wibeReviews');
+            if (!raw) return [];
+            const all = JSON.parse(raw);
+            const forSeller = all.filter((r) => String(r.sellerId) === String(sellerId));
+            return forSeller.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 2);
+        } catch {
+            return [];
+        }
+    }, [listing?.seller?.id]);
 
     // Sevimlilar: API yoki localStorage (kirish qilmaganida) — defer to avoid sync setState in effect
     const FAV_STORAGE_KEY = 'wibeFavoriteListingIds';
@@ -337,10 +355,6 @@ const AccountDetailPage = () => {
         setShowBuyerRulesModal(true);
     };
 
-    const purchaseListing = usePurchaseListing();
-    const [showReviewAfterPurchase, setShowReviewAfterPurchase] = useState(false);
-    const [pendingChatRoomId, setPendingChatRoomId] = useState(null);
-
     /** Qoidalar o'tkazilgach: balance orqali xarid, muvaffaqiyatda majburiy baholash oynasi ochiladi, keyin chat. */
     const handleBuyPassRedirectToTelegram = () => {
         if (!listing?.id) return;
@@ -436,21 +450,6 @@ const AccountDetailPage = () => {
         { id: 'features', label: t('detail.features') || 'Xususiyatlar' },
         { id: 'reviews', label: t('detail.reviews') || 'Sharhlar' },
     ];
-
-    // Sotuvchiga tegishli so'nggi 2 ta sharh (localStorage — API ulansa o'zgaradi)
-    const recentSellerReviews = useMemo(() => {
-        const sellerId = listing?.seller?.id;
-        if (!sellerId) return [];
-        try {
-            const raw = localStorage.getItem('wibeReviews');
-            if (!raw) return [];
-            const all = JSON.parse(raw);
-            const forSeller = all.filter((r) => String(r.sellerId) === String(sellerId));
-            return forSeller.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 2);
-        } catch {
-            return [];
-        }
-    }, [listing?.seller?.id]);
 
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '80px' }}>

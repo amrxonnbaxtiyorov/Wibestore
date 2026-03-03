@@ -13,6 +13,7 @@ export const useWebSocket = (url, options = {}) => {
     const [lastMessage, setLastMessage] = useState(null);
     const [error, setError] = useState(null);
     const [readyState, setReadyState] = useState(3); // WebSocket.CLOSED
+    const [retryCount, setRetryCount] = useState(0);
 
     const {
         onOpen,
@@ -45,6 +46,8 @@ export const useWebSocket = (url, options = {}) => {
         }
     }, []);
 
+    const connectRef = useRef(null);
+
     const connect = useCallback(() => {
         if (!mountedRef.current) return;
         if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) {
@@ -66,6 +69,7 @@ export const useWebSocket = (url, options = {}) => {
                 setIsConnected(true);
                 setError(null);
                 retryCountRef.current = 0;
+                setRetryCount(0);
                 if (onOpenRef.current) onOpenRef.current(event);
                 console.log('[WebSocket] Connected:', url);
             };
@@ -93,9 +97,11 @@ export const useWebSocket = (url, options = {}) => {
                     const currentRetry = retryCountRef.current;
                     console.log(`[WebSocket] Reconnecting in ${reconnectInterval}ms... (attempt ${currentRetry + 1}/${maxReconnectAttempts})`);
                     reconnectTimeoutRef.current = setTimeout(() => {
-                        if (mountedRef.current) {
-                            retryCountRef.current = currentRetry + 1;
-                            connect();
+                        if (mountedRef.current && connectRef.current) {
+                            const nextRetry = currentRetry + 1;
+                            retryCountRef.current = nextRetry;
+                            setRetryCount(nextRetry);
+                            connectRef.current();
                         }
                     }, reconnectInterval);
                 } else {
@@ -115,6 +121,10 @@ export const useWebSocket = (url, options = {}) => {
         }
     }, [url, protocols, getAuthToken, reconnectInterval, maxReconnectAttempts]);
 
+    useEffect(() => {
+        connectRef.current = connect;
+    }, [connect]);
+
     const disconnect = useCallback(() => {
         if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current);
@@ -132,6 +142,7 @@ export const useWebSocket = (url, options = {}) => {
         setLastMessage(null);
         setError(null);
         retryCountRef.current = 0;
+        setRetryCount(0);
     }, []);
 
     const sendMessage = useCallback((data) => {
@@ -144,12 +155,12 @@ export const useWebSocket = (url, options = {}) => {
         return false;
     }, []);
 
-    // Auto-connect on mount, cleanup on unmount
+    // Auto-connect on mount, cleanup on unmount (defer connect to avoid sync setState in effect)
     useEffect(() => {
         mountedRef.current = true;
-        connect();
-
+        const t = setTimeout(() => connect(), 0);
         return () => {
+            clearTimeout(t);
             mountedRef.current = false;
             disconnect();
         };
@@ -159,7 +170,7 @@ export const useWebSocket = (url, options = {}) => {
         isConnected,
         lastMessage,
         error,
-        retryCount: retryCountRef.current,
+        retryCount,
         sendMessage,
         connect,
         disconnect,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -6,12 +6,10 @@ const STORAGE_KEY = 'wibeCookieConsent';
 
 const CookieConsent = () => {
     const { t } = useLanguage();
-    const [visible, setVisible] = useState(false);
-
-    useEffect(() => {
-        const accepted = localStorage.getItem(STORAGE_KEY);
-        if (!accepted) setVisible(true);
-    }, []);
+    const [visible, setVisible] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return !localStorage.getItem(STORAGE_KEY);
+    });
 
     const accept = () => {
         localStorage.setItem(STORAGE_KEY, 'accepted');
