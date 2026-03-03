@@ -1,0 +1,4 @@
+# Railway — Telegram bot: Dockerfile orqali build
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
