@@ -78,6 +78,7 @@
         "subtitle": "Premium bilan ko'proq ko'rinish va tezroq sotish",
         "free_desc": "Bepul boshlang",
         "free_label": "Bepul",
+        "free_price": "0$ bepul",
         "premium_desc": "Ko'proq ko'rinish va imtiyozlar",
         "pro_desc": "Maksimal imtiyozlar",
         "popular": "Eng mashhur",
@@ -103,7 +104,7 @@
         "from_next_month": "Keyingi oydan chegirmasiz: {price}/oy",
         "current_plan": "Joriy reja",
         "login_required": "Obuna uchun avval tizimga kiring",
-        "buy_telegram": "Telegram orqali sotib olish",
+        "buy_telegram": "Sotib olish",
         "benefits_title": "Premium imtiyozlari",
         "benefits_subtitle": "Nima uchun sotuvchilar Premium tanlaydi?",
         "ben_visibility": "3x ko'rinish",
@@ -115,7 +116,8 @@
         "ben_position": "Eng yuqori joylashuv",
         "ben_position_desc": "Bosh sahifa va qidiruvda birinchi",
         "payment_methods": "To'lov usullari",
-        "auto_renew": "Obuna har oy avtomatik yangilanadi. Istalgan vaqtda bekor qilishingiz mumkin."
+        "auto_renew": "Obuna har oy avtomatik yangilanadi. Istalgan vaqtda bekor qilishingiz mumkin.",
+        "secure_payment_telegram": "Xavfsiz to'lov Telegram @wibestorebot orqali"
     },
     "login": {
         "welcome": "Xush kelibsiz!",

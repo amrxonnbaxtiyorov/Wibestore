@@ -175,20 +175,18 @@ const Footer = () => {
 
                     {/* Payment Methods */}
                     <div className="flex items-center gap-2">
-                        {['Payme', 'Click', 'Paynet'].map((method) => (
-                            <div
-                                key={method}
-                                className="rounded-md text-xs font-medium"
-                                style={{
-                                    backgroundColor: 'var(--color-bg-tertiary)',
-                                    color: 'var(--color-text-secondary)',
-                                    border: '1px solid var(--color-border-muted)',
-                                    padding: '10px',
-                                }}
-                            >
-                                {method}
-                            </div>
-                        ))}
+                        <div
+                            className="rounded-md text-xs font-medium flex items-center gap-1.5"
+                            style={{
+                                backgroundColor: 'var(--color-bg-tertiary)',
+                                color: 'var(--color-text-secondary)',
+                                border: '1px solid var(--color-border-muted)',
+                                padding: '10px',
+                            }}
+                        >
+                            <Send className="w-3.5 h-3.5" style={{ color: '#2AABEE' }} />
+                            Telegram orqali
+                        </div>
                     </div>
                 </div>
             </div>

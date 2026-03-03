@@ -78,6 +78,7 @@
         "subtitle": "Get more visibility and sell faster with Premium",
         "free_desc": "Get started for free",
         "free_label": "Free",
+        "free_price": "$0 free",
         "premium_desc": "More visibility and benefits",
         "pro_desc": "Maximum benefits",
         "popular": "Most Popular",
@@ -103,7 +104,7 @@
         "from_next_month": "From next month: {price}/mo",
         "current_plan": "Current plan",
         "login_required": "Please sign in first to subscribe",
-        "buy_telegram": "Buy via Telegram",
+        "buy_telegram": "Buy",
         "benefits_title": "Premium Benefits",
         "benefits_subtitle": "Why sellers choose Premium?",
         "ben_visibility": "3x visibility",
@@ -115,7 +116,8 @@
         "ben_position": "Top position",
         "ben_position_desc": "First in homepage and search",
         "payment_methods": "Payment Methods",
-        "auto_renew": "Subscription auto-renews monthly. Cancel anytime."
+        "auto_renew": "Subscription auto-renews monthly. Cancel anytime.",
+        "secure_payment_telegram": "Secure payment via Telegram @wibestorebot"
     },
     "login": {
         "welcome": "Welcome back!",
