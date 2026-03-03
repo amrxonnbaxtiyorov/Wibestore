@@ -23,7 +23,10 @@ def send_welcome_email(user_id: str) -> None:
 
     try:
         user = User.objects.get(id=user_id)
-        html_message = render_to_string("emails/welcome.html", {"user": user})
+        html_message = render_to_string(
+            "emails/welcome.html",
+            {"user": user, "frontend_url": getattr(settings, "FRONTEND_URL", "https://wibestore.uz")},
+        )
 
         send_mail(
             subject="Welcome to WibeStore! 🎮",
@@ -47,8 +50,7 @@ def send_email_verification_task(user_id: str, token: str) -> None:
 
     try:
         user = User.objects.get(id=user_id)
-        frontend_url = getattr(settings, "FRONTEND_URL", "https://wibestore.uz").rstrip("/")
-        verification_url = f"{frontend_url}/verify-email?token={token}"
+        verification_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
 
         send_mail(
             subject="Verify your WibeStore email",
@@ -71,8 +73,7 @@ def send_password_reset_email(user_id: str, token: str) -> None:
 
     try:
         user = User.objects.get(id=user_id)
-        frontend_url = getattr(settings, "FRONTEND_URL", "https://wibestore.uz").rstrip("/")
-        reset_url = f"{frontend_url}/reset-password?token={token}"
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
         html_message = render_to_string(
             "emails/password_reset.html",
@@ -103,7 +104,12 @@ def send_notification_email(user_id: str, subject: str, message: str) -> None:
         user = User.objects.get(id=user_id)
         html_message = render_to_string(
             "emails/notification.html",
-            {"user": user, "subject": subject, "message": message},
+            {
+                "user": user,
+                "subject": subject,
+                "message": message,
+                "frontend_url": getattr(settings, "FRONTEND_URL", "https://wibestore.uz"),
+            },
         )
 
         send_mail(

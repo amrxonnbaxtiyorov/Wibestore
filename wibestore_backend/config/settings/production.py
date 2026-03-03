@@ -99,9 +99,11 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ============================================================
 # REDIS / CACHE — fallback to local memory if Redis unavailable
-# Railway da REDIS_URL ni o'rnatmasangiz yoki localhost bo'lsa, cache = LocMem (500 oldini olish).
+# Railway: REDIS_URL yoki REDIS_PUBLIC_URI (Redis plugin) ishlatiladi.
 # ============================================================
-REDIS_URL = (env("REDIS_URL", default="") or "").strip()  # noqa: F405
+REDIS_URL = (
+    (env("REDIS_URL", default="") or os.environ.get("REDIS_PUBLIC_URI") or "").strip()
+)  # noqa: F405
 
 
 def _use_redis_cache():

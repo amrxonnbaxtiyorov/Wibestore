@@ -281,9 +281,6 @@ CORS_ALLOW_CREDENTIALS = True
 # Telegram bot: bot create-otp endpoint uchun maxfiy kalit (env da TELEGRAM_BOT_SECRET yoki BOT_SECRET_KEY)
 TELEGRAM_BOT_SECRET = os.environ.get("TELEGRAM_BOT_SECRET") or os.environ.get("BOT_SECRET_KEY", "")
 
-# Frontend base URL — parol tiklash / email tasdiq havolalari uchun (env da FRONTEND_URL)
-FRONTEND_URL = env("FRONTEND_URL", default="https://wibestore.uz").rstrip("/")
-
 CORS_ALLOW_HEADERS = [
     "accept",
     "authorization",
@@ -338,6 +335,9 @@ EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@wibestore.uz")
+
+# Frontend base URL (email linklar, reset/verify — Railway/custom domen uchun)
+FRONTEND_URL = (env("FRONTEND_URL", default="https://wibestore.uz") or "https://wibestore.uz").rstrip("/")
 
 # ============================================================
 # GOOGLE OAUTH

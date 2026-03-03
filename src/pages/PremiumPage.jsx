@@ -8,9 +8,9 @@ const TELEGRAM_BOT_USERNAME = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'wib
 
 const PremiumPage = () => {
     const { t } = useLanguage();
-    const { user: _user } = useAuth();
+    const { user: _user } = useAuth(); // reserved for subscription/display
     const [searchParams] = useSearchParams();
-    const [_loading, _setLoading] = useState(null); // plan id being loaded (reserved for payment flow)
+    const [_loading, _setLoading] = useState(null); // plan id when loading (for future use)
     const [error, setError] = useState('');
 
     // Check for payment result from URL params

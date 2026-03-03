@@ -24,7 +24,9 @@ Ushbu ro'yxat bo'yicha tekshirilsa, bot, backend va frontend bir-biri bilan to'g
 |-------------|----------------|
 | `TELEGRAM_BOT_SECRET` | Bot dagi `BOT_SECRET_KEY` bilan **bir xil** (masalan `wibestore-telegram-bot-secret-2024`) |
 | `DATABASE_URL` yoki `DATABASE_PUBLIC_URL` | Railway Postgres ulangan bo'lsa avtomatik |
+| `REDIS_URL` yoki `REDIS_PUBLIC_URI` | Railway Redis ulangan bo'lsa avtomatik (cache, Celery, WebSocket) |
 | `SECRET_KEY` | Kuchli kalit (production uchun majburiy) |
+| `FRONTEND_URL` | Frontend manzili (email linklar uchun), masalan `https://wibestore.uz` |
 | `CORS_ALLOWED_ORIGINS` | Frontend URL(lar), masalan `https://wibestore.uz,https://your-app.up.railway.app` |
 | `ALLOWED_HOSTS` | `localhost,127.0.0.1,.railway.app` (yoki o'z domainingiz) |
 
