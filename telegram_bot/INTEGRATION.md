@@ -55,3 +55,7 @@ Backend ishlashi uchun bu o'zgaruvchi **qo'yilishi shart** (bot kod yaratish so'
 - **Bot:** `WEBSITE_URL` = backend ning haqiqiy URL (https://...), `BOT_SECRET_KEY` = backend dagi secret bilan bir xil.
 - **Backend:** `TELEGRAM_BOT_SECRET` = bot dagi secret bilan bir xil.
 - **Bitta instance:** Token faqat bitta joyda (yoki faqat Railway, yoki faqat kompyuter).
+
+## 5. Railway — to'liq tekshiruv
+
+Barcha servislar va integratsiya uchun batafsil ro'yxat: [RAILWAY_CHECKLIST.md](RAILWAY_CHECKLIST.md).
