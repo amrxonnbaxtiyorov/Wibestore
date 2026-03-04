@@ -1,5 +1,5 @@
 """
-Admin approve/reject (called by bot with secret). Transaction fetch for bot.
+Admin approve/reject (called by bot with secret). Transaction fetch and receipt serving.
 """
 import logging
 from pathlib import Path
@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from wallet_topup.backend.config import settings
 from wallet_topup.backend.database import get_async_session
-from wallet_topup.backend.models import Transaction
+from wallet_topup.backend.models import Transaction, User
 from wallet_topup.backend.schemas.common import ApiResponse, ErrorDetail
 from wallet_topup.backend.services import approve_transaction, reject_transaction
 
@@ -22,21 +22,33 @@ logger = logging.getLogger(__name__)
 BOT_SECRET_HEADER = "X-Bot-Secret"
 
 
-def _verify_bot_secret(x_bot_secret: str | None = Header(None, alias=BOT_SECRET_HEADER)) -> None:
-    if not settings.TELEGRAM_BOT_TOKEN:
+def _verify_bot_secret(
+    x_bot_secret: str | None = Header(None, alias=BOT_SECRET_HEADER),
+) -> None:
+    """Verify the bot secret header for bot-to-backend communication."""
+    expected = settings.get_bot_api_secret()
+    if not expected:
         raise HTTPException(status_code=503, detail="Bot not configured.")
-    # Use bot token as secret for simplicity; in production use a separate BOT_SECRET env
-    expected = settings.TELEGRAM_BOT_TOKEN
     if not x_bot_secret or x_bot_secret != expected:
-        raise HTTPException(status_code=401, detail=ErrorDetail(code="UNAUTHORIZED", message="Invalid bot secret."))
+        raise HTTPException(
+            status_code=401,
+            detail=ErrorDetail(
+                code="UNAUTHORIZED",
+                message="Invalid bot secret.",
+            ).model_dump(),
+        )
 
 
 def _verify_admin(admin_telegram_id: int) -> None:
+    """Verify the admin Telegram ID is in the allowed set."""
     admins = settings.get_admin_ids()
     if not admins or admin_telegram_id not in admins:
         raise HTTPException(
             status_code=403,
-            detail=ErrorDetail(code="FORBIDDEN", message="Not an admin."),
+            detail=ErrorDetail(
+                code="FORBIDDEN",
+                message="Not an admin.",
+            ).model_dump(),
         )
 
 
@@ -51,6 +63,7 @@ async def get_transaction_for_bot(
     session: AsyncSession = Depends(get_async_session),
     _: None = Depends(_verify_bot_secret),
 ):
+    """Get transaction details for the bot to display to admins."""
     result = await session.execute(
         select(Transaction).where(Transaction.transaction_uid == transaction_uid)
     )
@@ -58,20 +71,37 @@ async def get_transaction_for_bot(
     if not tx:
         raise HTTPException(
             status_code=404,
-            detail=ErrorDetail(code="NOT_FOUND", message="Transaction not found."),
+            detail=ErrorDetail(
+                code="NOT_FOUND",
+                message="Transaction not found.",
+            ).model_dump(),
         )
+
+    # Get user details
+    user_result = await session.execute(
+        select(User).where(User.telegram_id == tx.telegram_id)
+    )
+    user = user_result.scalar_one_or_none()
+
     receipt_path = Path(tx.receipt_path)
-    receipt_url = f"/api/v1/admin/receipts/{transaction_uid}" if receipt_path.exists() else None
+    receipt_url = (
+        f"/api/v1/admin/receipts/{transaction_uid}"
+        if receipt_path.exists()
+        else None
+    )
+
     return ApiResponse(
         success=True,
         data={
             "transaction_uid": tx.transaction_uid,
             "telegram_id": tx.telegram_id,
+            "username": user.username if user else None,
+            "first_name": user.first_name if user else None,
             "currency": tx.currency,
             "payment_method": tx.payment_method,
             "amount": float(tx.amount),
             "status": tx.status,
-            "created_at": tx.created_at.isoformat(),
+            "created_at": tx.created_at.isoformat() if tx.created_at else None,
             "receipt_url": receipt_url,
         },
     )
@@ -83,15 +113,16 @@ async def get_receipt_file(
     session: AsyncSession = Depends(get_async_session),
     _: None = Depends(_verify_bot_secret),
 ):
+    """Serve the receipt file for admin review."""
     result = await session.execute(
         select(Transaction).where(Transaction.transaction_uid == transaction_uid)
     )
     tx = result.scalar_one_or_none()
     if not tx:
-        raise HTTPException(status_code=404)
+        raise HTTPException(status_code=404, detail="Transaction not found")
     path = Path(tx.receipt_path)
     if not path.exists():
-        raise HTTPException(status_code=404)
+        raise HTTPException(status_code=404, detail="Receipt file not found")
     return FileResponse(path, media_type="application/octet-stream")
 
 
@@ -101,13 +132,21 @@ async def admin_approve(
     session: AsyncSession = Depends(get_async_session),
     _: None = Depends(_verify_bot_secret),
 ):
+    """Approve a pending transaction. Atomically updates wallet balance."""
     _verify_admin(body.admin_telegram_id)
     success, message, payload = await approve_transaction(
         session, body.transaction_uid, body.admin_telegram_id
     )
     if not success:
-        raise HTTPException(status_code=400, detail=ErrorDetail(code="FAILED", message=message))
-    logger.info("Transaction %s approved by admin %s", body.transaction_uid, body.admin_telegram_id)
+        raise HTTPException(
+            status_code=400,
+            detail=ErrorDetail(code="FAILED", message=message).model_dump(),
+        )
+    logger.info(
+        "Transaction %s approved by admin %s",
+        body.transaction_uid,
+        body.admin_telegram_id,
+    )
     return ApiResponse(success=True, data=payload or {})
 
 
@@ -117,11 +156,19 @@ async def admin_reject(
     session: AsyncSession = Depends(get_async_session),
     _: None = Depends(_verify_bot_secret),
 ):
+    """Reject a pending transaction."""
     _verify_admin(body.admin_telegram_id)
-    success, message, telegram_id = await reject_transaction(
+    success, message, payload = await reject_transaction(
         session, body.transaction_uid, body.admin_telegram_id
     )
     if not success:
-        raise HTTPException(status_code=400, detail=ErrorDetail(code="FAILED", message=message))
-    logger.info("Transaction %s rejected by admin %s", body.transaction_uid, body.admin_telegram_id)
-    return ApiResponse(success=True, data={"status": "rejected", "telegram_id": telegram_id})
+        raise HTTPException(
+            status_code=400,
+            detail=ErrorDetail(code="FAILED", message=message).model_dump(),
+        )
+    logger.info(
+        "Transaction %s rejected by admin %s",
+        body.transaction_uid,
+        body.admin_telegram_id,
+    )
+    return ApiResponse(success=True, data=payload or {})

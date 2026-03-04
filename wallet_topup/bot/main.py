@@ -22,26 +22,39 @@ logger = logging.getLogger(__name__)
 
 async def main() -> None:
     if not config.token:
-        logger.error("TELEGRAM_BOT_TOKEN is not set")
+        logger.error("TELEGRAM_BOT_TOKEN is not set!")
         sys.exit(1)
+
+    if not config.admin_ids:
+        logger.warning("No ADMIN_TELEGRAM_IDS configured — admin features disabled")
+
+    if not config.web_app_url or "your-domain" in config.web_app_url:
+        logger.warning("WEB_APP_URL not properly configured: %s", config.web_app_url)
 
     bot = Bot(token=config.token, parse_mode=ParseMode.HTML)
     dp = Dispatcher()
     setup_routers(dp.router)
 
-    # Notify admins on new pending (Redis subscriber)
+    # Start Redis listener for pending transaction notifications
     listener_task = run_pending_listener(bot)
 
+    logger.info(
+        "Bot starting — admins: %s, web_app: %s",
+        config.admin_ids or "none",
+        config.web_app_url,
+    )
+
     try:
-        logger.info("Bot starting...")
-        await dp.start_polling(bot)
+        await dp.start_polling(bot, allowed_updates=["message", "callback_query"])
     finally:
+        logger.info("Bot shutting down...")
         listener_task.cancel()
         try:
             await listener_task
         except asyncio.CancelledError:
             pass
         await bot.session.close()
+        logger.info("Bot shutdown complete.")
 
 
 if __name__ == "__main__":

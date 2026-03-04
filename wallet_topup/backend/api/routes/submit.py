@@ -13,6 +13,7 @@ from wallet_topup.backend.database import get_async_session
 from wallet_topup.backend.schemas.common import ApiResponse, ErrorDetail, TransactionOut
 from wallet_topup.backend.security.telegram import (
     get_telegram_id_from_validated,
+    get_telegram_user_from_validated,
     validate_telegram_webapp_init_data,
 )
 from wallet_topup.backend.services import (
@@ -26,55 +27,139 @@ from wallet_topup.backend.services import (
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+# Magic bytes for file type validation
+MAGIC_BYTES = {
+    b"\xff\xd8\xff": "image/jpeg",
+    b"\x89PNG": "image/png",
+    b"RIFF": "image/webp",  # RIFF....WEBP
+    b"GIF8": "image/gif",
+    b"%PDF": "application/pdf",
+}
+
+
+def _detect_mime(content: bytes) -> str | None:
+    """Detect MIME type from magic bytes."""
+    for magic, mime in MAGIC_BYTES.items():
+        if content[:len(magic)] == magic:
+            return mime
+    return None
+
 
 def _validate_amount(currency: str, amount: float) -> None:
-    if currency == "UZS" and amount < settings.MIN_AMOUNT_UZS:
+    """Validate amount against configured min/max limits."""
+    if amount <= 0:
         raise HTTPException(
             status_code=400,
             detail=ErrorDetail(
-                code="AMOUNT_TOO_LOW",
-                message=f"Minimum amount for UZS is {settings.MIN_AMOUNT_UZS}",
-            ),
+                code="INVALID_AMOUNT",
+                message="Amount must be positive.",
+            ).model_dump(),
         )
-    if currency == "USDT" and amount < settings.MIN_AMOUNT_USDT:
-        raise HTTPException(
-            status_code=400,
-            detail=ErrorDetail(
-                code="AMOUNT_TOO_LOW",
-                message=f"Minimum amount for USDT is {settings.MIN_AMOUNT_USDT}",
-            ),
-        )
+    if currency == "UZS":
+        if amount < settings.MIN_AMOUNT_UZS:
+            raise HTTPException(
+                status_code=400,
+                detail=ErrorDetail(
+                    code="AMOUNT_TOO_LOW",
+                    message=f"Minimum amount for UZS is {int(settings.MIN_AMOUNT_UZS):,}",
+                ).model_dump(),
+            )
+        if amount > settings.MAX_AMOUNT_UZS:
+            raise HTTPException(
+                status_code=400,
+                detail=ErrorDetail(
+                    code="AMOUNT_TOO_HIGH",
+                    message=f"Maximum amount for UZS is {int(settings.MAX_AMOUNT_UZS):,}",
+                ).model_dump(),
+            )
+    elif currency == "USDT":
+        if amount < settings.MIN_AMOUNT_USDT:
+            raise HTTPException(
+                status_code=400,
+                detail=ErrorDetail(
+                    code="AMOUNT_TOO_LOW",
+                    message=f"Minimum amount for USDT is {settings.MIN_AMOUNT_USDT}",
+                ).model_dump(),
+            )
+        if amount > settings.MAX_AMOUNT_USDT:
+            raise HTTPException(
+                status_code=400,
+                detail=ErrorDetail(
+                    code="AMOUNT_TOO_HIGH",
+                    message=f"Maximum amount for USDT is {settings.MAX_AMOUNT_USDT:,}",
+                ).model_dump(),
+            )
 
 
 async def _save_receipt(file: UploadFile, transaction_uid: str) -> str:
-    ext = Path(file.filename or "bin").suffix or ".bin"
-    if ext.lower() not in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf"):
-        ext = ".bin"
-    safe_uid = transaction_uid.replace("-", "_")
-    filename = f"{safe_uid}{ext}"
-    upload_dir = Path(settings.UPLOAD_DIR_STR)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    path = upload_dir / filename
+    """Save uploaded receipt file with validation."""
     content = await file.read()
+
+    # Validate file size
     if len(content) > settings.MAX_RECEIPT_SIZE_BYTES:
         raise HTTPException(
             status_code=400,
             detail=ErrorDetail(
                 code="FILE_TOO_LARGE",
                 message=f"Max file size is {settings.MAX_RECEIPT_SIZE_BYTES // (1024*1024)} MB",
-            ),
+            ).model_dump(),
         )
-    mime = file.content_type or ""
-    if mime and mime not in settings.ALLOWED_RECEIPT_MIMES:
+
+    # Validate file is not empty
+    if len(content) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail=ErrorDetail(
+                code="EMPTY_FILE",
+                message="Receipt file is empty.",
+            ).model_dump(),
+        )
+
+    # Validate MIME type via magic bytes (do NOT trust Content-Type header)
+    detected_mime = _detect_mime(content)
+    if detected_mime is None:
+        # Fallback to Content-Type header
+        mime = file.content_type or ""
+        if mime not in settings.ALLOWED_RECEIPT_MIMES:
+            raise HTTPException(
+                status_code=400,
+                detail=ErrorDetail(
+                    code="INVALID_FILE_TYPE",
+                    message="Allowed: image (jpeg, png, webp, gif) or PDF",
+                ).model_dump(),
+            )
+    elif detected_mime not in settings.ALLOWED_RECEIPT_MIMES:
         raise HTTPException(
             status_code=400,
             detail=ErrorDetail(
                 code="INVALID_FILE_TYPE",
                 message="Allowed: image (jpeg, png, webp, gif) or PDF",
-            ),
+            ).model_dump(),
         )
+
+    # Determine file extension from detected MIME or original filename
+    mime_to_ext = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+        "image/gif": ".gif",
+        "application/pdf": ".pdf",
+    }
+    ext = mime_to_ext.get(detected_mime or "", "")
+    if not ext:
+        ext = Path(file.filename or "receipt.bin").suffix or ".bin"
+        if ext.lower() not in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf"):
+            ext = ".bin"
+
+    safe_uid = transaction_uid.replace("-", "_")
+    filename = f"{safe_uid}{ext}"
+    upload_dir = Path(settings.UPLOAD_DIR_STR)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    path = upload_dir / filename
+
     with open(path, "wb") as f:
         f.write(content)
+
     return str(path)
 
 
@@ -87,6 +172,8 @@ async def submit_topup(
     amount: float = Form(..., gt=0),
     receipt: UploadFile = File(...),
 ):
+    """Submit a wallet top-up request."""
+    # 1) Validate Telegram session
     validated = validate_telegram_webapp_init_data(init_data)
     if not validated:
         raise HTTPException(
@@ -94,34 +181,50 @@ async def submit_topup(
             detail=ErrorDetail(
                 code="INVALID_INIT_DATA",
                 message="Invalid or expired Telegram session.",
-            ),
+            ).model_dump(),
         )
     telegram_id = get_telegram_id_from_validated(validated)
     if not telegram_id:
         raise HTTPException(
             status_code=401,
-            detail=ErrorDetail(code="INVALID_USER", message="User data missing."),
+            detail=ErrorDetail(
+                code="INVALID_USER",
+                message="User data missing.",
+            ).model_dump(),
         )
 
+    # Extract user info for storage
+    tg_user = get_telegram_user_from_validated(validated)
+    username = tg_user.get("username") if tg_user else None
+    first_name = tg_user.get("first_name") if tg_user else None
+
+    # 2) Validate amount
     _validate_amount(currency, amount)
 
+    # 3) Check rate limit
     allowed, msg = await rate_limit_submission(telegram_id)
     if not allowed:
-        raise HTTPException(status_code=429, detail=ErrorDetail(code="RATE_LIMIT", message=msg))
+        raise HTTPException(
+            status_code=429,
+            detail=ErrorDetail(code="RATE_LIMIT", message=msg).model_dump(),
+        )
 
-    transaction_uid = str(uuid.uuid4())
-    receipt_path = await _save_receipt(receipt, transaction_uid)
-
-    await get_or_create_user(session, telegram_id)
+    # 4) Check no pending transaction
+    await get_or_create_user(session, telegram_id, username=username, first_name=first_name)
     if await has_pending_transaction(session, telegram_id):
         raise HTTPException(
             status_code=400,
             detail=ErrorDetail(
                 code="PENDING_EXISTS",
                 message="You already have a pending top-up. Wait for admin review.",
-            ),
+            ).model_dump(),
         )
 
+    # 5) Save receipt
+    transaction_uid = str(uuid.uuid4())
+    receipt_path = await _save_receipt(receipt, transaction_uid)
+
+    # 6) Create transaction
     tx = await create_pending_transaction(
         session,
         telegram_id=telegram_id,
@@ -129,9 +232,12 @@ async def submit_topup(
         payment_method=payment_method,
         amount=amount,
         receipt_path=receipt_path,
+        username=username,
         transaction_uid=transaction_uid,
     )
-    await session.commit()
+
+    # Session auto-commits via dependency — no explicit commit needed
+
     logger.info(
         "Top-up submitted: uid=%s telegram_id=%s amount=%s %s",
         transaction_uid,
@@ -139,10 +245,20 @@ async def submit_topup(
         amount,
         currency,
     )
+
+    # 7) Notify admin via Redis pub/sub
     await publish_new_pending(
         tx.transaction_uid,
-        {"telegram_id": telegram_id, "amount": amount, "currency": currency},
+        {
+            "telegram_id": telegram_id,
+            "username": username or "",
+            "first_name": first_name or "",
+            "amount": amount,
+            "currency": currency,
+            "payment_method": payment_method,
+        },
     )
+
     return ApiResponse(
         success=True,
         data=TransactionOut(

@@ -2,7 +2,7 @@
 Wallet Top-Up Bot - Configuration
 """
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -19,7 +19,11 @@ class BotConfig:
         web_app_url = os.getenv("WEB_APP_URL", "https://your-domain.com/wallet-app")
         backend_url = os.getenv("BACKEND_URL", "http://localhost:8001").rstrip("/")
         admin_ids_str = os.getenv("ADMIN_TELEGRAM_IDS", "")
-        admin_ids = {int(x.strip()) for x in admin_ids_str.split(",") if x.strip()}
+        admin_ids: set[int] = set()
+        for x in admin_ids_str.split(","):
+            x = x.strip()
+            if x.isdigit():
+                admin_ids.add(int(x))
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/3")
         return cls(
             token=token,

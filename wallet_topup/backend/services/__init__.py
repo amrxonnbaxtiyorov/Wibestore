@@ -3,6 +3,7 @@ from wallet_topup.backend.services.transaction import (
     create_pending_transaction,
     get_or_create_user,
     get_payment_methods,
+    has_pending_transaction,
 )
 from wallet_topup.backend.services.admin import approve_transaction, reject_transaction
 from wallet_topup.backend.services.notify_bot import publish_new_pending
@@ -12,6 +13,7 @@ __all__ = [
     "create_pending_transaction",
     "get_or_create_user",
     "get_payment_methods",
+    "has_pending_transaction",
     "approve_transaction",
     "reject_transaction",
     "publish_new_pending",
