@@ -1,5 +1,3 @@
-# Email templates
+# Backend templates
 
-Ishlatiladigan papka: **`emails/`** (welcome.html, password_reset.html, notification.html, base.html).
-
-`email/` papkasi eski dublikat — ishlatilmasin.
+- `emails/` — HTML shablonlar xatlar uchun (welcome, password_reset, notification, transaction_receipt).
