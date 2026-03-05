@@ -414,13 +414,12 @@ def main():
             "Railway: Bot servisida Variable qo'shing (Backend dagi TELEGRAM_BOT_SECRET bilan bir xil)."
         )
         return
-    # Railway'da WEBSITE_URL = backend manzili (https://...). Localhost bo'lmasin.
+    # Railway'da WEBSITE_URL = backend manzili (https://...). Localhost local dev uchun ruxsat.
     if "localhost" in WEBSITE_URL or "127.0.0.1" in WEBSITE_URL:
-        logger.error(
-            "WEBSITE_URL localhost/127.0.0.1 — Backend ga ulanmaydi! "
-            "Railway Bot servisida WEBSITE_URL = Backend URL (masalan https://exemplary-fascination-production-9514.up.railway.app) qo'ying. RAILWAY_VARIABLES.md"
+        logger.warning(
+            "WEBSITE_URL localhost/127.0.0.1 — lokal ishlab chiqish rejimi. "
+            "Railway deploy uchun WEBSITE_URL = Backend URL (masalan https://your-app.up.railway.app) qo'ying."
         )
-        return
 
     app = Application.builder().token(BOT_TOKEN).build()
 
