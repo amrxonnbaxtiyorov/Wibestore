@@ -74,6 +74,24 @@ const GamePage = () => {
 
     const game = { ...displayGame, listings_count: displayGame.listings_count ?? listings.length };
 
+    const GAME_ICON_MAP = {
+        'pubg-mobile': '/img/icons/Pubg-icon.webp',
+        steam: '/img/icons/steam.png',
+        'free-fire': '/img/icons/free.webp',
+        'standoff2': '/img/icons/st.webp',
+        'mobile-legends': '/img/icons/ml.webp',
+        'clash-of-clans': '/img/icons/cc.webp',
+        codm: '/img/icons/cal.webp',
+        roblox: '/img/icons/roblox.webp',
+    };
+
+    const gameSlug = game.slug || game.id || gameId;
+    const headerIcon =
+        game.icon ||
+        game.image ||
+        game.banner ||
+        (gameSlug ? GAME_ICON_MAP[gameSlug] : null);
+
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px' }}>
             <div className="gh-container">
@@ -104,10 +122,10 @@ const GamePage = () => {
                             overflow: 'hidden',
                         }}
                     >
-                        {game.icon ? (
-                            <img src={game.icon} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {headerIcon ? (
+                            <img src={headerIcon} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                            game.name.charAt(0)
+                            game.name?.charAt(0)
                         )}
                     </div>
                     <div>
