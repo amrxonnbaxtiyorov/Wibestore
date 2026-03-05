@@ -21,6 +21,18 @@ services:
       - ./backend/uploads:/app/uploads
     command: uvicorn wallet_topup.backend.main:app --host 0.0.0.0 --port 8001
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - PORT=80
+      - BACKEND_URL=http://backend:8001
+    depends_on:
+      - backend
+
   bot:
     build:
       context: .

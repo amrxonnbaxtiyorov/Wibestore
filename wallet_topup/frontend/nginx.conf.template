@@ -1,0 +1,37 @@
+server {
+    listen ${PORT};
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_types
+        text/plain
+        text/css
+        application/json
+        application/javascript
+        text/xml
+        application/xml
+        application/xml+rss
+        text/javascript
+        image/svg+xml;
+
+    # Cache static assets (hashed filenames from Vite build)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webp)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # Optional API proxy (generated at runtime by entrypoint.sh)
+    include /etc/nginx/conf.d/proxy.conf;
+
+    # SPA fallback — must be last
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
