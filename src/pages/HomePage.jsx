@@ -530,7 +530,7 @@ const HomePage = () => {
                                     }}
                                 >
                                     <div
-                                        className="flex items-center justify-center mx-auto"
+                                        className="inline-flex items-center justify-center"
                                         style={{
                                             width: '48px',
                                             height: '48px',
