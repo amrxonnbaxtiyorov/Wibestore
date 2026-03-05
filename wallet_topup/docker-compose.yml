@@ -35,8 +35,8 @@ services:
 
   bot:
     build:
-      context: .
-      dockerfile: bot/Dockerfile
+      context: ./bot
+      dockerfile: Dockerfile
     env_file: ./bot/.env
     environment:
       - BACKEND_URL=http://backend:8001

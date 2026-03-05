@@ -28,20 +28,28 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # Magic bytes for file type validation
-MAGIC_BYTES = {
-    b"\xff\xd8\xff": "image/jpeg",
-    b"\x89PNG": "image/png",
-    b"RIFF": "image/webp",  # RIFF....WEBP
-    b"GIF8": "image/gif",
-    b"%PDF": "application/pdf",
-}
+MAGIC_BYTES: list[tuple[bytes, int, bytes, str]] = [
+    # (prefix, offset_of_sub, sub_signature, mime)
+    (b"\xff\xd8\xff", 0, b"", "image/jpeg"),
+    (b"\x89PNG\r\n\x1a\n", 0, b"", "image/png"),
+    # WebP: starts with RIFF, then 4 bytes file size, then WEBP
+    (b"RIFF", 8, b"WEBP", "image/webp"),
+    (b"GIF87a", 0, b"", "image/gif"),
+    (b"GIF89a", 0, b"", "image/gif"),
+    (b"%PDF", 0, b"", "application/pdf"),
+]
 
 
 def _detect_mime(content: bytes) -> str | None:
     """Detect MIME type from magic bytes."""
-    for magic, mime in MAGIC_BYTES.items():
-        if content[:len(magic)] == magic:
-            return mime
+    for prefix, sub_offset, sub_sig, mime in MAGIC_BYTES:
+        if content[:len(prefix)] == prefix:
+            if sub_sig:
+                # Verify secondary signature (e.g., WEBP at bytes 8-11)
+                if content[sub_offset:sub_offset + len(sub_sig)] == sub_sig:
+                    return mime
+            else:
+                return mime
     return None
 
 

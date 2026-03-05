@@ -1,6 +1,7 @@
 """
 Admin approve/reject (called by bot with secret). Transaction fetch, receipt serving, list.
 """
+import hmac
 import logging
 from pathlib import Path
 
@@ -29,7 +30,7 @@ def _verify_bot_secret(
     expected = settings.get_bot_api_secret()
     if not expected:
         raise HTTPException(status_code=503, detail="Bot not configured.")
-    if not x_bot_secret or x_bot_secret != expected:
+    if not x_bot_secret or not hmac.compare_digest(x_bot_secret, expected):
         raise HTTPException(
             status_code=401,
             detail=ErrorDetail(
@@ -83,6 +84,8 @@ async def list_transactions(
         {
             "transaction_uid": tx.transaction_uid,
             "telegram_id": tx.telegram_id,
+            "username": tx.user.username if tx.user else None,
+            "first_name": tx.user.first_name if tx.user else None,
             "currency": tx.currency,
             "payment_method": tx.payment_method,
             "amount": float(tx.amount),

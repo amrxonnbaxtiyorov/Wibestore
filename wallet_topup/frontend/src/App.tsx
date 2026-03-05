@@ -85,9 +85,10 @@ export default function App() {
     }
   }, [step]);
 
+  const closeToast = useCallback(() => setToast(null), []);
+
   const showToast = useCallback((message: string, type: "error" | "success" = "error") => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
   }, []);
 
   const haptic = useCallback((type: "light" | "medium" | "heavy" = "light") => {
@@ -199,7 +200,7 @@ export default function App() {
       )}
 
       {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
+        <Toast message={toast.message} type={toast.type} onClose={closeToast} />
       )}
     </div>
   );
