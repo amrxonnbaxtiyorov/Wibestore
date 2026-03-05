@@ -74,6 +74,7 @@ async def reject_transaction(
     session: AsyncSession,
     transaction_uid: str,
     admin_telegram_id: int,
+    admin_note: str | None = None,
 ) -> tuple[bool, str, dict[str, Any] | None]:
     """
     Lock row, set REJECTED, log. Prevent double action.
@@ -92,13 +93,19 @@ async def reject_transaction(
 
     tx.status = "REJECTED"
     tx.admin_id = admin_telegram_id
+    if admin_note:
+        tx.admin_note = admin_note
+
+    details = f"Amount: {tx.amount} {tx.currency}"
+    if admin_note:
+        details += f" | Note: {admin_note}"
 
     session.add(
         AdminActionLog(
             admin_telegram_id=admin_telegram_id,
             transaction_uid=transaction_uid,
             action="REJECT",
-            details=f"Amount: {tx.amount} {tx.currency}",
+            details=details,
         )
     )
     await session.flush()
@@ -108,5 +115,6 @@ async def reject_transaction(
         "telegram_id": tx.telegram_id,
         "amount": float(tx.amount),
         "currency": tx.currency,
+        "admin_note": admin_note,
     }
     return True, "Rejected.", payload

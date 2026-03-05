@@ -89,7 +89,7 @@ async def _notify_admins(bot, transaction_uid: str, data: dict) -> None:
     receipt_bytes, content_type = await _fetch_receipt(transaction_uid)
     is_pdf = "pdf" in content_type.lower()
 
-    for admin_id in config.admin_ids:
+    for admin_id in config.get_notification_targets():
         try:
             if receipt_bytes:
                 if is_pdf:

@@ -1,7 +1,7 @@
 """
 Transaction and user services.
 """
-import uuid
+import secrets
 from typing import Sequence
 
 from sqlalchemy import select
@@ -88,8 +88,9 @@ async def create_pending_transaction(
     receipt_mime: str | None = None,
     username: str | None = None,
     transaction_uid: str | None = None,
+    ip_address: str | None = None,
 ) -> Transaction:
-    transaction_uid = transaction_uid or str(uuid.uuid4())
+    transaction_uid = transaction_uid or ("TXN-" + secrets.token_hex(6).upper())
     tx = Transaction(
         transaction_uid=transaction_uid,
         telegram_id=telegram_id,
@@ -99,6 +100,7 @@ async def create_pending_transaction(
         receipt_path=receipt_path,
         receipt_mime=receipt_mime,
         status="PENDING",
+        ip_address=ip_address,
     )
     session.add(tx)
     await session.flush()

@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 
-type Props = { transactionUid: string };
+type Props = {
+  transactionUid: string;
+  amount?: string;
+  currency?: string;
+  walletBalance?: string | null;
+};
 
 const CONFETTI_COLORS = [
   "#6c5ce7", "#a29bfe", "#74b9ff", "#00cec9", "#fd79a8", "#fdcb6e", "#55efc4",
@@ -33,7 +38,7 @@ function Confetti() {
   );
 }
 
-export function SuccessScreen({ transactionUid }: Props) {
+export function SuccessScreen({ transactionUid, amount, currency, walletBalance }: Props) {
   const [showConfetti, setShowConfetti] = useState(true);
 
   useEffect(() => {
@@ -55,10 +60,24 @@ export function SuccessScreen({ transactionUid }: Props) {
           You will be notified once it is approved or rejected.
         </p>
 
+        {amount && currency && (
+          <div className="success-amount-card">
+            <p className="label">Amount Submitted</p>
+            <p className="success-amount">+{Number(amount).toLocaleString()} {currency}</p>
+          </div>
+        )}
+
         <div className="transaction-id-card">
           <p className="label">Transaction ID</p>
           <code>{transactionUid}</code>
         </div>
+
+        {walletBalance !== null && walletBalance !== undefined && (
+          <div className="transaction-id-card">
+            <p className="label">Current Balance</p>
+            <code>{Number(walletBalance).toLocaleString()} UZS</code>
+          </div>
+        )}
 
         <button
           type="button"

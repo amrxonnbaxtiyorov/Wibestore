@@ -3,7 +3,7 @@ Wallet Top-Up Backend - User model (telegram_id, wallet_balance).
 """
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Numeric, String, func
+from sqlalchemy import BigInteger, Boolean, DateTime, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from wallet_topup.backend.database.base import Base
@@ -18,9 +18,11 @@ class User(Base):
     )
     username: Mapped[str | None] = mapped_column(String(255), nullable=True)
     first_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     wallet_balance: Mapped[float] = mapped_column(
-        Numeric(18, 2), default=0, nullable=False
+        Numeric(20, 2), default=0, nullable=False
     )
+    is_banned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

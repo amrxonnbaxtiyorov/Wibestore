@@ -2,11 +2,12 @@ import type { FormState } from "../App";
 
 type Props = {
   value: FormState["currency"];
+  walletBalance: string | null;
   onChange: (v: FormState["currency"]) => void;
   onNext: () => void;
 };
 
-export function StepCurrency({ value, onChange, onNext }: Props) {
+export function StepCurrency({ value, walletBalance, onChange, onNext }: Props) {
   return (
     <div className="step">
       <div className="step-header">
@@ -14,6 +15,13 @@ export function StepCurrency({ value, onChange, onNext }: Props) {
         <h1>Select Currency</h1>
         <p className="subtitle">Choose how you want to top up</p>
       </div>
+
+      {walletBalance !== null && (
+        <div className="balance-card">
+          <span className="balance-label">Current Balance</span>
+          <span className="balance-amount">{Number(walletBalance).toLocaleString()} UZS</span>
+        </div>
+      )}
 
       <div className="options-grid cols-2">
         {(["UZS", "USDT"] as const).map((cur) => (

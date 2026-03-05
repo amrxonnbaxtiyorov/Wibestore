@@ -2,10 +2,10 @@
 Submit top-up: validate initData, rate limit, no pending, save receipt, create transaction.
 """
 import logging
-import uuid
+import secrets
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from wallet_topup.backend.config import settings
@@ -165,6 +165,7 @@ async def _save_receipt(file: UploadFile, transaction_uid: str) -> tuple[str, st
 
 @router.post("", response_model=ApiResponse[TransactionOut])
 async def submit_topup(
+    request: Request,
     session: AsyncSession = Depends(get_async_session),
     init_data: str = Form(..., alias="initData"),
     currency: str = Form(..., pattern="^(UZS|USDT)$"),
@@ -198,6 +199,12 @@ async def submit_topup(
     username = tg_user.get("username") if tg_user else None
     first_name = tg_user.get("first_name") if tg_user else None
 
+    # Capture client IP address (X-Forwarded-For for proxy setups, else direct)
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    ip_address = forwarded_for.split(",")[0].strip() if forwarded_for else (
+        request.client.host if request.client else None
+    )
+
     # 2) Validate amount
     _validate_amount(currency, amount)
 
@@ -209,8 +216,16 @@ async def submit_topup(
             detail=ErrorDetail(code="RATE_LIMIT", message=msg).model_dump(),
         )
 
-    # 4) Check no pending transaction
-    await get_or_create_user(session, telegram_id, username=username, first_name=first_name)
+    # 4) Get/create user, check banned, check no pending transaction
+    user = await get_or_create_user(session, telegram_id, username=username, first_name=first_name)
+    if user.is_banned:
+        raise HTTPException(
+            status_code=403,
+            detail=ErrorDetail(
+                code="BANNED",
+                message="Your account has been restricted. Please contact support.",
+            ).model_dump(),
+        )
     if await has_pending_transaction(session, telegram_id):
         raise HTTPException(
             status_code=400,
@@ -221,7 +236,7 @@ async def submit_topup(
         )
 
     # 5) Save receipt
-    transaction_uid = str(uuid.uuid4())
+    transaction_uid = "TXN-" + secrets.token_hex(6).upper()
     receipt_path, receipt_mime = await _save_receipt(receipt, transaction_uid)
 
     # 6) Create transaction
@@ -235,6 +250,7 @@ async def submit_topup(
         receipt_mime=receipt_mime,
         username=username,
         transaction_uid=transaction_uid,
+        ip_address=ip_address,
     )
 
     # Session auto-commits via dependency — no explicit commit needed

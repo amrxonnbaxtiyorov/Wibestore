@@ -22,8 +22,13 @@ def upgrade() -> None:
         "users",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("telegram_id", sa.BigInteger(), nullable=False),
-        sa.Column("wallet_balance", sa.Numeric(18, 2), nullable=False, server_default="0"),
+        sa.Column("username", sa.String(255), nullable=True),
+        sa.Column("first_name", sa.String(255), nullable=True),
+        sa.Column("last_name", sa.String(255), nullable=True),
+        sa.Column("wallet_balance", sa.Numeric(20, 2), nullable=False, server_default="0"),
+        sa.Column("is_banned", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_users_telegram_id", "users", ["telegram_id"], unique=True)
@@ -35,11 +40,13 @@ def upgrade() -> None:
         sa.Column("telegram_id", sa.BigInteger(), nullable=False),
         sa.Column("currency", sa.String(10), nullable=False),
         sa.Column("payment_method", sa.String(50), nullable=False),
-        sa.Column("amount", sa.Numeric(18, 2), nullable=False),
+        sa.Column("amount", sa.Numeric(20, 2), nullable=False),
         sa.Column("receipt_path", sa.Text(), nullable=False),
         sa.Column("receipt_mime", sa.String(64), nullable=True),
         sa.Column("status", sa.String(20), nullable=False, server_default="PENDING"),
         sa.Column("admin_id", sa.BigInteger(), nullable=True),
+        sa.Column("admin_note", sa.Text(), nullable=True),
+        sa.Column("ip_address", sa.String(45), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -47,6 +54,7 @@ def upgrade() -> None:
     op.create_index("ix_transactions_transaction_uid", "transactions", ["transaction_uid"], unique=True)
     op.create_index("ix_transactions_telegram_id", "transactions", ["telegram_id"])
     op.create_index("ix_transactions_status", "transactions", ["status"])
+    op.create_index("ix_transactions_created_at", "transactions", ["created_at"])
 
     op.create_table(
         "payment_method_configs",
@@ -69,11 +77,16 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
+    op.create_index("ix_admin_logs_admin_id", "admin_action_logs", ["admin_telegram_id"])
+    op.create_index("ix_admin_logs_created_at", "admin_action_logs", ["created_at"])
 
 
 def downgrade() -> None:
+    op.drop_index("ix_admin_logs_created_at", "admin_action_logs")
+    op.drop_index("ix_admin_logs_admin_id", "admin_action_logs")
     op.drop_table("admin_action_logs")
     op.drop_table("payment_method_configs")
+    op.drop_index("ix_transactions_created_at", "transactions")
     op.drop_index("ix_transactions_status", "transactions")
     op.drop_index("ix_transactions_telegram_id", "transactions")
     op.drop_index("ix_transactions_transaction_uid", "transactions")

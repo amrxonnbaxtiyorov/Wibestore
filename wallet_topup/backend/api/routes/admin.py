@@ -52,9 +52,15 @@ def _verify_admin(admin_telegram_id: int) -> None:
         )
 
 
-class ApproveRejectBody(BaseModel):
+class ApproveBody(BaseModel):
     transaction_uid: str
     admin_telegram_id: int
+
+
+class RejectBody(BaseModel):
+    transaction_uid: str
+    admin_telegram_id: int
+    note: str | None = None
 
 
 @router.get("/transactions", response_model=ApiResponse[list])
@@ -188,7 +194,7 @@ async def get_user_balance(
 
 @router.post("/approve", response_model=ApiResponse[dict])
 async def admin_approve(
-    body: ApproveRejectBody,
+    body: ApproveBody,
     session: AsyncSession = Depends(get_async_session),
     _: None = Depends(_verify_bot_secret),
 ):
@@ -212,14 +218,14 @@ async def admin_approve(
 
 @router.post("/reject", response_model=ApiResponse[dict])
 async def admin_reject(
-    body: ApproveRejectBody,
+    body: RejectBody,
     session: AsyncSession = Depends(get_async_session),
     _: None = Depends(_verify_bot_secret),
 ):
-    """Reject a pending transaction."""
+    """Reject a pending transaction. Optional note stored in admin_note field."""
     _verify_admin(body.admin_telegram_id)
     success, message, payload = await reject_transaction(
-        session, body.transaction_uid, body.admin_telegram_id
+        session, body.transaction_uid, body.admin_telegram_id, admin_note=body.note
     )
     if not success:
         raise HTTPException(

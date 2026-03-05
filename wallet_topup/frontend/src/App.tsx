@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTelegramTheme } from "./hooks/useTelegramTheme";
 import { StepCurrency } from "./components/StepCurrency";
 import { StepMethod } from "./components/StepMethod";
 import { StepAmount } from "./components/StepAmount";
@@ -7,7 +8,7 @@ import { StepSubmit } from "./components/StepSubmit";
 import { SuccessScreen } from "./components/SuccessScreen";
 import { ProgressBar } from "./components/ProgressBar";
 import { Toast } from "./components/Toast";
-import type { PaymentMethod } from "./services/api";
+import { getUserBalance, type PaymentMethod } from "./services/api";
 
 export type Step = "currency" | "method" | "amount" | "receipt" | "submit" | "success";
 
@@ -35,18 +36,54 @@ const initialForm: FormState = {
   transactionUid: null,
 };
 
+// Back-navigation map: each step → previous step
+const BACK_MAP: Partial<Record<Step, Step>> = {
+  method: "currency",
+  amount: "method",
+  receipt: "amount",
+  submit: "receipt",
+};
+
 export default function App() {
   const [step, setStep] = useState<Step>("currency");
   const [form, setForm] = useState<FormState>(initialForm);
   const [toast, setToast] = useState<{ message: string; type: "error" | "success" } | null>(null);
+  const [walletBalance, setWalletBalance] = useState<string | null>(null);
 
+  // Apply Telegram theme colors to CSS variables (spec §9.5)
+  useTelegramTheme();
+
+  // Init Telegram WebApp
   useEffect(() => {
     const twa = window.Telegram?.WebApp;
     if (twa) {
       twa.ready();
       twa.expand();
+      twa.enableClosingConfirmation();
     }
+    // Fetch wallet balance on load (best-effort, doesn't block UX)
+    getUserBalance()
+      .then((data) => setWalletBalance(data.wallet_balance))
+      .catch(() => { /* silently ignore — may not be in Telegram */ });
   }, []);
+
+  // Telegram Back Button: show on all steps except currency & success
+  useEffect(() => {
+    const backButton = window.Telegram?.WebApp?.BackButton;
+    if (!backButton) return;
+    const prevStep = BACK_MAP[step];
+    if (prevStep && step !== "success") {
+      backButton.show();
+      const handler = () => setStep(prevStep);
+      backButton.onClick(handler);
+      return () => {
+        backButton.offClick(handler);
+        backButton.hide();
+      };
+    } else {
+      backButton.hide();
+    }
+  }, [step]);
 
   const showToast = useCallback((message: string, type: "error" | "success" = "error") => {
     setToast({ message, type });
@@ -70,6 +107,7 @@ export default function App() {
       {step === "currency" && (
         <StepCurrency
           value={form.currency}
+          walletBalance={walletBalance}
           onChange={(currency) => {
             haptic("light");
             setForm((f) => ({ ...f, currency, paymentMethod: null }));
@@ -152,7 +190,12 @@ export default function App() {
       )}
 
       {step === "success" && form.transactionUid && (
-        <SuccessScreen transactionUid={form.transactionUid} />
+        <SuccessScreen
+          transactionUid={form.transactionUid}
+          amount={form.amount}
+          currency={form.currency}
+          walletBalance={walletBalance}
+        />
       )}
 
       {toast && (

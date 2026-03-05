@@ -981,3 +981,57 @@ input[type="file"].hidden-input {
 .amount-presets {
   margin-bottom: 4px;
 }
+
+/* === Wallet Balance Card (currency step) === */
+.balance-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-active);
+  border: 1px solid var(--border-focus);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+.balance-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.balance-amount {
+  font-size: 1rem;
+  font-weight: 700;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === Success Amount Card === */
+.success-amount-card {
+  background: rgba(0, 206, 201, 0.08);
+  border: 1px solid rgba(0, 206, 201, 0.3);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.success-amount-card .label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.success-amount {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--success);
+}
