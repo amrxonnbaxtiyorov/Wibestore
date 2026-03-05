@@ -20,22 +20,22 @@ function slug(name) {
 
 /** Original/official o'yin rasmlari */
 const OVERRIDES = {
-  'pubg-mobile': { icon: '⚔️', image: '/img/icons/Pubg-icon.webp', accountCount: 547, color: '#F7B32B' },
+  'pubg-mobile': { icon: '⚔️', image: '/img/Pubg/pubg_logo.webp', accountCount: 547, color: '#F7B32B' },
   'pubg': { icon: '⚔️', image: '/img/icons/Pubg-icon.webp', accountCount: 547, color: '#F7B32B' },
   'steam': {
     icon: '🎮',
-    image: 'https://store.cloudflare.steamstatic.com/public/shared/images/header/logo_steam.svg',
+    image: '/img/Steam/steam_logo.webp',
     accountCount: 1203,
     color: '#1B2838',
   },
-  'free-fire': { icon: '🔫', image: '/img/icons/free.webp', accountCount: 389, color: '#FF5722' },
+  'free-fire': { icon: '🔫', image: '/img/FireFree/game_logo.jpg', accountCount: 389, color: '#FF5722' },
   'standoff-2': { icon: '🔫', image: '/img/icons/st.webp', accountCount: 256, color: '#E91E63' },
-  'standoff2': { icon: '🔫', image: '/img/icons/st.webp', accountCount: 256, color: '#E91E63' },
-  'mobile-legends': { icon: '⚔️', image: '/img/icons/ml.webp', accountCount: 478, color: '#00BCD4' },
-  'clash-of-clans': { icon: '🏰', image: '/img/icons/cc.webp', accountCount: 312, color: '#8BC34A' },
+  'standoff2': { icon: '🔫', image: '/img/Stendoff/stend_logo.jpeg', accountCount: 256, color: '#E91E63' },
+  'mobile-legends': { icon: '⚔️', image: '/img/Mobile/mobile-legends.jpg', accountCount: 478, color: '#00BCD4' },
+  'clash-of-clans': { icon: '🏰', image: '/img/Clash/clash_logo.jpg', accountCount: 312, color: '#8BC34A' },
   'call-of-duty-mobile': { icon: '🔫', image: '/img/icons/cal.webp', accountCount: 289, color: '#4CAF50' },
-  'codm': { icon: '🔫', image: '/img/icons/cal.webp', accountCount: 289, color: '#4CAF50' },
-  'roblox': { icon: '🤖', image: '/img/icons/roblox.webp', accountCount: 634, color: '#E2231A' },
+  'codm': { icon: '🔫', image: '/img/Callof/call_logo.jpg', accountCount: 289, color: '#4CAF50' },
+  'roblox': { icon: '🤖', image: '/img/Roblox/roblox_logo.jpg', accountCount: 634, color: '#E2231A' },
 };
 
 const PREFERRED_IDS = { 'Call of Duty Mobile': 'codm', 'Standoff 2': 'standoff2' };

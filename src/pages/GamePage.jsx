@@ -75,22 +75,26 @@ const GamePage = () => {
     const game = { ...displayGame, listings_count: displayGame.listings_count ?? listings.length };
 
     const GAME_ICON_MAP = {
-        'pubg-mobile': '/img/Pubg/pg.jpg',
-        steam: 'https://store.cloudflare.steamstatic.com/public/shared/images/header/logo_steam.svg',
-        'free-fire': './public/img/FireFree/game_logo.jpg',
+        'pubg-mobile': '/img/icons/Pubg-icon.webp',
+        'pubg': '/img/icons/Pubg-icon.webp',
+        steam: '/img/icons/steam.png',
+        'free-fire': '/img/icons/free.webp',
+        'standoff-2': '/img/icons/st.webp',
         'standoff2': '/img/icons/st.webp',
         'mobile-legends': '/img/icons/ml.webp',
         'clash-of-clans': '/img/icons/cc.webp',
+        'call-of-duty-mobile': '/img/icons/cal.webp',
         codm: '/img/icons/cal.webp',
         roblox: '/img/icons/roblox.webp',
     };
 
     const gameSlug = game.slug || game.id || gameId;
+    // GAME_ICON_MAP dan avval olish — API rasm noto'g'ri bo'lsa ham to'g'ri logo chiqadi
     const headerIcon =
+        (gameSlug ? GAME_ICON_MAP[gameSlug] : null) ||
         game.icon ||
         game.image ||
-        game.banner ||
-        (gameSlug ? GAME_ICON_MAP[gameSlug] : null);
+        game.banner;
 
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px' }}>
