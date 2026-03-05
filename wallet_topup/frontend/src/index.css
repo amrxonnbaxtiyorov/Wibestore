@@ -897,3 +897,87 @@ input[type="file"].hidden-input {
   color: var(--accent-light);
   pointer-events: none;
 }
+
+/* === Step direct h1 (fallback when not inside .step-header) === */
+.step > h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 8px;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === Step margin utilities === */
+.step {
+  padding-bottom: 8px;
+}
+
+.step .options-grid {
+  margin-bottom: 24px;
+}
+
+/* === input-field padding-right for suffix === */
+.amount-input-container .input-field {
+  padding-right: 72px;
+}
+
+/* === input-suffix positioning === */
+.input-suffix {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 700;
+  color: var(--accent-light);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+/* === upload-zone hidden file input === */
+.upload-zone input[type="file"].hidden-input,
+.hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* === upload-zone label is positioned === */
+.upload-zone {
+  position: relative;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+/* === Success screen h1 overrides gradient to success color === */
+.success-screen h1 {
+  -webkit-text-fill-color: var(--success);
+  background: none;
+  color: var(--success);
+  margin-bottom: 12px;
+}
+
+/* === success subtitle line-break support === */
+.success-screen .success-subtitle {
+  white-space: pre-line;
+}
+
+/* === btn-row spacing === */
+.btn-row {
+  margin-top: 24px;
+}
+
+/* === Summary card spacing === */
+.summary-card {
+  margin-bottom: 16px;
+}
+
+/* === Amount presets spacing === */
+.amount-presets {
+  margin-bottom: 4px;
+}

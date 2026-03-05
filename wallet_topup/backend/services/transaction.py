@@ -85,6 +85,7 @@ async def create_pending_transaction(
     payment_method: str,
     amount: float,
     receipt_path: str,
+    receipt_mime: str | None = None,
     username: str | None = None,
     transaction_uid: str | None = None,
 ) -> Transaction:
@@ -96,6 +97,7 @@ async def create_pending_transaction(
         payment_method=payment_method,
         amount=amount,
         receipt_path=receipt_path,
+        receipt_mime=receipt_mime,
         status="PENDING",
     )
     session.add(tx)

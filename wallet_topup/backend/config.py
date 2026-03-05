@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW_SECONDS: int = 600  # 10 minutes
 
     # ── Amount Limits ────────────────────────────────────
-    MIN_AMOUNT_UZS: float = 1_000
+    MIN_AMOUNT_UZS: float = 10_000
     MAX_AMOUNT_UZS: float = 50_000_000  # 50 million UZS
     MIN_AMOUNT_USDT: float = 1.0
     MAX_AMOUNT_USDT: float = 10_000.0

@@ -91,7 +91,7 @@ def _validate_amount(currency: str, amount: float) -> None:
             )
 
 
-async def _save_receipt(file: UploadFile, transaction_uid: str) -> str:
+async def _save_receipt(file: UploadFile, transaction_uid: str) -> tuple[str, str]:
     """Save uploaded receipt file with validation."""
     content = await file.read()
 
@@ -160,7 +160,7 @@ async def _save_receipt(file: UploadFile, transaction_uid: str) -> str:
     with open(path, "wb") as f:
         f.write(content)
 
-    return str(path)
+    return str(path), detected_mime or (file.content_type or "")
 
 
 @router.post("", response_model=ApiResponse[TransactionOut])
@@ -222,7 +222,7 @@ async def submit_topup(
 
     # 5) Save receipt
     transaction_uid = str(uuid.uuid4())
-    receipt_path = await _save_receipt(receipt, transaction_uid)
+    receipt_path, receipt_mime = await _save_receipt(receipt, transaction_uid)
 
     # 6) Create transaction
     tx = await create_pending_transaction(
@@ -232,6 +232,7 @@ async def submit_topup(
         payment_method=payment_method,
         amount=amount,
         receipt_path=receipt_path,
+        receipt_mime=receipt_mime,
         username=username,
         transaction_uid=transaction_uid,
     )

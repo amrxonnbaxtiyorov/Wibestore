@@ -18,6 +18,8 @@ export function StepMethod({ currency, selected, onSelect, onBack, onNext }: Pro
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setError(null);
     getPaymentMethods(currency)
       .then((data) => {
         if (!cancelled) setMethods(data);
@@ -33,38 +35,55 @@ export function StepMethod({ currency, selected, onSelect, onBack, onNext }: Pro
 
   return (
     <div className="step">
-      <h1>Payment method</h1>
-      <p className="muted">{currency === "UZS" ? "HUMO / UZCARD" : "VISA / MasterCard"}</p>
-      {loading && <p className="muted">Loading...</p>}
-      {error && <p className="error">{error}</p>}
+      <div className="step-header">
+        <span className="step-label">Step 2 of 5</span>
+        <h1>Payment Method</h1>
+        <p className="subtitle">
+          {currency === "UZS"
+            ? "Local cards — HUMO / UZCARD"
+            : "International cards — VISA / Mastercard"}
+        </p>
+      </div>
+
+      {loading && (
+        <div className="options-grid cols-1">
+          <div className="skeleton skeleton-card" />
+          <div className="skeleton skeleton-card" />
+        </div>
+      )}
+
+      {error && <p className="error-text">⚠ {error}</p>}
+
       {!loading && !error && (
-        <div className="options vertical">
+        <div className="options-grid cols-1">
           {methods.map((m) => (
             <button
               key={m.code}
               type="button"
-              className={`option ${selected?.code === m.code ? "selected" : ""}`}
+              className={`option-card ${selected?.code === m.code ? "selected" : ""}`}
               onClick={() => onSelect(m)}
             >
-              <span>{m.display_name}</span>
+              <div className="check-icon">{selected?.code === m.code ? "✓" : ""}</div>
+              <span className="option-label">{m.display_name}</span>
               {m.card_number && (
-                <small className="card-number">{m.card_number}</small>
+                <span className="option-sub">{m.card_number}</span>
               )}
             </button>
           ))}
         </div>
       )}
-      <div className="row">
-        <button type="button" className="btn secondary" onClick={onBack}>
-          Back
+
+      <div className="btn-row">
+        <button type="button" className="btn btn-secondary" onClick={onBack}>
+          ← Back
         </button>
         <button
           type="button"
-          className="btn primary"
+          className="btn btn-primary"
           onClick={onNext}
           disabled={!selected}
         >
-          Next
+          Continue →
         </button>
       </div>
     </div>

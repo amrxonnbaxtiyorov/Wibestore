@@ -50,4 +50,3 @@ try:
 except Exception as e:
     print(f"Warning: Could not create superuser: {e}")
     # Don't crash the entrypoint — server should still start
-

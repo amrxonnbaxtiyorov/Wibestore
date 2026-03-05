@@ -36,31 +36,68 @@ export function StepSubmit({ form, setForm, onSuccess, onError, onBack }: Props)
     }
   };
 
+  const amountNum = Number(form.amount);
+  const formattedAmount = !Number.isNaN(amountNum)
+    ? amountNum.toLocaleString()
+    : form.amount;
+
   return (
     <div className="step">
-      <h1>Confirm</h1>
-      <div className="summary">
-        <p><strong>Currency:</strong> {form.currency}</p>
-        <p><strong>Method:</strong> {form.paymentMethod?.display_name}</p>
-        <p><strong>Amount:</strong> {form.amount} {form.currency}</p>
+      <div className="step-header">
+        <span className="step-label">Step 5 of 5</span>
+        <h1>Review &amp; Submit</h1>
+        <p className="subtitle">Check the details before submitting</p>
       </div>
-      {form.error && <p className="error">{form.error}</p>}
-      <div className="row">
+
+      <div className="summary-card">
+        <p className="summary-title">Payment Details</p>
+
+        <div className="summary-row">
+          <span className="label">Currency</span>
+          <span className="value">{form.currency}</span>
+        </div>
+        <div className="summary-row">
+          <span className="label">Method</span>
+          <span className="value">{form.paymentMethod?.display_name}</span>
+        </div>
+        <div className="summary-row total">
+          <span className="label">Amount</span>
+          <span className="value">{formattedAmount} {form.currency}</span>
+        </div>
+        <div className="summary-row">
+          <span className="label">Receipt</span>
+          <span className="value">
+            {form.receiptPreview ? (
+              <img src={form.receiptPreview} alt="receipt" className="receipt-preview-small" />
+            ) : (
+              <span>📄 {form.receiptFile?.name}</span>
+            )}
+          </span>
+        </div>
+      </div>
+
+      {form.error && <p className="error-text">⚠ {form.error}</p>}
+
+      <div className="btn-row">
         <button
           type="button"
-          className="btn secondary"
+          className="btn btn-secondary"
           onClick={onBack}
           disabled={form.submitting}
         >
-          Back
+          ← Back
         </button>
         <button
           type="button"
-          className="btn primary"
+          className="btn btn-primary"
           onClick={handleSubmit}
           disabled={form.submitting}
         >
-          {form.submitting ? "Submitting…" : "Submit"}
+          {form.submitting ? (
+            <><span className="spinner" /> Submitting…</>
+          ) : (
+            "Submit Payment"
+          )}
         </button>
       </div>
     </div>

@@ -4,7 +4,6 @@ Subscribe to Redis channel for new pending transactions; notify admins with rece
 import asyncio
 import json
 import logging
-from io import BytesIO
 
 import aiohttp
 import redis.asyncio as redis
@@ -37,8 +36,11 @@ async def _fetch_transaction(transaction_uid: str) -> dict | None:
         return None
 
 
-async def _fetch_receipt_bytes(transaction_uid: str) -> bytes | None:
-    """Download receipt file from backend."""
+async def _fetch_receipt(transaction_uid: str) -> tuple[bytes | None, str]:
+    """
+    Download receipt file from backend.
+    Returns (bytes, content_type). content_type is used to pick photo vs document.
+    """
     url = f"{config.backend_url}/api/v1/admin/receipts/{transaction_uid}"
     headers = {"X-Bot-Secret": config.token}
     try:
@@ -47,11 +49,13 @@ async def _fetch_receipt_bytes(transaction_uid: str) -> bytes | None:
                 url, headers=headers, timeout=aiohttp.ClientTimeout(total=15)
             ) as resp:
                 if resp.status != 200:
-                    return None
-                return await resp.read()
+                    return None, ""
+                content_type = resp.headers.get("Content-Type", "")
+                data = await resp.read()
+                return data, content_type
     except Exception as e:
         logger.warning("Fetch receipt %s failed: %s", transaction_uid, e)
-        return None
+        return None, ""
 
 
 async def _notify_admins(bot, transaction_uid: str, data: dict) -> None:
@@ -64,7 +68,6 @@ async def _notify_admins(bot, transaction_uid: str, data: dict) -> None:
     currency = result.get("currency")
     payment_method = result.get("payment_method")
 
-    # Build user display string
     user_display = f"{telegram_id}"
     if username:
         user_display = f"@{username} ({telegram_id})"
@@ -83,23 +86,37 @@ async def _notify_admins(bot, transaction_uid: str, data: dict) -> None:
 
     keyboard = get_confirm_reject_keyboard(transaction_uid)
 
-    # Try to fetch and send receipt as photo
-    receipt_bytes = await _fetch_receipt_bytes(transaction_uid)
+    receipt_bytes, content_type = await _fetch_receipt(transaction_uid)
+    is_pdf = "pdf" in content_type.lower()
 
     for admin_id in config.admin_ids:
         try:
             if receipt_bytes:
-                # Send receipt as photo with caption
-                photo = BufferedInputFile(receipt_bytes, filename=f"receipt_{transaction_uid[:8]}.jpg")
-                await bot.send_photo(
-                    admin_id,
-                    photo=photo,
-                    caption=text,
-                    reply_markup=keyboard,
-                    parse_mode="HTML",
-                )
+                if is_pdf:
+                    doc = BufferedInputFile(
+                        receipt_bytes,
+                        filename=f"receipt_{transaction_uid[:8]}.pdf",
+                    )
+                    await bot.send_document(
+                        admin_id,
+                        document=doc,
+                        caption=text,
+                        reply_markup=keyboard,
+                        parse_mode="HTML",
+                    )
+                else:
+                    photo = BufferedInputFile(
+                        receipt_bytes,
+                        filename=f"receipt_{transaction_uid[:8]}.jpg",
+                    )
+                    await bot.send_photo(
+                        admin_id,
+                        photo=photo,
+                        caption=text,
+                        reply_markup=keyboard,
+                        parse_mode="HTML",
+                    )
             else:
-                # Fallback: send text only
                 await bot.send_message(
                     admin_id,
                     text + "\n📎 <i>Receipt not available</i>",
@@ -113,6 +130,8 @@ async def _notify_admins(bot, transaction_uid: str, data: dict) -> None:
 async def _listener_loop(bot) -> None:
     """Main Redis pub/sub loop for pending transaction notifications."""
     while True:
+        r = None
+        pubsub = None
         try:
             r = redis.from_url(config.redis_url, decode_responses=True)
             pubsub = r.pubsub()
@@ -143,8 +162,10 @@ async def _listener_loop(bot) -> None:
             await asyncio.sleep(5)
         finally:
             try:
-                await pubsub.unsubscribe(CHANNEL)
-                await r.aclose()
+                if pubsub:
+                    await pubsub.unsubscribe(CHANNEL)
+                if r:
+                    await r.aclose()
             except Exception:
                 pass
 

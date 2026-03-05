@@ -3,12 +3,10 @@ User: /start, /balance, show payment panel button.
 """
 import logging
 
-import aiohttp
 from aiogram import Bot, Router
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram.types import Message
 
-from wallet_topup.bot.config import config
 from wallet_topup.bot.keyboards import get_main_keyboard
 
 router = Router()
@@ -24,7 +22,7 @@ async def cmd_start(message: Message, bot: Bot) -> None:
         "Your payments are reviewed and confirmed by our admin team.\n\n"
         "📌 <b>How it works:</b>\n"
         "1️⃣ Open Payment Panel\n"
-        "2️⃣ Select currency & method\n"
+        "2️⃣ Select currency &amp; method\n"
         "3️⃣ Enter amount\n"
         "4️⃣ Upload payment receipt\n"
         "5️⃣ Wait for admin confirmation\n\n"
@@ -34,24 +32,13 @@ async def cmd_start(message: Message, bot: Bot) -> None:
     )
 
 
-@router.message(lambda m: m.text and m.text.lower() in ("/balance", "💳 my balance"))
-async def cmd_balance(message: Message, bot: Bot) -> None:
-    """Check wallet balance via backend API."""
-    telegram_id = message.from_user.id
-    try:
-        url = f"{config.backend_url}/api/v1/health"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                if resp.status != 200:
-                    await message.answer("⚠️ Service temporarily unavailable. Try again later.")
-                    return
-        await message.answer(
-            "💼 <b>Your Wallet</b>\n\n"
-            "Use the Payment Panel to top up your balance.\n"
-            "Contact admin if you need assistance.",
-            parse_mode="HTML",
-            reply_markup=get_main_keyboard(),
-        )
-    except Exception as e:
-        logger.warning("Balance check failed for %s: %s", telegram_id, e)
-        await message.answer("⚠️ Could not check balance. Try again later.")
+@router.message(Command("balance"))
+async def cmd_balance(message: Message) -> None:
+    """Tell user to open the Payment Panel to see their balance."""
+    await message.answer(
+        "💼 <b>Your Wallet</b>\n\n"
+        "Open the <b>Payment Panel</b> to view your current balance and make a top-up.\n\n"
+        "👇 Tap the button below:",
+        parse_mode="HTML",
+        reply_markup=get_main_keyboard(),
+    )

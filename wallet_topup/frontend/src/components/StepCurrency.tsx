@@ -9,26 +9,32 @@ type Props = {
 export function StepCurrency({ value, onChange, onNext }: Props) {
   return (
     <div className="step">
-      <h1>Select currency</h1>
-      <p className="muted">Choose how you want to top up</p>
-      <div className="options">
-        <button
-          type="button"
-          className={`option ${value === "UZS" ? "selected" : ""}`}
-          onClick={() => onChange("UZS")}
-        >
-          UZS
-        </button>
-        <button
-          type="button"
-          className={`option ${value === "USDT" ? "selected" : ""}`}
-          onClick={() => onChange("USDT")}
-        >
-          USDT
-        </button>
+      <div className="step-header">
+        <span className="step-label">Step 1 of 5</span>
+        <h1>Select Currency</h1>
+        <p className="subtitle">Choose how you want to top up</p>
       </div>
-      <button type="button" className="btn primary full" onClick={onNext}>
-        Next
+
+      <div className="options-grid cols-2">
+        {(["UZS", "USDT"] as const).map((cur) => (
+          <button
+            key={cur}
+            type="button"
+            className={`option-card ${value === cur ? "selected" : ""}`}
+            onClick={() => onChange(cur)}
+          >
+            <div className="check-icon">{value === cur ? "✓" : ""}</div>
+            <span className="option-icon">{cur === "UZS" ? "🇺🇿" : "₮"}</span>
+            <span className="option-label">{cur}</span>
+            <span className="option-sub">
+              {cur === "UZS" ? "Uzbek Sum" : "Tether USD"}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <button type="button" className="btn btn-primary btn-full" onClick={onNext}>
+        Continue →
       </button>
     </div>
   );

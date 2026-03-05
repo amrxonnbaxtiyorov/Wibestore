@@ -1,10 +1,10 @@
 """
-Admin approve/reject (called by bot with secret). Transaction fetch and receipt serving.
+Admin approve/reject (called by bot with secret). Transaction fetch, receipt serving, list.
 """
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -57,6 +57,37 @@ class ApproveRejectBody(BaseModel):
     admin_telegram_id: int
 
 
+@router.get("/transactions", response_model=ApiResponse[list])
+async def list_transactions(
+    status: str | None = Query(None, pattern="^(PENDING|APPROVED|REJECTED)$"),
+    limit: int = Query(20, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    session: AsyncSession = Depends(get_async_session),
+    _: None = Depends(_verify_bot_secret),
+):
+    """List transactions with optional status filter (for admin /pending, /stats)."""
+    query = select(Transaction).order_by(Transaction.created_at.desc()).offset(offset).limit(limit)
+    if status:
+        query = query.where(Transaction.status == status)
+
+    result = await session.execute(query)
+    transactions = result.scalars().all()
+
+    data = [
+        {
+            "transaction_uid": tx.transaction_uid,
+            "telegram_id": tx.telegram_id,
+            "currency": tx.currency,
+            "payment_method": tx.payment_method,
+            "amount": float(tx.amount),
+            "status": tx.status,
+            "created_at": tx.created_at.isoformat() if tx.created_at else None,
+        }
+        for tx in transactions
+    ]
+    return ApiResponse(success=True, data=data)
+
+
 @router.get("/transactions/{transaction_uid}", response_model=ApiResponse[dict])
 async def get_transaction_for_bot(
     transaction_uid: str,
@@ -77,7 +108,6 @@ async def get_transaction_for_bot(
             ).model_dump(),
         )
 
-    # Get user details
     user_result = await session.execute(
         select(User).where(User.telegram_id == tx.telegram_id)
     )
@@ -113,7 +143,7 @@ async def get_receipt_file(
     session: AsyncSession = Depends(get_async_session),
     _: None = Depends(_verify_bot_secret),
 ):
-    """Serve the receipt file for admin review."""
+    """Serve the receipt file for admin review, with correct MIME type."""
     result = await session.execute(
         select(Transaction).where(Transaction.transaction_uid == transaction_uid)
     )
@@ -123,7 +153,37 @@ async def get_receipt_file(
     path = Path(tx.receipt_path)
     if not path.exists():
         raise HTTPException(status_code=404, detail="Receipt file not found")
-    return FileResponse(path, media_type="application/octet-stream")
+
+    # Serve with detected MIME type so bot can decide photo vs document
+    mime = tx.receipt_mime or "application/octet-stream"
+    return FileResponse(path, media_type=mime)
+
+
+@router.get("/user-balance/{telegram_id}", response_model=ApiResponse[dict])
+async def get_user_balance(
+    telegram_id: int,
+    session: AsyncSession = Depends(get_async_session),
+    _: None = Depends(_verify_bot_secret),
+):
+    """Get a specific user's wallet balance (for admin /balance command)."""
+    result = await session.execute(
+        select(User).where(User.telegram_id == telegram_id)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail=ErrorDetail(code="NOT_FOUND", message="User not found.").model_dump(),
+        )
+    return ApiResponse(
+        success=True,
+        data={
+            "telegram_id": user.telegram_id,
+            "username": user.username,
+            "first_name": user.first_name,
+            "wallet_balance": str(user.wallet_balance),
+        },
+    )
 
 
 @router.post("/approve", response_model=ApiResponse[dict])

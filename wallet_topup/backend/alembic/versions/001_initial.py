@@ -37,6 +37,7 @@ def upgrade() -> None:
         sa.Column("payment_method", sa.String(50), nullable=False),
         sa.Column("amount", sa.Numeric(18, 2), nullable=False),
         sa.Column("receipt_path", sa.Text(), nullable=False),
+        sa.Column("receipt_mime", sa.String(64), nullable=True),
         sa.Column("status", sa.String(20), nullable=False, server_default="PENDING"),
         sa.Column("admin_id", sa.BigInteger(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=True),

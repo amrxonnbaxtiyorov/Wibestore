@@ -23,6 +23,7 @@ class Transaction(Base):
     payment_method: Mapped[str] = mapped_column(String(50), nullable=False)  # HUMO, UZCARD, VISA, MasterCard
     amount: Mapped[float] = mapped_column(Numeric(18, 2), nullable=False)
     receipt_path: Mapped[str] = mapped_column(Text, nullable=False)
+    receipt_mime: Mapped[str | None] = mapped_column(String(64), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="PENDING", index=True)  # PENDING, APPROVED, REJECTED
     admin_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
