@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs cat)",
+      "Bash(python -c \"import sys; sys.path.insert\\(0, ''.''\\); import django; import os; os.environ.setdefault\\(''DJANGO_SETTINGS_MODULE'', ''config.settings.base''\\); django.setup\\(\\)\")",
+      "Bash(python manage.py check --deploy)",
+      "Bash(python manage.py showmigrations --list)",
+      "Bash(xargs grep -l \"railway\\\\|Railway\\\\|RAILWAY\")",
+      "Bash(ls /c/WibeStore/Wibestore/wibestore_backend/apps/*/migrations/)",
+      "Bash(grep \"\\\\.py$\")",
+      "Bash(python manage.py makemigrations --check --dry-run)",
+      "Bash(python manage.py makemigrations --dry-run)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)"
+    ]
+  }
+}
