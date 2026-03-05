@@ -357,17 +357,18 @@ const HomePage = () => {
                     </div>
 
                     {/* Horizontal scroll slider — ma'lumot bor bo'lsa darhol ko'rsatamiz, API kutmaymiz */}
-                    <div
-                        className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
-                        style={{ margin: '0 -16px', padding: '0 16px 16px' }}
-                    >
-                        {premiumAccounts.length > 0 ? (
-                            premiumAccounts.map((account) => (
-                                <AccountCard key={account?.id ?? account?.title} account={toAccountCard(account)} featured />
-                            ))
-                        ) : listingsLoading ? (
-                            Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-                        ) : null}
+                    <div className="scroll-fade-x" style={{ margin: '0 -16px', padding: '0 16px 16px' }}>
+                        <div
+                            className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
+                        >
+                            {premiumAccounts.length > 0 ? (
+                                premiumAccounts.map((account) => (
+                                    <AccountCard key={account?.id ?? account?.title} account={toAccountCard(account)} featured />
+                                ))
+                            ) : listingsLoading ? (
+                                Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+                            ) : null}
+                        </div>
                     </div>
                 </div>
             </section>

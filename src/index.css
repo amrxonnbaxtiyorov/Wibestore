@@ -1818,6 +1818,34 @@ p {
    UTILITIES
    ============================================ */
 
+.scroll-fade-x {
+  position: relative;
+  overflow: hidden;
+}
+
+.scroll-fade-x::before,
+.scroll-fade-x::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  pointer-events: none;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.scroll-fade-x::before {
+  left: 0;
+  background: linear-gradient(to right, var(--color-bg-primary), transparent);
+}
+
+.scroll-fade-x::after {
+  right: 0;
+  background: linear-gradient(to left, var(--color-bg-primary), transparent);
+}
+
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;

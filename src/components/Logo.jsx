@@ -1,8 +1,8 @@
 import { useTheme } from '../context/ThemeContext';
 
 const LOGO_ASPECT = 185 / 36;
-const LOGO_LIGHT = '/logo-transparent.png';
-const LOGO_DARK = '/logo-dark.png';
+const LOGO_LIGHT = '/logo_website_black.png';
+const LOGO_DARK = '/logo_website_white.png';
 
 const Logo = ({ height = 56 }) => {
     const { isDark } = useTheme();
@@ -11,7 +11,7 @@ const Logo = ({ height = 56 }) => {
     const logoSrc = isDark ? LOGO_DARK : LOGO_LIGHT;
     return (
         <div
-            className="flex-shrink-0 select-none"
+            className="shrink-0 select-none"
             style={{
                 width: `${width}px`,
                 height: `${height}px`,
