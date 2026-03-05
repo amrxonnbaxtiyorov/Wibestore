@@ -11,7 +11,11 @@
       "Bash(python manage.py makemigrations --check --dry-run)",
       "Bash(python manage.py makemigrations --dry-run)",
       "Bash(npm run build)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(docker ps -a --filter \"name=wallet\" --format \"table {{.Names}}\\\\t{{.Status}}\\\\t{{.Ports}}\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0, ''..''\\); from wallet_topup.bot.config import config; print\\(''Token:'', bool\\(config.token\\)\\); print\\(''Admin IDs:'', config.admin_ids\\); print\\(''Web App URL:'', config.web_app_url\\); print\\(''Backend URL:'', config.backend_url\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(timeout 5 python bot.py)"
     ]
   }
 }
