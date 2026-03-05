@@ -63,9 +63,13 @@ const HomePage = () => {
     const allGames = Array.isArray(rawGames) ? rawGames.filter(Boolean) : [];
     // Bosh sahifada doim avvalgi 8 ta mashhur o'yin (PUBG, Steam, Free Fire va hokazo) — API tartibiga qaramay
     const popularGamesFixed = [
-        { id: 'pubg-mobile', name: 'PUBG Mobile', image: '/img/icons/Pubg-icon.webp' },
-        { id: 'steam', name: 'Steam', image: '/img/icons/steam.png' },
-        { id: 'free-fire', name: 'Free Fire', image: '/img/icons/free.webp' },
+        { id: 'pubg-mobile', name: 'PUBG Mobile', image: './public/img/Pubg/pg.jpg' },
+        {
+            id: 'steam',
+            name: 'Steam',
+            image: 'https://store.cloudflare.steamstatic.com/public/shared/images/header/logo_steam.svg',
+        },
+        { id: 'free-fire', name: 'Free Fire', image: '/img/FireFree/game_logo.jpg' },
         { id: 'standoff2', name: 'Standoff 2', image: '/img/icons/st.webp' },
         { id: 'mobile-legends', name: 'Mobile Legends', image: '/img/icons/ml.webp' },
         { id: 'clash-of-clans', name: 'Clash of Clans', image: '/img/icons/cc.webp' },

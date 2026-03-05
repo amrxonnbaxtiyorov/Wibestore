@@ -12,13 +12,13 @@ const GamePage = () => {
     const { gameId } = useParams();
     const [sortBy, setSortBy] = useState('newest');
     const [searchQuery, setSearchQuery] = useState('');
-    
+
     // API hooks
     const { data: apiGame, isLoading: gameLoading } = useGame(gameId);
     const { data, isLoading, fetchNextPage, hasNextPage } = useGameListings(gameId, {
         ordering: sortBy === 'price-low' ? 'price' : sortBy === 'price-high' ? '-price' : '-created_at',
     });
-    
+
     const rawListings = data?.pages?.flatMap(page => page?.results ?? []) ?? [];
     let listings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
     if (listings.length === 0 && gameId) {
@@ -75,9 +75,9 @@ const GamePage = () => {
     const game = { ...displayGame, listings_count: displayGame.listings_count ?? listings.length };
 
     const GAME_ICON_MAP = {
-        'pubg-mobile': '/img/icons/Pubg-icon.webp',
-        steam: '/img/icons/steam.png',
-        'free-fire': '/img/icons/free.webp',
+        'pubg-mobile': '/img/Pubg/pg.jpg',
+        steam: 'https://store.cloudflare.steamstatic.com/public/shared/images/header/logo_steam.svg',
+        'free-fire': './public/img/FireFree/game_logo.jpg',
         'standoff2': '/img/icons/st.webp',
         'mobile-legends': '/img/icons/ml.webp',
         'clash-of-clans': '/img/icons/cc.webp',

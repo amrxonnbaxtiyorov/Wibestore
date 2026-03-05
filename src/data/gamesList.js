@@ -22,7 +22,12 @@ function slug(name) {
 const OVERRIDES = {
   'pubg-mobile': { icon: '⚔️', image: '/img/icons/Pubg-icon.webp', accountCount: 547, color: '#F7B32B' },
   'pubg': { icon: '⚔️', image: '/img/icons/Pubg-icon.webp', accountCount: 547, color: '#F7B32B' },
-  'steam': { icon: '🎮', image: '/img/icons/steam.png', accountCount: 1203, color: '#1B2838' },
+  'steam': {
+    icon: '🎮',
+    image: 'https://store.cloudflare.steamstatic.com/public/shared/images/header/logo_steam.svg',
+    accountCount: 1203,
+    color: '#1B2838',
+  },
   'free-fire': { icon: '🔫', image: '/img/icons/free.webp', accountCount: 389, color: '#FF5722' },
   'standoff-2': { icon: '🔫', image: '/img/icons/st.webp', accountCount: 256, color: '#E91E63' },
   'standoff2': { icon: '🔫', image: '/img/icons/st.webp', accountCount: 256, color: '#E91E63' },
