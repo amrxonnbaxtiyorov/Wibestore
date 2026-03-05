@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Tag, Heart, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle, BarChart3, UserPlus, Copy } from 'lucide-react';
+import { ShoppingBag, Tag, Heart, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle, BarChart3, UserPlus, Copy, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing, useSellerDashboard, useReferral } from '../hooks';
 import AccountCard from '../components/AccountCard';
@@ -18,6 +18,7 @@ const ProfilePage = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState('listings');
+    const [showAvatarModal, setShowAvatarModal] = useState(false);
 
     // API hooks
     const { isLoading: profileLoading } = useProfile();
@@ -94,6 +95,7 @@ const ProfilePage = () => {
         { id: 'purchases', label: t('profile.purchases') || 'Purchases', icon: ShoppingBag, count: purchases.length },
         { id: 'sales', label: t('profile.sales') || 'Sales', icon: Tag, count: sales.length },
         { id: 'likes', label: t('profile.likes') || 'Liked', icon: Heart, count: likedAccounts.length },
+        { id: 'reviews', label: t('profile.reviews') || 'Reviews', icon: Star },
     ];
 
     if (!user) return null;
@@ -109,6 +111,9 @@ const ProfilePage = () => {
 
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px' }}>
+            {showAvatarModal && (
+                <AvatarEditModal onClose={() => setShowAvatarModal(false)} />
+            )}
             <div className="gh-container">
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs">
@@ -150,6 +155,7 @@ const ProfilePage = () => {
                                 )}
                             </div>
                             <button
+                                onClick={() => setShowAvatarModal(true)}
                                 style={{
                                     position: 'absolute', bottom: 0, right: 0,
                                     width: '28px', height: '28px',
@@ -344,8 +350,8 @@ const ProfilePage = () => {
                                                         <img src={listing.images?.[0]?.image ?? listing.image ?? listing.primary_image} alt={listing.title ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                     ) : (
                                                         <div className="flex items-center justify-center" style={{ width: '100%', height: '100%' }}>
-                                                            {getGameImage(listing.gameId) ? (
-                                                                <img src={getGameImage(listing.gameId)} alt="" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: 'var(--radius-md)', opacity: 0.5 }} />
+                                                            {getGameImage(listing.game?.id) ? (
+                                                                <img src={getGameImage(listing.game?.id)} alt="" style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: 'var(--radius-md)', opacity: 0.5 }} />
                                                             ) : (
                                                                 <Package style={{ width: '32px', height: '32px', color: 'var(--color-text-muted)', opacity: 0.5 }} />
                                                             )}
@@ -356,7 +362,7 @@ const ProfilePage = () => {
                                                     <div className="flex flex-wrap items-start justify-between gap-2" style={{ marginBottom: '8px' }}>
                                                         <div>
                                                             <h3 style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '2px' }}>{listing.title}</h3>
-                                                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>{getGameName(listing.gameId)}</p>
+                                                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>{listing.game?.name || getGameName(listing.game?.id)}</p>
                                                         </div>
                                                         <span className="flex items-center gap-1" style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: status.bg, color: status.color }}>
                                                             <StatusIcon className="w-3 h-3" /> {status.text}
@@ -368,7 +374,7 @@ const ProfilePage = () => {
                                                         </span>
                                                         <div className="flex items-center gap-2">
                                                             <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-                                                                {listing.createdAt ? new Date(listing.createdAt).toLocaleDateString() : ''}
+                                                                {(listing.created_at || listing.createdAt) ? new Date(listing.created_at || listing.createdAt).toLocaleDateString() : ''}
                                                             </span>
                                                             <button
                                                                 onClick={() => deleteListing(listing.id)}
@@ -418,7 +424,7 @@ const ProfilePage = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" style={{ gap: '16px' }}>
                                     {sales.map((account) => <AccountCard key={account.id} account={account} />)}
                                 </div>
-                            ) : <EmptyState icon={Tag} text={t('profile.no_sales') || 'No sales yet'} actionLabel={t('profile.create_listing') || 'Create listing'} actionTo="/sell" />}
+                            ) : <EmptyState icon={Tag} title={t('profile.no_sales') || 'No sales yet'} actionLabel={t('profile.create_listing') || 'Create listing'} actionTo="/sell" />}
                         </>
                     )}
 
@@ -431,7 +437,7 @@ const ProfilePage = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" style={{ gap: '16px' }}>
                                     {likedAccounts.map((account) => <AccountCard key={account.id} account={account} />)}
                                 </div>
-                            ) : <EmptyState icon={Heart} text={t('profile.no_likes') || 'No liked accounts'} actionLabel={t('profile.browse') || 'Browse accounts'} actionTo="/" />}
+                            ) : <EmptyState icon={Heart} title={t('profile.no_likes') || 'No liked accounts'} actionLabel={t('profile.browse') || 'Browse accounts'} actionTo="/" />}
                         </>
                     )}
 

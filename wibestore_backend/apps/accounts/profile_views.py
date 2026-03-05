@@ -158,15 +158,17 @@ class ReferralView(APIView):
 
     def get(self, request):
         import secrets
+        from django.conf import settings
         from apps.accounts.models import Referral
         user = request.user
         if not user.referral_code:
             user.referral_code = secrets.token_urlsafe(8).upper()[:10]
             user.save(update_fields=["referral_code"])
         referred_count = Referral.objects.filter(referrer=user).count()
+        frontend_url = getattr(settings, "FRONTEND_URL", "https://wibestore.uz").rstrip("/")
         return Response({
             "referral_code": user.referral_code,
-            "referral_url": f"{request.build_absolute_uri('/')}?ref={user.referral_code}",
+            "referral_url": f"{frontend_url}/?ref={user.referral_code}",
             "referred_count": referred_count,
         })
 

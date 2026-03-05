@@ -168,6 +168,7 @@ class AuthService:
                 "full_name": google_data.get("name", ""),
                 "is_verified": True,
                 "avatar": None,
+                "avatar_url": google_data.get("picture") or None,
             },
         )
 
@@ -175,6 +176,21 @@ class AuthService:
             logger.info("New user created via Google OAuth: %s", email)
         else:
             logger.info("User logged in via Google OAuth: %s", email)
+            # Sync profile fields that may have changed since last login
+            update_fields = []
+            picture_url = google_data.get("picture")
+            if picture_url and user.avatar_url != picture_url:
+                user.avatar_url = picture_url
+                update_fields.append("avatar_url")
+            google_name = google_data.get("name", "")
+            if google_name and not user.full_name:
+                user.full_name = google_name
+                update_fields.append("full_name")
+            if not user.is_verified:
+                user.is_verified = True
+                update_fields.append("is_verified")
+            if update_fields:
+                user.save(update_fields=update_fields)
 
         return user
 

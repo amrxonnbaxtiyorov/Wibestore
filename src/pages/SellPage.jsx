@@ -36,8 +36,8 @@ const SellPage = () => {
     const [modalGameSearch, setModalGameSearch] = useState('');
     
     // API hooks
-    const { mutate: createListing, isLoading: _isCreating } = useCreateListing();
-    const { mutate: _uploadImage, isLoading: _isUploading } = useUploadImage();
+    const { mutate: createListing, isPending: _isCreating } = useCreateListing();
+    const { mutate: _uploadImage, isPending: _isUploading } = useUploadImage();
     const { data: gamesData } = useGames();
 
     const mockGames = getGamesList();

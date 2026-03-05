@@ -4,6 +4,7 @@ WibeStore Backend - Marketplace Views
 
 import logging
 
+from django.db.models import F
 from django_filters.rest_framework.backends import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, parsers, permissions, status
@@ -90,8 +91,7 @@ class ListingFavoriteView(APIView):
         )
 
         if created:
-            listing.favorites_count += 1
-            listing.save(update_fields=["favorites_count"])
+            Listing.objects.filter(pk=listing.pk).update(favorites_count=F("favorites_count") + 1)
             return Response(
                 {"success": True, "message": "Added to favorites."},
                 status=status.HTTP_201_CREATED,
@@ -106,12 +106,9 @@ class ListingFavoriteView(APIView):
             user=request.user, listing_id=pk
         ).delete()
         if deleted:
-            try:
-                listing = Listing.objects.get(pk=pk)
-                listing.favorites_count = max(0, listing.favorites_count - 1)
-                listing.save(update_fields=["favorites_count"])
-            except Listing.DoesNotExist:
-                pass
+            Listing.objects.filter(pk=pk, favorites_count__gt=0).update(
+                favorites_count=F("favorites_count") - 1
+            )
             return Response(
                 {"success": True, "message": "Removed from favorites."},
                 status=status.HTTP_200_OK,
@@ -154,8 +151,8 @@ class ListingViewCountView(APIView):
 
         if not existing.exists():
             ListingView.objects.create(listing=listing, user=user, ip_address=ip)
-            listing.views_count += 1
-            listing.save(update_fields=["views_count"])
+            Listing.objects.filter(pk=listing.pk).update(views_count=F("views_count") + 1)
+            listing.refresh_from_db(fields=["views_count"])
 
         return Response(
             {"success": True, "views_count": listing.views_count},

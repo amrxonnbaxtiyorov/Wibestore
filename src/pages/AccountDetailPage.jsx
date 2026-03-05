@@ -6,7 +6,6 @@ import {
     Gamepad2, Trophy, Swords, Layers, ArrowLeft, Send
 } from 'lucide-react';
 
-const TELEGRAM_URL = 'https://t.me/wibestoreuz';
 import { useListing, useAddToFavorites, useRemoveFromFavorites, useListings, usePurchaseListing } from '../hooks';
 import ReviewList from '../components/ReviewList';
 import AccountCard from '../components/AccountCard';
@@ -18,6 +17,8 @@ import { useChat } from '../context/ChatContext';
 import { accounts as mockAccounts } from '../data/mockData';
 import BuyerRulesQuiz from '../components/BuyerRulesQuiz';
 import ReviewModal from '../components/ReviewModal';
+
+const TELEGRAM_URL = 'https://t.me/wibestoreuz';
 
 /* ─── Image Carousel ──────────────────────────────────────────── */
 const ImageCarousel = ({ images, title, noImageText, imageErrorText }) => {
