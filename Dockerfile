@@ -1,17 +1,19 @@
 # ============================================================
 # WibeStore Frontend - Multi-stage Dockerfile (Railway / Linux)
 # ============================================================
+# Builder: node:20-slim (glibc) — Alpine (musl) da Rollup native modul xato beradi:
+#   Cannot find module @rollup/rollup-linux-x64-musl
 
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Prefer npm ci for reproducible builds; fallback to install if no lock file
+# npm ci with optional deps (Rollup/Vite uchun platform-specific binary kerak)
 COPY package.json package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci --omit=optional; else npm install --omit=optional; fi
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 COPY . .
 
