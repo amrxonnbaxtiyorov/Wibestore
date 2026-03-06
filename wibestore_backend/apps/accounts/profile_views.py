@@ -42,7 +42,7 @@ class MyListingsView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Listing.objects.filter(seller=self.request.user).select_related("game")
+        return Listing.objects.filter(seller=self.request.user, deleted_at__isnull=True).select_related("game")
 
 
 @extend_schema(tags=["Profile"])

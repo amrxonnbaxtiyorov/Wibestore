@@ -25,7 +25,7 @@ const ProductsPage = () => {
 
     // Qidiruv matnini URL ga debounce bilan yozish (ulashiladigan link uchun)
     useEffect(() => {
-        const t = setTimeout(() => {
+        const timer = setTimeout(() => {
             const q = searchQuery.trim();
             setSearchParams((prev) => {
                 const cur = prev.get('search') ?? '';
@@ -36,7 +36,7 @@ const ProductsPage = () => {
                 return next;
             }, { replace: true });
         }, 400);
-        return () => clearTimeout(t);
+        return () => clearTimeout(timer);
     }, [searchQuery, setSearchParams]);
 
     // API hooks — faqat aniq filterlar yuboriladi (undefined yo'q, tez cache)

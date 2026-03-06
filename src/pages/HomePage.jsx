@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Shield, Zap, Users, TrendingUp, Star, Crown, ChevronRight, Trophy } from 'lucide-react';
 import { useGames, useListings } from '../hooks';
 import GameCard from '../components/GameCard';
@@ -44,18 +43,10 @@ function useCounter(target, duration = 2000) {
 
 const HomePage = () => {
     const { t } = useLanguage();
-    const queryClient = useQueryClient();
 
     // API hooks
     const { data: gamesData, isLoading: gamesLoading } = useGames();
     const { data: listingsData, isLoading: listingsLoading } = useListings({ limit: 8 });
-
-    // Prefetch products page (Boshqa mahsulotlar) — cache key ProductsPage default bilan bir xil
-    useEffect(() => {
-        queryClient.prefetchInfiniteQuery({
-            queryKey: ['listings', { ordering: '-created_at' }],
-        });
-    }, [queryClient]);
 
     // Use API data — ensure array, no undefined items
     const rawGames = gamesData?.results ?? gamesData ?? [];

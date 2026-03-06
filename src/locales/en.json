@@ -35,6 +35,7 @@
     "stats": {
         "accounts": "Accounts",
         "sellers": "Sellers",
+        "games": "Games",
         "success": "Success Rate",
         "total_users": "Total Users",
         "total_sales": "Total Sales",

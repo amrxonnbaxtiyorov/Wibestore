@@ -149,7 +149,6 @@ const Navbar = () => {
                                             backgroundColor: active
                                                 ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)')
                                                 : 'transparent',
-                                            padding: isActive ? '10px' : 'auto',
                                         }}
                                         onMouseEnter={(e) => {
                                             if (!active) {
@@ -258,7 +257,6 @@ const Navbar = () => {
                                     className="flex items-center gap-2 h-8 px-3 rounded-md transition-all duration-200"
                                     aria-label="Change language"
                                     style={{
-                                        padding: isActive ? '10px' : 'auto',
                                         backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                         border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
                                     }}
@@ -298,7 +296,6 @@ const Navbar = () => {
                                         className="absolute right-0 top-full mt-2 py-1.5 rounded-md shadow-xl overflow-hidden"
                                         style={{
                                             minWidth: '180px',
-                                            padding: isActive ? '10px' : 'auto',
                                             backgroundColor: isDark ? '#1c2333' : '#ffffff',
                                             border: `1px solid ${isDark ? '#30363d' : '#d0d7de'}`,
                                             zIndex: 100,
@@ -529,7 +526,6 @@ const Navbar = () => {
                                         to="/login"
                                         className="hidden sm:inline-flex items-center justify-center h-9 px-12 rounded-sm text-sm font-medium transition-colors duration-150 whitespace-nowrap"
                                         style={{
-                                            padding: isActive ? '10px' : 'auto',
                                             textDecoration: 'none',
                                             color: isDark ? '#c9d1d9' : '#1f2328',
                                             border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'}`,
@@ -543,7 +539,6 @@ const Navbar = () => {
                                         to="/signup"
                                         className="inline-flex items-center justify-center h-9 px-12 rounded-sm text-sm font-semibold transition-all duration-150 whitespace-nowrap"
                                         style={{
-                                            padding: isActive ? '10px' : 'auto',
                                             textDecoration: 'none',
                                             backgroundColor: isDark ? '#238636' : '#1f883d',
                                             color: '#ffffff',

@@ -112,8 +112,9 @@ const SettingsPage = () => {
             const publicClient = createPublicClient();
             
             await publicClient.post('/auth/password/change/', {
-                current_password: passwordData.currentPassword,
+                old_password: passwordData.currentPassword,
                 new_password: passwordData.newPassword,
+                new_password_confirm: passwordData.confirmPassword,
             });
 
             setMessage({ type: 'success', text: t('settings.password_changed') });
