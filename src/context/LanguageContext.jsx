@@ -24,7 +24,7 @@ export const languages = [
         code: 'en',
         name: 'English',
         flag: '🇺🇸',
-        flagUrl: 'https://flagcdn.com/w320/gb.png',
+        flagUrl: 'https://flagcdn.com/w320/us.png', // AQSh bayrog'i — ingliz tili (avvalgi ko'rinish)
     },
 ];
 

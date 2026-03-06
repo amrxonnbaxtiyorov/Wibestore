@@ -244,7 +244,7 @@ const SettingsPage = () => {
                                                 {user?.avatar ? (
                                                     <img src={user.avatar} alt={user?.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 ) : (
-                                                    getDisplayInitial(user?.name || user?.display_name || user?.full_name, 'U')
+                                                    getDisplayInitial(user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')
                                                 )}
                                             </div>
                                             <label style={{

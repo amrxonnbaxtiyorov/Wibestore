@@ -268,18 +268,21 @@ const Navbar = () => {
                                         e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
                                     }}
                                 >
-                                    <img
-                                        src={currentLang.flagUrl}
-                                        alt={currentLang.name}
-                                        className="flex-shrink-0"
-                                        style={{
-                                            width: '20px',
-                                            height: '14px',
-                                            objectFit: 'cover',
-                                            borderRadius: '2px',
-                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
-                                        }}
-                                    />
+                                    <span className="flex-shrink-0 flex items-center justify-center" style={{ width: '20px', height: '14px' }}>
+                                        <img
+                                            src={currentLang.flagUrl}
+                                            alt=""
+                                            style={{
+                                                width: '20px',
+                                                height: '14px',
+                                                objectFit: 'cover',
+                                                borderRadius: '2px',
+                                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
+                                            }}
+                                            onError={(e) => { e.target.style.display = 'none'; const next = e.target.nextElementSibling; if (next) next.style.display = 'inline'; }}
+                                        />
+                                        <span style={{ display: 'none', fontSize: '14px' }} aria-hidden>{currentLang.flag}</span>
+                                    </span>
                                     <span
                                         className="text-[12px] font-semibold hidden sm:block"
                                         style={{ color: isDark ? '#e6edf3' : '#1f2328' }}
@@ -322,18 +325,21 @@ const Navbar = () => {
                                                         if (!selected) e.currentTarget.style.backgroundColor = 'transparent';
                                                     }}
                                                 >
-                                                    <img
-                                                        src={lang.flagUrl}
-                                                        alt={lang.name}
-                                                        className="flex-shrink-0"
-                                                        style={{
-                                                            width: '24px',
-                                                            height: '17px',
-                                                            objectFit: 'cover',
-                                                            borderRadius: '2px',
-                                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`,
-                                                        }}
-                                                    />
+                                                    <span className="flex-shrink-0 flex items-center justify-center" style={{ width: '24px', height: '17px' }}>
+                                                        <img
+                                                            src={lang.flagUrl}
+                                                            alt=""
+                                                            style={{
+                                                                width: '24px',
+                                                                height: '17px',
+                                                                objectFit: 'cover',
+                                                                borderRadius: '2px',
+                                                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`,
+                                                            }}
+                                                            onError={(e) => { e.target.style.display = 'none'; const next = e.target.nextElementSibling; if (next) next.style.display = 'inline'; next.style.fontSize = '18px'; }}
+                                                        />
+                                                        <span style={{ display: 'none', fontSize: '18px' }} aria-hidden>{lang.flag}</span>
+                                                    </span>
                                                     <div className="flex flex-col">
                                                         <span
                                                             className="text-[13px] leading-tight"
@@ -426,7 +432,10 @@ const Navbar = () => {
                                                         }}
                                                     />
                                                 ) : (
-                                                    getDisplayInitial(user?.name || user?.display_name, 'U')
+                                                    getDisplayInitial(
+                                                        user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''),
+                                                        'U'
+                                                    )
                                                 )}
                                             </div>
                                             <div
@@ -460,7 +469,7 @@ const Navbar = () => {
                                                     className="text-[13px] font-semibold mb-1"
                                                     style={{ color: isDark ? '#f0f6fc' : '#1f2328', paddingTop: '4px', paddingBottom: '4px' }}
                                                 >
-                                                    {capitalizeFirst(user?.name || user?.display_name) || 'User'}
+                                                    {capitalizeFirst(user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : '')) || 'User'}
                                                 </div>
                                                 <div
                                                     className="text-[12px] truncate mb-1"

@@ -156,7 +156,7 @@ const ProfilePage = () => {
                                 {user.avatar ? (
                                     <img src={user.avatar} alt={user.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
-                                    getDisplayInitial(user.name || user.display_name, 'U')
+                                    getDisplayInitial(user.name ?? user.display_name ?? user.full_name, 'U')
                                 )}
                             </div>
                             <button
@@ -177,7 +177,7 @@ const ProfilePage = () => {
                         {/* Info — ism ostida faqat Telegram ID */}
                         <div className="flex-1 text-center md:text-left">
                             <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-                                {capitalizeFirst(user.name || user.display_name || user.email) || '—'}
+                                {capitalizeFirst(user.name ?? user.display_name ?? user.full_name ?? user.email) || '—'}
                             </h1>
                             <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
                                 {user.telegram_id || user.telegram_username || user.email || ''}
