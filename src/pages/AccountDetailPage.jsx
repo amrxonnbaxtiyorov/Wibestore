@@ -19,6 +19,7 @@ import BuyerRulesQuiz from '../components/BuyerRulesQuiz';
 import ReviewModal from '../components/ReviewModal';
 
 const TELEGRAM_URL = 'https://t.me/wibestoreuz';
+const FAV_STORAGE_KEY = 'wibeFavoriteListingIds';
 
 /* ─── Image Carousel ──────────────────────────────────────────── */
 const ImageCarousel = ({ images, title, noImageText, imageErrorText }) => {
@@ -216,7 +217,7 @@ const AccountDetailPage = () => {
         price: apiListing.price,
         features: apiListing.features?.length ? apiListing.features : [],
     } : null;
-    const { data: relatedData } = useListings({ game: listing?.game?.id, limit: 4 });
+    const { data: relatedData } = useListings({ game: listing?.game?.slug, limit: 4 });
 
     const { data: reviewsData } = useListingReviews(accountId);
     const apiReviews = Array.isArray(reviewsData) ? reviewsData : (reviewsData?.results ?? []);
@@ -234,7 +235,6 @@ const AccountDetailPage = () => {
         if (typeof listing?.is_favorited === 'boolean') setIsLiked(listing.is_favorited);
     }, [listing?.id, listing?.is_favorited]);
 
-    const FAV_STORAGE_KEY = 'wibeFavoriteListingIds';
     useEffect(() => {
         if (!listing?.id || isAuthenticated) return;
         try {
