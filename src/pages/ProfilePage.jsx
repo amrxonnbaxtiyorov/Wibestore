@@ -57,7 +57,7 @@ const ProfilePage = () => {
 
     // Use API data or fallback to user context
     const myListings = listingsData?.results || [];
-    const likedAccounts = favoritesData?.results || [];
+    const likedAccounts = favoritesData?.results?.map(fav => fav.listing).filter(Boolean) || [];
     const purchases = purchasesData?.results || [];
     const sales = salesData?.results || [];
 
@@ -407,8 +407,32 @@ const ProfilePage = () => {
                                 {t('profile.my_purchases') || 'My Purchases'}
                             </h2>
                             {purchases.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" style={{ gap: '16px' }}>
-                                    {purchases.map((account) => <AccountCard key={account.id} account={account} />)}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {purchases.map((txn) => {
+                                        const statusBadge = getStatusBadge(txn.status);
+                                        const StatusIcon = statusBadge.icon;
+                                        return (
+                                            <div key={txn.id} className="flex flex-col sm:flex-row gap-4" style={{ padding: '16px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-muted)' }}>
+                                                <div className="flex-1">
+                                                    <div className="flex flex-wrap items-start justify-between gap-2" style={{ marginBottom: '8px' }}>
+                                                        <h3 style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>{txn.listing_title || t('common.untitled_account')}</h3>
+                                                        <span className="flex items-center gap-1" style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: statusBadge.bg, color: statusBadge.color }}>
+                                                            <StatusIcon className="w-3 h-3" /> {statusBadge.text}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-accent)' }}>{formatPrice(txn.amount)}</span>
+                                                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>{txn.created_at ? new Date(txn.created_at).toLocaleDateString() : ''}</span>
+                                                    </div>
+                                                    {txn.seller_name && (
+                                                        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                                                            {t('profile.seller') || 'Seller'}: {txn.seller_name}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             ) : <EmptyState icon={ShoppingBag} title={t('profile.no_purchases') || 'No purchases yet'} actionLabel={t('profile.browse') || 'Browse accounts'} actionTo="/" />}
                         </>
@@ -425,8 +449,32 @@ const ProfilePage = () => {
                                 </Link>
                             </div>
                             {sales.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" style={{ gap: '16px' }}>
-                                    {sales.map((account) => <AccountCard key={account.id} account={account} />)}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {sales.map((txn) => {
+                                        const statusBadge = getStatusBadge(txn.status);
+                                        const StatusIcon = statusBadge.icon;
+                                        return (
+                                            <div key={txn.id} className="flex flex-col sm:flex-row gap-4" style={{ padding: '16px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-muted)' }}>
+                                                <div className="flex-1">
+                                                    <div className="flex flex-wrap items-start justify-between gap-2" style={{ marginBottom: '8px' }}>
+                                                        <h3 style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>{txn.listing_title || t('common.untitled_account')}</h3>
+                                                        <span className="flex items-center gap-1" style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: 'var(--radius-full)', backgroundColor: statusBadge.bg, color: statusBadge.color }}>
+                                                            <StatusIcon className="w-3 h-3" /> {statusBadge.text}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-accent)' }}>{formatPrice(txn.seller_earnings ?? txn.amount)}</span>
+                                                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>{txn.created_at ? new Date(txn.created_at).toLocaleDateString() : ''}</span>
+                                                    </div>
+                                                    {txn.buyer_name && (
+                                                        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                                                            {t('profile.buyer') || 'Buyer'}: {txn.buyer_name}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             ) : <EmptyState icon={Tag} title={t('profile.no_sales') || 'No sales yet'} actionLabel={t('profile.create_listing') || 'Create listing'} actionTo="/sell" />}
                         </>

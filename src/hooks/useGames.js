@@ -47,7 +47,8 @@ export const useGameListings = (slug, filters = {}) => {
             if (lastPage?.next) {
                 try {
                     const url = new URL(lastPage.next);
-                    return url.searchParams.get('page') || undefined;
+                    const page = url.searchParams.get('page');
+                    return page ? Number(page) : undefined;
                 } catch {
                     return undefined;
                 }

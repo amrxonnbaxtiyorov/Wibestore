@@ -206,7 +206,7 @@ const GamePage = () => {
                                     className="btn btn-primary btn-lg"
                                     disabled={isLoading}
                                 >
-                                    {isLoading ? 'Loading...' : 'Load More'}
+                                    {isLoading ? (t('common.loading') || 'Loading...') : (t('products.load_more') || 'Load More')}
                                 </button>
                             </div>
                         )}

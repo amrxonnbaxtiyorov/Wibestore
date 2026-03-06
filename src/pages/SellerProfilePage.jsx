@@ -18,7 +18,7 @@ const SellerProfilePage = () => {
     const sellerFromState = location.state?.seller;
 
     const { data: listingsData, isLoading } = useListings({
-        seller_id: userId,
+        seller: userId,
         limit: 24,
     });
 
