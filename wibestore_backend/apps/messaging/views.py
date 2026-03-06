@@ -46,6 +46,12 @@ class ChatRoomCreateView(APIView):
         participant_id = serializer.validated_data["participant_id"]
         listing_id = serializer.validated_data.get("listing_id")
 
+        if str(participant_id) == str(request.user.id):
+            return Response(
+                {"success": False, "error": {"message": "Cannot create a chat room with yourself."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
             other_user = User.objects.get(id=participant_id, is_active=True)
         except User.DoesNotExist:
@@ -129,7 +135,7 @@ class SendMessageView(APIView):
             message_type=serializer.validated_data.get("message_type", "text"),
         )
 
-        room.last_message = message.content[:200]
+        room.last_message = (message.content[:197] + "...") if len(message.content) > 200 else message.content
         from django.utils import timezone
         room.last_message_at = timezone.now()
         room.save(update_fields=["last_message", "last_message_at"])

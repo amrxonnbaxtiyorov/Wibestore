@@ -112,7 +112,7 @@ class AdminPendingListingsView(generics.ListAPIView):
     def get_queryset(self):
         return Listing.objects.filter(status="pending").select_related(
             "game", "seller"
-        ).order_by("created_at")
+        ).prefetch_related("images").order_by("created_at")
 
 
 @extend_schema(tags=["Admin"])

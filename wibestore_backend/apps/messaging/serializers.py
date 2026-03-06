@@ -60,5 +60,5 @@ class CreateChatRoomSerializer(serializers.Serializer):
 
 
 class SendMessageSerializer(serializers.Serializer):
-    content = serializers.CharField()
+    content = serializers.CharField(min_length=1, max_length=5000)
     message_type = serializers.CharField(default="text")

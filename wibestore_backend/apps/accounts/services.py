@@ -306,6 +306,10 @@ class AuthService:
         # Telefon bilan user bormi? — ulash
         user = User.objects.filter(phone_number=phone_normalized).first()
         if user:
+            if user.telegram_id and user.telegram_id != str(record.telegram_id):
+                raise BusinessLogicError(
+                    "This phone number is already linked to a different Telegram account."
+                )
             user.telegram_id = record.telegram_id
             update_fields = ["telegram_id"]
             if record.photo_url:
