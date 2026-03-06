@@ -9,9 +9,8 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
-ENV NODE_ENV=production
-
-# npm ci with optional deps (Rollup/Vite uchun platform-specific binary kerak)
+# NODE_ENV=production qo‘ymang: npm ci faqat prod o‘rnatadi, Vite devDependencies da — "vite: not found" bo‘ladi
+# npm ci (yoki install) barcha dependency’larni o‘rnatadi, keyin vite build ishlaydi
 COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
