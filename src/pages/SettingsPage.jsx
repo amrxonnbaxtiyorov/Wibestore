@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Settings, User, Lock, Bell, Globe, CreditCard, Shield, Trash2, Camera, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getDisplayInitial } from '../lib/displayUtils';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
 
 const SettingsPage = () => {
@@ -243,7 +244,7 @@ const SettingsPage = () => {
                                                 {user?.avatar ? (
                                                     <img src={user.avatar} alt={user?.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 ) : (
-                                                    (user?.name || 'U').charAt(0).toUpperCase()
+                                                    getDisplayInitial(user?.name || user?.display_name || user?.full_name, 'U')
                                                 )}
                                             </div>
                                             <label style={{

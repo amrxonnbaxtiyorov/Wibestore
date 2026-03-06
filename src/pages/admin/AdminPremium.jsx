@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Search, Crown, User, Check, X, Clock, Star } from 'lucide-react';
+import { getDisplayInitial } from '../../lib/displayUtils';
 import { useLanguage } from '../../context/LanguageContext';
 
 const AdminPremium = () => {
@@ -160,7 +161,7 @@ const AdminPremium = () => {
                                         fontWeight: 'var(--font-weight-bold)',
                                         flexShrink: 0,
                                     }}>
-                                        {user.name?.charAt(0) || 'U'}
+                                        {getDisplayInitial(user.name, 'U')}
                                     </div>
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

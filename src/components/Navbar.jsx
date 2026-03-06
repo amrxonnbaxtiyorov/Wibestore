@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCoins } from '../context/CoinContext';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
+import { getDisplayInitial, capitalizeFirst } from '../lib/displayUtils';
 import NotificationWidget from './NotificationWidget';
 import Logo from './Logo';
 
@@ -425,7 +426,7 @@ const Navbar = () => {
                                                         }}
                                                     />
                                                 ) : (
-                                                    (user?.name || 'U').charAt(0).toUpperCase()
+                                                    getDisplayInitial(user?.name || user?.display_name, 'U')
                                                 )}
                                             </div>
                                             <div
@@ -459,7 +460,7 @@ const Navbar = () => {
                                                     className="text-[13px] font-semibold mb-1"
                                                     style={{ color: isDark ? '#f0f6fc' : '#1f2328', paddingTop: '4px', paddingBottom: '4px' }}
                                                 >
-                                                    {user?.name || 'User'}
+                                                    {capitalizeFirst(user?.name || user?.display_name) || 'User'}
                                                 </div>
                                                 <div
                                                     className="text-[12px] truncate mb-1"

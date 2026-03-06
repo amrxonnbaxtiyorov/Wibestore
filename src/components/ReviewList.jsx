@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Star, MessageSquare } from 'lucide-react';
+import { getDisplayInitial } from '../lib/displayUtils';
 import { useLanguage } from '../context/LanguageContext';
 
 const ReviewList = ({ userId, type = 'received' }) => {
@@ -117,7 +118,7 @@ const ReviewList = ({ userId, type = 'received' }) => {
                                     flexShrink: 0,
                                 }}
                             >
-                                {review.reviewerName?.charAt(0) || 'U'}
+                                {getDisplayInitial(review.reviewerName, 'U')}
                             </div>
 
                             {/* Content */}

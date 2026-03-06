@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, Crown, Ban, Eye, Mail, MoreVertical, UserCheck } from 'lucide-react';
+import { getDisplayInitial } from '../../lib/displayUtils';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAdminUsers } from '../../hooks/useAdmin';
 
@@ -160,7 +161,7 @@ const AdminUsers = () => {
                                                 fontSize: 'var(--font-size-sm)',
                                                 flexShrink: 0,
                                             }}>
-                                                {user.name.charAt(0)}
+                                                {getDisplayInitial(user.name, 'U')}
                                             </div>
                                             <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
                                                 {user.name}

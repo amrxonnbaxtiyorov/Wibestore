@@ -7,6 +7,7 @@ import AccountCard from '../components/AccountCard';
 import AvatarEditModal from '../components/AvatarEditModal';
 import ReviewList from '../components/ReviewList';
 import { formatPrice } from '../data/mockData';
+import { getDisplayInitial, capitalizeFirst } from '../lib/displayUtils';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import SkeletonLoader from '../components/SkeletonLoader';
@@ -155,7 +156,7 @@ const ProfilePage = () => {
                                 {user.avatar ? (
                                     <img src={user.avatar} alt={user.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 ) : (
-                                    (user.name || user.display_name || 'U').charAt(0).toUpperCase()
+                                    getDisplayInitial(user.name || user.display_name, 'U')
                                 )}
                             </div>
                             <button
@@ -176,7 +177,7 @@ const ProfilePage = () => {
                         {/* Info — ism ostida faqat Telegram ID */}
                         <div className="flex-1 text-center md:text-left">
                             <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-                                {user.name || user.display_name || user.email}
+                                {capitalizeFirst(user.name || user.display_name || user.email) || '—'}
                             </h1>
                             <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
                                 {user.telegram_id || user.telegram_username || user.email || ''}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Star, X, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getDisplayInitial } from '../lib/displayUtils';
 import { useLanguage } from '../context/LanguageContext';
 
 const MIN_COMMENT_LENGTH = 10;
@@ -117,7 +118,7 @@ const ReviewModal = ({ isOpen, onClose, seller, account, onSubmit }) => {
                                     color: '#fff',
                                 }}
                             >
-                                {seller?.name?.charAt(0) || 'S'}
+                                {getDisplayInitial(seller?.name, 'S')}
                             </div>
                             <div>
                                 <p style={{
