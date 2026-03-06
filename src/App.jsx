@@ -238,6 +238,7 @@ function App() {
                           </Suspense>
                         } />
                         <Route path="/register" element={<Navigate to="/signup" replace />} />
+                        <Route path="/privacy" element={<Navigate to="/terms" replace />} />
                         <Route path="/profile" element={
                           <Suspense fallback={<PageLoader />}>
                             <PublicLayout><AuthGuard><ProfilePage /></AuthGuard></PublicLayout>

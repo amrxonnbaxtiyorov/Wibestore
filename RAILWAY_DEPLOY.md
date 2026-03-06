@@ -51,7 +51,7 @@ Backend ishga tushishi uchun **kamida** `DATABASE_URL` (yoki `DATABASE_PUBLIC_UR
 | `BOT_TOKEN` | @BotFather dan olingan token |
 | `WEBSITE_URL` | **Backend** asosiy URL (masalan `https://your-backend.up.railway.app`). Localhost bo‘lmasin. |
 | `BOT_SECRET_KEY` yoki `TELEGRAM_BOT_SECRET` | Backend’dagi `TELEGRAM_BOT_SECRET` bilan **bir xil** |
-| `REGISTER_URL` | Frontend ro‘yxatdan o‘tish sahifasi (masalan `https://your-frontend.up.railway.app/register`) |
+| `REGISTER_URL` | Frontend ro‘yxatdan o‘tish sahifasi (masalan `https://your-frontend.up.railway.app/signup`) |
 
 **Muhim:** Bot faqat **bitta** joyda ishlashi kerak (Railway yoki kompyuteringiz). Ikkovi bir vaqtda ishlasa `Conflict: only one bot instance` xatosi chiqadi.
 

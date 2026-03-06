@@ -21,18 +21,9 @@
 
 ## 🔐 1. XAVFSIZLIK XATOLARI
 
-### 1.1 Admin paroli kodda hardcode qilingan
-**Fayl:** `src/pages/admin/AdminLogin.jsx` (7-9 qator)
-```javascript
-const ADMIN_CREDENTIALS = {
-    username: 'admin',
-    password: 'wibe2024'
-};
-```
-**Muammo:** Admin login va paroli ochiq kodda yozilgan — har kim ko'rishi mumkin.
-
-**✏️ Tuzatish prompti:**
-> Admin login credentiallarini `AdminLogin.jsx` faylidan olib tashla. Buning o'rniga environment variable (`.env` fayl) dan `VITE_ADMIN_USERNAME` va `VITE_ADMIN_PASSWORD` orqali oqishing yoki backend API orqali autentifikatsiya qilish kerak. Backendga o'tguncha `.env` faylga ko'chirib, `.gitignore`ga `.env`ni qo'sh.
+### 1.1 Admin paroli — ✅ TUZATILGAN
+**Fayl:** `src/pages/admin/AdminLogin.jsx`  
+**Holat:** Admin login va parol endi **environment variable** orqali olinadi: `VITE_ADMIN_USERNAME` va `VITE_ADMIN_PASSWORD` (`.env` faylda). Kodda hardcode qolgan emas. `.gitignore` da `.env` mavjud.
 
 ---
 

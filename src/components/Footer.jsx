@@ -15,7 +15,7 @@ const Footer = () => {
         support: [
             { label: t('footer.faq'), to: '/faq' },
             { label: t('footer.terms'), to: '/terms' },
-            { label: t('footer.privacy'), to: '/privacy' },
+            { label: t('footer.privacy'), to: '/terms' },
             { label: t('footer.cookies'), to: '/terms' },
         ],
     };

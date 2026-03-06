@@ -17,7 +17,7 @@ Foydalanuvchi     Telegram Bot              WibeStore Backend        Sayt (front
      │                  │◄── {code: "123456"}       │                        │
      │◄── "Kodingiz: 123456" (10 min)                │                        │
      │                  │                           │                        │
-     │────────────────────────────────────────────── Saytda /register ───────►│
+     │────────────────────────────────────────────── Saytda /signup ────────►│
      │                  │                           │◄── POST register/telegram
      │                  │                           │    {phone, code}       │
      │                  │                           │── User yaratadi, JWT    │
@@ -45,7 +45,7 @@ pip install python-telegram-bot==20.7 requests
 | `BOT_TOKEN` | @BotFather dan olingan token |
 | `WEBSITE_URL` | Backend asosiy URL (masalan `http://localhost:8000`) |
 | `BOT_SECRET_KEY` yoki `TELEGRAM_BOT_SECRET` | Backend bilan bir xil maxfiy kalit |
-| `REGISTER_URL` | Frontend ro'yxatdan o'tish sahifasi (masalan `http://localhost:5173/register`) |
+| `REGISTER_URL` | Frontend ro'yxatdan o'tish sahifasi (masalan `http://localhost:5173/signup`). `/register` ham `/signup` ga yo'naltiradi. |
 
 ### 3. Ishga tushirish
 
@@ -57,7 +57,7 @@ cd wibestore_backend && python manage.py runserver
 cd telegram_bot && python bot.py
 ```
 
-Frontendda `/register` sahifasida telefon + kod kiritiladi, so'rov `POST /api/v1/auth/register/telegram/` ga yuboriladi.
+Frontendda `/signup` (yoki `/register`) sahifasida telefon + kod kiritiladi, so'rov `POST /api/v1/auth/register/telegram/` ga yuboriladi.
 
 ## API (WibeStore backend)
 

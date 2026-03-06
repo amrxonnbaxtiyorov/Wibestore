@@ -33,10 +33,12 @@ def process_withdrawal(transaction_id: str) -> None:
 
     try:
         txn = Transaction.objects.get(id=transaction_id, type="withdrawal", status="pending")
-        # TODO: Integrate with payment provider API for actual withdrawal
         txn.status = "processing"
         txn.save(update_fields=["status"])
-        logger.info("Withdrawal processing: %s", transaction_id)
+        logger.info(
+            "Withdrawal marked processing: %s. Integrate payment provider API for actual payout.",
+            transaction_id,
+        )
     except Exception as e:
         logger.error("Failed to process withdrawal %s: %s", transaction_id, e)
 

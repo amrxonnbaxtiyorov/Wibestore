@@ -61,7 +61,7 @@ Ushbu hujjat backend, bot va frontend o'rtasidagi Telegram orqali ro'yxatdan o't
 - `BOT_TOKEN` — @BotFather token.
 - `WEBSITE_URL` — backend asosiy URL (masalan `https://api.wibestore.net`). **Localhost emas** production uchun.
 - `BOT_SECRET_KEY` yoki `TELEGRAM_BOT_SECRET` — backend'dagi `TELEGRAM_BOT_SECRET` bilan **bir xil**.
-- `REGISTER_URL` — frontend ro'yxatdan o'tish sahifasi (masalan `https://wibestore.net/register`).
+- `REGISTER_URL` — frontend ro'yxatdan o'tish sahifasi (masalan `https://wibestore.net/signup`). Frontendda `/register` ham `/signup` ga yo'naltiradi.
 
 ---
 
@@ -104,7 +104,7 @@ Ushbu hujjat backend, bot va frontend o'rtasidagi Telegram orqali ro'yxatdan o't
 
 1. Backend: `cd wibestore_backend && python manage.py runserver`
 2. Bot: `cd telegram_bot && python bot.py` (bitta instance).
-3. Frontend: `npm run dev`, `/register` ochib, Telegram blokida telefon + kodni kiriting.
+3. Frontend: `npm run dev`, `/signup` ochib, Telegram blokida telefon + kodni kiriting.
 4. Botda `/start` → telefon yuboring → kodni olib, saytda kiriting → ro'yxatdan o'tish muvaffaqiyatli bo'lishi kerak.
 
 Agar "Backend ishlamayotgan" yoki 403 chiqsa: `TELEGRAM_BOT_SECRET` (backend) va `BOT_SECRET_KEY` (bot) **bir xil** ekanligini tekshiring.

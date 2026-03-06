@@ -104,17 +104,24 @@ npm run dev
 
 ### 4. Docker (рекомендуется)
 
+Запуск из **корня проекта** (где лежит `docker-compose.yml`):
+
 ```bash
-cd wibestore_backend
-
-# Запустить все сервисы
+# Из корня WibeStore/
 docker-compose up -d
+```
 
+- **Frontend:** http://localhost:3000  
+- **Backend API:** http://localhost:8000  
+
+После запуска:
+
+```bash
 # Применить миграции
-docker-compose exec web python manage.py migrate
+docker-compose exec backend python manage.py migrate
 
 # Создать суперпользователя
-docker-compose exec web python manage.py createsuperuser
+docker-compose exec backend python manage.py createsuperuser
 ```
 
 ## 🔌 API Документация
@@ -217,9 +224,13 @@ npm run build
 
 ### Docker Compose (Production)
 
+Из корня проекта (если есть `docker-compose.prod.yml`):
+
 ```bash
 docker-compose -f docker-compose.prod.yml up -d
 ```
+
+Иначе используйте основной compose: `docker-compose up -d` (Frontend: 3000, Backend: 8000).
 
 ## 🔐 Безопасность
 

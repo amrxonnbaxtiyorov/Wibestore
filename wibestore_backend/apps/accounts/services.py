@@ -199,8 +199,8 @@ class AuthService:
         """Generate and send OTP to phone number."""
         otp = generate_otp()
         cache.set(f"otp_{phone_number}", otp, timeout=300)  # 5 minutes
-        logger.info("OTP sent to: %s", phone_number)
-        # TODO: Integrate with SMS provider
+        logger.info("OTP generated for %s (cached 5 min). Integrate SMS provider to send OTP.", phone_number)
+        # Production: integrate SMS provider (Twilio, etc.) and send otp to phone_number
         return otp
 
     @staticmethod
