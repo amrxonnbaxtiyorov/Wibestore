@@ -11,7 +11,7 @@ Quyida **har bir servis** uchun Railway Variables bo‘limiga **nom = qiymat** k
 Redis servisi → Variables → Raw Editor (yoki bittadan Name/Value). Quyidagi blokni nusxalab joylashtiring:
 
 ```
-REDIS_PASSWORD="oDtIHqCCjcqaPaHQbqIdphOGKxDCdGXq"
+REDIS_PASSWORD="<your-redis-password>"
 REDIS_PUBLIC_URL="redis://default:${{REDIS_PASSWORD}}@${{RAILWAY_TCP_PROXY_DOMAIN}}:${{RAILWAY_TCP_PROXY_PORT}}"
 REDIS_URL="redis://${{REDISUSER}}:${{REDIS_PASSWORD}}@${{REDISHOST}}:${{REDISPORT}}"
 REDISHOST="${{RAILWAY_PRIVATE_DOMAIN}}"
@@ -36,7 +36,7 @@ PGPASSWORD="${{POSTGRES_PASSWORD}}"
 PGPORT="5432"
 PGUSER="${{POSTGRES_USER}}"
 POSTGRES_DB="railway"
-POSTGRES_PASSWORD="mnaWooQCfFfeonxVieIJyTMwvpNKHKAb"
+POSTGRES_PASSWORD="<your-postgres-password>"
 POSTGRES_USER="postgres"
 ```
 
@@ -77,7 +77,7 @@ Frontend servisi → Variables. Quyidagi blokni nusxalab joylashtiring. Keyin **
 
 ```
 BACKEND_URL="https://backend-production-97516.up.railway.app/"
-VITE_ADMIN_PASSWORD="kuchli_parol_yozing"
+VITE_ADMIN_PASSWORD="<your-admin-password>"
 VITE_ADMIN_USERNAME="admin"
 VITE_API_BASE_URL="https://backend-production-97516.up.railway.app/api/v1"
 VITE_APP_ENV="production"
@@ -98,9 +98,9 @@ VITE_WS_BASE_URL="wss://backend-production-97516.up.railway.app"
 Telegram Bot servisi → Variables. Quyidagi blokni nusxalab joylashtiring.
 
 ```
-BOT_SECRET_KEY="wibestore-telegram-bot-secret-2024"
-BOT_TOKEN="8511895179:AAENCVFFkHqvnzneXgd4eHZpfNNP78-smg4"
-REGISTER_URL="https://frontend-production-76e67.up.railway.app/register"
+BOT_SECRET_KEY="<your-bot-secret-key>"
+BOT_TOKEN="<your-telegram-bot-token>"
+REGISTER_URL="https://frontend-production-76e67.up.railway.app/signup"
 WEBSITE_URL="https://backend-production-97516.up.railway.app"
 ```
 
@@ -126,6 +126,6 @@ WEBSITE_URL="https://backend-production-97516.up.railway.app"
 | Frontend | `https://frontend-production-76e67.up.railway.app` |
 | API base (Frontend/Backend) | `https://backend-production-97516.up.railway.app/api/v1` |
 | WebSocket | `wss://backend-production-97516.up.railway.app` |
-| Ro‘yxatdan o‘tish (Bot) | `https://frontend-production-76e67.up.railway.app/register` |
+| Ro‘yxatdan o‘tish (Bot) | `https://frontend-production-76e67.up.railway.app/signup` |
 
 Agar Backend domeningiz boshqa bo‘lsa (masalan `exemplary-fascination-production-9514.up.railway.app`), yuqoridagi **backend-production-97516** o‘rniga o‘sha domenni barcha joyda almashtiring.

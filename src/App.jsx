@@ -237,6 +237,7 @@ function App() {
                             <PublicLayout><GuestGuard><SignupPage /></GuestGuard></PublicLayout>
                           </Suspense>
                         } />
+                        <Route path="/register" element={<Navigate to="/signup" replace />} />
                         <Route path="/profile" element={
                           <Suspense fallback={<PageLoader />}>
                             <PublicLayout><AuthGuard><ProfilePage /></AuthGuard></PublicLayout>

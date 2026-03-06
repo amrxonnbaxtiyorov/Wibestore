@@ -83,7 +83,7 @@ Run from **repo root** (Wibestore) so `wallet_topup` package is found.
 
 ## Bot token and URL (from your message)
 
-- Bot token: `8674334131:AAE08Keom_XZKjE2ooU0RYbhgijM1ZCug7Q`
+- Bot token: `<your-bot-token>` (Telegram @BotFather dan oling)
 - Bot URL: https://t.me/wibestorepaybot
 
 Set `WEB_APP_URL` to the URL where the frontend is hosted (HTTPS in production).

@@ -94,7 +94,9 @@ export default function App() {
   const haptic = useCallback((type: "light" | "medium" | "heavy" = "light") => {
     try {
       window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(type);
-    } catch { }
+    } catch {
+      // HapticFeedback mavjud emas (masalan, brauzerda) — e'tiborsiz qoldiramiz
+    }
   }, []);
 
   const currentStepIndex = STEPS.indexOf(step);
