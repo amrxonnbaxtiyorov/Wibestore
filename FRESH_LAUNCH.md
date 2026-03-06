@@ -48,11 +48,14 @@ Statistika va ro'yxatlar endi faqat **API** dan keladi; sayt "0" dan boshlangan 
 
 ---
 
-## 3. Qisqa tartib
+## 3. Qisqa tartib (lokal yoki server)
 
-1. **Backend:** `cd wibestore_backend` → `python manage.py reset_to_zero --full --no-input`
-2. **Frontend:** Qayta build qiling yoki deploy qiling (yoki faqat yangilab sahifani oching — cache avtomatik tozalanadi).
-3. Sayt tayyor: sotuvlar 0, statistika 0, foydalanuvchi balanslari 0.
+1. **Backend:** `cd wibestore_backend` → `python manage.py migrate` (agar kerak bo'lsa) → `python manage.py reset_to_zero --full --no-input`
+2. **Frontend:** Qayta build/deploy qiling yoki brauzerda sahifani yangilang — cache avtomatik tozalanadi.
+3. Sayt tayyor: sotuvlar 0, statistika 0, balanslar 0.
+
+**Railway (production):** Backend servisida "Settings" → "Deploy" yoki one-off run orqali:
+`python manage.py migrate && python manage.py reset_to_zero --full --no-input` (yoki Railway CLI/Shell orqali backend papkada shu buyruqlarni bajarish).
 
 ---
 
