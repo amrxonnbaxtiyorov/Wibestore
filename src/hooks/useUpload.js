@@ -10,11 +10,7 @@ export const useUploadImage = () => {
             const formData = new FormData();
             formData.append('image', imageFile);
 
-            const { data } = await apiClient.post('/upload/image/', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            const { data } = await apiClient.post('/upload/image/', formData);
             return data;
         },
     });
@@ -31,11 +27,7 @@ export const useUploadImages = () => {
                 formData.append('images', file);
             });
 
-            const { data } = await apiClient.post('/upload/images/', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            const { data } = await apiClient.post('/upload/images/', formData);
             return data;
         },
     });

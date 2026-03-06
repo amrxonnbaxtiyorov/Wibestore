@@ -7,7 +7,12 @@ const ReviewList = ({ userId, type = 'received' }) => {
     const reviews = useMemo(() => {
         const savedReviews = localStorage.getItem('wibeReviews');
         if (!savedReviews) return [];
-        const allReviews = JSON.parse(savedReviews);
+        let allReviews;
+        try {
+            allReviews = JSON.parse(savedReviews);
+        } catch {
+            return [];
+        }
         const filtered = type === 'received'
             ? allReviews.filter(r => r.sellerId === userId)
             : allReviews.filter(r => r.reviewerId === userId);

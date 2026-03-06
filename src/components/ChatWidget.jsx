@@ -271,7 +271,7 @@ const ChatWidget = () => {
                                             key={msg.id}
                                             style={{
                                                 display: 'flex',
-                                                justifyContent: msg.senderId === user.id ? 'flex-end' : 'flex-start',
+                                                justifyContent: msg.senderId === user?.id ? 'flex-end' : 'flex-start',
                                             }}
                                         >
                                             <div
@@ -279,7 +279,7 @@ const ChatWidget = () => {
                                                     maxWidth: '80%',
                                                     padding: 'var(--space-3)',
                                                     borderRadius: 'var(--radius-2xl)',
-                                                    ...(msg.senderId === user.id
+                                                    ...(msg.senderId === user?.id
                                                         ? {
                                                             backgroundColor: 'var(--color-accent-blue)',
                                                             color: 'var(--color-text-on-accent)',
@@ -296,8 +296,8 @@ const ChatWidget = () => {
                                                 <p style={{
                                                     fontSize: 'var(--font-size-xs)',
                                                     marginTop: '4px',
-                                                    opacity: msg.senderId === user.id ? 0.7 : 1,
-                                                    color: msg.senderId === user.id
+                                                    opacity: msg.senderId === user?.id ? 0.7 : 1,
+                                                    color: msg.senderId === user?.id
                                                         ? 'inherit'
                                                         : 'var(--color-text-muted)',
                                                 }}>
