@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 
 import { useListing, useAddToFavorites, useRemoveFromFavorites, useListings, usePurchaseListing } from '../hooks';
+import { useListingReviews } from '../hooks/useReviews';
 import ReviewList from '../components/ReviewList';
 import AccountCard from '../components/AccountCard';
 import SkeletonLoader from '../components/SkeletonLoader';
@@ -217,7 +218,11 @@ const AccountDetailPage = () => {
     } : null;
     const { data: relatedData } = useListings({ game: listing?.game?.id, limit: 4 });
 
-    const [isLiked, setIsLiked] = useState(false);
+    const { data: reviewsData } = useListingReviews(accountId);
+    const apiReviews = Array.isArray(reviewsData) ? reviewsData : (reviewsData?.results ?? []);
+    const recentSellerReviews = apiReviews.slice(0, 2);
+
+    const [isLiked, setIsLiked] = useState(!!listing?.is_favorited);
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState('description');
     const [showBuyerRulesModal, setShowBuyerRulesModal] = useState(false);
@@ -225,22 +230,10 @@ const AccountDetailPage = () => {
     const [showReviewAfterPurchase, setShowReviewAfterPurchase] = useState(false);
     const [pendingChatRoomId, setPendingChatRoomId] = useState(null);
 
-    // Sotuvchiga tegishli so'nggi 2 ta sharh (localStorage — API ulansa o'zgaradi)
-    const recentSellerReviews = useMemo(() => {
-        const sellerId = listing?.seller?.id;
-        if (!sellerId) return [];
-        try {
-            const raw = localStorage.getItem('wibeReviews');
-            if (!raw) return [];
-            const all = JSON.parse(raw);
-            const forSeller = all.filter((r) => String(r.sellerId) === String(sellerId));
-            return forSeller.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 2);
-        } catch {
-            return [];
-        }
-    }, [listing?.seller?.id]);
+    useEffect(() => {
+        if (typeof listing?.is_favorited === 'boolean') setIsLiked(listing.is_favorited);
+    }, [listing?.id, listing?.is_favorited]);
 
-    // Sevimlilar: API yoki localStorage (kirish qilmaganida) — defer to avoid sync setState in effect
     const FAV_STORAGE_KEY = 'wibeFavoriteListingIds';
     useEffect(() => {
         if (!listing?.id || isAuthenticated) return;
@@ -253,8 +246,8 @@ const AccountDetailPage = () => {
         }
     }, [listing?.id, isAuthenticated]);
 
-    /* ── Loading: faqat listing yo‘q bo‘lsa (API ham, mock ham yo‘q) skeleton ko‘rsatamiz ── */
-    if (isLoading && !rawListing) {
+    /* ── Loading skeleton ── */
+    if (isLoading && !listing) {
         return (
             <div className="page-enter" style={{ minHeight: 'calc(100vh - 64px)', padding: '32px' }}>
                 <div className="gh-container">
