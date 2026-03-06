@@ -2,10 +2,13 @@
 WibeStore Backend - Marketplace Serializers
 """
 
+import uuid
+
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from apps.accounts.serializers import UserPublicSerializer
+from apps.games.models import Game
 from apps.games.serializers import GameListSerializer
 
 from .models import Favorite, Listing, ListingImage, ListingView, SavedSearch
@@ -81,9 +84,9 @@ class ListingSerializer(serializers.ModelSerializer):
 
 
 class ListingCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating listings."""
+    """Serializer for creating listings. game_id accepts UUID or game slug."""
 
-    game_id = serializers.UUIDField(write_only=True)
+    game_id = serializers.CharField(write_only=True, help_text="Game UUID or slug")
     account_email = serializers.CharField(write_only=True, required=False, default="")
     account_password = serializers.CharField(write_only=True, required=False, default="")
 
@@ -107,6 +110,23 @@ class ListingCreateSerializer(serializers.ModelSerializer):
             "skins_count",
             "features",
         ]
+
+    def validate_game_id(self, value):
+        if not value or not str(value).strip():
+            raise serializers.ValidationError("O'yin tanlanishi shart.")
+        raw = str(value).strip()
+        try:
+            uuid.UUID(raw)
+            if not Game.objects.filter(pk=raw).exists():
+                raise serializers.ValidationError("Bunday o'yin topilmadi.")
+            return raw
+        except (ValueError, TypeError):
+            game = Game.objects.filter(slug=raw).first()
+            if not game:
+                game = Game.objects.filter(slug__iexact=raw).first()
+            if not game:
+                raise serializers.ValidationError("Bunday o'yin topilmadi.")
+            return str(game.pk)
 
     def create(self, validated_data):
         game_id = validated_data.pop("game_id")

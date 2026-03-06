@@ -59,7 +59,20 @@ Statistika va ro'yxatlar endi faqat **API** dan keladi; sayt "0" dan boshlangan 
 
 ---
 
-## 4. Eslatmalar
+## 4. E'lon (listing) qayerga ketadi?
+
+Foydalanuvchi "Akkaunt sotish" (Sell) orqali e'lon yuborganida:
+
+1. **Backend (Django):** E'lon `POST /api/v1/listings/` orqali yoziladi, `marketplace.Listing` modelida **status="pending"** bilan saqlanadi.
+2. **Django Admin:** `/admin/` — barcha listinglar (pending, active, sold) Django admin panelida ko‘rinadi.
+3. **Frontend Admin panel:** Saytdagi Admin bo‘limi (`/admin-panel` yoki AdminAccounts) **API** orqali `GET /api/v1/admin-panel/listings/pending/` va `GET /api/v1/admin-panel/listings/` chaqirib, xuddi shu listinglarni ko‘rsatadi. Moderator tasdiqlagach (approve) listing **active** bo‘ladi va saytda chiqadi.
+
+Demak, e'lon bir marta backend DB ga yoziladi; ko‘rinishi esa ham Django admin, ham frontend admin panelida.
+
+---
+
+## 5. Eslatmalar
 
 - **Migratsiyalar:** `reset_to_zero` ishlatishdan oldin migratsiyalarni qo'llang: `cd wibestore_backend` → `python manage.py migrate`. Agar `no such column: listings.warranty_days` kabi xato chiqsa, demak migrate qilinmagan — avval `migrate`, keyin `reset_to_zero`.
+- **E'lon yuborish xatosi (400):** Agar "Request failed with status code 400" chiqsa, odatda `game_id` noto‘g‘ri (o‘yin UUID/slug backendda yo‘q) yoki majburiy maydonlar yetishmasa bo‘ladi. Endi frontend `game_id` yuboradi va backend UUID yoki o‘yin slugini qabul qiladi; xato xabari toastda aniq ko‘rsatiladi.
 - **Seed data:** Keyin test ma'lumot kiritmoqchi bo'lsangiz, `python manage.py seed_data` (yoki loyihadagi boshqa seed skriptlar) ishlatishingiz mumkin; ular yangi listing va user'lar yaratadi, lekin `reset_to_zero` dan keyin DB yana "toza" bo'ladi.

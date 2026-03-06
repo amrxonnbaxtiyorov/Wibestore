@@ -9,11 +9,12 @@ import getGamesList from '../data/gamesList';
 import { CS2_WEAPON_TYPES, isCs2Game } from '../data/cs2WeaponTypes';
 import SellerRulesQuiz from '../components/SellerRulesQuiz';
 
-// Eng ko'p sotilgan / ko'p e'lon bor o'yinlar (API yoki mock bo'yicha)
+// Backend listing yaratish uchun game_id UUID bo'lishi kerak; API dan kelganda g.id ishlatamiz
 function getTopGamesForSell(apiGames, mockGames) {
     const list = Array.isArray(apiGames) && apiGames.length > 0
         ? apiGames.map((g) => ({
-            id: g.slug ?? g.id,
+            id: g.id,
+            slug: g.slug,
             name: g.name,
             image: g.image || (g.banner ? (typeof g.banner === 'string' ? g.banner : g.banner?.url) : null) || '/img/icons/placeholder.png',
             accountCount: g.active_listings_count ?? g.listings_count ?? 0,
@@ -45,7 +46,8 @@ const SellPage = () => {
     const topGamesForSell = allGamesSorted.slice(0, 8);
     const allGames = Array.isArray(gamesData?.results ?? gamesData) && (gamesData?.results ?? gamesData).length > 0
         ? (gamesData.results ?? gamesData).map((g) => ({
-            id: g.slug ?? g.id,
+            id: g.id,
+            slug: g.slug,
             name: g.name,
             image: g.image || (g.banner ? (typeof g.banner === 'string' ? g.banner : g.banner?.url) : null) || '/img/icons/placeholder.png',
           }))
@@ -134,20 +136,22 @@ const SellPage = () => {
         setIsSubmitting(true);
         
         try {
-            // Prepare data for API
+            // Backend ListingCreateSerializer: game_id (UUID), title, description, price, account_*, va boshqalar
             const listingData = {
-                game: formData.gameId,
-                title: formData.title,
-                description: formData.description,
-                price: formData.price,
-                ...(formData.weaponType && { weapon_type: formData.weaponType }),
-                level: formData.level || '',
-                rank: formData.rank || '',
-                skins_count: parseInt(formData.skins) || 0,
-                features: formData.features,
-                login_method: formData.loginMethod,
-                account_email: formData.accountEmail,
-                account_password: formData.accountPassword,
+                game_id: formData.gameId,
+                title: formData.title.trim(),
+                description: formData.description.trim(),
+                price: Number(formData.price),
+                level: (formData.level || '').toString(),
+                rank: (formData.rank || '').toString(),
+                skins_count: parseInt(formData.skins, 10) || 0,
+                features: Array.isArray(formData.features) ? formData.features : [],
+                login_method: formData.loginMethod || 'email',
+                account_email: (formData.accountEmail || '').toString(),
+                account_password: (formData.accountPassword || '').toString(),
+                account_additional_info: formData.additionalInfo?.trim()
+                    ? { note: formData.additionalInfo.trim() }
+                    : {},
             };
             
             createListing(listingData, {
@@ -160,10 +164,23 @@ const SellPage = () => {
                     setSubmitted(true);
                 },
                 onError: (error) => {
+                    const data = error?.response?.data;
+                    let message = error?.message || t('sell.error_listing_create') || 'Listing yaratishda xatolik yuz berdi';
+                    if (data) {
+                        if (typeof data === 'string') message = data;
+                        else if (data.detail) message = data.detail;
+                        else if (typeof data === 'object' && Object.keys(data).length > 0) {
+                            const parts = Object.entries(data).map(([k, v]) => {
+                                const val = Array.isArray(v) ? v[0] : v;
+                                return typeof val === 'string' ? `${k}: ${val}` : `${k}: ${JSON.stringify(val)}`;
+                            });
+                            message = parts.join('. ') || message;
+                        }
+                    }
                     addToast({
                         type: 'error',
                         title: t('common.error') || 'Xatolik',
-                        message: error?.message || t('sell.error_listing_create') || 'Listing yaratishda xatolik yuz berdi',
+                        message,
                     });
                 },
                 onSettled: () => {

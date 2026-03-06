@@ -95,6 +95,8 @@ export const useCreateListing = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['listings'] });
             queryClient.invalidateQueries({ queryKey: ['profile', 'listings'] });
+            queryClient.invalidateQueries({ queryKey: ['admin', 'listings'] });
+            queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
         },
     });
 };
