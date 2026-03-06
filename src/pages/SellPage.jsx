@@ -58,7 +58,7 @@ const SellPage = () => {
         : allGames;
 
     const [formData, setFormData] = useState({
-        gameId: '', title: '', description: '', price: '',
+        gameId: '', gameSlug: '', title: '', description: '', price: '',
         weaponType: '', level: '', rank: '', skins: '', features: [], images: [],
         loginMethod: 'email', accountEmail: '', accountPassword: '', additionalInfo: ''
     });
@@ -133,8 +133,20 @@ const SellPage = () => {
 
     const handleSubmit = async () => {
         if (!validateStep(3)) return;
+
+        // gameId UUID bo'lishi kerak — mock game tanlangan bo'lsa (API yuklanmagan), xabar beramiz
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (formData.gameId && !uuidRegex.test(formData.gameId)) {
+            addToast({
+                type: 'error',
+                title: t('common.error') || 'Xatolik',
+                message: t('sell.game_not_loaded') || "O'yinlar ro'yxati yuklanmadi. Sahifani yangilang.",
+            });
+            return;
+        }
+
         setIsSubmitting(true);
-        
+
         try {
             // Backend ListingCreateSerializer: game_id (UUID), title, description, price, account_*, va boshqalar
             const listingData = {
@@ -165,16 +177,27 @@ const SellPage = () => {
                 },
                 onError: (error) => {
                     const data = error?.response?.data;
-                    let message = error?.message || t('sell.error_listing_create') || 'Listing yaratishda xatolik yuz berdi';
+                    let message = error?.message || t('sell.error_listing_create') || "E'lon yaratishda xatolik yuz berdi";
                     if (data) {
-                        if (typeof data === 'string') message = data;
-                        else if (data.detail) message = data.detail;
-                        else if (typeof data === 'object' && Object.keys(data).length > 0) {
-                            const parts = Object.entries(data).map(([k, v]) => {
-                                const val = Array.isArray(v) ? v[0] : v;
-                                return typeof val === 'string' ? `${k}: ${val}` : `${k}: ${JSON.stringify(val)}`;
-                            });
-                            message = parts.join('. ') || message;
+                        // Backend custom format: { success: false, error: { code, message, details } }
+                        if (data.error) {
+                            const errObj = data.error;
+                            if (errObj.details && Object.keys(errObj.details).length > 0) {
+                                // Show first field-level error message
+                                const firstKey = Object.keys(errObj.details)[0];
+                                const val = errObj.details[firstKey];
+                                message = Array.isArray(val) ? val[0] : String(val);
+                            } else if (errObj.message && errObj.message !== 'An error occurred.') {
+                                message = errObj.message;
+                            }
+                        } else if (typeof data === 'string') {
+                            message = data;
+                        } else if (data.detail) {
+                            message = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+                        } else if (typeof data === 'object' && Object.keys(data).length > 0) {
+                            const firstKey = Object.keys(data)[0];
+                            const val = data[firstKey];
+                            message = Array.isArray(val) ? val[0] : (typeof val === 'string' ? val : JSON.stringify(val));
                         }
                     }
                     addToast({
@@ -201,7 +224,7 @@ title: t('common.error') || 'Xatolik',
         setSubmitted(false);
         setStep(1);
         setFormData({
-            gameId: '', title: '', description: '', price: '',
+            gameId: '', gameSlug: '', title: '', description: '', price: '',
             weaponType: '', level: '', rank: '', skins: '', features: [], images: [],
             loginMethod: 'email', accountEmail: '', accountPassword: '', additionalInfo: ''
         });
@@ -228,17 +251,17 @@ title: t('common.error') || 'Xatolik',
                         <CheckCircle style={{ width: '36px', height: '36px', color: 'var(--color-accent-green)' }} />
                     </div>
                     <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '12px' }}>
-                        E&apos;lon yuborildi!
+                        {t('sell.success_title') || "E'lon yuborildi!"}
                     </h1>
                     <p style={{ color: 'var(--color-text-secondary)', marginBottom: '28px' }}>
-                        Sizning e'loningiz moderatsiyaga yuborildi. 24 soat ichida tekshiriladi va tasdiqlangandan keyin saytda paydo bo'ladi.
+                        {t('sell.success_description') || "Sizning e'loningiz moderatsiyaga yuborildi. 24 soat ichida tekshiriladi va tasdiqlangandan keyin saytda paydo bo'ladi."}
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <button onClick={() => navigate('/profile')} className="btn btn-primary btn-lg" style={{ width: '100%' }}>
                             {t('common.go_to_profile')}
                         </button>
                         <button onClick={resetForm} className="btn btn-secondary btn-lg" style={{ width: '100%' }}>
-                            Yana e'lon berish
+                            {t('sell.another_listing_btn') || "Yana e'lon berish"}
                         </button>
                     </div>
                 </div>
@@ -253,7 +276,7 @@ title: t('common.error') || 'Xatolik',
                 <div className="modal-overlay">
                     <div className="modal-container modal-lg" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)' }}>O&apos;yin tanlang</h3>
+                            <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)' }}>{t('sell.select_game_title') || "O'yin tanlang"}</h3>
                             <button onClick={() => { setShowGameModal(false); setModalGameSearch(''); }}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--color-text-muted)' }}>
                                 <X className="w-5 h-5" />
@@ -265,7 +288,7 @@ title: t('common.error') || 'Xatolik',
                                 <input
                                     type="text" value={modalGameSearch}
                                     onChange={(e) => setModalGameSearch(e.target.value)}
-                                    placeholder="O'yin nomini qidiring..."
+                                    placeholder={t('sell.search_game_placeholder') || "O'yin nomini qidiring..."}
                                     className="input input-lg"
                                     style={{ paddingLeft: '40px' }}
                                     autoFocus
@@ -277,7 +300,7 @@ title: t('common.error') || 'Xatolik',
                                 {filteredModalGames.map((game) => (
                                     <button
                                         key={game.id} type="button"
-                                        onClick={() => { setFormData({ ...formData, gameId: game.id }); setShowGameModal(false); setModalGameSearch(''); }}
+                                        onClick={() => { setFormData({ ...formData, gameId: game.id, gameSlug: game.slug || '' }); setShowGameModal(false); setModalGameSearch(''); }}
                                         style={{
                                             padding: '12px', borderRadius: 'var(--radius-lg)',
                                             border: `2px solid ${formData.gameId === game.id ? 'var(--color-accent-blue)' : 'var(--color-border-default)'}`,
@@ -291,7 +314,7 @@ title: t('common.error') || 'Xatolik',
                                 ))}
                             </div>
                             {filteredModalGames.length === 0 && (
-                                <p className="text-center" style={{ color: 'var(--color-text-muted)', padding: '32px 0' }}>Hech narsa topilmadi</p>
+                                <p className="text-center" style={{ color: 'var(--color-text-muted)', padding: '32px 0' }}>{t('sell.no_games_found') || 'Hech narsa topilmadi'}</p>
                             )}
                         </div>
                     </div>
@@ -304,15 +327,15 @@ title: t('common.error') || 'Xatolik',
                     <div className="breadcrumbs">
                         <Link to="/">{t('common.home')}</Link>
                         <span className="breadcrumb-separator">/</span>
-                        <span className="breadcrumb-current">Akkaunt sotish</span>
+                        <span className="breadcrumb-current">{t('sell.page_title') || 'Akkaunt sotish'}</span>
                     </div>
 
                     {/* Header */}
                     <div className="text-center" style={{ paddingTop: '16px', marginBottom: '24px' }}>
                         <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                            Akkaunt sotish
+                            {t('sell.page_title') || 'Akkaunt sotish'}
                         </h1>
-                        <p style={{ color: 'var(--color-text-secondary)' }}>O&apos;yin akkauntingizni xavfsiz soting</p>
+                        <p style={{ color: 'var(--color-text-secondary)' }}>{t('sell.page_subtitle') || "O'yin akkauntingizni xavfsiz soting"}</p>
                     </div>
 
                     {/* Progress Steps */}
@@ -347,16 +370,16 @@ title: t('common.error') || 'Xatolik',
                             <div>
                                 <h2 className="flex items-center gap-2" style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '20px' }}>
                                     <Tag className="w-5 h-5" style={{ color: 'var(--color-accent-blue)' }} />
-                                    Asosiy ma'lumotlar
+                                    {t('sell.step1_title') || "Asosiy ma'lumotlar"}
                                 </h2>
 
                                 {/* Game Selection */}
                                 <div style={{ marginBottom: '20px' }}>
-                                    <label className="input-label">O'yin *</label>
+                                    <label className="input-label">{t('sell.game_label') || "O'yin *"}</label>
                                     <div className="grid grid-cols-3 sm:grid-cols-4" style={{ gap: '8px' }}>
                                         {topGamesForSell.map((game) => (
                                             <button key={game.id} type="button"
-                                                onClick={() => setFormData({ ...formData, gameId: game.id })}
+                                                onClick={() => setFormData({ ...formData, gameId: game.id, gameSlug: game.slug || '' })}
                                                 style={{
                                                     padding: '10px', borderRadius: 'var(--radius-lg)',
                                                     border: `2px solid ${formData.gameId === game.id ? 'var(--color-accent-blue)' : 'var(--color-border-default)'}`,
@@ -397,7 +420,7 @@ title: t('common.error') || 'Xatolik',
 
                                 {/* Price */}
                                 <div style={{ marginBottom: '16px' }}>
-                                    <label className="input-label">Narx (so'm) *</label>
+                                    <label className="input-label">{t('sell.price_label') || "Narx (so'm) *"}</label>
                                     <div className="relative">
                                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
                                         <input type="number" value={formData.price}
@@ -413,7 +436,7 @@ title: t('common.error') || 'Xatolik',
                                 </div>
 
                                 {/* Qurol turi — faqat CS2 / skin uchun */}
-                                {isCs2Game(formData.gameId) && (
+                                {isCs2Game(formData.gameSlug || formData.gameId) && (
                                     <div style={{ marginBottom: '16px' }}>
                                         <label className="input-label">{t('sell.weapon_type') || 'Qurol turi (skin)'}</label>
                                         <select
@@ -453,7 +476,7 @@ title: t('common.error') || 'Xatolik',
                             <div>
                                 <h2 className="flex items-center gap-2" style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '20px' }}>
                                     <FileText className="w-5 h-5" style={{ color: 'var(--color-accent-blue)' }} />
-                                    Batafsil ma'lumot
+                                    {t('sell.step2_title') || "Batafsil ma'lumot"}
                                 </h2>
 
                                 {/* Description */}
@@ -472,7 +495,7 @@ title: t('common.error') || 'Xatolik',
 
                                 {/* Features */}
                                 <div style={{ marginBottom: '20px' }}>
-                                    <label className="input-label">Xususiyatlar</label>
+                                    <label className="input-label">{t('sell.features_label') || 'Xususiyatlar'}</label>
                                     <div className="flex flex-wrap" style={{ gap: '8px' }}>
                                         {featureOptions.map((opt) => (
                                             <button key={opt.value} type="button" onClick={() => toggleFeature(opt.value)}
@@ -493,7 +516,7 @@ title: t('common.error') || 'Xatolik',
 
                                 {/* Skins count */}
                                 <div style={{ marginBottom: '20px' }}>
-                                    <label className="input-label">Skinlar soni</label>
+                                    <label className="input-label">{t('sell.skins_count_label') || 'Skinlar soni'}</label>
                                     <input type="text" value={formData.skins}
                                         onChange={(e) => setFormData({ ...formData, skins: e.target.value })}
                                         placeholder="50+" className="input input-lg" />
@@ -501,7 +524,7 @@ title: t('common.error') || 'Xatolik',
 
                                 {/* Images upload */}
                                 <div>
-                                    <label className="input-label">Rasmlar (max 5 ta)</label>
+                                    <label className="input-label">{t('sell.images_label') || 'Rasmlar (max 5 ta)'}</label>
 
                                     {formData.images.length > 0 && (
                                         <div className="grid grid-cols-3 sm:grid-cols-5" style={{ gap: '10px', marginBottom: '12px' }}>
@@ -549,7 +572,7 @@ title: t('common.error') || 'Xatolik',
                                                 }}
                                             />
                                             <Upload style={{ width: '36px', height: '36px', color: 'var(--color-text-muted)', margin: '0 auto 10px' }} />
-                                            <p style={{ color: 'var(--color-text-secondary)' }}>Rasmlarni yuklash uchun bosing</p>
+                                            <p style={{ color: 'var(--color-text-secondary)' }}>{t('sell.images_upload_prompt') || 'Rasmlarni yuklash uchun bosing'}</p>
                                             <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>PNG, JPG (max 5MB, {5 - formData.images.length} ta qoldi)</p>
                                         </label>
                                     )}
@@ -562,7 +585,7 @@ title: t('common.error') || 'Xatolik',
                             <div>
                                 <h2 className="flex items-center gap-2" style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '20px' }}>
                                     <Shield className="w-5 h-5" style={{ color: 'var(--color-accent-green)' }} />
-                                    Akkaunt ma'lumotlari
+                                    {t('sell.step3_title') || "Akkaunt ma'lumotlari"}
                                 </h2>
 
                                 {/* Warning */}
