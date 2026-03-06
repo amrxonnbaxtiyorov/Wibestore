@@ -4,9 +4,15 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Gaming Accounts Marketplace - React + Django",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:ci": "node scripts/fix-unicode-quotes.js && npm run build",
+    "start": "vite preview --host 0.0.0.0 --port ${PORT:-4173}",
     "logo:transparent": "node scripts/logo-remove-checkered.js",
     "logo:dark": "node scripts/logo-dark-mode.js",
     "lint": "eslint .",
@@ -18,7 +24,6 @@
     "@emailjs/browser": "^4.4.1",
     "@react-oauth/google": "^0.13.4",
     "@tanstack/react-query": "^5.90.21",
-    "@tanstack/react-query-devtools": "^5.91.3",
     "appwrite": "^21.5.0",
     "axios": "^1.13.5",
     "lucide-react": "^0.563.0",
@@ -29,6 +34,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/vite": "^4.2.0",
+    "@tanstack/react-query-devtools": "^5.91.3",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
@@ -37,8 +43,10 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
-    "sharp": "^0.34.5",
     "tailwindcss": "^4.1.18",
     "vite": "^7.2.4"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.34.5"
   }
 }

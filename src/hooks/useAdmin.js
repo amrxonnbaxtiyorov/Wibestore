@@ -71,9 +71,45 @@ export const useAdminPendingListings = () => {
         queryKey: ['admin', 'listings', 'pending'],
         queryFn: async () => {
             const { data } = await apiClient.get(`${ADMIN_BASE}/listings/pending/`);
-            return data?.results ?? data;
+            return data?.results ?? data ?? [];
         },
         staleTime: 1 * 60 * 1000,
+    });
+};
+
+/**
+ * Hook для получения всех listings с фильтром по status (admin)
+ */
+export const useAdminAllListings = (filters = {}) => {
+    const { status } = filters;
+    return useQuery({
+        queryKey: ['admin', 'listings', 'all', status],
+        queryFn: async () => {
+            const params = new URLSearchParams();
+            if (status && status !== 'all') params.set('status', status);
+            const url = `${ADMIN_BASE}/listings/${params.toString() ? `?${params}` : ''}`;
+            const { data } = await apiClient.get(url);
+            return Array.isArray(data) ? data : (data?.results ?? data ?? []);
+        },
+        staleTime: 1 * 60 * 1000,
+    });
+};
+
+/**
+ * Hook для удаления listing (admin)
+ */
+export const useAdminDeleteListing = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (listingId) => {
+            const { data } = await apiClient.delete(`${ADMIN_BASE}/listings/${listingId}/delete/`);
+            return data;
+        },
+        onSuccess: (_, listingId) => {
+            queryClient.invalidateQueries({ queryKey: ['admin', 'listings'] });
+            queryClient.invalidateQueries({ queryKey: ['listings', listingId] });
+            queryClient.invalidateQueries({ queryKey: ['listings'] });
+        },
     });
 };
 
@@ -112,10 +148,10 @@ export const useAdminRejectListing = () => {
 };
 
 /**
- * Hook для получения списка listing'ов (admin) — alias для pending
+ * Hook для получения списка listing'ов (admin) — all with optional status filter
  */
-export const useAdminListings = (_filters = {}) => {
-    return useAdminPendingListings();
+export const useAdminListings = (filters = {}) => {
+    return useAdminAllListings(filters);
 };
 
 /**
@@ -214,9 +250,11 @@ export default {
     useAdminUsers,
     useAdminBanUser,
     useAdminPendingListings,
+    useAdminAllListings,
     useAdminListings,
     useAdminApproveListing,
     useAdminRejectListing,
+    useAdminDeleteListing,
     useAdminUpdateListing,
     useAdminReports,
     useAdminResolveReport,

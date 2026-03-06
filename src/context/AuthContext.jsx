@@ -143,7 +143,7 @@ export const AuthProvider = ({ children }) => {
             const data = error.response?.data;
             const status = error.response?.status;
             if (status === 405) {
-                throw new Error("Xatolik yuz berdi. Keyinroq qayta urinib ko‘ring.");
+                throw new Error("Xatolik yuz berdi. Keyinroq qayta urinib ko'ring.");
             }
             const msg = data?.error?.message || (typeof data?.error === 'string' ? data.error : null) || data?.detail;
             if (msg && typeof msg === 'string') {

@@ -1,8 +1,8 @@
 // WibeStore - Utility functions and static data
 
-import getGamesList from ‘./gamesList’;
+import getGamesList from './gamesList';
 
-/** Barcha o’yinlar ro’yxati (faqat o’yinlar) */
+/** Barcha o'yinlar ro'yxati (faqat o'yinlar) */
 export const games = getGamesList();
 
 export const premiumPlans = [

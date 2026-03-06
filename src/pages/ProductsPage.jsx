@@ -39,7 +39,7 @@ const ProductsPage = () => {
         return () => clearTimeout(t);
     }, [searchQuery, setSearchParams]);
 
-    // API hooks — faqat aniq filterlar yuboriladi (undefined yo‘q, tez cache)
+    // API hooks — faqat aniq filterlar yuboriladi (undefined yo'q, tez cache)
     const { data: gamesData } = useGames();
     const { data, isLoading, isFetching, fetchNextPage, hasNextPage } = useListings({
         ...(selectedGame !== 'all' && { game: selectedGame }),

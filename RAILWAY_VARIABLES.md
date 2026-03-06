@@ -129,3 +129,30 @@ WEBSITE_URL="https://backend-production-97516.up.railway.app"
 | Ro‘yxatdan o‘tish (Bot) | `https://frontend-production-76e67.up.railway.app/signup` |
 
 Agar Backend domeningiz boshqa bo‘lsa (masalan `exemplary-fascination-production-9514.up.railway.app`), yuqoridagi **backend-production-97516** o‘rniga o‘sha domenni barcha joyda almashtiring.
+
+---
+
+## 8. "Bog'lanish xatosi" chiqsa (Frontend sahifada)
+
+Bu xabar frontend backend API’ga so‘rov yuborayotganda javob olmasa ko‘rinadi.
+
+**Tekshiring:**
+
+1. **Frontend** servisida `VITE_API_BASE_URL` va `VITE_WS_BASE_URL` **Backend** ning haqiqiy URL’i (yuqoridagi jadvaldagidek). Backend domeni Frontend domenidan **boshqa** (alohida servis).
+2. O‘zgaruvchilarni o‘zgartirgach **Frontend** ni **Redeploy** qiling — Vite env’ni faqat build vaqtida o‘qiydi, shuning uchun yangi build kerak.
+3. Backend servisi ishlayotganini tekshiring: brauzerda `https://YOUR_BACKEND_URL/api/v1/` ochib ko‘ring (401 yoki JSON javob bo‘lsa backend ishlayapti).
+4. CORS: Backend’da `CORS_ALLOWED_ORIGINS` da Frontend manzilingiz (masalan `https://frontend-production-76e67.up.railway.app`) bo‘lishi kerak.
+
+**Variables to‘g‘ri bo‘lsa ham:** (1) Frontend Variables o‘zgartirgach **Redeploy** qiling — Vite env faqat build vaqtida o‘qiladi. (2) Brauzerda **F12 → Console** da `[WibeStore] ... Hozir ishlatilayotgan API:` qatorida qaysi URL ishlatilayotganini ko‘ring; to‘liq backend URL bo‘lmasa Frontend’ni qayta build qiling. (3) Backend’da `CORS_ALLOWED_ORIGINS` da frontend domeni aniq (https, slashsiz) bo‘lishi va Backend Redeploy qilingan bo‘lishi kerak.
+
+---
+
+## 9. Frontend build (Railway / Linux)
+
+- **Node:** Loyiha `engines.node >= 20` va `.nvmrc` (22) qo‘llaydi; Railway’da Node 20 yoki 22 ishlatiladi.
+- **Build:** `npm run build` (Vite). Lock file bo‘lsa `npm ci --omit=optional`, bo‘lmasa `npm install --omit=optional` — optional (masalan sharp) Linux container’da build xatosiz ishlashi uchun.
+- **Ikkita deploy usuli:**
+  1. **Dockerfile** (tavsiya): Root’dagi `Dockerfile` frontend uchun. Barcha `VITE_*` o‘zgaruvchilarni **Build time variables** (yoki Docker build args) orqali bering; default bo‘sh, build baribir muvaffaqiyatli bo‘ladi.
+  2. **Nixpacks:** `nixpacks.toml` bor; `npm run build` va `npm run start` (Vite preview). Railway o‘zgaruvchilarni build vaqtida avtomatik beradi.
+- **Start:** Dockerfile’da nginx + `entrypoint.sh` (PORT va BACKEND_URL). Nixpacks’da `npm run start` — `vite preview --host 0.0.0.0 --port $PORT`.
+- **Barqarorlik:** Unicode qo‘shtirnoqlardan saqlanish uchun `node scripts/fix-unicode-quotes.js` ni CI yoki lokal build oldidan işlatish mumkin.

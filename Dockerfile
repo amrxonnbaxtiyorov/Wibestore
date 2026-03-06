@@ -1,5 +1,5 @@
 # ============================================================
-# WibeStore Frontend - Multi-stage Dockerfile
+# WibeStore Frontend - Multi-stage Dockerfile (Railway / Linux)
 # ============================================================
 
 # Stage 1: Build
@@ -7,18 +7,41 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+
+# Prefer npm ci for reproducible builds; fallback to install if no lock file
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN if [ -f package-lock.json ]; then npm ci --omit=optional; else npm install --omit=optional; fi
 
 COPY . .
-ARG VITE_API_BASE_URL=/api/v1
-ARG VITE_WS_BASE_URL=ws://localhost:8000
+
+# Build-time env (Railway: set as build args or use default empty)
+ARG VITE_API_BASE_URL=
+ARG VITE_WS_BASE_URL=
 ARG VITE_GOOGLE_CLIENT_ID=
 ARG VITE_SENTRY_DSN=
+ARG VITE_ADMIN_USERNAME=
+ARG VITE_ADMIN_PASSWORD=
+ARG VITE_TELEGRAM_BOT_USERNAME=
+ARG VITE_APPWRITE_ENDPOINT=
+ARG VITE_APPWRITE_PROJECT_ID=
+ARG VITE_EMAILJS_PUBLIC_KEY=
+ARG VITE_EMAILJS_SERVICE_ID=
+ARG VITE_EMAILJS_TEMPLATE_ID=
+ARG VITE_APP_ENV=
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_WS_BASE_URL=$VITE_WS_BASE_URL
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
+ENV VITE_ADMIN_USERNAME=$VITE_ADMIN_USERNAME
+ENV VITE_ADMIN_PASSWORD=$VITE_ADMIN_PASSWORD
+ENV VITE_TELEGRAM_BOT_USERNAME=$VITE_TELEGRAM_BOT_USERNAME
+ENV VITE_APPWRITE_ENDPOINT=$VITE_APPWRITE_ENDPOINT
+ENV VITE_APPWRITE_PROJECT_ID=$VITE_APPWRITE_PROJECT_ID
+ENV VITE_EMAILJS_PUBLIC_KEY=$VITE_EMAILJS_PUBLIC_KEY
+ENV VITE_EMAILJS_SERVICE_ID=$VITE_EMAILJS_SERVICE_ID
+ENV VITE_EMAILJS_TEMPLATE_ID=$VITE_EMAILJS_TEMPLATE_ID
+ENV VITE_APP_ENV=$VITE_APP_ENV
 
 RUN npm run build
 

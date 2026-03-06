@@ -36,7 +36,10 @@ const globalErrorHandler = (error) => {
     }));
   }
 
-  if (!error.response && !error.message?.includes('Network Error')) {
+  // So'rov backend'ga yetmadi (URL noto'g'ri, backend ishlamayapti, tarmoq yoki CORS)
+  if (!error.response) {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+    console.warn('[WibeStore] Bog\'lanish xatosi. Hozir ishlatilayotgan API:', apiBase, '| Backend ishlayaptimi va CORS (Backend CORS_ALLOWED_ORIGINS da frontend URL bormi?) tekshiring.');
     window.dispatchEvent(new CustomEvent('wibe-toast', {
       detail: {
         type: 'error',

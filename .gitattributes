@@ -1,0 +1,9 @@
+# Ensure shell scripts use LF in repo (critical for Linux/Railway containers)
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+
+# Lock down line endings for config used in Linux
+.gitattributes text eol=lf
+.gitignore text eol=lf
+nixpacks.toml text eol=lf
+Dockerfile text eol=lf

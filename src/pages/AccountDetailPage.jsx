@@ -203,7 +203,7 @@ const AccountDetailPage = () => {
     const { mutate: removeFromFavorites } = useRemoveFromFavorites();
     const listing = apiListing ? {
         ...apiListing,
-        description: apiListing.description || ‘’,
+        description: apiListing.description || '',
         images: apiListing.images?.length ? apiListing.images : (apiListing.image ? [{ image: apiListing.image }] : []),
         image: apiListing.image || apiListing.images?.[0]?.image,
         seller: {
@@ -683,13 +683,13 @@ const AccountDetailPage = () => {
                                     </p>
                                     {recentSellerReviews.length > 0 ? (
                                         recentSellerReviews.map((rev) => (
-                                            <div key={rev.id || rev.createdAt} style={{ marginBottom: '8px' }}>
+                                            <div key={rev.id || rev.created_at} style={{ marginBottom: '8px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
                                                     {[1, 2, 3, 4, 5].map((s) => (
                                                         <Star key={s} className="w-3 h-3" style={{ color: s <= (rev.rating || 0) ? 'var(--color-premium-gold-light)' : 'var(--color-text-muted)', fill: s <= (rev.rating || 0) ? 'currentColor' : 'none' }} />
                                                     ))}
                                                     <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                                                        {rev.reviewerName || t('detail.reviewer_unknown')}
+                                                        {rev.reviewer?.display_name || rev.reviewer?.full_name || rev.reviewerName || t('detail.reviewer_unknown')}
                                                     </span>
                                                 </div>
                                                 {rev.comment && (

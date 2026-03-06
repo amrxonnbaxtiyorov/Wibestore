@@ -88,7 +88,7 @@ const HomePage = () => {
     const premiumAccounts = allListings.filter(l => l?.is_premium || l?.isPremium).slice(0, 6);
     const recommendedAccounts = allListings.slice(0, 8);
 
-    // Listing → AccountCard format (API va mock ikkalasini qo‘llab-quvvatlash)
+    // Listing → AccountCard format (API va mock ikkalasini qo'llab-quvvatlash)
     const toAccountCard = (account) => ({
         id: account?.id,
         gameId: account?.game?.slug ?? account?.game?.id ?? account?.gameId,

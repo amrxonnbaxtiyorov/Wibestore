@@ -104,7 +104,7 @@ class AdminFraudStatsView(APIView):
 
 @extend_schema(tags=["Admin"])
 class AdminPendingListingsView(generics.ListAPIView):
-    """GET /api/v1/admin/listings/pending/ — Pending listings for moderation."""
+    """GET /api/v1/admin-panel/listings/pending/ — Pending listings for moderation."""
 
     serializer_class = ListingSerializer
     permission_classes = [IsAdminUser]
@@ -113,6 +113,23 @@ class AdminPendingListingsView(generics.ListAPIView):
         return Listing.objects.filter(status="pending").select_related(
             "game", "seller"
         ).order_by("created_at")
+
+
+@extend_schema(tags=["Admin"])
+class AdminAllListingsView(generics.ListAPIView):
+    """GET /api/v1/admin-panel/listings/ — All listings with optional status filter."""
+
+    serializer_class = ListingSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        qs = Listing.objects.filter(deleted_at__isnull=True).select_related(
+            "game", "seller"
+        ).prefetch_related("images").order_by("-created_at")
+        status_filter = self.request.query_params.get("status", "").strip().lower()
+        if status_filter and status_filter != "all":
+            qs = qs.filter(status=status_filter)
+        return qs
 
 
 @extend_schema(tags=["Admin"])
@@ -152,6 +169,24 @@ class AdminRejectListingView(APIView):
         reason = request.data.get("reason", "")
         ListingService.reject_listing(listing, request.user, reason)
         return Response({"success": True, "message": "Listing rejected."})
+
+
+@extend_schema(tags=["Admin"])
+class AdminDeleteListingView(APIView):
+    """DELETE /api/v1/admin-panel/listings/{id}/ — Admin delete (soft) a listing."""
+
+    permission_classes = [IsAdminUser]
+
+    def delete(self, request, pk):
+        try:
+            listing = Listing.objects.get(pk=pk, deleted_at__isnull=True)
+        except Listing.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"message": "Listing not found."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        listing.soft_delete()
+        return Response({"success": True, "message": "Listing deleted."})
 
 
 @extend_schema(tags=["Admin"])

@@ -6,5 +6,10 @@ dist
 .env.*
 !.env.example
 wibestore_backend
+wallet_topup
+telegram_bot
 *.log
 .DS_Store
+.cache
+coverage
+.husky

@@ -4,38 +4,33 @@ import { Star, Crown, Heart } from 'lucide-react';
 import { formatPrice } from '../data/mockData';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAddToFavorites, useRemoveFromFavorites } from '../hooks/useListings';
 
 const AccountCard = ({ account, featured = false }) => {
     const { user, isAuthenticated } = useAuth();
     const { t } = useLanguage();
-    const [isLiked, setIsLiked] = useState(false);
+    const addToFavorites = useAddToFavorites();
+    const removeFromFavorites = useRemoveFromFavorites();
+    const isFavoritedFromApi = account.is_favorited === true;
+    const [isLiked, setIsLiked] = useState(isFavoritedFromApi);
 
     useEffect(() => {
-        if (!user) return;
-        const savedLikes = localStorage.getItem(`wibeLikes_${user.id}`);
-        if (savedLikes) {
-            const likedIds = JSON.parse(savedLikes);
-            const liked = likedIds.includes(account.id);
-            queueMicrotask(() => setIsLiked(liked));
-        }
-    }, [user, account.id]);
+        if (typeof account.is_favorited === 'boolean') setIsLiked(account.is_favorited);
+    }, [account.id, account.is_favorited]);
+
+    const isLikedState = typeof account.is_favorited === 'boolean' ? account.is_favorited : isLiked;
 
     const handleLike = (e) => {
         e.preventDefault();
         e.stopPropagation();
         if (!isAuthenticated || !user) return;
+        if (addToFavorites.isPending || removeFromFavorites.isPending) return;
 
-        const savedLikes = localStorage.getItem(`wibeLikes_${user.id}`);
-        let likedIds = savedLikes ? JSON.parse(savedLikes) : [];
-
-        if (isLiked) {
-            likedIds = likedIds.filter(id => id !== account.id);
+        if (isLikedState) {
+            removeFromFavorites.mutate(account.id, { onSettled: () => setIsLiked(false) });
         } else {
-            likedIds.push(account.id);
+            addToFavorites.mutate(account.id, { onSettled: () => setIsLiked(true) });
         }
-
-        localStorage.setItem(`wibeLikes_${user.id}`, JSON.stringify(likedIds));
-        setIsLiked(!isLiked);
     };
 
     // Fallback for missing data
@@ -142,15 +137,15 @@ const AccountCard = ({ account, featured = false }) => {
                             left: '12px',
                             width: '32px',
                             height: '32px',
-                            backgroundColor: isLiked ? 'var(--color-accent-red)' : 'rgba(0,0,0,0.5)',
+                            backgroundColor: isLikedState ? 'var(--color-accent-red)' : 'rgba(0,0,0,0.5)',
                             backdropFilter: 'blur(4px)',
                             color: '#fff',
                             border: 'none',
                             cursor: 'pointer',
                         }}
-                        aria-label={isLiked ? 'Unlike' : 'Like'}
+                        aria-label={isLikedState ? 'Unlike' : 'Like'}
                     >
-                        <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
+                        <Heart className={`w-3.5 h-3.5 ${isLikedState ? 'fill-current' : ''}`} />
                     </button>
                 )}
 

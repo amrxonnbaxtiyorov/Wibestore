@@ -1,26 +1,31 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Eye, EyeOff, Check, X, Crown, Ban, Key, AlertCircle, RefreshCw } from 'lucide-react';
-import { formatPrice, games } from '../../data/mockData';
+import { useState, useEffect } from 'react';
+import { Search, Eye, EyeOff, Check, X, Ban, Key, AlertCircle, RefreshCw } from 'lucide-react';
+import { formatPrice } from '../../data/mockData';
+import {
+    useAdminAllListings,
+    useAdminApproveListing,
+    useAdminRejectListing,
+    useAdminDeleteListing,
+} from '../../hooks/useAdmin';
+
+// Sotuvdagi eski ma'lumotlarni loyihadan olib tashlash — localStorage tozalash (bir marta)
+if (typeof localStorage !== 'undefined' && localStorage.getItem('wibeListings')) {
+    localStorage.removeItem('wibeListings');
+}
 
 const AdminAccounts = () => {
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
-    const [listings, setListings] = useState([]);
     const [selectedListing, setSelectedListing] = useState(null);
     const [showCredentials, setShowCredentials] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
-    const loadListings = useCallback(() => {
-        const savedListings = localStorage.getItem('wibeListings');
-        if (savedListings) {
-            setListings(JSON.parse(savedListings));
-        }
-    }, []);
-
-    useEffect(() => {
-        queueMicrotask(() => loadListings());
-    }, [loadListings]);
+    const statusParam = selectedStatus === 'all' ? undefined : selectedStatus;
+    const { data: apiListings = [], isLoading, refetch } = useAdminAllListings({ status: statusParam });
+    const approveListing = useAdminApproveListing();
+    const rejectListing = useAdminRejectListing();
+    const deleteListing = useAdminDeleteListing();
 
     const statusFilters = [
         { value: 'all', label: 'Barchasi' },
@@ -41,35 +46,45 @@ const AdminAccounts = () => {
         return <span className="badge" style={{ backgroundColor: s.bg, color: s.color }}>{s.label}</span>;
     };
 
-    const getGameName = (gameId) => {
-        const game = games.find(g => g.id === gameId);
-        return game?.name || gameId;
-    };
+    const getGameName = (listing) => listing?.game?.name || listing?.game_id || '—';
+    const getSellerName = (listing) => listing?.seller?.display_name || listing?.seller?.full_name || listing?.seller?.email || '—';
 
-    const handleApprove = (listing) => {
-        const updated = listings.map(l => l.id === listing.id ? { ...l, status: 'active', approvedAt: new Date().toISOString() } : l);
-        localStorage.setItem('wibeListings', JSON.stringify(updated));
-        setListings(updated);
-        setMessage({ type: 'success', text: `"${listing.title}" tasdiqlandi!` });
+    const showMsg = (type, text) => {
+        setMessage({ type, text });
         setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     };
 
-    const handleReject = (listing) => {
+    const handleApprove = async (listing) => {
+        try {
+            await approveListing.mutateAsync(listing.id);
+            showMsg('success', `"${listing.title}" tasdiqlandi!`);
+            refetch();
+        } catch (err) {
+            showMsg('error', err?.response?.data?.error?.message || 'Tasdiqlash xatosi');
+        }
+    };
+
+    const handleReject = async (listing) => {
         if (!window.confirm(`"${listing.title}" ni rad etmoqchimisiz?`)) return;
-        const updated = listings.map(l => l.id === listing.id ? { ...l, status: 'rejected', rejectedAt: new Date().toISOString() } : l);
-        localStorage.setItem('wibeListings', JSON.stringify(updated));
-        setListings(updated);
-        setMessage({ type: 'success', text: `"${listing.title}" rad etildi!` });
-        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        try {
+            await rejectListing.mutateAsync({ listingId: listing.id, reason: '' });
+            showMsg('success', `"${listing.title}" rad etildi!`);
+            refetch();
+        } catch (err) {
+            showMsg('error', err?.response?.data?.error?.message || 'Rad etish xatosi');
+        }
     };
 
-    const handleDelete = (listing) => {
+    const handleDelete = async (listing) => {
         if (!window.confirm(`"${listing.title}" ni o'chirmoqchimisiz?`)) return;
-        const updated = listings.filter(l => l.id !== listing.id);
-        localStorage.setItem('wibeListings', JSON.stringify(updated));
-        setListings(updated);
-        setMessage({ type: 'success', text: `E'lon o'chirildi!` });
-        setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+        try {
+            await deleteListing.mutateAsync(listing.id);
+            showMsg('success', 'E\'lon o\'chirildi!');
+            if (selectedListing?.id === listing.id) setShowCredentials(false);
+            refetch();
+        } catch (err) {
+            showMsg('error', err?.response?.data?.error?.message || 'O\'chirish xatosi');
+        }
     };
 
     const viewCredentials = (listing) => {
@@ -78,30 +93,30 @@ const AdminAccounts = () => {
         setShowPassword(false);
     };
 
-    const filteredListings = listings.filter(listing => {
-        const matchesStatus = selectedStatus === 'all' || listing.status === selectedStatus;
-        const matchesSearch = listing.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            listing.sellerName?.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesStatus && matchesSearch;
+    const filteredListings = (apiListings || []).filter((listing) => {
+        const matchesSearch =
+            listing.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            getSellerName(listing).toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSearch;
     });
 
-    const pendingCount = listings.filter(l => l.status === 'pending').length;
+    const pendingCount = (apiListings || []).filter((l) => l.status === 'pending').length;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between" style={{ gap: '16px' }}>
                 <div>
                     <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
                         Akkauntlar
                     </h1>
                     <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-                        Foydalanuvchi e&apos;lonlarini boshqaring
+                        Foydalanuvchi e&apos;lonlarini boshqaring (API orqali)
                     </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <button
-                        onClick={loadListings}
+                        onClick={() => refetch()}
+                        disabled={isLoading}
                         className="btn btn-ghost btn-md"
                         title="Yangilash"
                         aria-label="Refresh"
@@ -116,7 +131,6 @@ const AdminAccounts = () => {
                 </div>
             </div>
 
-            {/* Success/Error Message */}
             {message.text && (
                 <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-error'}`}>
                     <Check style={{ width: '18px', height: '18px', flexShrink: 0 }} />
@@ -124,7 +138,6 @@ const AdminAccounts = () => {
                 </div>
             )}
 
-            {/* Filters */}
             <div className="flex flex-col lg:flex-row" style={{ gap: '12px' }}>
                 <div style={{ position: 'relative', flex: 1 }}>
                     <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: 'var(--color-text-muted)' }} />
@@ -151,7 +164,6 @@ const AdminAccounts = () => {
                 </div>
             </div>
 
-            {/* Table */}
             <div style={{
                 backgroundColor: 'var(--color-bg-secondary)',
                 borderRadius: 'var(--radius-xl)',
@@ -173,26 +185,32 @@ const AdminAccounts = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredListings.length > 0 ? (
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan="8" style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                                        Yuklanmoqda…
+                                    </td>
+                                </tr>
+                            ) : filteredListings.length > 0 ? (
                                 filteredListings.map((listing) => (
                                     <tr key={listing.id}>
-                                        <td style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>#{listing.id}</td>
+                                        <td style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>#{String(listing.id).slice(0, 8)}</td>
                                         <td>
                                             <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
                                                 {listing.title}
                                             </div>
                                             <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                                                Level: {listing.level || '-'} | Rank: {listing.rank || '-'}
+                                                Level: {listing.level || '—'} | Rank: {listing.rank || '—'}
                                             </div>
                                         </td>
-                                        <td style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>{getGameName(listing.gameId)}</td>
-                                        <td style={{ color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>{listing.sellerName}</td>
+                                        <td style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>{getGameName(listing)}</td>
+                                        <td style={{ color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>{getSellerName(listing)}</td>
                                         <td style={{ color: 'var(--color-text-accent)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)' }}>
                                             {formatPrice(Number(listing.price))}
                                         </td>
                                         <td>{getStatusBadge(listing.status)}</td>
                                         <td style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-                                            {new Date(listing.createdAt).toLocaleDateString('uz-UZ')}
+                                            {listing.created_at ? new Date(listing.created_at).toLocaleDateString('uz-UZ') : '—'}
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -235,50 +253,23 @@ const AdminAccounts = () => {
                         </tbody>
                     </table>
                 </div>
-
-                {/* Footer */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: 'var(--space-4)',
-                    borderTop: '1px solid var(--color-border-muted)',
-                }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--space-4)', borderTop: '1px solid var(--color-border-muted)' }}>
                     <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
                         {filteredListings.length} ta akkaunt topildi
                     </div>
                 </div>
             </div>
 
-            {/* Credentials Modal */}
             {showCredentials && selectedListing && (
                 <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'var(--color-bg-overlay)', backdropFilter: 'blur(4px)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                    <div style={{
-                        backgroundColor: 'var(--color-bg-secondary)',
-                        borderRadius: 'var(--radius-xl)',
-                        padding: '24px',
-                        width: '100%',
-                        maxWidth: '440px',
-                        border: '1px solid var(--color-border-default)',
-                    }}>
-                        {/* Modal Header */}
+                    <div style={{ backgroundColor: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-xl)', padding: '24px', width: '100%', maxWidth: '440px', border: '1px solid var(--color-border-default)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{
-                                    width: '44px',
-                                    height: '44px',
-                                    backgroundColor: 'var(--color-accent-blue)',
-                                    borderRadius: 'var(--radius-full)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}>
+                                <div style={{ width: '44px', height: '44px', backgroundColor: 'var(--color-accent-blue)', borderRadius: 'var(--radius-full)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Key style={{ width: '22px', height: '22px', color: '#ffffff' }} />
                                 </div>
                                 <div>
-                                    <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>
-                                        Akkaunt ma&apos;lumotlari
-                                    </h3>
+                                    <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>Akkaunt ma&apos;lumotlari</h3>
                                     <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>{selectedListing.title}</p>
                                 </div>
                             </div>
@@ -286,75 +277,41 @@ const AdminAccounts = () => {
                                 <X style={{ width: '18px', height: '18px' }} />
                             </button>
                         </div>
-
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {/* Login Method */}
                             <div style={{ padding: '16px', backgroundColor: 'var(--color-bg-primary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border-muted)' }}>
                                 <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>Kirish usuli</label>
-                                <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{selectedListing.loginMethod || 'Email'}</p>
+                                <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{selectedListing.login_method || 'Email'}</p>
                             </div>
-
-                            {/* Email/Login */}
                             <div style={{ padding: '16px', backgroundColor: 'var(--color-bg-primary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border-muted)' }}>
                                 <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>Email / Login</label>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontFamily: 'monospace' }}>{selectedListing.accountEmail}</p>
-                                    <button onClick={() => navigator.clipboard.writeText(selectedListing.accountEmail)} style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                        Nusxalash
-                                    </button>
-                                </div>
+                                <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontFamily: 'monospace' }}>
+                                    {selectedListing.account_email ? (showPassword ? selectedListing.account_email : '••••••••••') : '— (API orqali berilmaydi)'}
+                                </p>
                             </div>
-
-                            {/* Password */}
                             <div style={{ padding: '16px', backgroundColor: 'var(--color-bg-primary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border-muted)' }}>
                                 <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>Parol</label>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontFamily: 'monospace' }}>
-                                        {showPassword ? selectedListing.accountPassword : '••••••••••'}
-                                    </p>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <button onClick={() => setShowPassword(!showPassword)} className="btn btn-ghost btn-sm" style={{ padding: '4px' }} aria-label={showPassword ? 'Hide' : 'Show'}>
-                                            {showPassword ? <EyeOff style={{ width: '14px', height: '14px' }} /> : <Eye style={{ width: '14px', height: '14px' }} />}
-                                        </button>
-                                        <button onClick={() => navigator.clipboard.writeText(selectedListing.accountPassword)} style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                            Nusxalash
-                                        </button>
-                                    </div>
-                                </div>
+                                <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontFamily: 'monospace' }}>
+                                    {selectedListing.account_password ? (showPassword ? selectedListing.account_password : '••••••••••') : '— (API orqali berilmaydi)'}
+                                </p>
                             </div>
-
-                            {/* Additional Info */}
-                            {selectedListing.additionalInfo && (
-                                <div style={{ padding: '16px', backgroundColor: 'var(--color-bg-primary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border-muted)' }}>
-                                    <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>Qo&apos;shimcha ma&apos;lumot</label>
-                                    <p style={{ color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>{selectedListing.additionalInfo}</p>
-                                </div>
-                            )}
-
-                            {/* Seller Info */}
                             <div style={{ padding: '16px', backgroundColor: 'var(--color-info-bg)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-accent-blue)' }}>
                                 <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-accent)', display: 'block', marginBottom: '4px' }}>Sotuvchi</label>
-                                <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{selectedListing.sellerName}</p>
-                                <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>ID: {selectedListing.sellerId}</p>
+                                <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{getSellerName(selectedListing)}</p>
+                                <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>ID: {selectedListing.seller?.id || '—'}</p>
                             </div>
                         </div>
-
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                             {selectedListing.status === 'pending' && (
                                 <>
-                                    <button onClick={() => { handleApprove(selectedListing); setShowCredentials(false); }}
-                                        className="btn btn-md" style={{ flex: 1, backgroundColor: 'var(--color-accent-green)', color: '#fff', border: 'none' }}>
+                                    <button onClick={() => { handleApprove(selectedListing); setShowCredentials(false); }} className="btn btn-md" style={{ flex: 1, backgroundColor: 'var(--color-accent-green)', color: '#fff', border: 'none' }}>
                                         <Check style={{ width: '16px', height: '16px' }} /> Tasdiqlash
                                     </button>
-                                    <button onClick={() => { handleReject(selectedListing); setShowCredentials(false); }}
-                                        className="btn btn-danger btn-md" style={{ flex: 1 }}>
+                                    <button onClick={() => { handleReject(selectedListing); setShowCredentials(false); }} className="btn btn-danger btn-md" style={{ flex: 1 }}>
                                         <X style={{ width: '16px', height: '16px' }} /> Rad etish
                                     </button>
                                 </>
                             )}
-                            <button onClick={() => setShowCredentials(false)} className="btn btn-secondary btn-md" style={{ flex: 1 }}>
-                                Yopish
-                            </button>
+                            <button onClick={() => setShowCredentials(false)} className="btn btn-secondary btn-md" style={{ flex: 1 }}>Yopish</button>
                         </div>
                     </div>
                 </div>
