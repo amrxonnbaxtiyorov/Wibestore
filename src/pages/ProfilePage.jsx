@@ -57,7 +57,7 @@ const ProfilePage = () => {
 
     // Use API data or fallback to user context
     const myListings = listingsData?.results || [];
-    const likedAccounts = favoritesData?.results?.map(fav => fav.listing).filter(Boolean) || [];
+    const likedAccounts = favoritesData?.results?.map(fav => fav.listing ? { ...fav.listing, is_favorited: true } : null).filter(Boolean) || [];
     const purchases = purchasesData?.results || [];
     const sales = salesData?.results || [];
 
