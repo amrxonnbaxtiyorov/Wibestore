@@ -12,14 +12,6 @@ const defaultStats = [
     { label: 'Shikoyatlar', value: '0', change: '-', trend: 'up', icon: AlertTriangle, color: 'var(--color-accent-red)' },
 ];
 
-const fallbackAccounts = [
-    { id: 1, title: 'PUBG Mobile Conqueror', game: 'PUBG Mobile', price: 2500000, status: 'pending', seller: 'ProGamer_UZ' },
-    { id: 2, title: 'Steam 150+ Games', game: 'Steam', price: 3800000, status: 'active', seller: 'GameStore_TJ' },
-];
-const fallbackReports = [
-    { id: 1, type: 'Scam', account: 'PUBG Account #123', reporter: 'user123', status: 'pending' },
-];
-
 const AdminDashboard = () => {
     const { data: dashboardData, isLoading: _dashboardLoading } = useAdminDashboard();
     const { data: fraudData } = useAdminFraudStats();
@@ -41,7 +33,7 @@ const AdminDashboard = () => {
         { ...defaultStats[3], value: String(apiStats.reports?.pending ?? 0), change: apiStats.reports?.total ? `/${apiStats.reports.total}` : '-' },
     ] : defaultStats;
 
-    const recentAccounts = Array.isArray(pendingListings) && pendingListings.length > 0
+    const recentAccounts = Array.isArray(pendingListings)
         ? pendingListings.slice(0, 5).map((l) => ({
             id: l.id,
             title: l.title,
@@ -50,9 +42,9 @@ const AdminDashboard = () => {
             status: l.status,
             seller: l.seller?.email ?? l.seller?.display_name ?? '-',
         }))
-        : fallbackAccounts;
+        : [];
 
-    const recentReports = Array.isArray(reportsList) && reportsList.length > 0
+    const recentReports = Array.isArray(reportsList)
         ? reportsList.slice(0, 5).map((r) => ({
             id: r.id,
             type: r.reason || 'Report',
@@ -60,7 +52,7 @@ const AdminDashboard = () => {
             reporter: r.reporter?.email ?? '-',
             status: r.status,
         }))
-        : fallbackReports;
+        : [];
 
     const getStatusBadge = (status) => {
         const config = {

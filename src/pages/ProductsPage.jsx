@@ -6,7 +6,6 @@ import AccountCard from '../components/AccountCard';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { PageHeader } from '../components/ui';
 import { useLanguage } from '../context/LanguageContext';
-import { accounts as mockAccounts, games as mockGames } from '../data/mockData';
 
 const ProductsPage = () => {
     const { t } = useLanguage();
@@ -51,12 +50,11 @@ const ProductsPage = () => {
         ordering: sortBy === 'price-low' ? 'price' : sortBy === 'price-high' ? '-price' : sortBy === 'views' ? '-views_count' : '-created_at',
     });
 
-    // Flatten paginated data — API bo'sh bo'lsa mock akkauntlar (test va tekshiruv uchun)
+    // Flatten paginated data
     const rawListings = data?.pages?.flatMap(page => page?.results ?? []) ?? [];
-    let allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
-    if (allListings.length === 0) allListings = mockAccounts;
+    const allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
     const rawGames = gamesData?.results ?? gamesData ?? [];
-    const games = (Array.isArray(rawGames) && rawGames.length > 0 ? rawGames.filter(Boolean) : mockGames) || [];
+    const games = Array.isArray(rawGames) ? rawGames.filter(Boolean) : [];
 
     // Filter va sort
     let filteredListings = [...allListings];

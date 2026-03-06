@@ -7,7 +7,6 @@ import GameCard from '../components/GameCard';
 import AccountCard from '../components/AccountCard';
 import { SkeletonGrid, SkeletonCard } from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
-import { games as mockGames, accounts as mockAccounts } from '../data/mockData';
 
 // Animated counter hook
 function useCounter(target, duration = 2000) {
@@ -58,8 +57,8 @@ const HomePage = () => {
         });
     }, [queryClient]);
 
-    // Use API data or fallback to mock data — ensure array, no undefined items
-    const rawGames = gamesData?.results ?? gamesData ?? mockGames;
+    // Use API data — ensure array, no undefined items
+    const rawGames = gamesData?.results ?? gamesData ?? [];
     const allGames = Array.isArray(rawGames) ? rawGames.filter(Boolean) : [];
     // Bosh sahifada doim avvalgi 8 ta mashhur o'yin (PUBG, Steam, Free Fire va hokazo) — API tartibiga qaramay
     const popularGamesFixed = [
@@ -76,18 +75,15 @@ const HomePage = () => {
         { id: 'codm', name: 'Call of Duty Mobile', image: '/img/icons/cal.webp' },
         { id: 'roblox', name: 'Roblox', image: '/img/icons/roblox.webp' },
     ];
-    const sourceGames = allGames.length > 0 ? allGames : mockGames;
     const games = popularGamesFixed.map((fixed) => {
-        const fromApi = sourceGames.find((g) => (g?.slug || g?.id) === fixed.id);
+        const fromApi = allGames.find((g) => (g?.slug || g?.id) === fixed.id);
         return fromApi
             ? { ...fixed, ...fromApi, id: fixed.id, name: fromApi.name || fixed.name, image: fromApi.image || fromApi.banner || fixed.image }
             : fixed;
     });
 
-    // API bo'sh bo'lsa mock akkauntlar ko'rinsin (sotuvchi/xaridor va xatolik tekshiruvi uchun)
     const rawListings = listingsData?.pages?.flatMap?.(page => page?.results ?? []) ?? listingsData?.results ?? listingsData ?? [];
-    let allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
-    if (allListings.length === 0) allListings = mockAccounts;
+    const allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
 
     const premiumAccounts = allListings.filter(l => l?.is_premium || l?.isPremium).slice(0, 6);
     const recommendedAccounts = allListings.slice(0, 8);
@@ -118,10 +114,11 @@ const HomePage = () => {
         })
         .slice(0, 8);
 
+    const totalListings = listingsData?.pages?.[0]?.count ?? 0;
     const statsData = [
-        { target: '12,500+', label: t('stats.accounts'), icon: TrendingUp },
-        { target: '5,000+', label: t('stats.sellers'), icon: Users },
+        { target: totalListings > 0 ? `${totalListings}+` : '0', label: t('stats.accounts'), icon: TrendingUp },
         { target: '98%', label: t('stats.success'), icon: Zap },
+        { target: allGames.length > 0 ? `${allGames.length}+` : '0', label: t('stats.games') || 'Games', icon: Users },
     ];
 
     // Create counter hooks for each stat

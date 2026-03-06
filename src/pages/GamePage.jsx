@@ -5,7 +5,6 @@ import { useGame, useGameListings } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
-import { games as mockGames, accounts as mockAccounts } from '../data/mockData';
 
 const GamePage = () => {
     const { t } = useLanguage();
@@ -20,10 +19,7 @@ const GamePage = () => {
     });
 
     const rawListings = data?.pages?.flatMap(page => page?.results ?? []) ?? [];
-    let listings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
-    if (listings.length === 0 && gameId) {
-        listings = mockAccounts.filter((a) => (a.game?.slug || a.gameId) === gameId);
-    }
+    const listings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
 
     // Filter and sort
     const filteredListings = listings.filter(listing =>
@@ -41,7 +37,7 @@ const GamePage = () => {
     const regularListings = sortedListings.filter(l => !(l?.is_premium || l?.isPremium));
     const finalAccounts = [...premiumListings, ...regularListings];
 
-    const displayGame = apiGame || (!gameLoading && gameId ? mockGames.find((g) => (g.id || g.slug) === gameId) || null : null);
+    const displayGame = apiGame || null;
 
     if (gameLoading && !displayGame) {
         return (

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Crown, Star, Flame, Trophy } from 'lucide-react';
+import { Crown, Star, Flame, Trophy, Package } from 'lucide-react';
 import AccountCard from '../components/AccountCard';
-import { accounts, games } from '../data/mockData';
+import { SkeletonGrid } from '../components/SkeletonLoader';
+import { useListings, useGames } from '../hooks';
 import { useLanguage } from '../context/LanguageContext';
 
 const TopAccountsPage = () => {
@@ -11,29 +12,42 @@ const TopAccountsPage = () => {
     const [sortBy, setSortBy] = useState('rating');
     const [gameFilter, setGameFilter] = useState('');
 
-    const isPremiumAcc = (acc) => acc?.isPremium || acc?.is_premium;
-    const getAccGameId = (acc) => acc?.gameId || acc?.game?.id || acc?.game?.slug || '';
+    const ordering =
+        sortBy === 'price-high' ? '-price' :
+        sortBy === 'price-low' ? 'price' :
+        sortBy === 'sales' ? '-seller__sales_count' :
+        '-created_at';
 
-    const filteredAccounts = [...accounts]
-        .filter(acc => {
-            if (gameFilter && getAccGameId(acc) !== gameFilter) return false;
-            if (filter === 'premium') return isPremiumAcc(acc);
-            return true;
+    const { data, isLoading } = useListings({
+        ...(filter === 'premium' && { is_premium: true }),
+        ...(gameFilter && { game: gameFilter }),
+        ordering,
+        limit: 40,
+    });
+
+    const { data: gamesData } = useGames();
+
+    const rawListings = data?.pages?.flatMap(page => page?.results ?? []) ?? [];
+    const allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
+
+    const rawGames = gamesData?.results ?? gamesData ?? [];
+    const games = Array.isArray(rawGames) ? rawGames.filter(Boolean) : [];
+
+    // Sort client-side by rating if needed (API may not support seller__rating ordering)
+    const sortedListings = sortBy === 'rating'
+        ? [...allListings].sort((a, b) => {
+            const aPremium = a.is_premium || a.isPremium;
+            const bPremium = b.is_premium || b.isPremium;
+            if (aPremium && !bPremium) return -1;
+            if (!aPremium && bPremium) return 1;
+            return (b.seller?.rating || 0) - (a.seller?.rating || 0);
         })
-        .sort((a, b) => {
-            if (sortBy === 'rating') {
-                if (isPremiumAcc(a) && !isPremiumAcc(b)) return -1;
-                if (!isPremiumAcc(a) && isPremiumAcc(b)) return 1;
-                return (b.seller?.rating || 0) - (a.seller?.rating || 0);
-            }
-            if (sortBy === 'price-high') return (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0);
-            if (sortBy === 'price-low') return (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0);
-            if (sortBy === 'sales') return (b.seller?.sales || 0) - (a.seller?.sales || 0);
-            return 0;
-        });
+        : allListings;
+
+    const premiumCount = allListings.filter(a => a?.is_premium || a?.isPremium).length;
 
     const statCards = [
-        { icon: Crown, label: t('top.premium_sellers') || 'Premium Sellers', value: accounts.filter(a => a?.isPremium || a?.is_premium).length, color: 'var(--color-premium-gold-light)' },
+        { icon: Crown, label: t('top.premium_sellers') || 'Premium Sellers', value: premiumCount, color: 'var(--color-premium-gold-light)' },
         { icon: Star, label: t('top.high_rated') || 'High rated only', value: '4.5+', color: 'var(--color-premium-gold-light)' },
         { icon: Flame, label: t('top.experienced') || 'Experienced sellers', value: '100+', color: 'var(--color-accent-orange)' },
     ];
@@ -115,7 +129,7 @@ const TopAccountsPage = () => {
                         >
                             <option value="">{t('top.game_all') || "Barcha o'yinlar"}</option>
                             {games.map((game) => (
-                                <option key={game.id} value={game.id}>{game.name}</option>
+                                <option key={game.id ?? game.slug} value={game.slug ?? game.id}>{game.name}</option>
                             ))}
                         </select>
                     </div>
@@ -169,46 +183,72 @@ const TopAccountsPage = () => {
                     color: 'var(--color-text-muted)',
                     marginBottom: 'var(--space-4)',
                 }}>
-                    {filteredAccounts.length} {t('top.results') || 'accounts'}
+                    {sortedListings.length} {t('top.results') || 'accounts'}
                 </p>
 
                 {/* Accounts Grid */}
-                <div
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger"
-                    style={{ gap: 'var(--space-4)' }}
-                >
-                    {filteredAccounts.map((account, index) => (
-                        <div key={account.id} style={{ position: 'relative' }}>
-                            {/* Rank badge for top 3 */}
-                            {index < 3 && (
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        top: '-8px',
-                                        left: '-8px',
-                                        zIndex: 10,
-                                        width: '28px',
-                                        height: '28px',
-                                        borderRadius: 'var(--radius-full)',
-                                        background: index === 0 ? 'linear-gradient(135deg, #FFD700, #FFA500)' :
-                                            index === 1 ? 'linear-gradient(135deg, #C0C0C0, #A0A0A0)' :
-                                                'linear-gradient(135deg, #CD7F32, #A0522D)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: 'var(--font-size-sm)',
-                                        fontWeight: 'var(--font-weight-bold)',
-                                        color: '#fff',
-                                        boxShadow: 'var(--shadow-md)',
+                {isLoading ? (
+                    <SkeletonGrid count={12} />
+                ) : sortedListings.length > 0 ? (
+                    <div
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger"
+                        style={{ gap: 'var(--space-4)' }}
+                    >
+                        {sortedListings.map((listing, index) => (
+                            <div key={listing.id} style={{ position: 'relative' }}>
+                                {/* Rank badge for top 3 */}
+                                {index < 3 && (
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            top: '-8px',
+                                            left: '-8px',
+                                            zIndex: 10,
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: 'var(--radius-full)',
+                                            background: index === 0 ? 'linear-gradient(135deg, #FFD700, #FFA500)' :
+                                                index === 1 ? 'linear-gradient(135deg, #C0C0C0, #A0A0A0)' :
+                                                    'linear-gradient(135deg, #CD7F32, #A0522D)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: 'var(--font-size-sm)',
+                                            fontWeight: 'var(--font-weight-bold)',
+                                            color: '#fff',
+                                            boxShadow: 'var(--shadow-md)',
+                                        }}
+                                    >
+                                        {index + 1}
+                                    </div>
+                                )}
+                                <AccountCard
+                                    account={{
+                                        id: listing.id,
+                                        gameId: listing.game?.slug ?? listing.game?.id,
+                                        gameName: listing.game?.name ?? 'Unknown',
+                                        title: listing.title ?? '',
+                                        price: Number(listing.price) || 0,
+                                        seller: listing.seller,
+                                        image: listing.images?.[0]?.image ?? listing.image ?? listing.primary_image ?? '',
+                                        isLiked: listing.is_favorited ?? false,
+                                        isPremium: listing.is_premium ?? false,
                                     }}
-                                >
-                                    {index + 1}
-                                </div>
-                            )}
-                            <AccountCard account={account} />
-                        </div>
-                    ))}
-                </div>
+                                />
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="empty-state">
+                        <Package className="empty-state-icon" />
+                        <h3 className="empty-state-title">
+                            {t('products.no_results') || 'No accounts found'}
+                        </h3>
+                        <p className="empty-state-description">
+                            {t('products.no_results_desc') || 'Try adjusting your filters'}
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

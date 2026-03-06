@@ -1,21 +1,26 @@
 import { useState } from 'react';
 import { Search, Crown, Ban, Eye, Mail, MoreVertical, UserCheck } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAdminUsers } from '../../hooks/useAdmin';
 
 const AdminUsers = () => {
     const { t } = useLanguage();
     const [selectedRole, setSelectedRole] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
 
-    const users = [
-        { id: 1, name: 'ProGamer_UZ', email: 'progamer@mail.uz', role: 'seller', isPremium: true, status: 'active', sales: 156, joined: '2023-06-15' },
-        { id: 2, name: 'GameStore_TJ', email: 'gamestore@mail.tj', role: 'seller', isPremium: true, status: 'active', sales: 89, joined: '2023-08-20' },
-        { id: 3, name: 'Buyer123', email: 'buyer123@gmail.com', role: 'buyer', isPremium: false, status: 'active', purchases: 12, joined: '2024-01-10' },
-        { id: 4, name: 'FFKing_UZ', email: 'ffking@mail.uz', role: 'seller', isPremium: false, status: 'active', sales: 234, joined: '2023-05-01' },
-        { id: 5, name: 'ScammerX', email: 'scammer@fake.com', role: 'seller', isPremium: false, status: 'blocked', sales: 5, joined: '2024-01-20' },
-        { id: 6, name: 'NormalUser', email: 'normal@mail.uz', role: 'buyer', isPremium: false, status: 'active', purchases: 3, joined: '2024-01-15' },
-        { id: 7, name: 'MLBB_Pro', email: 'mlbbpro@mail.uz', role: 'seller', isPremium: true, status: 'active', sales: 167, joined: '2023-09-10' },
-    ];
+    const { data: usersData, isLoading } = useAdminUsers();
+    const rawUsers = Array.isArray(usersData) ? usersData : (usersData?.results ?? []);
+    const users = rawUsers.map(u => ({
+        id: u.id,
+        name: u.display_name ?? u.username ?? u.email ?? '-',
+        email: u.email ?? '-',
+        role: u.seller_profile ? 'seller' : 'buyer',
+        isPremium: u.is_premium ?? false,
+        status: u.is_active === false ? 'blocked' : 'active',
+        sales: u.seller_profile?.total_sales ?? u.sales_count ?? 0,
+        purchases: u.purchases_count ?? 0,
+        joined: u.date_joined ? u.date_joined.slice(0, 10) : '-',
+    }));
 
     const roleFilters = [
         { value: 'all', label: t('admin.filter_all') },
@@ -52,6 +57,10 @@ const AdminUsers = () => {
             </span>
         );
     };
+
+    if (isLoading) {
+        return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}>Yuklanmoqda...</div>;
+    }
 
     const filteredUsers = users.filter(user => {
         let matchesRole = selectedRole === 'all';

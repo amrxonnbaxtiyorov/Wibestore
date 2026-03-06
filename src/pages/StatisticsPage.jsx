@@ -2,36 +2,18 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Trophy, TrendingUp, Users, ShoppingBag, Star, Medal, Crown, Award } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useListings, useGames } from '../hooks';
 
 const StatisticsPage = () => {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState('sellers');
 
-    const topSellers = [
-        { id: 1, name: 'GameMaster_UZ', sales: 156, rating: 4.9, premium: 'premium' },
-        { id: 2, name: 'ProGamer777', sales: 142, rating: 4.8, premium: 'pro' },
-        { id: 3, name: 'AccountKing', sales: 128, rating: 4.7, premium: 'premium' },
-        { id: 4, name: 'EliteSeller', sales: 115, rating: 4.9, premium: null },
-        { id: 5, name: 'TopTrader', sales: 98, rating: 4.6, premium: 'pro' },
-        { id: 6, name: 'FastDeals', sales: 87, rating: 4.5, premium: null },
-        { id: 7, name: 'TrustySeller', sales: 76, rating: 4.8, premium: 'premium' },
-        { id: 8, name: 'QuickSale', sales: 65, rating: 4.4, premium: null },
-        { id: 9, name: 'BestPrice', sales: 54, rating: 4.7, premium: 'pro' },
-        { id: 10, name: 'SafeTrade', sales: 43, rating: 4.6, premium: null },
-    ];
+    const { data: listingsData } = useListings({ limit: 1 });
+    const { data: gamesData } = useGames();
 
-    const activeUsers = [
-        { id: 1, name: 'ActivePlayer1', activity: 98, purchases: 45, sales: 32 },
-        { id: 2, name: 'DailyGamer', activity: 95, purchases: 38, sales: 28 },
-        { id: 3, name: 'TrueCollector', activity: 92, purchases: 52, sales: 15 },
-        { id: 4, name: 'GameHunter', activity: 89, purchases: 41, sales: 22 },
-        { id: 5, name: 'TopBuyer', activity: 85, purchases: 67, sales: 8 },
-        { id: 6, name: 'RegularUser', activity: 82, purchases: 29, sales: 35 },
-        { id: 7, name: 'ProCollector', activity: 78, purchases: 48, sales: 12 },
-        { id: 8, name: 'FastBuyer', activity: 75, purchases: 33, sales: 18 },
-        { id: 9, name: 'SmartTrader', activity: 72, purchases: 25, sales: 41 },
-        { id: 10, name: 'NewStar', activity: 68, purchases: 19, sales: 24 },
-    ];
+    const totalListings = listingsData?.pages?.[0]?.count ?? 0;
+    const rawGames = gamesData?.results ?? gamesData ?? [];
+    const gamesCount = Array.isArray(rawGames) ? rawGames.length : 0;
 
     const getRankIcon = (index) => {
         if (index === 0) return <Crown className="w-5 h-5" style={{ color: 'var(--color-premium-gold-light)' }} />;
@@ -40,17 +22,10 @@ const StatisticsPage = () => {
         return <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-muted)' }}>{index + 1}</span>;
     };
 
-    const getPremiumBadge = (type) => {
-        if (type === 'premium') return <span className="badge badge-blue" style={{ fontSize: '10px', padding: '1px 6px' }}>Premium</span>;
-        if (type === 'pro') return <span className="badge badge-purple" style={{ fontSize: '10px', padding: '1px 6px' }}>Pro</span>;
-        return null;
-    };
-
     const stats = [
-        { icon: Users, label: t('stats.total_users') || 'Total Users', value: '1,234', color: 'var(--color-accent-blue)' },
-        { icon: ShoppingBag, label: t('stats.total_sales') || 'Total Sales', value: '5,678', color: 'var(--color-accent-green)' },
-        { icon: Star, label: t('stats.avg_rating') || 'Avg Rating', value: '4.8', color: 'var(--color-premium-gold-light)' },
-
+        { icon: Users, label: t('stats.total_users') || 'Total Users', value: totalListings > 0 ? `${totalListings}+` : '—', color: 'var(--color-accent-blue)' },
+        { icon: ShoppingBag, label: t('stats.games') || 'Games', value: gamesCount > 0 ? `${gamesCount}` : '—', color: 'var(--color-accent-green)' },
+        { icon: Star, label: t('stats.avg_rating') || 'Avg Rating', value: '4.8+', color: 'var(--color-premium-gold-light)' },
     ];
 
     return (
@@ -141,7 +116,7 @@ const StatisticsPage = () => {
                     </button>
                 </div>
 
-                {/* Leaderboard */}
+                {/* Leaderboard — empty state while no leaderboard API */}
                 <div
                     style={{
                         backgroundColor: 'var(--color-bg-primary)',
@@ -151,110 +126,18 @@ const StatisticsPage = () => {
                         overflow: 'hidden',
                     }}
                 >
-                    {activeTab === 'sellers' ? (
-                        topSellers.map((user, index) => (
-                            <div
-                                key={user.id}
-                                className="flex items-center gap-4 leaderboard-row"
-                                style={{
-                                    padding: '14px 20px',
-                                    borderBottom: index < topSellers.length - 1 ? '1px solid var(--color-border-muted)' : 'none',
-                                    backgroundColor: index < 3 ? 'var(--color-bg-secondary)' : 'transparent',
-                                }}
-                            >
-                                <div className="w-6 flex justify-center flex-shrink-0">
-                                    {getRankIcon(index)}
-                                </div>
-                                <div
-                                    className="avatar avatar-md"
-                                    style={{ backgroundColor: 'var(--color-accent-blue)', color: '#fff' }}
-                                >
-                                    {user.name.charAt(0)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-base)' }}>
-                                            {user.name}
-                                        </span>
-                                        {getPremiumBadge(user.premium)}
-                                    </div>
-                                    <div className="flex items-center gap-1" style={{ marginTop: '2px' }}>
-                                        <Star className="w-3 h-3 fill-current" style={{ color: 'var(--color-premium-gold-light)' }} />
-                                        <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                                            {user.rating}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="text-right flex-shrink-0">
-                                    <div style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-accent)' }}>
-                                        {user.sales}
-                                    </div>
-                                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-                                        {t('stats.sales_label') || 'sales'}
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        activeUsers.map((user, index) => (
-                            <div
-                                key={user.id}
-                                className="flex items-center gap-4 leaderboard-row"
-                                style={{
-                                    padding: '14px 20px',
-                                    borderBottom: index < activeUsers.length - 1 ? '1px solid var(--color-border-muted)' : 'none',
-                                    backgroundColor: index < 3 ? 'var(--color-bg-secondary)' : 'transparent',
-                                }}
-                            >
-                                <div className="w-6 flex justify-center flex-shrink-0">
-                                    {getRankIcon(index)}
-                                </div>
-                                <div
-                                    className="avatar avatar-md"
-                                    style={{ backgroundColor: 'var(--color-accent-purple)', color: '#fff' }}
-                                >
-                                    {user.name.charAt(0)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-base)' }}>
-                                        {user.name}
-                                    </span>
-                                    <div className="flex items-center gap-3" style={{ marginTop: '2px', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                                        <span>🛒 {user.purchases}</span>
-                                        <span>💰 {user.sales}</span>
-                                    </div>
-                                </div>
-                                <div className="text-right flex-shrink-0">
-                                    <div className="flex items-center gap-2">
-                                        <div
-                                            style={{
-                                                width: '80px', height: '8px',
-                                                borderRadius: 'var(--radius-full)',
-                                                backgroundColor: 'var(--color-bg-tertiary)',
-                                                overflow: 'hidden',
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: `${user.activity}%`,
-                                                    height: '100%',
-                                                    borderRadius: 'var(--radius-full)',
-                                                    backgroundColor: 'var(--color-accent-blue)',
-                                                    transition: 'width 0.3s ease',
-                                                }}
-                                            />
-                                        </div>
-                                        <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', width: '36px', textAlign: 'right' }}>
-                                            {user.activity}%
-                                        </span>
-                                    </div>
-                                    <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                                        {t('stats.activity') || 'activity'}
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    )}
+                    <div className="empty-state" style={{ padding: '48px 24px' }}>
+                        <Trophy className="empty-state-icon" />
+                        <h3 className="empty-state-title">
+                            {t('stats.coming_soon_title') || 'Leaderboard Coming Soon'}
+                        </h3>
+                        <p className="empty-state-description">
+                            {t('stats.coming_soon_desc') || 'Rankings will be shown here once enough transactions are recorded.'}
+                        </p>
+                        <Link to="/products" className="btn btn-primary btn-md" style={{ textDecoration: 'none' }}>
+                            {t('hero.cta_browse') || 'Browse Accounts'}
+                        </Link>
+                    </div>
                 </div>
             </div>
         </div>

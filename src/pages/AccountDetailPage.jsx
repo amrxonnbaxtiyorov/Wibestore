@@ -14,7 +14,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
-import { accounts as mockAccounts } from '../data/mockData';
 import BuyerRulesQuiz from '../components/BuyerRulesQuiz';
 import ReviewModal from '../components/ReviewModal';
 
@@ -201,24 +200,20 @@ const AccountDetailPage = () => {
     const { data: apiListing, isLoading, error, refetch } = useListing(accountId);
     const { mutate: addToFavorites } = useAddToFavorites();
     const { mutate: removeFromFavorites } = useRemoveFromFavorites();
-    // API yoki darhol mock — sotuvdagi akkauntlar har doim ko‘rinsin (API kutmasdan)
-    const mockFallback = accountId ? mockAccounts.find((a) => String(a.id) === String(accountId)) : null;
-    const rawListing = apiListing || mockFallback;
-    // API va mock formatini birlashtirish — bitta listing obyekti, hammasi mukammal ko‘rinsin
-    const listing = rawListing ? {
-        ...rawListing,
-        description: rawListing.description || mockFallback?.description || '',
-        images: rawListing.images?.length ? rawListing.images : (rawListing.image ? [{ image: rawListing.image }] : (mockFallback?.images?.length ? mockFallback.images : (mockFallback?.image ? [{ image: mockFallback.image }] : []))),
-        image: rawListing.image || rawListing.images?.[0]?.image || mockFallback?.image,
+    const listing = apiListing ? {
+        ...apiListing,
+        description: apiListing.description || ‘’,
+        images: apiListing.images?.length ? apiListing.images : (apiListing.image ? [{ image: apiListing.image }] : []),
+        image: apiListing.image || apiListing.images?.[0]?.image,
         seller: {
-            ...(rawListing.seller || {}),
-            display_name: rawListing.seller?.display_name ?? rawListing.seller?.name ?? mockFallback?.seller?.name,
-            name: rawListing.seller?.name ?? rawListing.seller?.display_name ?? mockFallback?.seller?.name,
-            total_sales: rawListing.seller?.total_sales ?? rawListing.seller?.sales ?? mockFallback?.seller?.sales ?? 0,
-            rating: rawListing.seller?.rating ?? mockFallback?.seller?.rating ?? 5,
+            ...(apiListing.seller || {}),
+            display_name: apiListing.seller?.display_name ?? apiListing.seller?.name,
+            name: apiListing.seller?.name ?? apiListing.seller?.display_name,
+            total_sales: apiListing.seller?.total_sales ?? apiListing.seller?.sales ?? 0,
+            rating: apiListing.seller?.rating ?? 5,
         },
-        price: rawListing.price ?? mockFallback?.price,
-        features: rawListing.features?.length ? rawListing.features : (mockFallback ? [t('detail.escrow_protection'), t('detail.fast_delivery'), mockFallback.game?.name || mockFallback.gameName].filter(Boolean) : []),
+        price: apiListing.price,
+        features: apiListing.features?.length ? apiListing.features : [],
     } : null;
     const { data: relatedData } = useListings({ game: listing?.game?.id, limit: 4 });
 
@@ -441,10 +436,7 @@ const AccountDetailPage = () => {
 
     const features = listing.features || [];
     const images = listing.images?.length ? listing.images : (listing.image ? [{ image: listing.image }] : []);
-    const apiRelated = (relatedData?.pages?.[0]?.results || []).filter((l) => l.id !== listing.id).slice(0, 4);
-    const relatedListings = apiRelated.length > 0
-        ? apiRelated
-        : mockAccounts.filter((a) => (a.game?.slug || a.gameId) === (listing.game?.slug || listing.gameId) && a.id !== listing.id).slice(0, 4);
+    const relatedListings = (relatedData?.pages?.[0]?.results || []).filter((l) => l.id !== listing.id).slice(0, 4);
 
     const tabs = [
         { id: 'description', label: t('detail.description') || 'Tavsif' },

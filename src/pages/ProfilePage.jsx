@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Tag, Heart, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle, BarChart3, UserPlus, Copy, Star } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing, useSellerDashboard, useReferral } from '../hooks';
+import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing, useSellerDashboard, useReferral, useGames } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import AvatarEditModal from '../components/AvatarEditModal';
 import ReviewList from '../components/ReviewList';
-import { games, formatPrice } from '../data/mockData';
+import { formatPrice } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import SkeletonLoader from '../components/SkeletonLoader';
@@ -29,19 +29,23 @@ const ProfilePage = () => {
     const { data: dashboardData } = useSellerDashboard();
     const { data: referralData } = useReferral();
     const { mutate: deleteListingMutation } = useDeleteListing();
+    const { data: gamesData } = useGames();
 
     useEffect(() => {
         if (!isAuthenticated) navigate('/login');
     }, [isAuthenticated, navigate]);
 
+    const rawGames = gamesData?.results ?? gamesData ?? [];
+    const games = Array.isArray(rawGames) ? rawGames.filter(Boolean) : [];
+
     // Helper functions for game info
     const getGameName = (gameId) => {
-        const game = games.find(g => g.id === gameId);
+        const game = games.find(g => (g.slug ?? g.id) === gameId || g.id === gameId);
         return game?.name || gameId || t('common.unknown_game');
     };
 
     const getGameImage = (gameId) => {
-        const game = games.find(g => g.id === gameId);
+        const game = games.find(g => (g.slug ?? g.id) === gameId || g.id === gameId);
         return game?.image || null;
     };
 
