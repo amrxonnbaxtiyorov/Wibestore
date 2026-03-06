@@ -8,6 +8,15 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { GoogleAuthProvider } from './context/GoogleAuthContext'
 import queryClient from './lib/reactQuery'
 
+// Fresh launch: clear legacy cache so API is the only source for listings/reviews/stats
+try {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('wibeListings')
+    localStorage.removeItem('wibeReviews')
+    localStorage.removeItem('wibeSellerRatings')
+  }
+} catch (_) {}
+
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 const hasGoogleAuth = CLIENT_ID.length > 0
 

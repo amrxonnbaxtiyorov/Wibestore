@@ -15,7 +15,17 @@
       "Bash(docker ps -a --filter \"name=wallet\" --format \"table {{.Names}}\\\\t{{.Status}}\\\\t{{.Ports}}\")",
       "Bash(python -c \"import sys; sys.path.insert\\(0, ''..''\\); from wallet_topup.bot.config import config; print\\(''Token:'', bool\\(config.token\\)\\); print\\(''Admin IDs:'', config.admin_ids\\); print\\(''Web App URL:'', config.web_app_url\\); print\\(''Backend URL:'', config.backend_url\\)\")",
       "Bash(python -c \":*)",
-      "Bash(timeout 5 python bot.py)"
+      "Bash(timeout 5 python bot.py)",
+      "Bash(ls \"c:\\\\WibeStore\\\\Wibestore\\\\wallet_topup\\\\backend\"\" && ls \"c:WibeStoreWibestorewallet_topupbot\"\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const b=fs.readFileSync\\(''entrypoint.sh''\\); console.log\\(b.includes\\(0x0d\\)?''CRLF'':''LF only''\\);\")",
+      "Bash(npm ls sharp)",
+      "Bash(node -e \":*)",
+      "Bash(ls -la dist/assets/*.js)",
+      "Bash(sort -k5 -rn)",
+      "Bash(grep -l \"react-query-devtools\\\\|ReactQueryDevtools\" dist/assets/*.js)",
+      "Bash(ls dist/assets/*.map)",
+      "Bash(python3 -c \"import json; p=json.load\\(open\\(''package.json''\\)\\); print\\(''deps:'', ''@tanstack/react-query-devtools'' in p.get\\(''dependencies'',{}\\)\\); print\\(''devDeps:'', ''@tanstack/react-query-devtools'' in p.get\\(''devDependencies'',{}\\)\\)\")",
+      "Bash(node -e \"const p=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''package.json'',''utf8''\\)\\); console.log\\(''deps:'', ''@tanstack/react-query-devtools'' in \\(p.dependencies||{}\\)\\); console.log\\(''devDeps:'', ''@tanstack/react-query-devtools'' in \\(p.devDependencies||{}\\)\\); console.log\\(''sharp in optional:'', ''sharp'' in \\(p.optionalDependencies||{}\\)\\); console.log\\(''sharp in devDeps:'', ''sharp'' in \\(p.devDependencies||{}\\)\\);\")"
     ]
   }
 }
