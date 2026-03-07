@@ -63,6 +63,12 @@ class PaymentRepository:
         )
         return result.scalar_one_or_none()
 
+    async def update_receipt_path(self, payment_id: int, receipt_path: str) -> None:
+        payment = await self.get_by_id(payment_id)
+        if payment:
+            payment.receipt_path = receipt_path
+            self._session.add(payment)
+
     async def update_admin_message(
         self, payment_id: int, admin_chat_id: int, admin_message_id: int
     ) -> None:

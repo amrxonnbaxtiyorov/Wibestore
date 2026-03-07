@@ -8,8 +8,7 @@ To'lov jarayoni handlerlari (FSM):
 """
 import logging
 
-from aiogram import Router, F
-from aiogram.exceptions import TelegramBadRequest
+from aiogram import Bot, Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, PhotoSize
 
@@ -20,7 +19,8 @@ from bot.config import (
 from bot.keyboards.inline import PAYMENT_TYPE_KB, retry_payment_kb
 from bot.keyboards.reply import CANCEL_KB, MAIN_MENU
 from bot.services.payment_service import (
-    user_has_pending_payment, create_payment, save_admin_message, ensure_user,
+    user_has_pending_payment, create_payment,
+    save_admin_message, update_receipt_path, ensure_user,
 )
 from bot.services.notification_service import notify_admins_new_payment
 from bot.states.payment import PaymentFlow
@@ -124,7 +124,7 @@ async def payment_cancel_inline(callback: CallbackQuery, state: FSMContext) -> N
 # ── 3. Chek rasmini qabul qilish ──────────────────────────────────────────────
 
 @router.message(PaymentFlow.waiting_receipt, F.photo)
-async def receipt_received(message: Message, state: FSMContext, bot) -> None:
+async def receipt_received(message: Message, state: FSMContext, bot: Bot) -> None:
     """Foydalanuvchi chek rasmini yubordi — tekshirish, saqlash, admin xabardor qilish."""
     user = message.from_user
     if not user:
@@ -165,10 +165,12 @@ async def receipt_received(message: Message, state: FSMContext, bot) -> None:
         receipt_path="",  # Hali saqlanmagan
     )
 
-    # 2. Rasm faylini serverga saqlash (asinxron)
+    # 2. Rasm faylini serverga yuklab olish va DB ga yo'lni saqlash
     receipt_path = await download_receipt(bot=bot, file_id=file_id, payment_id=payment_id)
+    if receipt_path:
+        await update_receipt_path(payment_id, receipt_path)
 
-    # 3. Foydalanuvchiga tasdiqlash xabari
+    # 3. FSM ni tozalash va foydalanuvchiga tasdiqlash xabari
     await state.clear()
     await message.answer(
         f"✅ <b>Chek qabul qilindi!</b>\n\n"

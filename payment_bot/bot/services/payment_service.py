@@ -76,6 +76,15 @@ async def create_payment(
         return payment.id
 
 
+async def update_receipt_path(payment_id: int, receipt_path: str) -> None:
+    """Chek fayl yo'lini DB ga saqlash (yuklab olingandan so'ng)."""
+    if not receipt_path:
+        return
+    async with get_session() as session:
+        repo = PaymentRepository(session)
+        await repo.update_receipt_path(payment_id, receipt_path)
+
+
 async def save_admin_message(payment_id: int, chat_id: int, message_id: int) -> None:
     """Admin xabar ID sini to'lovga bog'lash."""
     async with get_session() as session:
