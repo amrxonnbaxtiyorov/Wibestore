@@ -419,23 +419,9 @@ const Navbar = () => {
                                                     color: '#fff',
                                                 }}
                                             >
-                                                {user?.avatar ? (
-                                                    <img
-                                                        src={user.avatar}
-                                                        alt={user?.name || 'User'}
-                                                        className="w-full h-full"
-                                                        style={{
-                                                            objectFit: 'cover',
-                                                            objectPosition: 'center',
-                                                            minWidth: '100%',
-                                                            minHeight: '100%',
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    getDisplayInitial(
-                                                        user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''),
-                                                        'U'
-                                                    )
+                                                {getDisplayInitial(
+                                                    user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''),
+                                                    'U'
                                                 )}
                                             </div>
                                             <div
