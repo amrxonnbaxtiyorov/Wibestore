@@ -25,7 +25,8 @@
       "Bash(grep -l \"react-query-devtools\\\\|ReactQueryDevtools\" dist/assets/*.js)",
       "Bash(ls dist/assets/*.map)",
       "Bash(python3 -c \"import json; p=json.load\\(open\\(''package.json''\\)\\); print\\(''deps:'', ''@tanstack/react-query-devtools'' in p.get\\(''dependencies'',{}\\)\\); print\\(''devDeps:'', ''@tanstack/react-query-devtools'' in p.get\\(''devDependencies'',{}\\)\\)\")",
-      "Bash(node -e \"const p=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''package.json'',''utf8''\\)\\); console.log\\(''deps:'', ''@tanstack/react-query-devtools'' in \\(p.dependencies||{}\\)\\); console.log\\(''devDeps:'', ''@tanstack/react-query-devtools'' in \\(p.devDependencies||{}\\)\\); console.log\\(''sharp in optional:'', ''sharp'' in \\(p.optionalDependencies||{}\\)\\); console.log\\(''sharp in devDeps:'', ''sharp'' in \\(p.devDependencies||{}\\)\\);\")"
+      "Bash(node -e \"const p=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''package.json'',''utf8''\\)\\); console.log\\(''deps:'', ''@tanstack/react-query-devtools'' in \\(p.dependencies||{}\\)\\); console.log\\(''devDeps:'', ''@tanstack/react-query-devtools'' in \\(p.devDependencies||{}\\)\\); console.log\\(''sharp in optional:'', ''sharp'' in \\(p.optionalDependencies||{}\\)\\); console.log\\(''sharp in devDeps:'', ''sharp'' in \\(p.devDependencies||{}\\)\\);\")",
+      "Bash(ls -1 *.*)"
     ]
   }
 }
