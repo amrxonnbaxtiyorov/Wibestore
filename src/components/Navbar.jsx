@@ -415,13 +415,17 @@ const Navbar = () => {
                                             <div
                                                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden"
                                                 style={{
-                                                    background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                                                    background: user?.avatar ? 'transparent' : 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
                                                     color: '#fff',
                                                 }}
                                             >
-                                                {getDisplayInitial(
-                                                    user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''),
-                                                    'U'
+                                                {user?.avatar ? (
+                                                    <img src={user.avatar} alt={user?.name || 'User'} className="w-full h-full" style={{ objectFit: 'cover' }} />
+                                                ) : (
+                                                    getDisplayInitial(
+                                                        user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''),
+                                                        'U'
+                                                    )
                                                 )}
                                             </div>
                                             <div

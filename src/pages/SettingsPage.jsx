@@ -235,18 +235,22 @@ const SettingsPage = () => {
                                         {t('settings.profile_info')}
                                     </h2>
 
-                                    {/* Avatar — doim bitta harf (initial); rasm yuklash tugmasi alohida */}
+                                    {/* Avatar — yuklangan rasm bor bo'lsa rasm, yo'q bo'lsa ismning birinchi harfi */}
                                     <div className="flex items-center gap-4" style={{ marginBottom: '24px' }}>
                                         <div className="relative">
                                             <div style={{
                                                 width: '64px', height: '64px',
-                                                background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                                background: user?.avatar ? 'transparent' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
                                                 borderRadius: 'var(--radius-xl)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 fontSize: '24px', fontWeight: 'var(--font-weight-bold)', color: '#fff',
                                                 overflow: 'hidden',
                                             }}>
-                                                {getDisplayInitial(user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')}
+                                                {user?.avatar ? (
+                                                    <img src={user.avatar} alt={user?.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    getDisplayInitial(user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')
+                                                )}
                                             </div>
                                             <label style={{
                                                 position: 'absolute', bottom: '-4px', right: '-4px',

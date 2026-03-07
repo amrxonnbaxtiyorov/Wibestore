@@ -139,13 +139,13 @@ const ProfilePage = () => {
                     }}
                 >
                     <div className="flex flex-col md:flex-row items-center gap-5">
-                        {/* Avatar — doim bitta harf (initial); profil rasmi doira ichida ko'rsatilmaydi */}
+                        {/* Avatar — yuklangan rasm bor bo'lsa rasm, yo'q bo'lsa ismning birinchi harfi */}
                         <div className="relative">
                             <div
                                 className="avatar"
                                 style={{
                                     width: '80px', height: '80px',
-                                    background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                    background: user.avatar ? 'transparent' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
                                     fontSize: '32px', fontWeight: 'var(--font-weight-bold)',
                                     color: '#ffffff',
                                     borderRadius: 'var(--radius-full)',
@@ -153,7 +153,11 @@ const ProfilePage = () => {
                                     overflow: 'hidden',
                                 }}
                             >
-                                {getDisplayInitial(user.name ?? user.display_name ?? user.full_name ?? (user.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')}
+                                {user.avatar ? (
+                                    <img src={user.avatar} alt={user.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    getDisplayInitial(user.name ?? user.display_name ?? user.full_name ?? (user.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')
+                                )}
                             </div>
                             <button
                                 onClick={() => setShowAvatarModal(true)}
