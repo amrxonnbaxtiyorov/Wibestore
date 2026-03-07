@@ -162,6 +162,11 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${tokens.access}`;
     }
 
+    // FormData (masalan avatar yuklash) uchun Content-Type o'chiriladi — brauzer multipart/form-data + boundary qo'yadi
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     return config;
   },
   (error) => {

@@ -60,7 +60,12 @@ const SettingsPage = () => {
             await updateProfile(form);
             setMessage({ type: 'success', text: t('settings.profile_updated') || 'Profil yangilandi' });
         } catch (err) {
-            setMessage({ type: 'error', text: err?.message || t('settings.generic_error') });
+            const data = err?.response?.data;
+            let text = err?.message || t('settings.generic_error');
+            if (data && (typeof data === 'string')) text = data;
+            else if (data?.detail) text = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+            else if (data?.avatar) text = Array.isArray(data.avatar) ? data.avatar[0] : data.avatar;
+            setMessage({ type: 'error', text });
         } finally {
             setAvatarUploading(false);
             e.target.value = '';
@@ -230,22 +235,18 @@ const SettingsPage = () => {
                                         {t('settings.profile_info')}
                                     </h2>
 
-                                    {/* Avatar — rasm bor bo'lsa rasm, yo'q bo'lsa ismning birinchi harfi */}
+                                    {/* Avatar — doim bitta harf (initial); rasm yuklash tugmasi alohida */}
                                     <div className="flex items-center gap-4" style={{ marginBottom: '24px' }}>
                                         <div className="relative">
                                             <div style={{
                                                 width: '64px', height: '64px',
-                                                background: user?.avatar ? 'transparent' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                                background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
                                                 borderRadius: 'var(--radius-xl)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 fontSize: '24px', fontWeight: 'var(--font-weight-bold)', color: '#fff',
                                                 overflow: 'hidden',
                                             }}>
-                                                {user?.avatar ? (
-                                                    <img src={user.avatar} alt={user?.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                ) : (
-                                                    getDisplayInitial(user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')
-                                                )}
+                                                {getDisplayInitial(user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')}
                                             </div>
                                             <label style={{
                                                 position: 'absolute', bottom: '-4px', right: '-4px',
