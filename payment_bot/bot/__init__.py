@@ -1,1 +1,0 @@
-# Payment Bot package
