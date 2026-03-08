@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
+import { useUploadImage, useUpdateProfile } from '../hooks';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from './ToastProvider';
 
-export default function AvatarEditModal({ onClose, onSave }) {
+export default function AvatarEditModal({ onClose }) {
     const [preview, setPreview] = useState(null);
-    const [cropped, setCropped] = useState(null);
+    const [file, setFile] = useState(null);
+    const { addToast } = useToast();
+    const { refreshUser } = useAuth();
+    const { mutate: uploadImage, isPending: isUploading } = useUploadImage();
+    const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
+
+    const isPending = isUploading || isUpdating;
 
     useEffect(() => {
         const handleEscape = (e) => { if (e.key === 'Escape') onClose(); };
@@ -11,17 +20,76 @@ export default function AvatarEditModal({ onClose, onSave }) {
     }, [onClose]);
 
     const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            setFile(selectedFile);
             const reader = new FileReader();
-            reader.onload = (ev) => { setPreview(ev.target.result); setCropped(ev.target.result); };
-            reader.readAsDataURL(file);
+            reader.onload = (ev) => setPreview(ev.target.result);
+            reader.readAsDataURL(selectedFile);
         }
     };
 
     const handleSave = () => {
-        if (cropped && onSave) onSave(cropped);
-        onClose();
+        if (!file) return;
+
+        uploadImage(file, {
+            onSuccess: (data) => {
+                let imageUrl = data?.url || data?.image?.url;
+                if (!imageUrl) {
+                    addToast({
+                        type: 'error',
+                        title: 'Xatolik',
+                        message: "Rasm yuklandi, lekin URL olinmadi. Profil yangilanmadi.",
+                    });
+                    return;
+                }
+                if (typeof imageUrl === 'string' && imageUrl.startsWith('/') && !imageUrl.startsWith('//')) {
+                    imageUrl = window.location.origin + imageUrl;
+                }
+                updateProfile(
+                    { avatar_url: imageUrl },
+                    {
+                        onSuccess: async () => {
+                            try {
+                                await refreshUser();
+                            } catch (_) {
+                                // Profile updated; refresh may use different endpoint
+                            }
+                            addToast({
+                                type: 'success',
+                                title: 'Muvaffaqiyatli',
+                                message: "Rasm muvaffaqiyatli o'zgartirildi",
+                            });
+                            onClose();
+                        },
+                        onError: (error) => {
+                            const msg = error?.response?.data?.error?.message
+                                || error?.response?.data?.detail
+                                || (typeof error?.response?.data?.error === 'string' ? error.response.data.error : null)
+                                || error?.message
+                                || "Profil yangilanmadi.";
+                            addToast({
+                                type: 'error',
+                                title: 'Xatolik',
+                                message: msg,
+                            });
+                        },
+                    }
+                );
+            },
+            onError: (error) => {
+                const msg = error?.response?.data?.error?.message
+                    || error?.response?.data?.detail
+                    || (typeof error?.response?.data?.error === 'string' ? error.response.data.error : null)
+                    || error?.message
+                    || "Rasm yuklanmadi. Qayta urinib ko'ring.";
+                addToast({
+                    type: 'error',
+                    title: 'Xatolik',
+                    message: msg,
+                });
+            },
+        });
     };
 
     return (
@@ -38,8 +106,17 @@ export default function AvatarEditModal({ onClose, onSave }) {
                         </div>
                     )}
                     <div className="flex items-center justify-end gap-2" style={{ marginTop: '16px' }}>
-                        <button type="button" className="btn btn-secondary btn-md" onClick={onClose}>Bekor qilish</button>
-                        <button type="button" className="btn btn-primary btn-md" onClick={handleSave} disabled={!cropped}>Tasdiqlash</button>
+                        <button type="button" className="btn btn-secondary btn-md" onClick={onClose} disabled={isPending}>
+                            Bekor qilish
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-primary btn-md"
+                            onClick={handleSave}
+                            disabled={!file || isPending}
+                        >
+                            {isPending ? "Yuklanmoqda..." : "Tasdiqlash"}
+                        </button>
                     </div>
                 </div>
             </div>

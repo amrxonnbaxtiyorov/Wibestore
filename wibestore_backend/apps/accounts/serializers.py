@@ -151,6 +151,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
             "full_name",
             "phone_number",
             "avatar",
+            "avatar_url",
             "language",
             "timezone",
         ]

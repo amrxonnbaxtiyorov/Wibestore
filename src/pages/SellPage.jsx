@@ -39,19 +39,21 @@ const SellPage = () => {
     // API hooks
     const { mutate: createListing, isPending: _isCreating } = useCreateListing();
     const { mutate: _uploadImage, isPending: _isUploading } = useUploadImage();
-    const { data: gamesData } = useGames();
+    const { data: gamesData, isLoading: gamesLoading, isError: gamesError } = useGames();
 
+    const apiGamesList = Array.isArray(gamesData?.results) ? gamesData.results : (Array.isArray(gamesData) ? gamesData : []);
+    const hasApiGames = apiGamesList.length > 0;
     const mockGames = getGamesList();
-    const allGamesSorted = getTopGamesForSell(gamesData?.results ?? gamesData, mockGames);
-    const topGamesForSell = allGamesSorted.slice(0, 8);
-    const allGames = Array.isArray(gamesData?.results ?? gamesData) && (gamesData?.results ?? gamesData).length > 0
-        ? (gamesData.results ?? gamesData).map((g) => ({
+    const allGamesSorted = getTopGamesForSell(apiGamesList, []);
+    const topGamesForSell = hasApiGames ? allGamesSorted.slice(0, 8) : [];
+    const allGames = hasApiGames
+        ? apiGamesList.map((g) => ({
             id: g.id,
             slug: g.slug,
             name: g.name,
             image: g.image || (g.banner ? (typeof g.banner === 'string' ? g.banner : g.banner?.url) : null) || '/img/icons/placeholder.png',
           }))
-        : mockGames;
+        : [];
 
     const filteredModalGames = modalGameSearch
         ? allGames.filter(g => g.name.toLowerCase().includes(modalGameSearch.toLowerCase()))
@@ -87,6 +89,9 @@ const SellPage = () => {
             </div>
         );
     }
+
+    const gamesReady = !gamesLoading && hasApiGames;
+    const gamesFailed = !gamesLoading && !hasApiGames && (gamesError || gamesData !== undefined);
 
     const featureOptions = [
         { value: 'Original email', labelKey: 'sell.feature_original_email' },
@@ -363,8 +368,30 @@ title: t('common.error') || 'Xatolik',
                         ))}
                     </div>
 
-                    {/* Form Card */}
-                    <div style={cardStyle}>
+                    {/* Games loading / error — form shown only when games loaded from API */}
+                    {gamesLoading && (
+                        <div style={{ ...cardStyle, textAlign: 'center', padding: '48px 24px' }}>
+                            <p style={{ color: 'var(--color-text-muted)', marginBottom: '12px' }}>O'yinlar yuklanmoqda...</p>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                {[1, 2, 3, 4, 5, 6].map((i) => (
+                                    <div key={i} style={{ width: '64px', height: '64px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-tertiary)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {gamesFailed && (
+                        <div style={{ ...cardStyle, textAlign: 'center', padding: '48px 24px' }}>
+                            <AlertCircle style={{ width: '48px', height: '48px', color: 'var(--color-accent-orange)', margin: '0 auto 16px' }} />
+                            <p style={{ color: 'var(--color-text-primary)', marginBottom: '8px' }}>{t('sell.game_not_loaded') || "O'yinlar ro'yxati yuklanmadi."}</p>
+                            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginBottom: '16px' }}>Sahifani yangilang yoki keyinroq qayta urinib ko'ring.</p>
+                            <button type="button" className="btn btn-primary btn-md" onClick={() => window.location.reload()}>
+                                Sahifani yangilash
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Form Card — only when games loaded from API */}
+                    {gamesReady && <div style={cardStyle}>
                         {/* Step 1: Basic Info */}
                         {step === 1 && (
                             <div>
@@ -671,6 +698,7 @@ title: t('common.error') || 'Xatolik',
                             )}
                         </div>
                     </div>
+                    }
 
                     {/* Info */}
                     <div className="flex items-start gap-3" style={{
