@@ -192,7 +192,7 @@ const FAQPage = () => {
                         </p>
                         <div className="flex flex-wrap justify-center gap-3">
                             <a
-                                href="https://t.me/wibestoreuz"
+                                href="https://t.me/wibe_store"
                                 className="btn btn-lg"
                                 style={{
                                     backgroundColor: '#ffffff',
