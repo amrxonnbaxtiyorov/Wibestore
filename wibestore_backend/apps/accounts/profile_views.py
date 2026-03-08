@@ -4,7 +4,7 @@ WibeStore Backend - Profile Views
 
 from django.contrib.auth import get_user_model
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, permissions, status
+from rest_framework import generics, parsers, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -21,9 +21,10 @@ User = get_user_model()
 
 @extend_schema(tags=["Profile"])
 class ProfileView(generics.RetrieveUpdateAPIView):
-    """GET/PATCH /api/v1/profile/ — User profile."""
+    """GET/PATCH /api/v1/profile/ — User profile. Accepts JSON and multipart/form-data for PATCH."""
 
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [parsers.JSONParser, parsers.MultiPartParser, parsers.FormParser]
 
     def get_serializer_class(self):
         if self.request.method == "PATCH":

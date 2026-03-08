@@ -5,12 +5,11 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import { useCreateListing, useUploadImage, useGames } from '../hooks';
-import getGamesList from '../data/gamesList';
 import { CS2_WEAPON_TYPES, isCs2Game } from '../data/cs2WeaponTypes';
 import SellerRulesQuiz from '../components/SellerRulesQuiz';
 
-// Backend listing yaratish uchun game_id UUID bo'lishi kerak; API dan kelganda g.id ishlatamiz
-function getTopGamesForSell(apiGames, mockGames) {
+// Backend listing yaratish uchun game_id UUID bo'lishi kerak; faqat API dan yuklangan o'yinlar ishlatiladi
+function getTopGamesForSell(apiGames) {
     const list = Array.isArray(apiGames) && apiGames.length > 0
         ? apiGames.map((g) => ({
             id: g.id,
@@ -19,7 +18,7 @@ function getTopGamesForSell(apiGames, mockGames) {
             image: g.image || (g.banner ? (typeof g.banner === 'string' ? g.banner : g.banner?.url) : null) || '/img/icons/placeholder.png',
             accountCount: g.active_listings_count ?? g.listings_count ?? 0,
         }))
-        : mockGames;
+        : [];
     const sorted = [...list].sort((a, b) => (b.accountCount ?? 0) - (a.accountCount ?? 0));
     return sorted;
 }
@@ -43,8 +42,7 @@ const SellPage = () => {
 
     const apiGamesList = Array.isArray(gamesData?.results) ? gamesData.results : (Array.isArray(gamesData) ? gamesData : []);
     const hasApiGames = apiGamesList.length > 0;
-    const mockGames = getGamesList();
-    const allGamesSorted = getTopGamesForSell(apiGamesList, []);
+    const allGamesSorted = getTopGamesForSell(apiGamesList);
     const topGamesForSell = hasApiGames ? allGamesSorted.slice(0, 8) : [];
     const allGames = hasApiGames
         ? apiGamesList.map((g) => ({
