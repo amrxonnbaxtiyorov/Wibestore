@@ -71,7 +71,7 @@ export const useWebSocket = (url, options = {}) => {
                 retryCountRef.current = 0;
                 setRetryCount(0);
                 if (onOpenRef.current) onOpenRef.current(event);
-                console.log('[WebSocket] Connected:', url);
+                if (import.meta.env.DEV) console.log('[WebSocket] Connected:', url);
             };
 
             wsRef.current.onmessage = (event) => {
@@ -90,12 +90,12 @@ export const useWebSocket = (url, options = {}) => {
                 setReadyState(WebSocket.CLOSED);
                 setIsConnected(false);
                 if (onCloseRef.current) onCloseRef.current(event);
-                console.log('[WebSocket] Disconnected:', url);
+                if (import.meta.env.DEV) console.log('[WebSocket] Disconnected:', url);
 
                 // Attempt to reconnect
                 if (retryCountRef.current < maxReconnectAttempts && mountedRef.current) {
                     const currentRetry = retryCountRef.current;
-                    console.log(`[WebSocket] Reconnecting in ${reconnectInterval}ms... (attempt ${currentRetry + 1}/${maxReconnectAttempts})`);
+                    if (import.meta.env.DEV) console.log(`[WebSocket] Reconnecting in ${reconnectInterval}ms... (attempt ${currentRetry + 1}/${maxReconnectAttempts})`);
                     reconnectTimeoutRef.current = setTimeout(() => {
                         if (mountedRef.current && connectRef.current) {
                             const nextRetry = currentRetry + 1;
@@ -105,7 +105,7 @@ export const useWebSocket = (url, options = {}) => {
                         }
                     }, reconnectInterval);
                 } else {
-                    console.error('[WebSocket] Max reconnect attempts reached');
+                    if (import.meta.env.DEV) console.error('[WebSocket] Max reconnect attempts reached');
                 }
             };
 
@@ -113,7 +113,7 @@ export const useWebSocket = (url, options = {}) => {
                 if (!mountedRef.current) return;
                 setError(event);
                 if (onErrorRef.current) onErrorRef.current(event);
-                console.error('[WebSocket] Error:', url);
+                if (import.meta.env.DEV) console.error('[WebSocket] Error:', url);
             };
         } catch (err) {
             setError(err);
@@ -151,7 +151,7 @@ export const useWebSocket = (url, options = {}) => {
             wsRef.current.send(message);
             return true;
         }
-        console.warn('[WebSocket] Cannot send message - not connected');
+        if (import.meta.env.DEV) console.warn('[WebSocket] Cannot send message - not connected');
         return false;
     }, []);
 

@@ -32,8 +32,8 @@ class RegisterWithOTPView(APIView):
     {
         "username": "john",
         "email": "john@example.com",
-        "password": "strongpass123",
-        "password2": "strongpass123",
+        "password": "<parol>",
+        "password2": "<parol>",
         "otp_code": "123456"
     }
     """
@@ -88,7 +88,7 @@ class LoginView(APIView):
     """
     Login
     POST /api/auth/login/
-    {"username": "john", "password": "strongpass123"}
+    {"username": "john", "password": "<parol>"}
     """
     permission_classes = [AllowAny]
 
