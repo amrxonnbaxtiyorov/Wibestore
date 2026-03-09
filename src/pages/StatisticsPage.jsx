@@ -65,8 +65,12 @@ const StatisticsPage = () => {
                     {stats.map((stat, idx) => (
                         <div
                             key={idx}
-                            className="text-center"
                             style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textAlign: 'center',
                                 padding: '20px 16px',
                                 borderRadius: 'var(--radius-lg)',
                                 backgroundColor: 'var(--color-bg-secondary)',
@@ -74,7 +78,7 @@ const StatisticsPage = () => {
                             }}
                         >
                             <div
-                                className="flex items-center justify-center mx-auto"
+                                className="flex items-center justify-center"
                                 style={{
                                     width: '40px', height: '40px',
                                     borderRadius: 'var(--radius-lg)',
