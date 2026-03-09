@@ -37,6 +37,7 @@ const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
 const CoinsPage = lazy(() => import('./pages/CoinsPage'));
 const SellerProfilePage = lazy(() => import('./pages/SellerProfilePage'));
 const ChatRoomPage = lazy(() => import('./pages/ChatRoomPage'));
+const ChatPage = lazy(() => import('./pages/ChatPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Admin pages
@@ -287,6 +288,11 @@ function App() {
                         <Route path="/seller/:userId" element={
                           <Suspense fallback={<PageLoader />}>
                             <PublicLayout><SellerProfilePage /></PublicLayout>
+                          </Suspense>
+                        } />
+                        <Route path="/chat" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <PublicLayout><AuthGuard><ChatPage /></AuthGuard></PublicLayout>
                           </Suspense>
                         } />
                         <Route path="/chat/:roomId" element={

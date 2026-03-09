@@ -127,14 +127,14 @@ const Navbar = () => {
                         {/* ─── Logo ─── */}
                         <Link
                             to="/"
-                            className="flex items-center flex-shrink-0 mr-4 transition-opacity duration-200 hover:opacity-80"
+                            className="flex items-center shrink-0 mr-4 transition-opacity duration-200 hover:opacity-80"
                             style={{ textDecoration: 'none' }}
                         >
                             <Logo height={56} />
                         </Link>
 
                         {/* ─── Nav Links (desktop) ─── */}
-                        <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
+                        <div className="hidden lg:flex items-center gap-3 shrink-0">
                             {navLinks.map((link) => {
                                 const active = isActive(link.to);
                                 return (
@@ -143,6 +143,7 @@ const Navbar = () => {
                                         to={link.to}
                                         className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors duration-150 whitespace-nowrap"
                                         style={{
+                                            padding: '10px',
                                             textDecoration: 'none',
                                             color: active
                                                 ? (isDark ? '#f0f6fc' : '#1f2328')
@@ -244,12 +245,12 @@ const Navbar = () => {
 
                         {/* ─── Divider ─── */}
                         <div
-                            className="hidden md:block w-px h-5 mx-1 flex-shrink-0"
+                            className="hidden md:block w-px h-5 mx-1 shrink-0"
                             style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}
                         />
 
                         {/* ─── Right Actions ─── */}
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex items-center gap-1 shrink-0">
 
                             {/* Language Switcher */}
                             <div className="relative" ref={langRef}>
@@ -269,7 +270,7 @@ const Navbar = () => {
                                         e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
                                     }}
                                 >
-                                    <span className="flex-shrink-0 flex items-center justify-center" style={{ width: '20px', height: '14px' }}>
+                                    <span className="shrink-0 flex items-center justify-center" style={{ width: '20px', height: '14px' }}>
                                         <img
                                             src={currentLang.flagUrl}
                                             alt=""
@@ -326,7 +327,7 @@ const Navbar = () => {
                                                         if (!selected) e.currentTarget.style.backgroundColor = 'transparent';
                                                     }}
                                                 >
-                                                    <span className="flex-shrink-0 flex items-center justify-center" style={{ width: '24px', height: '17px' }}>
+                                                    <span className="shrink-0 flex items-center justify-center" style={{ width: '24px', height: '17px' }}>
                                                         <img
                                                             src={lang.flagUrl}
                                                             alt=""
@@ -370,7 +371,7 @@ const Navbar = () => {
                             {/* Theme Toggle */}
                             <button
                                 onClick={toggleTheme}
-                                className="flex items-center justify-center w-8 h-8 rounded-md transition-colors duration-150 flex-shrink-0"
+                                className="flex items-center justify-center w-8 h-8 rounded-md transition-colors duration-150 shrink-0"
                                 aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
                                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
@@ -387,7 +388,7 @@ const Navbar = () => {
 
                             {/* Divider before auth */}
                             <div
-                                className="hidden sm:block w-px h-5 mx-1 flex-shrink-0"
+                                className="hidden sm:block w-px h-5 mx-1 shrink-0"
                                 style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}
                             />
 
@@ -412,7 +413,7 @@ const Navbar = () => {
                                             }
                                         }}
                                     >
-                                        <div className="relative flex-shrink-0">
+                                        <div className="relative shrink-0">
                                             <div
                                                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden"
                                                 style={{
@@ -558,7 +559,7 @@ const Navbar = () => {
                             <button
                                 type="button"
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="lg:hidden flex items-center justify-center w-8 h-8 rounded-md ml-1 transition-colors duration-150 flex-shrink-0"
+                                className="lg:hidden flex items-center justify-center w-8 h-8 rounded-md ml-1 transition-colors duration-150 shrink-0"
                                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'; }}
                                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                             >
@@ -629,7 +630,7 @@ const Navbar = () => {
                                                 : 'transparent',
                                         }}
                                     >
-                                        <link.icon className="w-4 h-4 flex-shrink-0" />
+                                        <link.icon className="w-4 h-4 shrink-0" />
                                         <span className="flex-1">{link.label}</span>
                                         {link.badge && (
                                             <span
@@ -657,7 +658,7 @@ const Navbar = () => {
                                         backgroundColor: isDark ? 'rgba(248,81,73,0.1)' : 'rgba(207,34,46,0.06)',
                                     }}
                                 >
-                                    <Settings className="w-4 h-4 flex-shrink-0" />
+                                    <Settings className="w-4 h-4 shrink-0" />
                                     <span>Admin Panel</span>
                                 </Link>
                             )}

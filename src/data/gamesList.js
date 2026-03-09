@@ -20,15 +20,15 @@ function slug(name) {
 
 /** Original/official o'yin rasmlari */
 const OVERRIDES = {
-  'pubg-mobile': { icon: '⚔️', image: '/img/Pubg/pubg_logo.webp', accountCount: 547, color: '#F7B32B' },
-  'pubg': { icon: '⚔️', image: '/img/icons/Pubg-icon.webp', accountCount: 547, color: '#F7B32B' },
+  'pubg-mobile': { icon: '⚔️', image: '/public/img/Pubg/pubg_logo.webp', accountCount: 547, color: '#F7B32B' },
+  'pubg': { icon: '⚔️', image: '/public/img/icons/pubg_logo.webp', accountCount: 547, color: '#F7B32B' },
   'steam': {
     icon: '🎮',
-    image: '/img/Steam/steam_logo.webp',
+    image: 'public/img/Steam/steam_logo.webp',
     accountCount: 1203,
     color: '#1B2838',
   },
-  'free-fire': { icon: '🔫', image: '/img/FireFree/game_logo.jpg', accountCount: 389, color: '#FF5722' },
+  'free-fire': { icon: '🔫', image: '/public/img/FireFree/game_logo.jpg', accountCount: 389, color: '#FF5722' },
   'standoff-2': { icon: '🔫', image: '/img/icons/st.webp', accountCount: 256, color: '#E91E63' },
   'standoff2': { icon: '🔫', image: '/img/Stendoff/stend_logo.jpeg', accountCount: 256, color: '#E91E63' },
   'mobile-legends': { icon: '⚔️', image: '/img/Mobile/mobile-legends.jpg', accountCount: 478, color: '#00BCD4' },
