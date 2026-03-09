@@ -95,8 +95,8 @@ const TopAccountsPage = () => {
                 {/* Stats */}
                 <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 'var(--space-4)', marginBottom: 'var(--space-10)' }}>
                     {statCards.map((card, idx) => (
-                        <div key={idx} className="stat-card text-center">
-                            <card.icon className="w-7 h-7 mx-auto" style={{ color: card.color, marginBottom: 'var(--space-3)' }} />
+                        <div key={idx} className="stat-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                            <card.icon className="w-7 h-7" style={{ color: card.color, marginBottom: 'var(--space-3)' }} />
                             <div className="stat-card-value">{card.value}</div>
                             <div className="stat-card-label">{card.label}</div>
                         </div>
