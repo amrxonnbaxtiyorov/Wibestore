@@ -4,6 +4,7 @@
         "top": "Топ аккаунты",
         "statistics": "Статистика",
         "premium": "Премиум",
+        "chat": "Сообщения",
         "login": "Войти",
         "signup": "Регистрация",
         "sell": "Продать",
@@ -12,6 +13,9 @@
         "logout": "Выйти",
         "search": "Поиск аккаунтов...",
         "compare": "Сравнение"
+    },
+    "chat": {
+        "conversations": "диалогов"
     },
     "onboarding": {
         "welcome_title": "Добро пожаловать в WibeStore",

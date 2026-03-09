@@ -4,6 +4,7 @@
         "top": "Top akkauntlar",
         "statistics": "Statistika",
         "premium": "Site Premium",
+        "chat": "Xabarlar",
         "login": "Kirish",
         "signup": "Ro'yxatdan o'tish",
         "sell": "Sotish",
@@ -12,6 +13,9 @@
         "logout": "Chiqish",
         "search": "Akkauntlarni qidirish...",
         "compare": "Solishtirish"
+    },
+    "chat": {
+        "conversations": "suhbat"
     },
     "onboarding": {
         "welcome_title": "WibeStore ga xush kelibsiz",

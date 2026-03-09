@@ -4,6 +4,7 @@
         "top": "Top Accounts",
         "statistics": "Statistics",
         "premium": "Site Premium",
+        "chat": "Messages",
         "login": "Login",
         "signup": "Sign Up",
         "sell": "Sell",
@@ -12,6 +13,9 @@
         "logout": "Logout",
         "search": "Search accounts...",
         "compare": "Compare"
+    },
+    "chat": {
+        "conversations": "conversations"
     },
     "onboarding": {
         "welcome_title": "Welcome to WibeStore",
