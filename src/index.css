@@ -187,6 +187,15 @@
   --transition-base: 0.2s ease;
   --transition-slow: 0.3s ease;
   --transition-modal: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Responsive breakpoints (for reference; use in @media) */
+  --bp-xs: 360px;
+  --bp-sm: 480px;
+  --bp-md: 640px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+  --bp-2xl: 1536px;
+  --bp-nav-mobile: 1024px;
 }
 
 /* ---- TailwindCSS Custom Theme ---- */
@@ -230,6 +239,7 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -1913,49 +1923,198 @@ p {
 }
 
 /* ============================================
-   RESPONSIVE
+   RESPONSIVE — MOBILE-FIRST BREAKPOINTS
+   xs: <480px  sm: 480–639  md: 640–1023  lg: 1024–1279  xl: 1280+
    ============================================ */
 
-/* Mobile fixes */
-@media (max-width: 639px) {
-  h1 {
-    font-size: var(--font-size-2xl) !important;
-  }
-
-  h2 {
-    font-size: var(--font-size-xl) !important;
-  }
-
-  .text-display {
-    font-size: var(--font-size-3xl) !important;
-  }
-
-  .modal-container {
-    max-width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
-    height: 100%;
-  }
+/* Flex child overflow fix (all viewports) */
+.flex>* {
+  min-width: 0;
 }
 
+/* —— Extra small (phones, portrait) —— */
 @media (max-width: 479px) {
   .gh-container {
     padding-left: var(--space-3);
     padding-right: var(--space-3);
   }
+
+  h1 {
+    font-size: var(--font-size-xl);
+    line-height: var(--line-height-xl);
+  }
+
+  h2 {
+    font-size: var(--font-size-lg);
+    line-height: var(--line-height-lg);
+  }
+
+  h3 {
+    font-size: var(--font-size-base);
+  }
+
+  .text-display {
+    font-size: var(--font-size-2xl);
+    line-height: var(--line-height-2xl);
+  }
+
+  .page-header {
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  .modal-overlay {
+    padding: var(--space-2);
+    align-items: flex-end;
+  }
+
+  .modal-container {
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: var(--space-4);
+  }
+
+  .toast-container {
+    left: var(--space-3);
+    right: var(--space-3);
+    top: var(--space-4);
+    max-width: none;
+  }
+
+  .empty-state {
+    padding: var(--space-10) var(--space-4);
+  }
+
+  .empty-state-icon {
+    width: 48px;
+    height: 48px;
+  }
 }
 
-/* Safe area for mobile */
+/* —— Small (phones landscape, large phones) —— */
+@media (max-width: 639px) {
+  h1 {
+    font-size: var(--font-size-2xl);
+    line-height: var(--line-height-2xl);
+  }
+
+  h2 {
+    font-size: var(--font-size-xl);
+    line-height: var(--line-height-xl);
+  }
+
+  .text-display {
+    font-size: var(--font-size-3xl);
+    line-height: var(--line-height-3xl);
+  }
+
+  .modal-container {
+    max-width: 100%;
+    max-height: 90vh;
+  }
+
+  .modal-sm {
+    max-width: 100%;
+  }
+
+  .modal-md,
+  .modal-lg {
+    max-width: calc(100vw - var(--space-8));
+  }
+
+  .card-header,
+  .card-content,
+  .card-footer {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .stat-card {
+    padding: var(--space-4);
+  }
+
+  .stat-card-value {
+    font-size: var(--font-size-xl);
+  }
+
+  .search-modal-overlay {
+    padding: 10vh var(--space-3) var(--space-4);
+  }
+
+  .search-modal-container {
+    max-width: 100%;
+  }
+
+  .auth-layout {
+    padding: var(--space-6) var(--space-4);
+    min-height: calc(100vh - 64px);
+  }
+
+  .auth-form-card {
+    padding: var(--space-4);
+  }
+}
+
+/* —— Medium (tablets) —— */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .gh-container {
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+
+  .modal-container {
+    max-width: min(90vw, 520px);
+  }
+}
+
+/* —— Large (desktop) —— */
+@media (min-width: 1024px) {
+  .gh-container {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
+/* —— Touch devices: minimum tap targets —— */
+@media (pointer: coarse) {
+  .btn-sm {
+    min-height: 36px;
+    min-width: 36px;
+  }
+
+  .btn-md {
+    min-height: 40px;
+  }
+
+  .dropdown-item {
+    min-height: 44px;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .tab {
+    min-height: 44px;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .pagination-btn {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* Safe area for notched devices (iPhone X+, etc.) */
 @supports (padding: max(0px)) {
   body {
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
   }
-}
-
-/* Flex child overflow fix */
-.flex>* {
-  min-width: 0;
 }
 
 /* Premium accent line */
@@ -2225,6 +2384,10 @@ p {
     font-size: var(--font-size-xs);
   }
 
+  .step-indicator {
+    margin-bottom: var(--space-6);
+  }
+
   .pricing-card {
     padding: var(--space-6) var(--space-4);
   }
@@ -2241,11 +2404,31 @@ p {
 
   .gh-table {
     font-size: var(--font-size-sm);
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .gh-table th,
   .gh-table td {
     padding: var(--space-2) var(--space-3);
+  }
+
+  .grid-auto-fill-280 {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .grid-auto-fill-240 {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+}
+
+@media (max-width: 479px) {
+  .grid-auto-fill-280,
+  .grid-auto-fill-240 {
+    gap: var(--space-2);
   }
 }
 
@@ -2350,21 +2533,6 @@ p {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--space-4);
-}
-
-/* Minimum touch target for mobile */
-@media (pointer: coarse) {
-  .btn-sm {
-    min-height: 36px;
-  }
-
-  .dropdown-item {
-    min-height: 40px;
-  }
-
-  .tab {
-    min-height: 40px;
-  }
 }
 
 /* Selection color */
