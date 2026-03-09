@@ -6,6 +6,7 @@ import GameCard from '../components/GameCard';
 import AccountCard from '../components/AccountCard';
 import { SkeletonGrid, SkeletonCard } from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
+import { resolveGameImageUrl } from '../lib/displayUtils';
 
 // Animated counter hook
 function useCounter(target, duration = 2000) {
@@ -48,17 +49,13 @@ const HomePage = () => {
     const { data: gamesData, isLoading: gamesLoading } = useGames();
     const { data: listingsData, isLoading: listingsLoading } = useListings({ limit: 8 });
 
-    // Use API data — ensure array, no undefined items
+    // Use API data — mashhur o'yinlar Django admin'dan (to'liq image URL backenddan keladi)
     const rawGames = gamesData?.results ?? gamesData ?? [];
     const allGames = Array.isArray(rawGames) ? rawGames.filter(Boolean) : [];
-    // Bosh sahifada doim avvalgi 8 ta mashhur o'yin (PUBG, Steam, Free Fire va hokazo) — API tartibiga qaramay
-    const popularGamesFixed = [
-        { id: 'pubg-mobile', name: 'PUBG Mobile', image: './public/img/Pubg/pg.jpg' },
-        {
-            id: 'steam',
-            name: 'Steam',
-            image: 'https://store.cloudflare.steamstatic.com/public/shared/images/header/logo_steam.svg',
-        },
+    // API dan birinchi 8 ta o'yin (Django admin tartibi va rasmlar); API bo'sh bo'lsa zaxira ro'yxat
+    const popularGamesFallback = [
+        { id: 'pubg-mobile', name: 'PUBG Mobile', image: '/img/Pubg/pg.jpg' },
+        { id: 'steam', name: 'Steam', image: 'https://store.cloudflare.steamstatic.com/public/shared/images/header/logo_steam.svg' },
         { id: 'free-fire', name: 'Free Fire', image: '/img/FireFree/game_logo.jpg' },
         { id: 'standoff2', name: 'Standoff 2', image: '/img/icons/st.webp' },
         { id: 'mobile-legends', name: 'Mobile Legends', image: '/img/icons/ml.webp' },
@@ -66,12 +63,15 @@ const HomePage = () => {
         { id: 'codm', name: 'Call of Duty Mobile', image: '/img/icons/cal.webp' },
         { id: 'roblox', name: 'Roblox', image: '/img/icons/roblox.webp' },
     ];
-    const games = popularGamesFixed.map((fixed) => {
-        const fromApi = allGames.find((g) => (g?.slug || g?.id) === fixed.id);
-        return fromApi
-            ? { ...fixed, ...fromApi, id: fixed.id, name: fromApi.name || fixed.name, image: fromApi.image || fromApi.banner || fixed.image }
-            : fixed;
-    });
+    const games = allGames.length > 0
+        ? allGames.slice(0, 8).map((g) => ({
+            id: g.id,
+            slug: g.slug,
+            name: g.name,
+            image: resolveGameImageUrl(g.image || g.banner) || null,
+            active_listings_count: g.active_listings_count,
+        }))
+        : popularGamesFallback;
 
     const rawListings = listingsData?.pages?.flatMap?.(page => page?.results ?? []) ?? listingsData?.results ?? listingsData ?? [];
     const allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
@@ -292,8 +292,8 @@ const HomePage = () => {
                                         name: game.name,
                                         slug: game.slug || game.id,
                                         icon: game.icon,
-                                        image: game.image || game.banner,
-                                        listingsCount: game.listings_count ?? game.listingsCount ?? game.accountCount ?? 0,
+                                        image: game.image,
+                                        listingsCount: game.active_listings_count ?? game.listings_count ?? game.listingsCount ?? game.accountCount ?? 0,
                                     }}
                                 />
                             ))

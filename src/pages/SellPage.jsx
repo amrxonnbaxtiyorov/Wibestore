@@ -5,17 +5,18 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import { useCreateListing, useUploadImage, useGames } from '../hooks';
+import { resolveGameImageUrl } from '../lib/displayUtils';
 import { CS2_WEAPON_TYPES, isCs2Game } from '../data/cs2WeaponTypes';
 import SellerRulesQuiz from '../components/SellerRulesQuiz';
 
-// Backend listing yaratish uchun game_id UUID bo'lishi kerak; faqat API dan yuklangan o'yinlar ishlatiladi
+// Backend listing yaratish uchun game_id UUID kerak; o'yin rasmi to'liq URL (backend) yoki resolveGameImageUrl orqali
 function getTopGamesForSell(apiGames) {
     const list = Array.isArray(apiGames) && apiGames.length > 0
         ? apiGames.map((g) => ({
             id: g.id,
             slug: g.slug,
             name: g.name,
-            image: g.image || (g.banner ? (typeof g.banner === 'string' ? g.banner : g.banner?.url) : null) || '/img/icons/placeholder.png',
+            image: resolveGameImageUrl(g.image || g.banner) || '/img/icons/placeholder.png',
             accountCount: g.active_listings_count ?? g.listings_count ?? 0,
         }))
         : [];
@@ -49,7 +50,7 @@ const SellPage = () => {
             id: g.id,
             slug: g.slug,
             name: g.name,
-            image: g.image || (g.banner ? (typeof g.banner === 'string' ? g.banner : g.banner?.url) : null) || '/img/icons/placeholder.png',
+            image: resolveGameImageUrl(g.image || g.banner) || '/img/icons/placeholder.png',
           }))
         : [];
 
