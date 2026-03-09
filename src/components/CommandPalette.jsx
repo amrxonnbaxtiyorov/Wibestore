@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ArrowRight, Gamepad2, Crown, BarChart2, HelpCircle, Settings, User } from 'lucide-react';
+import { Search, ArrowRight, Gamepad2, Crown, BarChart2, HelpCircle, Settings, User, Coins } from 'lucide-react';
 import { useGames } from '../hooks/useGames';
 import { games as fallbackGames } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
@@ -34,6 +34,7 @@ const CommandPalette = () => {
             { type: 'page', icon: Gamepad2, label: t('nav.products') || 'Products', description: 'Browse all accounts', path: '/products' },
             { type: 'page', icon: Crown, label: t('nav.premium') || 'Premium', description: 'Premium plans', path: '/premium' },
             { type: 'page', icon: BarChart2, label: t('nav.statistics') || 'Statistics', description: 'Rankings & stats', path: '/statistics' },
+            { type: 'page', icon: Coins, label: t('nav.coins') || 'Coins', description: 'Coins & vouchers', path: '/coins' },
             { type: 'page', icon: User, label: t('nav.profile') || 'Profile', description: 'Your profile', path: '/profile' },
             { type: 'page', icon: Settings, label: t('nav.settings') || 'Settings', description: 'Account settings', path: '/settings' },
             { type: 'page', icon: HelpCircle, label: 'FAQ', description: 'Frequently asked questions', path: '/faq' },
