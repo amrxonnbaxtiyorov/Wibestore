@@ -21,14 +21,24 @@ export function capitalizeFirst(str) {
 }
 
 /**
- * O'yin rasmi URL — backend nisbiy (/media/...) yoki to'liq qaytarsa ham ishlaydi.
- * @param {string|null|undefined} url - Backenddan kelgan image (yoki banner) qiymati
+ * Backenddan kelgan har qanday rasm URL ni to'liq URL ga aylantiradi.
+ * Nisbiy (/media/...) yoki to'liq (https://...) bo'lishi mumkin — production da frontend boshqa domenda bo'lganda rasmlar yuklanadi.
+ * @param {string|null|undefined} url - Backenddan kelgan image URL
  * @returns {string|null} To'liq URL yoki null
  */
-export function resolveGameImageUrl(url) {
+export function resolveBackendImageUrl(url) {
   if (!url || typeof url !== 'string') return null;
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
   const origin = base.replace(/\/api\/v1\/?$/, '');
   return origin + (url.startsWith('/') ? url : '/' + url);
+}
+
+/**
+ * O'yin rasmi URL — backend nisbiy (/media/...) yoki to'liq qaytarsa ham ishlaydi.
+ * @param {string|null|undefined} url - Backenddan kelgan image (yoki banner) qiymati
+ * @returns {string|null} To'liq URL yoki null
+ */
+export function resolveGameImageUrl(url) {
+  return resolveBackendImageUrl(url);
 }

@@ -4,6 +4,7 @@ import { MessageCircle, ArrowLeft, Send, Star, AlertTriangle } from 'lucide-reac
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { useLanguage } from '../context/LanguageContext';
+import { resolveBackendImageUrl } from '../lib/displayUtils';
 
 /**
  * Chat — bitta sahifa: suhbatlar ro'yxati va tanlangan suhbat xabarlari.
@@ -148,7 +149,7 @@ export default function ChatPage() {
                                     }}
                                 >
                                     <img
-                                        src={activeChat.accountImage || '/placeholder.jpg'}
+                                        src={resolveBackendImageUrl(activeChat.accountImage) || activeChat.accountImage || '/placeholder.jpg'}
                                         alt=""
                                         style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', objectFit: 'cover' }}
                                     />
@@ -240,7 +241,7 @@ export default function ChatPage() {
                                             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                                         >
                                             <img
-                                                src={conv.accountImage || '/placeholder.jpg'}
+                                                src={resolveBackendImageUrl(conv.accountImage) || conv.accountImage || '/placeholder.jpg'}
                                                 alt=""
                                                 style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', objectFit: 'cover' }}
                                             />
