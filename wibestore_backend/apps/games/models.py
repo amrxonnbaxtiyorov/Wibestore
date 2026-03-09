@@ -16,7 +16,8 @@ class Game(BaseModel):
     slug = models.SlugField(max_length=120, unique=True, blank=True)
     description = models.TextField(blank=True, default="")
     icon = models.CharField(max_length=10, blank=True, default="🎮", help_text="Emoji icon")
-    image = models.ImageField(upload_to="games/", blank=True, null=True)
+    image = models.ImageField(upload_to="games/", blank=True, null=True, help_text="O'yin rasmi (banner)")
+    logo = models.ImageField(upload_to="games/logos/", blank=True, null=True, help_text="O'yin logotipi")
     color = models.CharField(
         max_length=7,
         default="#3B82F6",

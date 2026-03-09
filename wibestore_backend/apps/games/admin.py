@@ -15,12 +15,32 @@ logger = logging.getLogger(__name__)
 
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
-    list_display = ["name", "slug", "icon", "is_active", "sort_order", "created_at"]
+    list_display = ["name", "slug", "icon", "has_image", "has_logo", "is_active", "sort_order", "created_at"]
     list_filter = ["is_active"]
     search_fields = ["name", "slug"]
     prepopulated_fields = {"slug": ("name",)}
     ordering = ["sort_order", "name"]
     readonly_fields = ["created_at", "updated_at"]
+    fieldsets = (
+        (None, {
+            "fields": ("name", "slug", "description", "icon", "color", "is_active", "sort_order"),
+        }),
+        ("Rasmlar", {
+            "fields": ("image", "logo"),
+            "description": "O'yin rasmi (banner) va logotipini yuklang.",
+        }),
+        ("Sana", {
+            "fields": ("created_at", "updated_at"),
+        }),
+    )
+
+    @admin.display(boolean=True, description="Rasmi")
+    def has_image(self, obj):
+        return bool(obj.image)
+
+    @admin.display(boolean=True, description="Logo")
+    def has_logo(self, obj):
+        return bool(obj.logo)
 
     def get_queryset(self, request):
         try:

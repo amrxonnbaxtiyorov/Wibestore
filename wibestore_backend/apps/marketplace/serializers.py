@@ -93,6 +93,7 @@ class ListingCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Listing
         fields = [
+            "id",
             "game_id",
             "title",
             "description",
@@ -110,6 +111,7 @@ class ListingCreateSerializer(serializers.ModelSerializer):
             "skins_count",
             "features",
         ]
+        read_only_fields = ["id"]
 
     def validate_game_id(self, value):
         if not value or not str(value).strip():
@@ -177,10 +179,14 @@ class ListingListSerializer(serializers.ModelSerializer):
 
     def get_primary_image(self, obj) -> str | None:
         primary = obj.images.filter(is_primary=True).first()
-        if primary:
-            return primary.image.url
-        first = obj.images.first()
-        return first.image.url if first else None
+        if not primary:
+            primary = obj.images.first()
+        if not primary:
+            return None
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(primary.image.url)
+        return primary.image.url
 
 
 class FavoriteListSerializer(serializers.ModelSerializer):
