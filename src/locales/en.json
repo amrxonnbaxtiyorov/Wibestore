@@ -47,7 +47,9 @@
         "top_sellers": "Top Sellers",
         "active_users": "Active Users",
         "sales_label": "sales",
-        "activity": "activity"
+        "activity": "activity",
+        "coming_soon_title": "Leaderboard Coming Soon",
+        "coming_soon_desc": "Rankings will be shown here once enough transactions are recorded."
     },
     "sections": {
         "popular_games": "Popular Games",

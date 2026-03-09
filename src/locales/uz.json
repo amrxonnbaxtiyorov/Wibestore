@@ -47,7 +47,9 @@
         "top_sellers": "Eng yaxshi sotuvchilar",
         "active_users": "Faol foydalanuvchilar",
         "sales_label": "sotuv",
-        "activity": "faoliyat"
+        "activity": "faoliyat",
+        "coming_soon_title": "Reyting tez kunda",
+        "coming_soon_desc": "Yetarli savdolar yozilgach, reytinglar shu yerda ko'rsatiladi."
     },
     "sections": {
         "popular_games": "Mashhur o'yinlar",
