@@ -169,9 +169,9 @@ const Navbar = () => {
                                         <span>{link.label}</span>
                                         {link.badge && (
                                             <span
-                                                className="px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none"
+                                                className="rounded-full text-[9px] font-bold leading-none"
                                                 style={{
-                                                    padding: '2px 6px',
+                                                    padding: '7px',
                                                     background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
                                                     color: '#fff',
                                                 }}
@@ -573,7 +573,7 @@ const Navbar = () => {
                     </div>
                 </div>
 
-                {/* ─── Mobile Menu ─── */}
+                {/* ─── Mobile Menu (burger open) ─── */}
                 {isMobileMenuOpen && (
                     <div
                         className="lg:hidden"
@@ -586,14 +586,20 @@ const Navbar = () => {
                             backgroundColor: isDark ? '#161b22' : '#ffffff',
                             borderTop: `1px solid ${isDark ? '#21262d' : '#eaeef2'}`,
                             boxShadow: '0 16px 32px rgba(0,0,0,0.15)',
+                            paddingLeft: 'max(16px, env(safe-area-inset-left))',
+                            paddingRight: 'max(16px, env(safe-area-inset-right))',
+                            paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+                            maxHeight: 'calc(100vh - 64px)',
+                            overflowY: 'auto',
+                            WebkitOverflowScrolling: 'touch',
                         }}
                     >
-                        <div className="px-4 py-3 space-y-1">
+                        <div className="py-4 space-y-1">
                             {/* Mobile Search */}
-                            <form onSubmit={handleSearch} className="mb-3">
-                                <div className="relative">
+                            <form onSubmit={handleSearch} className="px-1 mb-4">
+                                <div className="relative w-full">
                                     <Search
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
                                         style={{ color: isDark ? '#484f58' : '#8c959f' }}
                                     />
                                     <input
@@ -601,78 +607,85 @@ const Navbar = () => {
                                         placeholder={t('nav.search') || 'Akkauntlarni qidirish...'}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full h-10 pl-10 pr-4 rounded-md text-sm font-medium outline-none"
+                                        className="w-full rounded-lg text-sm font-medium outline-none border-none focus:ring-2 focus:ring-offset-0"
                                         style={{
-                                            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                                            minHeight: '44px',
+                                            paddingLeft: '44px',
+                                            paddingRight: '16px',
+                                            backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                             color: isDark ? '#f0f6fc' : '#1f2328',
                                             border: `1px solid ${isDark ? '#30363d' : '#d0d7de'}`,
                                         }}
+                                        aria-label={t('nav.search') || 'Akkauntlarni qidirish'}
                                     />
                                 </div>
                             </form>
 
                             {/* Nav Links */}
-                            {navLinks.map((link) => {
-                                const active = isActive(link.to);
-                                return (
+                            <nav className="flex flex-col gap-1 pl-2 sm:pl-3" role="navigation" aria-label="Mobil menyu">
+                                {navLinks.map((link) => {
+                                    const active = isActive(link.to);
+                                    return (
+                                        <Link
+                                            key={link.to}
+                                            to={link.to}
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="flex items-center gap-3 rounded-lg text-left min-h-[44px] pl-5 pr-4 py-3 text-sm font-medium transition-colors duration-100"
+                                            style={{
+                                                textDecoration: 'none',
+                                                color: active
+                                                    ? (isDark ? '#f0f6fc' : '#1f2328')
+                                                    : (isDark ? '#8b949e' : '#656d76'),
+                                                backgroundColor: active
+                                                    ? (isDark ? 'rgba(56,139,253,0.15)' : 'rgba(9,105,218,0.08)')
+                                                    : 'transparent',
+                                            }}
+                                        >
+                                            <link.icon className="w-5 h-5 shrink-0" style={{ color: active ? (isDark ? '#58a6ff' : '#0969da') : 'inherit' }} />
+                                            <span className="flex-1">{link.label}</span>
+                                            {link.badge && (
+                                                <span
+                                                    className="rounded-full text-[9px] font-bold leading-none shrink-0"
+                                                    style={{
+                                                        padding: '7px',
+                                                        background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                                                        color: '#fff',
+                                                    }}
+                                                >
+                                                    {link.badge}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    );
+                                })}
+
+                                {isAdmin && (
                                     <Link
-                                        key={link.to}
-                                        to={link.to}
+                                        to="/admin"
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors duration-100"
+                                        className="flex items-center gap-3 rounded-lg min-h-[44px] pl-5 pr-4 py-3 text-sm font-semibold transition-colors duration-100"
                                         style={{
                                             textDecoration: 'none',
-                                            color: active
-                                                ? (isDark ? '#f0f6fc' : '#1f2328')
-                                                : (isDark ? '#8b949e' : '#656d76'),
-                                            backgroundColor: active
-                                                ? (isDark ? 'rgba(56,139,253,0.15)' : 'rgba(9,105,218,0.08)')
-                                                : 'transparent',
+                                            color: isDark ? '#f85149' : '#cf222e',
+                                            backgroundColor: isDark ? 'rgba(248,81,73,0.1)' : 'rgba(207,34,46,0.06)',
                                         }}
                                     >
-                                        <link.icon className="w-4 h-4 shrink-0" />
-                                        <span className="flex-1">{link.label}</span>
-                                        {link.badge && (
-                                            <span
-                                                className="px-1.5 py-0.5 rounded-full text-[9px] font-bold leading-none"
-                                                style={{
-                                                    background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
-                                                    color: '#fff',
-                                                }}
-                                            >
-                                                {link.badge}
-                                            </span>
-                                        )}
+                                        <Settings className="w-5 h-5 shrink-0" />
+                                        <span>Admin Panel</span>
                                     </Link>
-                                );
-                            })}
-
-                            {isAdmin && (
-                                <Link
-                                    to="/admin"
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-semibold transition-colors duration-100"
-                                    style={{
-                                        textDecoration: 'none',
-                                        color: isDark ? '#f85149' : '#cf222e',
-                                        backgroundColor: isDark ? 'rgba(248,81,73,0.1)' : 'rgba(207,34,46,0.06)',
-                                    }}
-                                >
-                                    <Settings className="w-4 h-4 shrink-0" />
-                                    <span>Admin Panel</span>
-                                </Link>
-                            )}
+                                )}
+                            </nav>
 
                             {/* Auth Actions (mobile) */}
                             {!isAuthenticated && (
                                 <div
-                                    className="pt-3 mt-2 space-y-2"
+                                    className="pt-4 mt-4 flex flex-col gap-2"
                                     style={{ borderTop: `1px solid ${isDark ? '#21262d' : '#eaeef2'}` }}
                                 >
                                     <Link
                                         to="/login"
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="flex items-center justify-center h-10 rounded-md text-sm font-medium transition-colors duration-150"
+                                        className="flex items-center justify-center min-h-[44px] rounded-lg text-sm font-medium transition-colors duration-150 px-4"
                                         style={{
                                             textDecoration: 'none',
                                             color: isDark ? '#c9d1d9' : '#1f2328',
@@ -684,7 +697,7 @@ const Navbar = () => {
                                     <Link
                                         to="/signup"
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="flex items-center justify-center h-10 rounded-md text-sm font-bold transition-colors duration-150"
+                                        className="flex items-center justify-center min-h-[44px] rounded-lg text-sm font-semibold transition-colors duration-150 px-4"
                                         style={{
                                             textDecoration: 'none',
                                             backgroundColor: isDark ? '#238636' : '#1f883d',
