@@ -136,28 +136,11 @@ export const useAdminAuth = () => {
         return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
-    // Login function
-    const login = useCallback((username, password) => {
-        const adminUsername = import.meta.env.VITE_ADMIN_USERNAME || 'admin';
-        const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || '';
-        
-        // Check if admin password is configured
-        if (!adminPassword) {
-            return { 
-                success: false, 
-                error: "Admin paroli so'zlanmagan! Iltimos, .env faylga VITE_ADMIN_PASSWORD ni kiriting." 
-            };
-        }
-        
-        if (username === adminUsername && password === adminPassword) {
-            const newSession = setAdminSession(username);
-            setSession(newSession);
-            setIsAuthenticated(true);
-            return { success: true };
-        }
-        
-        return { success: false, error: "Login yoki parol noto'g'ri!" };
-    }, []);
+    // Admin kirish endi asosiy sayt orqali (staff hisob + JWT). Frontendda parol tekshirilmaydi.
+    const login = useCallback(() => ({
+        success: false,
+        error: "Admin panelga kirish uchun asosiy saytda staff hisob bilan kiring (/login).",
+    }), []);
 
     // Logout function
     const logout = useCallback(() => {

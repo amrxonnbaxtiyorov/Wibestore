@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, Package, AlertTriangle, Star,
     DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft
 } from 'lucide-react';
-import { getAdminSession, refreshAdminSession } from '../../hooks/useAdminAuth';
+import { useAuth } from '../../hooks';
 import { useLanguage } from '../../context/LanguageContext';
 import './admin.css';
 
@@ -13,32 +13,16 @@ const AdminLayout = ({ children }) => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
-    const [session, setSession] = useState(null);
+    const { user, logout } = useAuth();
 
-    // Check admin authentication
-    useEffect(() => {
-        const checkAuth = () => {
-            const currentSession = getAdminSession();
-            if (!currentSession) {
-                navigate('/admin/login');
-                return;
-            }
-            setSession(currentSession);
-            
-            // Refresh session if active
-            refreshAdminSession();
-        };
-        
-        checkAuth();
-        
-        // Check session every minute
-        const interval = setInterval(checkAuth, 60000);
-        return () => clearInterval(interval);
-    }, [navigate]);
+    // Admin panel faqat staff foydalanuvchilar uchun; AdminGuard allaqachon tekshiradi
+    if (user && !user.is_staff) {
+        navigate('/');
+        return null;
+    }
 
-    const handleLogout = () => {
-        localStorage.removeItem('adminAuth');
-        setSession(null);
+    const handleLogout = async () => {
+        await logout();
         navigate('/admin/login');
     };
 
@@ -54,7 +38,9 @@ const AdminLayout = ({ children }) => {
     ];
 
     const getAdminName = () => {
-        if (session?.username) return session.username;
+        if (user?.name) return user.name;
+        if (user?.username) return user.username;
+        if (user?.email) return user.email.split('@')[0];
         return 'Admin';
     };
 

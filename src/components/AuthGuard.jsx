@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks';
+import GuardLoading from './GuardLoading';
 
 /**
  * AuthGuard - Защищенный маршрут для авторизованных пользователей
@@ -13,20 +14,8 @@ const AuthGuard = ({ children }) => {
     const { user, isLoading, isInitialized } = useAuth();
     const location = useLocation();
 
-    // Пока идет загрузка - показываем loading
     if (isLoading || !isInitialized) {
-        return (
-            <div
-                style={{
-                    minHeight: '60vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-            >
-                <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
-            </div>
-        );
+        return <GuardLoading />;
     }
 
     // Если пользователь не авторизован - редирект на login
@@ -50,18 +39,7 @@ export const AdminGuard = ({ children }) => {
     const location = useLocation();
 
     if (isLoading || !isInitialized) {
-        return (
-            <div
-                style={{
-                    minHeight: '60vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-            >
-                <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
-            </div>
-        );
+        return <GuardLoading />;
     }
 
     if (!user) {
@@ -83,18 +61,7 @@ export const GuestGuard = ({ children }) => {
     const { user, isLoading, isInitialized } = useAuth();
 
     if (isLoading || !isInitialized) {
-        return (
-            <div
-                style={{
-                    minHeight: '60vh',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-            >
-                <div className="skeleton" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
-            </div>
-        );
+        return <GuardLoading />;
     }
 
     if (user) {

@@ -15,7 +15,9 @@ try {
     localStorage.removeItem('wibeReviews')
     localStorage.removeItem('wibeSellerRatings')
   }
-} catch (_) {}
+} catch (_) {
+  // Intentionally ignore: localStorage may be unavailable (e.g. private mode)
+}
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 const hasGoogleAuth = CLIENT_ID.length > 0

@@ -1,4 +1,19 @@
 import { QueryClient, MutationCache, QueryCache } from '@tanstack/react-query';
+import uz from '../locales/uz.json';
+import en from '../locales/en.json';
+import ru from '../locales/ru.json';
+
+const LOCALES = { uz, en, ru };
+
+/** Tarjima kalitini joriy tilga o'giradi (toast va ErrorBoundary uchun) */
+function t(key) {
+  const lang = (typeof window !== 'undefined' && localStorage.getItem('wibeLanguage')) || 'uz';
+  const L = LOCALES[lang] || LOCALES.uz;
+  const parts = key.split('.');
+  let v = L;
+  for (const p of parts) v = v?.[p];
+  return typeof v === 'string' ? v : key;
+}
 
 /**
  * Настройка React Query Client
@@ -25,13 +40,13 @@ const globalErrorHandler = (error) => {
     }
   }
 
-  // Показываем toast для критических ошибок
+  // Показываем toast для критических ошибок (i18n)
   if (error.response?.status === 500) {
     window.dispatchEvent(new CustomEvent('wibe-toast', {
       detail: {
         type: 'error',
-        title: 'Server xatosi',
-        message: "Server xatolik yuz berdi. Keyinroq qayta urinib ko'ring.",
+        title: t('common.server_error_title'),
+        message: t('common.server_error_message'),
       },
     }));
   }
@@ -43,8 +58,8 @@ const globalErrorHandler = (error) => {
     window.dispatchEvent(new CustomEvent('wibe-toast', {
       detail: {
         type: 'error',
-        title: "Bog'lanish xatosi",
-        message: "Internet yoki server bilan bog'lanishda xatolik. Qayta urinib ko'ring.",
+        title: t('common.connection_error_title'),
+        message: t('common.connection_error_message'),
       },
     }));
   }

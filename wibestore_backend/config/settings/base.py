@@ -30,10 +30,17 @@ if env_file.exists():
 # ============================================================
 # CORE SETTINGS
 # ============================================================
-# In production, set SECRET_KEY in env (never use default).
-SECRET_KEY = env("SECRET_KEY", default="django-insecure-change-me-in-production")
+# In production, SECRET_KEY must be set in env (never use default).
+_SECRET_KEY_DEFAULT = "django-insecure-change-me-in-production"
+SECRET_KEY = env("SECRET_KEY", default=_SECRET_KEY_DEFAULT)
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+
+if not DEBUG and (not SECRET_KEY or SECRET_KEY == _SECRET_KEY_DEFAULT):
+    raise ValueError(
+        "SECRET_KEY must be set in production. "
+        "Set the SECRET_KEY environment variable (e.g. in .env or deployment config)."
+    )
 
 # ============================================================
 # APPLICATION DEFINITION
