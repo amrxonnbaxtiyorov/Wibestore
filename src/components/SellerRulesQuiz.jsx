@@ -181,7 +181,7 @@ export default function SellerRulesQuiz({ onPass }) {
                     <button type="button" onClick={() => setPhase('rules')} className="btn btn-secondary" style={{ flex: 1, padding: '10px' }}>
                         {t('common.back') || 'Orqaga'}
                     </button>
-                    <button type="button" onClick={handleSubmitQuiz} className="btn btn-primary" style={{ flex: 2, padding: '10px' }}>
+                    <button type="button" onClick={handleSubmitQuiz} className="btn btn-primary" style={{ flex: 2, padding: '10px'}}>
                         {t('seller_rules.submit_quiz') || "Javoblarni yuborish"}
                     </button>
                 </div>

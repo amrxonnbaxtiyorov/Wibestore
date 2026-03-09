@@ -8,7 +8,7 @@ import {
 
 import { useListing, useAddToFavorites, useRemoveFromFavorites, useListings, usePurchaseListing } from '../hooks';
 import { useListingReviews } from '../hooks/useReviews';
-import { resolveBackendImageUrl } from '../lib/displayUtils';
+import { resolveImageUrl } from '../lib/displayUtils';
 import ReviewList from '../components/ReviewList';
 import AccountCard from '../components/AccountCard';
 import SkeletonLoader from '../components/SkeletonLoader';
@@ -28,8 +28,7 @@ const ImageCarousel = ({ images, title, noImageText, imageErrorText }) => {
     const [imgError, setImgError] = useState(false);
     const total = images?.length || 0;
     const rawSrc = images?.[current]?.image || images?.[current];
-    const srcStr = typeof rawSrc === 'string' ? rawSrc : (rawSrc?.image || rawSrc);
-    const imgSrc = srcStr ? (resolveBackendImageUrl(srcStr) || srcStr) : null;
+    const imgSrc = resolveImageUrl(rawSrc);
     useEffect(() => {
         queueMicrotask(() => setImgError(false));
     }, [current]);
@@ -147,7 +146,7 @@ const ImageCarousel = ({ images, title, noImageText, imageErrorText }) => {
                                 backgroundColor: 'var(--color-bg-tertiary)',
                             }}
                         >
-                            <img src={resolveBackendImageUrl(img?.image || img) || img?.image || img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={resolveImageUrl(img?.image || img)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </button>
                     ))}
                 </div>

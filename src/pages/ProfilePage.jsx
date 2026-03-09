@@ -7,7 +7,7 @@ import AccountCard from '../components/AccountCard';
 import AvatarEditModal from '../components/AvatarEditModal';
 import ReviewList from '../components/ReviewList';
 import { formatPrice } from '../data/mockData';
-import { getDisplayInitial, capitalizeFirst, resolveBackendImageUrl } from '../lib/displayUtils';
+import { getDisplayInitial, capitalizeFirst, resolveImageUrl } from '../lib/displayUtils';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import SkeletonLoader from '../components/SkeletonLoader';
@@ -352,7 +352,7 @@ const ProfilePage = () => {
                                                     }}
                                                 >
                                                     {(listing.images?.[0]?.image ?? listing.image ?? listing.primary_image) ? (
-                                                        <img src={resolveBackendImageUrl(listing.images?.[0]?.image ?? listing.image ?? listing.primary_image) || (listing.images?.[0]?.image ?? listing.image ?? listing.primary_image)} alt={listing.title ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        <img src={resolveImageUrl(listing.images?.[0]?.image ?? listing.image ?? listing.primary_image)} alt={listing.title ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                     ) : (
                                                         <div className="flex items-center justify-center" style={{ width: '100%', height: '100%' }}>
                                                             {getGameImage(listing.game?.id) ? (

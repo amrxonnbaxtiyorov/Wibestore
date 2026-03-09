@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Crown, Heart } from 'lucide-react';
 import { formatPrice } from '../data/mockData';
-import { resolveBackendImageUrl } from '../lib/displayUtils';
+import { resolveImageUrl } from '../lib/displayUtils';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useAddToFavorites, useRemoveFromFavorites } from '../hooks/useListings';
@@ -40,7 +40,7 @@ const AccountCard = ({ account, featured = false }) => {
     const accountPrice = account.price || 0;
     const accountGameName = account.gameName || account.game?.name || t('common.unknown_game');
     const accountDescription = account.description || '';
-    const accountImage = resolveBackendImageUrl(account.image) || account.image;
+    const accountImage = resolveImageUrl(account.image);
     const accountIsPremium = account.isPremium || account.is_premium || false;
     const seller = account.seller || { rating: 5.0, isPremium: false, total_sales: 0, sales_count: 0 };
     const sellerRating = Number(seller.rating) || 5;

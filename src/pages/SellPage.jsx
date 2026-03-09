@@ -4,7 +4,8 @@ import { Upload, X, Plus, DollarSign, Image, FileText, Tag, Shield, AlertCircle,
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
-import { useCreateListing, useUploadImage, useGames } from '../hooks';
+import { useCreateListing, useGames } from '../hooks';
+import apiClient from '../lib/apiClient';
 import { resolveGameImageUrl } from '../lib/displayUtils';
 import { CS2_WEAPON_TYPES, isCs2Game } from '../data/cs2WeaponTypes';
 import SellerRulesQuiz from '../components/SellerRulesQuiz';
@@ -38,8 +39,8 @@ const SellPage = () => {
     
     // API hooks
     const { mutate: createListing, isPending: _isCreating } = useCreateListing();
-    const { mutate: _uploadImage, isPending: _isUploading } = useUploadImage();
     const { data: gamesData, isLoading: gamesLoading, isError: gamesError } = useGames();
+    const [imageFiles, setImageFiles] = useState([]);
 
     const apiGamesList = Array.isArray(gamesData?.results) ? gamesData.results : (Array.isArray(gamesData) ? gamesData : []);
     const hasApiGames = apiGamesList.length > 0;
@@ -171,7 +172,23 @@ const SellPage = () => {
             };
             
             createListing(listingData, {
-                onSuccess: () => {
+                onSuccess: async (response) => {
+                    const listingId = response?.data?.id || response?.id;
+
+                    if (listingId && imageFiles.length > 0) {
+                        try {
+                            const fd = new FormData();
+                            imageFiles.forEach(file => fd.append('images', file));
+                            await apiClient.post(`/listings/${listingId}/images/`, fd);
+                        } catch {
+                            addToast({
+                                type: 'warning',
+                                title: t('sell.images_upload_warning_title') || 'Rasmlar',
+                                message: t('sell.images_upload_warning') || 'Listing yaratildi, lekin rasmlar yuklanmadi. Profildan qayta yuklashingiz mumkin.',
+                            });
+                        }
+                    }
+
                     addToast({
                         type: 'success',
                         title: t('common.success') || 'Muvaffaqiyatli!',
@@ -232,6 +249,7 @@ title: t('common.error') || 'Xatolik',
             weaponType: '', level: '', rank: '', skins: '', features: [], images: [],
             loginMethod: 'email', accountEmail: '', accountPassword: '', additionalInfo: ''
         });
+        setImageFiles([]);
     };
 
     const cardStyle = {
@@ -558,7 +576,7 @@ title: t('common.error') || 'Xatolik',
                                                 <div key={index} className="relative group" style={{ aspectRatio: '1', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
                                                     <img src={img} alt={`Preview ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                     <button type="button"
-                                                        onClick={() => setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }))}
+                                                        onClick={() => { setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) })); setImageFiles(prev => prev.filter((_, i) => i !== index)); }}
                                                         style={{
                                                             position: 'absolute', top: '4px', right: '4px',
                                                             width: '22px', height: '22px', borderRadius: 'var(--radius-full)',
@@ -591,6 +609,7 @@ title: t('common.error') || 'Xatolik',
                                                         const reader = new FileReader();
                                                         reader.onload = (event) => {
                                                             setFormData(prev => ({ ...prev, images: [...prev.images, event.target.result] }));
+                                                            setImageFiles(prev => [...prev, file]);
                                                         };
                                                         reader.readAsDataURL(file);
                                                     });

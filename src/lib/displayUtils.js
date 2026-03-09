@@ -21,24 +21,23 @@ export function capitalizeFirst(str) {
 }
 
 /**
- * Backenddan kelgan har qanday rasm URL ni to'liq URL ga aylantiradi.
- * Nisbiy (/media/...) yoki to'liq (https://...) bo'lishi mumkin — production da frontend boshqa domenda bo'lganda rasmlar yuklanadi.
- * @param {string|null|undefined} url - Backenddan kelgan image URL
- * @returns {string|null} To'liq URL yoki null
+ * Backend nisbiy URL'ni (/media/...) to'liq URL'ga aylantiradi.
+ * To'liq URL yoki data: URL bo'lsa o'zgartirmaydi.
+ * @param {string|null|undefined} url
+ * @returns {string|null}
  */
-export function resolveBackendImageUrl(url) {
+export function resolveImageUrl(url) {
   if (!url || typeof url !== 'string') return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
   const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
   const origin = base.replace(/\/api\/v1\/?$/, '');
   return origin + (url.startsWith('/') ? url : '/' + url);
 }
 
-/**
- * O'yin rasmi URL — backend nisbiy (/media/...) yoki to'liq qaytarsa ham ishlaydi.
- * @param {string|null|undefined} url - Backenddan kelgan image (yoki banner) qiymati
- * @returns {string|null} To'liq URL yoki null
- */
+/** @deprecated resolveImageUrl ni ishlating */
+export const resolveBackendImageUrl = resolveImageUrl;
+
+/** @deprecated resolveImageUrl ni ishlating */
 export function resolveGameImageUrl(url) {
-  return resolveBackendImageUrl(url);
+  return resolveImageUrl(url);
 }
