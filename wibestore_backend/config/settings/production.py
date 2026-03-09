@@ -82,22 +82,22 @@ CSRF_TRUSTED_ORIGINS = env.list(  # noqa: F405
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")  # noqa: F405
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")  # noqa: F405
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="wibestore-media")  # noqa: F405
-AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="auto")  # noqa: F405
-AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default="")  # noqa: F405
-AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN", default="")  # noqa: F405
 
 if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None
     AWS_QUERYSTRING_AUTH = False
+    AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="auto")  # noqa: F405
     AWS_S3_OBJECT_PARAMETERS = {
         "CacheControl": "max-age=86400",
     }
-    if AWS_S3_ENDPOINT_URL:
-        AWS_S3_ENDPOINT_URL = AWS_S3_ENDPOINT_URL
-    if AWS_S3_CUSTOM_DOMAIN:
-        AWS_S3_CUSTOM_DOMAIN = AWS_S3_CUSTOM_DOMAIN
+    _endpoint = env("AWS_S3_ENDPOINT_URL", default="").strip()  # noqa: F405
+    if _endpoint:
+        AWS_S3_ENDPOINT_URL = _endpoint.rstrip("/")
+    _custom_domain = env("AWS_S3_CUSTOM_DOMAIN", default="").strip()  # noqa: F405
+    if _custom_domain:
+        AWS_S3_CUSTOM_DOMAIN = _custom_domain.replace("https://", "").replace("http://", "").rstrip("/")
 
 # ============================================================
 # STATIC FILES (WhiteNoise)
