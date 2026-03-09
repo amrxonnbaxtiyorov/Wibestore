@@ -128,9 +128,9 @@ const Navbar = () => {
                         <Link
                             to="/"
                             className="flex items-center shrink-0 mr-4 transition-opacity duration-200 hover:opacity-80"
-                            style={{ textDecoration: 'none' }}
+                            style={{ textDecoration: 'none'}}
                         >
-                            <Logo height={56} />
+                            <Logo />
                         </Link>
 
                         {/* ─── Nav Links (desktop) ─── */}
