@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Settings, User, Lock, Bell, Globe, CreditCard, Shield, Trash2, Camera, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getDisplayInitial } from '../lib/displayUtils';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
+import AvatarCropModal from '../components/AvatarCropModal';
 
 const SettingsPage = () => {
     const navigate = useNavigate();
@@ -40,37 +41,54 @@ const SettingsPage = () => {
         telegram: true, push: true, sales: true, messages: true, updates: false
     });
     const [avatarUploading, setAvatarUploading] = useState(false);
+    const [showCropModal, setShowCropModal] = useState(false);
+    const [cropImageUrl, setCropImageUrl] = useState(null);
+    const [pendingAvatarBlob, setPendingAvatarBlob] = useState(null);
+    const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
 
     useEffect(() => {
         if (!isAuthenticated) navigate('/login');
     }, [isAuthenticated, navigate]);
 
-    const handleAvatarChange = async (e) => {
+    useEffect(() => {
+        return () => {
+            if (cropImageUrl) URL.revokeObjectURL(cropImageUrl);
+            if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+        };
+    }, [cropImageUrl, avatarPreviewUrl]);
+
+    const handleAvatarFileSelect = useCallback((e) => {
         const file = e.target.files?.[0];
         if (!file || !file.type.startsWith('image/')) return;
         if (file.size > 5 * 1024 * 1024) {
             setMessage({ type: 'error', text: t('settings.avatar_too_large') || 'Rasm 5MB dan oshmasin' });
             return;
         }
-        setAvatarUploading(true);
         setMessage({ type: '', text: '' });
-        try {
-            const form = new FormData();
-            form.append('avatar', file);
-            await updateProfile(form);
-            setMessage({ type: 'success', text: t('settings.profile_updated') || 'Profil yangilandi' });
-        } catch (err) {
-            const data = err?.response?.data;
-            let text = err?.message || t('settings.generic_error');
-            if (data && (typeof data === 'string')) text = data;
-            else if (data?.detail) text = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
-            else if (data?.avatar) text = Array.isArray(data.avatar) ? data.avatar[0] : data.avatar;
-            setMessage({ type: 'error', text });
-        } finally {
-            setAvatarUploading(false);
-            e.target.value = '';
+        if (cropImageUrl) URL.revokeObjectURL(cropImageUrl);
+        setCropImageUrl(URL.createObjectURL(file));
+        setShowCropModal(true);
+        e.target.value = '';
+    }, [cropImageUrl, t]);
+
+    const handleCropConfirm = useCallback((blob) => {
+        if (cropImageUrl) {
+            URL.revokeObjectURL(cropImageUrl);
+            setCropImageUrl(null);
         }
-    };
+        setShowCropModal(false);
+        if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+        setPendingAvatarBlob(blob);
+        setAvatarPreviewUrl(blob ? URL.createObjectURL(blob) : null);
+    }, [cropImageUrl, avatarPreviewUrl]);
+
+    const handleCropClose = useCallback(() => {
+        setShowCropModal(false);
+        if (cropImageUrl) {
+            URL.revokeObjectURL(cropImageUrl);
+            setCropImageUrl(null);
+        }
+    }, [cropImageUrl]);
 
     if (!isAuthenticated) return null;
 
@@ -84,17 +102,30 @@ const SettingsPage = () => {
 
     const handleProfileSave = async () => {
         setIsSaving(true);
+        if (pendingAvatarBlob) setAvatarUploading(true);
         setMessage({ type: '', text: '' });
         try {
-            await updateProfile({
-                full_name: profileData.name,
-                phone_number: profileData.phone || null
-            });
+            if (pendingAvatarBlob) {
+                const form = new FormData();
+                form.append('avatar', pendingAvatarBlob, 'avatar.jpg');
+                form.append('full_name', profileData.name);
+                if (profileData.phone) form.append('phone_number', profileData.phone);
+                await updateProfile(form);
+                setPendingAvatarBlob(null);
+                if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+                setAvatarPreviewUrl(null);
+            } else {
+                await updateProfile({
+                    full_name: profileData.name,
+                    phone_number: profileData.phone || null
+                });
+            }
             setMessage({ type: 'success', text: t('settings.profile_updated') });
         } catch (err) {
             setMessage({ type: 'error', text: err?.message || t('settings.generic_error') });
         } finally {
             setIsSaving(false);
+            setAvatarUploading(false);
         }
     };
 
@@ -223,7 +254,7 @@ const SettingsPage = () => {
                                         fontSize: 'var(--font-size-sm)',
                                     }}
                                 >
-                                    {message.type === 'success' ? <CheckCircle className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
+                                    {message.type === 'success' ? <CheckCircle className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
                                     <span>{message.text}</span>
                                 </div>
                             )}
@@ -235,18 +266,20 @@ const SettingsPage = () => {
                                         {t('settings.profile_info')}
                                     </h2>
 
-                                    {/* Avatar — yuklangan rasm bor bo'lsa rasm, yo'q bo'lsa ismning birinchi harfi */}
+                                    {/* Avatar — yuklashda crop modal, Saqlash bosilganda xotiraga/backend ga saqlanadi */}
                                     <div className="flex items-center gap-4" style={{ marginBottom: '24px' }}>
                                         <div className="relative">
                                             <div style={{
                                                 width: '64px', height: '64px',
-                                                background: user?.avatar ? 'transparent' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                                background: (avatarPreviewUrl || user?.avatar) ? 'transparent' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
                                                 borderRadius: 'var(--radius-xl)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 fontSize: '24px', fontWeight: 'var(--font-weight-bold)', color: '#fff',
                                                 overflow: 'hidden',
                                             }}>
-                                                {user?.avatar ? (
+                                                {avatarPreviewUrl ? (
+                                                    <img src={avatarPreviewUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : user?.avatar ? (
                                                     <img src={user.avatar} alt={user?.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 ) : (
                                                     getDisplayInitial(user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')
@@ -260,7 +293,7 @@ const SettingsPage = () => {
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 cursor: avatarUploading ? 'wait' : 'pointer', color: '#fff',
                                             }}>
-                                                <input type="file" accept="image/*" className="hidden" style={{ display: 'none' }} onChange={handleAvatarChange} disabled={avatarUploading} />
+                                                <input type="file" accept="image/*" className="hidden" style={{ display: 'none' }} onChange={handleAvatarFileSelect} disabled={avatarUploading} />
                                                 {avatarUploading ? <span className="animate-pulse" style={{ fontSize: 10 }}>...</span> : <Camera className="w-3 h-3" />}
                                             </label>
                                         </div>
@@ -541,6 +574,13 @@ const SettingsPage = () => {
                     </div>
                 </div>
             </div>
+            {showCropModal && cropImageUrl && (
+                <AvatarCropModal
+                    imageUrl={cropImageUrl}
+                    onConfirm={handleCropConfirm}
+                    onClose={handleCropClose}
+                />
+            )}
         </div>
     );
 };
