@@ -1,22 +1,34 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ArrowRight, Gamepad2, Crown, BarChart2, HelpCircle, Settings, User } from 'lucide-react';
-import { games } from '../data/mockData';
+import { useGames } from '../hooks/useGames';
+import { games as fallbackGames } from '../data/mockData';
 import { useLanguage } from '../context/LanguageContext';
 
 /**
  * CommandPalette — Ctrl+K global search / command palette
- * Premium GitHub-style command palette with keyboard navigation
+ * O'yinlar ro'yxati API dan (useGames), API mavjud bo'lmasa mock dan.
  */
 const CommandPalette = () => {
     const { t } = useLanguage();
     const navigate = useNavigate();
+    const { data: gamesData } = useGames();
     const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [activeIndex, setActiveIndex] = useState(0);
     const inputRef = useRef(null);
 
-    // Define searchable items (pages + games)
+    const apiGames = gamesData?.results ?? gamesData;
+    const gamesList = Array.isArray(apiGames) && apiGames.length > 0
+        ? apiGames.map((g) => ({
+            id: g.slug ?? g.id,
+            slug: g.slug,
+            name: g.name,
+            accountCount: g.active_listings_count ?? 0,
+            icon: g.icon ?? null,
+        }))
+        : fallbackGames;
+
     const allItems = useMemo(() => {
         const pages = [
             { type: 'page', icon: Gamepad2, label: t('nav.products') || 'Products', description: 'Browse all accounts', path: '/products' },
@@ -27,17 +39,17 @@ const CommandPalette = () => {
             { type: 'page', icon: HelpCircle, label: 'FAQ', description: 'Frequently asked questions', path: '/faq' },
         ];
 
-        const gameItems = games.map(game => ({
+        const gameItems = gamesList.map((game) => ({
             type: 'game',
             icon: Gamepad2,
             label: game.name,
-            description: `${game.accountCount || 0} accounts`,
-            path: `/game/${game.id}`,
-            emoji: game.icon,
+            description: `${game.accountCount ?? 0} accounts`,
+            path: `/game/${game.slug ?? game.id}`,
+            emoji: game.icon ?? undefined,
         }));
 
         return [...pages, ...gameItems];
-    }, [t]);
+    }, [t, gamesList]);
 
     // Filter results based on query
     const filteredItems = useMemo(() => {
@@ -148,7 +160,7 @@ const CommandPalette = () => {
                                 onMouseEnter={() => setActiveIndex(index)}
                             >
                                 <div
-                                    className="flex items-center justify-center flex-shrink-0"
+                                    className="flex items-center justify-center shrink-0"
                                     style={{
                                         width: '32px', height: '32px',
                                         borderRadius: 'var(--radius-md)',
@@ -176,7 +188,7 @@ const CommandPalette = () => {
                                         {item.description}
                                     </div>
                                 </div>
-                                <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-text-muted)', opacity: index === activeIndex ? 1 : 0 }} />
+                                <ArrowRight className="w-4 h-4 shrink-0" style={{ color: 'var(--color-text-muted)', opacity: index === activeIndex ? 1 : 0 }} />
                             </button>
                         ))
                     ) : (

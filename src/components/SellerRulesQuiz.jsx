@@ -150,7 +150,7 @@ export default function SellerRulesQuiz({ onPass }) {
                                 </p>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     {(getOptions(q) || q.optionsEn).map((opt, optIndex) => (
-                                        <label key={optIndex} className="flex items-center gap-3" style={{ cursor: 'pointer', padding: '10px', width: '100%', boxSizing: 'border-box', minWidth: 0 }}>
+                                        <label key={optIndex} className="flex items-center gap-3" style={{ cursor: 'pointer', padding: '10px', width: '100%', boxSizing: 'border-box', minWidth: 0, minHeight: '44px' }}>
                                             <input
                                                 type="radio"
                                                 name={q.id}
@@ -178,10 +178,10 @@ export default function SellerRulesQuiz({ onPass }) {
                 )}
 
                 <div style={{ display: 'flex', gap: '12px', flexShrink: 0 }}>
-                    <button type="button" onClick={() => setPhase('rules')} className="btn btn-secondary" style={{ flex: 1 }}>
+                    <button type="button" onClick={() => setPhase('rules')} className="btn btn-secondary" style={{ flex: 1, padding: '10px' }}>
                         {t('common.back') || 'Orqaga'}
                     </button>
-                    <button type="button" onClick={handleSubmitQuiz} className="btn btn-primary" style={{ flex: 2 }}>
+                    <button type="button" onClick={handleSubmitQuiz} className="btn btn-primary" style={{ flex: 2, padding: '10px' }}>
                         {t('seller_rules.submit_quiz') || "Javoblarni yuborish"}
                     </button>
                 </div>
