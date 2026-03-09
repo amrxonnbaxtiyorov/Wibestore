@@ -231,9 +231,9 @@ const PremiumPage = () => {
                             )}
 
                             {/* Icon & Name */}
-                            <div className="text-center" style={{ marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '24px' }}>
                                 <div
-                                    className="flex items-center justify-center mx-auto"
+                                    className="flex items-center justify-center"
                                     style={{
                                         width: '56px', height: '56px',
                                         borderRadius: 'var(--radius-xl)',
@@ -391,8 +391,11 @@ const PremiumPage = () => {
                             ].map((benefit, index) => (
                                 <div
                                     key={index}
-                                    className="text-center"
                                     style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        textAlign: 'center',
                                         padding: '24px 16px',
                                         borderRadius: 'var(--radius-lg)',
                                         backgroundColor: 'rgba(255,255,255,0.1)',
@@ -400,7 +403,7 @@ const PremiumPage = () => {
                                     }}
                                 >
                                     <div
-                                        className="flex items-center justify-center mx-auto"
+                                        className="flex items-center justify-center"
                                         style={{
                                             width: '48px', height: '48px',
                                             borderRadius: 'var(--radius-lg)',
