@@ -258,6 +258,7 @@ const Navbar = () => {
                                     className="flex items-center gap-2 h-8 px-3 rounded-md transition-all duration-200"
                                     aria-label="Change language"
                                     style={{
+                                        padding: '10px',
                                         backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                         border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
                                     }}
@@ -526,6 +527,7 @@ const Navbar = () => {
                                         to="/login"
                                         className="hidden sm:inline-flex items-center justify-center h-9 px-12 rounded-sm text-sm font-medium transition-colors duration-150 whitespace-nowrap"
                                         style={{
+                                            padding: '10px',
                                             textDecoration: 'none',
                                             color: isDark ? '#c9d1d9' : '#1f2328',
                                             border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'}`,
@@ -539,6 +541,7 @@ const Navbar = () => {
                                         to="/signup"
                                         className="inline-flex items-center justify-center h-9 px-12 rounded-sm text-sm font-semibold transition-all duration-150 whitespace-nowrap"
                                         style={{
+                                            padding: '10px',
                                             textDecoration: 'none',
                                             backgroundColor: isDark ? '#238636' : '#1f883d',
                                             color: '#ffffff',
