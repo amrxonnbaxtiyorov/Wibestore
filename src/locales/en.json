@@ -18,7 +18,13 @@
     "chat": {
         "conversations": "conversations",
         "sound_on": "Turn sound on",
-        "sound_off": "Turn sound off"
+        "sound_off": "Turn sound off",
+        "choose": "Choose a chat",
+        "choose_hint": "Select a conversation from the left",
+        "choose_placeholder": "Select a chat first",
+        "load_older": "Load older messages",
+        "no_conversations": "No conversations yet",
+        "search_placeholder": "Search conversations..."
     },
     "onboarding": {
         "welcome_title": "Welcome to WibeStore",

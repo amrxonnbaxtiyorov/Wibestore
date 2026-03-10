@@ -216,7 +216,7 @@ export default function ChatPage() {
                             ) : !Array.isArray(chats) || chats.length === 0 ? (
                                 <div className="empty-state">
                                     <MessageCircle className="empty-state-icon" style={{ width: '56px', height: '56px' }} />
-                                    <p className="empty-state-description">Suhbatlar yo'q</p>
+                                    <p className="empty-state-description">{t('chat.no_conversations')}</p>
                                 </div>
                             ) : (
                                 chats.map((room) => {
@@ -343,7 +343,7 @@ export default function ChatPage() {
                                 </Link>
                             ) : (
                                 <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
-                                    {t('chat.choose') || 'Suhbatni tanlang'}
+                                    {t('chat.choose')}
                                 </p>
                             )}
                         </div>
@@ -365,7 +365,7 @@ export default function ChatPage() {
                             {!activeRoom ? (
                                 <div className="empty-state" style={{ flex: 1, minHeight: 0, padding: '48px 16px' }}>
                                     <MessageCircle className="empty-state-icon" style={{ width: '64px', height: '64px' }} />
-                                    <p className="empty-state-description">{t('chat.choose') || 'Chap tomondan suhbat tanlang'}</p>
+                                    <p className="empty-state-description">{t('chat.choose_hint')}</p>
                                 </div>
                             ) : isMessagesLoading ? (
                                 <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
@@ -450,7 +450,7 @@ export default function ChatPage() {
                                     value={text}
                                     onChange={(e) => setText(e.target.value)}
                                     className="input input-md"
-                                    placeholder={activeRoom ? (t('detail.write_message') || 'Xabar yozing...') : (t('chat.choose') || 'Avval suhbatni tanlang')}
+                                    placeholder={activeRoom ? t('detail.write_message') : t('chat.choose_placeholder')}
                                     style={{ flex: 1 }}
                                     disabled={!activeRoom || sendMessageMutation.isPending}
                                 />

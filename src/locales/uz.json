@@ -18,7 +18,13 @@
     "chat": {
         "conversations": "suhbat",
         "sound_on": "Ovozni yoqish",
-        "sound_off": "Ovozni o'chirish"
+        "sound_off": "Ovozni o'chirish",
+        "choose": "Suhbatni tanlang",
+        "choose_hint": "Chap tomondan suhbat tanlang",
+        "choose_placeholder": "Avval suhbatni tanlang",
+        "load_older": "Eski xabarlar",
+        "no_conversations": "Suhbatlar yo'q",
+        "search_placeholder": "Suhbatlarni qidirish..."
     },
     "onboarding": {
         "welcome_title": "WibeStore ga xush kelibsiz",

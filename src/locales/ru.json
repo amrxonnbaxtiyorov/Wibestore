@@ -18,7 +18,13 @@
     "chat": {
         "conversations": "диалогов",
         "sound_on": "Включить звук",
-        "sound_off": "Выключить звук"
+        "sound_off": "Выключить звук",
+        "choose": "Выберите чат",
+        "choose_hint": "Выберите диалог слева",
+        "choose_placeholder": "Сначала выберите чат",
+        "load_older": "Загрузить старые сообщения",
+        "no_conversations": "Нет диалогов",
+        "search_placeholder": "Поиск диалогов..."
     },
     "onboarding": {
         "welcome_title": "Добро пожаловать в WibeStore",
