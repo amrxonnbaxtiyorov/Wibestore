@@ -54,8 +54,10 @@ class MyFavoritesView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Favorite.objects.filter(user=self.request.user).select_related(
-            "listing__game", "listing__seller"
+        return (
+            Favorite.objects.filter(user=self.request.user)
+            .select_related("listing__game", "listing__seller")
+            .prefetch_related("listing__images")
         )
 
 
