@@ -15,7 +15,7 @@ import SkeletonLoader from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import { useAuth } from '../context/AuthContext';
-import { useChat } from '../context/ChatContext';
+import { useCreateChat } from '../hooks/useChat';
 import BuyerRulesQuiz from '../components/BuyerRulesQuiz';
 import ReviewModal from '../components/ReviewModal';
 
@@ -199,7 +199,7 @@ const AccountDetailPage = () => {
     const { t } = useLanguage();
     const { addToast } = useToast();
     const { user, isAuthenticated } = useAuth();
-    const { startConversation, openChat } = useChat();
+    const createChatMutation = useCreateChat();
 
     const { data: apiListing, isLoading, error, refetch } = useListing(accountId);
     const { mutate: addToFavorites } = useAddToFavorites();
@@ -395,23 +395,35 @@ const AccountDetailPage = () => {
             navigate('/login?redirect=' + encodeURIComponent(location.pathname));
             return;
         }
-        const seller = {
-            id: listing.seller?.id,
-            name: listing.seller?.display_name || listing.seller?.name || t('detail.seller'),
-            rating: listing.seller?.rating ?? 5
-        };
-        const account = {
-            id: listing.id,
-            title: listing.title,
-            image: listing.images?.[0]?.image || listing.image
-        };
-        if (seller.id && account.id) {
-            startConversation(seller, account);
-            openChat();
-            navigate('/chat');
-        } else {
+        const sellerId = listing?.seller?.id;
+        const listingId = listing?.id;
+        if (!sellerId || !listingId) {
             addToast({ type: 'info', title: t('detail.chat_coming_soon') });
+            return;
         }
+
+        if (createChatMutation.isPending) return;
+        createChatMutation.mutate(
+            {
+                participantId: sellerId,
+                listingId,
+                initialMessage: `Salom! "${listing?.title || ''}" akkaunt bo'yicha savolim bor.`,
+            },
+            {
+                onSuccess: (res) => {
+                    const roomId = res?.data?.id || res?.data?.room?.id || res?.id;
+                    if (roomId) navigate(`/chat/${roomId}`);
+                    else navigate('/chat');
+                },
+                onError: () => {
+                    addToast({
+                        type: 'error',
+                        title: t('common.error') || 'Xatolik',
+                        description: 'Chat yaratib bo‘lmadi. Qayta urinib ko‘ring.',
+                    });
+                },
+            }
+        );
     };
 
     const handleShare = async () => {

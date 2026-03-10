@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useChat } from '../context/ChatContext';
+import { useChats } from '../hooks/useChat';
 
 /**
  * Chat widget: faqat /chat sahifasiga olib boradigan suzuvchi tugma.
@@ -9,9 +8,11 @@ import { useChat } from '../context/ChatContext';
  */
 const ChatWidget = () => {
     const { pathname } = useLocation();
-    const { getUnreadCount } = useChat();
-
-    const unreadCount = getUnreadCount();
+    const { data: chatsData } = useChats();
+    const chats = chatsData?.results ?? chatsData ?? [];
+    const unreadCount = Array.isArray(chats)
+        ? chats.reduce((sum, r) => sum + (Number(r?.unread_count ?? 0) || 0), 0)
+        : 0;
 
     const isAdminPage = pathname.includes('/admin');
     const isChatPage = pathname === '/chat' || pathname.startsWith('/chat/');

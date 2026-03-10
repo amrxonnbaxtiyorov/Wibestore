@@ -65,8 +65,14 @@ export const useCreateChat = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (participantId) => {
-            const { data } = await apiClient.post('/chats/', { participant_id: participantId });
+        mutationFn: async ({ participantId, listingId, initialMessage } = {}) => {
+            const payload = {
+                participant_id: participantId,
+            };
+            if (listingId) payload.listing_id = listingId;
+            if (initialMessage) payload.initial_message = initialMessage;
+
+            const { data } = await apiClient.post('/chats/create/', payload);
             return data;
         },
         onSuccess: () => {
