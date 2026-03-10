@@ -109,6 +109,7 @@ export default function ChatPage() {
                         borderRadius: 'var(--radius-xl)',
                         overflow: 'hidden',
                         position: 'relative',
+                        marginBottom: '10px',
                     }}
                 >
                     {/* Close / back button */}
