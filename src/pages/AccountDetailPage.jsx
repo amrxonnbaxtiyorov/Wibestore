@@ -408,6 +408,7 @@ const AccountDetailPage = () => {
         if (seller.id && account.id) {
             startConversation(seller, account);
             openChat();
+            navigate('/chat');
         } else {
             addToast({ type: 'info', title: t('detail.chat_coming_soon') });
         }
