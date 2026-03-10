@@ -19,21 +19,23 @@ const ChatWidget = () => {
 
     const isAdminPage = pathname.includes('/admin');
     const isChatPage = pathname === '/chat' || pathname.startsWith('/chat/');
-    if (isAdminPage || isChatPage) {
-        return null;
-    }
 
     useEffect(() => {
+        // Hooks must always run; effect does nothing on hidden routes
+        if (isAdminPage || isChatPage) return;
         ensureSoundUnlocked();
-    }, []);
+    }, [isAdminPage, isChatPage]);
 
     useEffect(() => {
+        if (isAdminPage || isChatPage) return;
         const prev = prevUnreadRef.current ?? 0;
         if (unreadCount > prev) {
             playChatBackgroundSound();
         }
         prevUnreadRef.current = unreadCount;
-    }, [unreadCount]);
+    }, [unreadCount, isAdminPage, isChatPage]);
+
+    if (isAdminPage || isChatPage) return null;
 
     return (
         <Link
