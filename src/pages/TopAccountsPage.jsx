@@ -226,7 +226,8 @@ const TopAccountsPage = () => {
                                     account={{
                                         id: listing.id,
                                         gameId: listing.game?.slug ?? listing.game?.id,
-                                        gameName: listing.game?.name ?? (t('common.unknown_game') || "Noma'lum o'yin"),
+                                        // List API qaytaradi: game_name (ListingListSerializer). Detail API qaytaradi: game{name}
+                                        gameName: listing.game?.name ?? listing.game_name ?? (t('common.unknown_game') || "Noma'lum o'yin"),
                                         title: listing.title ?? '',
                                         price: Number(listing.price) || 0,
                                         seller: listing.seller,
