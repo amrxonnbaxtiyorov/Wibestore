@@ -644,13 +644,42 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
 
 
 async def _receive_withdraw_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Chiqarish summasini qabul qilish va tasdiqlash so'rash."""
+    """Chiqarish summasini qabul qilish, balansni tekshirish va tasdiqlash so'rash."""
     text = (update.message.text or "").strip().replace(" ", "").replace(",", "")
     if not text or not text.isdigit():
         await update.message.reply_text("❌ Summani faqat raqamda yuboring (masalan: 50000)")
         return WAITING_WITHDRAW_AMOUNT
-    amount = text
-    context.user_data["withdraw_amount"] = amount
+    amount_str = text
+    try:
+        amount_float = float(amount_str)
+    except ValueError:
+        await update.message.reply_text("❌ Noto'g'ri summa. Raqam kiriting.")
+        return WAITING_WITHDRAW_AMOUNT
+    if amount_float <= 0:
+        await update.message.reply_text("❌ Summa 0 dan katta bo'lishi kerak.")
+        return WAITING_WITHDRAW_AMOUNT
+
+    telegram_id = update.effective_user.id
+    result = get_telegram_profile_via_api(telegram_id)
+    if not result or not result.get("success") or not result.get("has_account"):
+        await update.message.reply_html("❌ Balansni tekshirib bo'lmadi. Qayta urinib ko'ring.")
+        return WAITING_PHONE
+    balance_str = result.get("data", {}).get("balance", "0")
+    try:
+        balance_float = float(balance_str)
+    except (ValueError, TypeError):
+        balance_float = 0.0
+
+    if amount_float > balance_float:
+        await update.message.reply_html(
+            f"❌ <b>Hisobingizda buncha mablag' yo'q.</b>\n\n"
+            f"Joriy balans: <b>{balance_str} UZS</b>\n"
+            f"Siz kiritgan summa: <b>{amount_str} UZS</b>\n\n"
+            "Kamroq summa kiriting yoki /cancel bosing."
+        )
+        return WAITING_WITHDRAW_AMOUNT
+
+    context.user_data["withdraw_amount"] = amount_str
     keyboard = [
         [
             InlineKeyboardButton("Ha", callback_data="withdraw_confirm:yes"),
@@ -658,7 +687,7 @@ async def _receive_withdraw_amount(update: Update, context: ContextTypes.DEFAULT
         ],
     ]
     await update.message.reply_html(
-        f"❓ <b>{amount} UZS</b> summani hisobdan chiqarishga rozimisiz?",
+        f"❓ <b>{amount_str} UZS</b> summani hisobdan chiqarishga rozimisiz?",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
     return WITHDRAW_CONFIRM
@@ -677,7 +706,7 @@ async def _cb_withdraw_confirm(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def _receive_withdraw_card(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Chiqarish uchun karta raqamini qabul qilish va adminga yuborish."""
+    """Chiqarish uchun karta raqamini qabul qilish va adminga yuborish (balans bilan)."""
     card = (update.message.text or "").strip()
     if not card or len(card) < 4:
         await update.message.reply_text("❌ Karta raqamini to'g'ri kiriting.")
@@ -686,6 +715,7 @@ async def _receive_withdraw_card(update: Update, context: ContextTypes.DEFAULT_T
     telegram_id = update.effective_user.id
     result = get_telegram_profile_via_api(telegram_id)
     username = result.get("data", {}).get("username", "") if result and result.get("has_account") else str(telegram_id)
+    balance = result.get("data", {}).get("balance", "0") if result and result.get("has_account") else "0"
     for target in _notification_targets():
         try:
             await context.bot.send_message(
@@ -693,7 +723,8 @@ async def _receive_withdraw_card(update: Update, context: ContextTypes.DEFAULT_T
                 f"💸 <b>Hisobdan pul yechish so'rovi</b>\n\n"
                 f"👤 Sayt username: <b>{username}</b>\n"
                 f"🆔 Telegram ID: <code>{telegram_id}</code>\n"
-                f"💰 Summa: <b>{amount} UZS</b>\n"
+                f"📊 <b>Hisobdagi balans: {balance} UZS</b>\n"
+                f"💰 So'ralgan summa: <b>{amount} UZS</b>\n"
                 f"💳 Karta raqami: <code>{card}</code>",
                 parse_mode="HTML",
             )
