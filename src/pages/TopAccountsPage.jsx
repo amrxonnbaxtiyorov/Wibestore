@@ -226,7 +226,7 @@ const TopAccountsPage = () => {
                                     account={{
                                         id: listing.id,
                                         gameId: listing.game?.slug ?? listing.game?.id,
-                                        gameName: listing.game?.name ?? 'Unknown',
+                                        gameName: listing.game?.name ?? (t('common.unknown_game') || "Noma'lum o'yin"),
                                         title: listing.title ?? '',
                                         price: Number(listing.price) || 0,
                                         seller: listing.seller,
