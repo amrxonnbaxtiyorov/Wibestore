@@ -99,6 +99,41 @@ class SubscriptionService:
         return subscription
 
     @staticmethod
+    @transaction.atomic
+    def grant_subscription(user, plan_slug: str, months: int = 1) -> UserSubscription:
+        """
+        Admin tomonidan foydalanuvchiga tarif berish (to'lovsiz).
+        Mavjud aktiv obunani bekor qiladi va yangi yaratadi.
+        """
+        try:
+            plan = SubscriptionPlan.objects.get(slug=plan_slug, is_active=True)
+        except SubscriptionPlan.DoesNotExist:
+            raise BusinessLogicError(f"Tarif topilmadi: {plan_slug}")
+
+        now = timezone.now()
+        duration = timedelta(days=30 * months)
+
+        UserSubscription.objects.filter(user=user, status="active").update(
+            status="cancelled", cancelled_at=now
+        )
+
+        subscription = UserSubscription.objects.create(
+            user=user,
+            plan=plan,
+            status="active",
+            start_date=now,
+            end_date=now + duration,
+            auto_renew=False,
+            payment_history=[{
+                "source": "admin_grant",
+                "months": months,
+                "date": now.isoformat(),
+            }],
+        )
+        logger.info("Admin granted %s to %s for %s month(s)", plan_slug, user.email, months)
+        return subscription
+
+    @staticmethod
     def get_user_plan(user) -> str:
         """Get user's current plan type."""
         subscription = UserSubscription.objects.filter(
