@@ -251,3 +251,10 @@ class TelegramRegisterSerializer(serializers.Serializer):
 
     phone = serializers.CharField(max_length=20)
     code = serializers.CharField(min_length=4, max_length=6)
+
+
+class TelegramBotProfileRequestSerializer(serializers.Serializer):
+    """Bot uchun profil so'rovi: secret_key + telegram_id."""
+
+    secret_key = serializers.CharField(write_only=True)
+    telegram_id = serializers.IntegerField(min_value=1)

@@ -22,6 +22,7 @@ from .serializers import (
     OTPVerifySerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    TelegramBotProfileRequestSerializer,
     TelegramOTPCreateSerializer,
     TelegramRegisterSerializer,
     UserProfileUpdateSerializer,
@@ -273,6 +274,72 @@ class OTPVerifyView(APIView):
         )
         return Response(
             {"success": True, "message": "OTP verified successfully."},
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(tags=["Authentication"])
+class TelegramBotProfileView(APIView):
+    """
+    Bot uchun foydalanuvchi profili: sayt username, balans, sotilgan akkauntlar soni.
+    POST /api/v1/auth/telegram/profile/
+    Body: { "secret_key": "...", "telegram_id": 123456789 }
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
+
+    def post(self, request):
+        from django.conf import settings
+
+        serializer = TelegramBotProfileRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or data["secret_key"] != secret:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Unauthorized",
+                    "detail": "TELEGRAM_BOT_SECRET noto'g'ri yoki backend'da o'rnatilmagan.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        user = User.objects.filter(
+            telegram_id=data["telegram_id"],
+            is_active=True,
+            deleted_at__isnull=True,
+        ).first()
+
+        if not user:
+            return Response(
+                {
+                    "success": True,
+                    "has_account": False,
+                    "message": "Saytda ro'yxatdan o'tmagan.",
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        from apps.payments.models import EscrowTransaction
+
+        sold_count = EscrowTransaction.objects.filter(
+            seller=user, status="confirmed"
+        ).count()
+
+        return Response(
+            {
+                "success": True,
+                "has_account": True,
+                "data": {
+                    "username": user.username or user.email or str(user.telegram_id),
+                    "email": user.email or "",
+                    "balance": str(user.balance),
+                    "sold_count": sold_count,
+                },
+            },
             status=status.HTTP_200_OK,
         )
 

@@ -98,8 +98,26 @@ PAYMENT_ENABLED = bool(
     and 'your-domain' not in WEB_APP_URL
 )
 
-# Conversation states: faqat telefon orqali kod olish
+# Conversation states: telefon + yangi menyu oqimlari
 WAITING_PHONE, CONFIRMING = range(2)
+(
+    WAITING_PREMIUM_SCREENSHOT,
+    WAITING_TOPUP_SCREENSHOT,
+    WAITING_WITHDRAW_AMOUNT,
+    WITHDRAW_CONFIRM,
+    WAITING_WITHDRAW_CARD,
+) = range(2, 7)
+
+# Yangi keyboard tugmalar matni
+BTN_MY_ACCOUNT = "Mening saytdagi akkauntim"
+BTN_PREMIUM = "Premium olish"
+BTN_TOPUP = "Xisobni to'ldirish"
+BTN_WITHDRAW = "Xisobdan pul yechish"
+
+# Premium / to'ldirish / chiqarish uchun sozlamalar
+ADMIN_CARD_NUMBER = os.getenv("ADMIN_CARD_NUMBER", "").strip()
+PREMIUM_PRICE_UZS = os.getenv("PREMIUM_PRICE_UZS", "50000")
+PRO_PRICE_UZS = os.getenv("PRO_PRICE_UZS", "30000")
 
 # Countdown update interval (seconds) — har soniyada teskari sanoq
 COUNTDOWN_INTERVAL = 1
@@ -176,6 +194,28 @@ def create_otp_via_api(telegram_id: int, phone: str, full_name: str = "", photo_
             e, WEBSITE_URL
         )
         return None
+
+
+def get_telegram_profile_via_api(telegram_id: int) -> dict | None:
+    """Backend API orqali foydalanuvchi profili: username, balance, sold_count."""
+    if not BOT_SECRET_KEY:
+        return None
+    url = f"{WEBSITE_URL.rstrip('/')}/api/v1/auth/telegram/profile/"
+    payload = {"secret_key": BOT_SECRET_KEY, "telegram_id": telegram_id}
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status == 200:
+                return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        logger.warning("Profil API xato: %s", e)
+    return None
 
 
 def _make_progress_bar(remaining: int, total: int) -> str:
@@ -285,17 +325,27 @@ def _schedule_countdown(context: ContextTypes.DEFAULT_TYPE, chat_id: int, messag
         )
 
 
+# ===== ASOSIY KLAVIATURA =====
+
+
+def _get_main_keyboard():
+    """Asosiy menyu: 4 ta yangi tugma + telefon + to'lov paneli."""
+    keyboard = [
+        [KeyboardButton(BTN_MY_ACCOUNT), KeyboardButton(BTN_PREMIUM)],
+        [KeyboardButton(BTN_TOPUP), KeyboardButton(BTN_WITHDRAW)],
+        [KeyboardButton("📱 Telefon raqamimni yuborish", request_contact=True)],
+    ]
+    if PAYMENT_ENABLED:
+        keyboard.append([KeyboardButton("💰 To'lov paneli", web_app=WebAppInfo(url=WEB_APP_URL))])
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+
 # ===== HANDLERS =====
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Bot: /start — to'lov paneli + ro'yxatdan o'tish"""
+    """Bot: /start — asosiy menyu (akkaunt, Premium, to'ldirish, chiqarish, telefon, to'lov paneli)"""
     user = update.effective_user
-
-    # Asosiy klaviatura: OTP + To'lov paneli (agar sozlangan bo'lsa)
-    keyboard = [[KeyboardButton("📱 Telefon raqamimni yuborish", request_contact=True)]]
-    if PAYMENT_ENABLED:
-        keyboard.append([KeyboardButton("💰 To'lov paneli", web_app=WebAppInfo(url=WEB_APP_URL))])
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    reply_markup = _get_main_keyboard()
 
     payment_line = "\n💰 <b>To'lov paneli</b> — hisobni to'ldirish\n" if PAYMENT_ENABLED else ""
 
@@ -312,16 +362,139 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return WAITING_PHONE
 
 
+async def _handle_menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str) -> int | None:
+    """Agar matn menyu tugmasi bo'lsa, tegishli handlerni chaqirib state qaytaradi; aks holda None."""
+    if text == BTN_MY_ACCOUNT:
+        return await _cmd_my_account(update, context)
+    if text == BTN_PREMIUM:
+        return await _cmd_premium(update, context)
+    if text == BTN_TOPUP:
+        return await _cmd_topup(update, context)
+    if text == BTN_WITHDRAW:
+        return await _cmd_withdraw_start(update, context)
+    return None
+
+
+async def _cmd_my_account(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Mening saytdagi akkauntim: username, balans, sotilgan akkauntlar soni."""
+    telegram_id = update.effective_user.id
+    result = get_telegram_profile_via_api(telegram_id)
+    if not result or not result.get("success"):
+        await update.message.reply_html(
+            "❌ Ma'lumotlarni olish mumkin emas. Keyinroq urinib ko'ring yoki /start bosing."
+        )
+        return WAITING_PHONE
+    if not result.get("has_account"):
+        await update.message.reply_html(
+            "📌 <b>Saytda akkauntingiz yo'q.</b>\n\n"
+            "Avval saytda ro'yxatdan o'ting: telefon raqamingizni yuboring va tasdiqlash kodini oling, "
+            f"keyin <a href='{REGISTER_URL}'>saytda</a> kiriting."
+        )
+        return WAITING_PHONE
+    d = result.get("data", {})
+    username = d.get("username", "—")
+    balance = d.get("balance", "0")
+    sold_count = d.get("sold_count", 0)
+    await update.message.reply_html(
+        f"👤 <b>Saytdagi akkauntingiz</b>\n\n"
+        f"🆔 Username: <b>{username}</b>\n"
+        f"💰 Balans: <b>{balance} UZS</b>\n"
+        f"📦 Sotilgan akkauntlar: <b>{sold_count}</b> ta"
+    )
+    return WAITING_PHONE
+
+
+async def _cmd_premium(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Premium olish: tarif tanlash (Premium / Pro / Menu)."""
+    keyboard = [
+        [
+            InlineKeyboardButton("Premium", callback_data="premium_plan:premium"),
+            InlineKeyboardButton("Pro", callback_data="premium_plan:pro"),
+        ],
+        [InlineKeyboardButton("Menu", callback_data="premium_plan:menu")],
+    ]
+    await update.message.reply_html(
+        "⭐ <b>Premium tarifini tanlang</b>\n\n"
+        "1️⃣ <b>Premium</b>\n"
+        "2️⃣ <b>Pro</b>\n\n"
+        "Quyidagi tugmalardan birini bosing:",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+    return WAITING_PHONE
+
+
+async def _cb_premium_plan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Premium yoki Pro tanlanganida: narx + karta + screenshot so'rash."""
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+    if data == "premium_plan:menu":
+        await query.edit_message_text("⬅️ Asosiy menyuga qayttingiz.")
+        return WAITING_PHONE
+    if data == "premium_plan:pro":
+        plan_name, price = "Pro", PRO_PRICE_UZS
+    else:
+        plan_name, price = "Premium", PREMIUM_PRICE_UZS
+    context.user_data["premium_plan"] = plan_name
+    card_line = f"\n💳 To'lov kartasi: <code>{ADMIN_CARD_NUMBER}</code>" if ADMIN_CARD_NUMBER else ""
+    await query.edit_message_text(
+        f"✅ Tarif: <b>{plan_name}</b>\n\n"
+        f"💰 Narx: <b>{price} UZS</b>{card_line}\n\n"
+        "📸 To'lov qilganingizdan keyin <b>screenshot</b> (skrinshot) yuboring. "
+        "Admin tekshirib tasdiqlaydi.",
+        parse_mode="HTML",
+    )
+    return WAITING_PREMIUM_SCREENSHOT
+
+
+async def _cmd_topup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Xisobni to'ldirish: balans + karta, screenshot so'rash."""
+    telegram_id = update.effective_user.id
+    result = get_telegram_profile_via_api(telegram_id)
+    balance = "0"
+    if result and result.get("success") and result.get("has_account"):
+        balance = result.get("data", {}).get("balance", "0")
+    card_line = f"\n💳 To'lov kartasi: <code>{ADMIN_CARD_NUMBER}</code>" if ADMIN_CARD_NUMBER else ""
+    await update.message.reply_html(
+        f"💰 <b>Hisobni to'ldirish</b>\n\n"
+        f"Joriy balans: <b>{balance} UZS</b>{card_line}\n\n"
+        "Kartaga pul o'tkazgach, to'lov <b>screenshot</b>ini (skrinshot) yuboring. Admin tekshiradi."
+    )
+    return WAITING_TOPUP_SCREENSHOT
+
+
+async def _cmd_withdraw_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Xisobdan pul yechish: balans ko'rsatib, summa so'rash."""
+    telegram_id = update.effective_user.id
+    result = get_telegram_profile_via_api(telegram_id)
+    if not result or not result.get("success") or not result.get("has_account"):
+        await update.message.reply_html(
+            "❌ Saytda akkauntingiz yo'q yoki ma'lumot olinmadi. Avval ro'yxatdan o'ting."
+        )
+        return WAITING_PHONE
+    balance = result.get("data", {}).get("balance", "0")
+    await update.message.reply_html(
+        f"💸 <b>Hisobdan pul yechish</b>\n\n"
+        f"Joriy balans: <b>{balance} UZS</b>\n\n"
+        "Qancha summani chiqarmoqchisiz? Raqamni yozing (masalan: 50000)"
+    )
+    return WAITING_WITHDRAW_AMOUNT
+
+
 async def receive_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Telefon qabul qilish va OTP yuborish"""
-    # Contact yoki matn orqali
+    """Telefon qabul qilish yoki menyu tugmalarini boshqarish."""
     if update.message.contact:
         phone = update.message.contact.phone_number
         if not phone.startswith('+'):
             phone = '+' + phone
     else:
-        phone = update.message.text.strip()
-        # Validatsiya
+        text = (update.message.text or "").strip()
+        # Avval menyu tugmalarini tekshirish
+        if text in (BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW):
+            state = await _handle_menu_button(update, context, text)
+            return state if state is not None else WAITING_PHONE
+        phone = text
+        # Telefon validatsiyasi
         if not phone.startswith('+') or len(phone) < 10:
             await update.message.reply_text(
                 "❌ Noto'g'ri telefon raqam.\n\n"
@@ -421,6 +594,126 @@ async def new_code_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     return CONFIRMING
 
 
+async def _receive_premium_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Premium to'lov screenshot qabul qilish va adminga yuborish."""
+    if not update.message.photo:
+        await update.message.reply_text("📸 Iltimos, to'lov skrinshotini (rasm) yuboring.")
+        return WAITING_PREMIUM_SCREENSHOT
+    plan = context.user_data.get("premium_plan", "Premium")
+    telegram_id = update.effective_user.id
+    result = get_telegram_profile_via_api(telegram_id)
+    username = result.get("data", {}).get("username", "") if result and result.get("has_account") else str(telegram_id)
+    if not username and result and result.get("has_account"):
+        username = result.get("data", {}).get("email", str(telegram_id))
+    caption = (
+        f"⭐ <b>Premium to'lov (skrinshot)</b>\n"
+        f"👤 Sayt username: <b>{username}</b>\n"
+        f"📋 Tarif: <b>{plan}</b>\n"
+        f"🆔 Telegram ID: <code>{telegram_id}</code>"
+    )
+    file_id = update.message.photo[-1].file_id
+    await _send_to_admins_photo(context.bot, caption, file_id)
+    context.user_data.pop("premium_plan", None)
+    await update.message.reply_html(
+        "✅ Skrinshot qabul qilindi. Admin tekshiradi va tasdiqlagach xabar beramiz.",
+        reply_markup=_get_main_keyboard(),
+    )
+    return WAITING_PHONE
+
+
+async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Hisobni to'ldirish screenshot qabul qilish va adminga yuborish."""
+    if not update.message.photo:
+        await update.message.reply_text("📸 Iltimos, to'lov skrinshotini (rasm) yuboring.")
+        return WAITING_TOPUP_SCREENSHOT
+    telegram_id = update.effective_user.id
+    result = get_telegram_profile_via_api(telegram_id)
+    username = result.get("data", {}).get("username", "") if result and result.get("has_account") else str(telegram_id)
+    caption = (
+        f"💰 <b>Hisobni to'ldirish (skrinshot)</b>\n"
+        f"👤 Sayt username: <b>{username}</b>\n"
+        f"🆔 Telegram ID: <code>{telegram_id}</code>"
+    )
+    file_id = update.message.photo[-1].file_id
+    await _send_to_admins_photo(context.bot, caption, file_id)
+    await update.message.reply_html(
+        "✅ Skrinshot qabul qilindi. Admin tekshiradi va balans yangilanadi.",
+        reply_markup=_get_main_keyboard(),
+    )
+    return WAITING_PHONE
+
+
+async def _receive_withdraw_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Chiqarish summasini qabul qilish va tasdiqlash so'rash."""
+    text = (update.message.text or "").strip().replace(" ", "").replace(",", "")
+    if not text or not text.isdigit():
+        await update.message.reply_text("❌ Summani faqat raqamda yuboring (masalan: 50000)")
+        return WAITING_WITHDRAW_AMOUNT
+    amount = text
+    context.user_data["withdraw_amount"] = amount
+    keyboard = [
+        [
+            InlineKeyboardButton("Ha", callback_data="withdraw_confirm:yes"),
+            InlineKeyboardButton("Yo'q", callback_data="withdraw_confirm:no"),
+        ],
+    ]
+    await update.message.reply_html(
+        f"❓ <b>{amount} UZS</b> summani hisobdan chiqarishga rozimisiz?",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+    return WITHDRAW_CONFIRM
+
+
+async def _cb_withdraw_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Chiqarish tasdiqlash: Ha -> karta so'ra, Yo'q -> menyu."""
+    query = update.callback_query
+    await query.answer()
+    if query.data == "withdraw_confirm:no":
+        context.user_data.pop("withdraw_amount", None)
+        await query.edit_message_text("⬅️ Bekor qilindi. Asosiy menyuga qayting.")
+        return WAITING_PHONE
+    await query.edit_message_text("💳 Karta raqamingizni yuboring (faqat raqamlar yoki to'liq formati).")
+    return WAITING_WITHDRAW_CARD
+
+
+async def _receive_withdraw_card(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Chiqarish uchun karta raqamini qabul qilish va adminga yuborish."""
+    card = (update.message.text or "").strip()
+    if not card or len(card) < 4:
+        await update.message.reply_text("❌ Karta raqamini to'g'ri kiriting.")
+        return WAITING_WITHDRAW_CARD
+    amount = context.user_data.pop("withdraw_amount", "?")
+    telegram_id = update.effective_user.id
+    result = get_telegram_profile_via_api(telegram_id)
+    username = result.get("data", {}).get("username", "") if result and result.get("has_account") else str(telegram_id)
+    for target in _notification_targets():
+        try:
+            await context.bot.send_message(
+                target,
+                f"💸 <b>Hisobdan pul yechish so'rovi</b>\n\n"
+                f"👤 Sayt username: <b>{username}</b>\n"
+                f"🆔 Telegram ID: <code>{telegram_id}</code>\n"
+                f"💰 Summa: <b>{amount} UZS</b>\n"
+                f"💳 Karta raqami: <code>{card}</code>",
+                parse_mode="HTML",
+            )
+        except Exception as e:
+            logger.warning("Admin %s ga xabar yuborilmadi: %s", target, e)
+    await update.message.reply_html(
+        "✅ So'rovingiz qabul qilindi. Admin tekshiradi va pul o'tkazilgach xabar beramiz.",
+        reply_markup=_get_main_keyboard(),
+    )
+    return WAITING_PHONE
+
+
+async def _cancel_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Joriy oqimni bekor qilib asosiy menyuga qaytish."""
+    context.user_data.pop("premium_plan", None)
+    context.user_data.pop("withdraw_amount", None)
+    await update.message.reply_html("⬅️ Bekor qilindi.", reply_markup=_get_main_keyboard())
+    return WAITING_PHONE
+
+
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Bekor qilish"""
     await update.message.reply_html(
@@ -465,6 +758,15 @@ def _notification_targets() -> list[int]:
     if ADMIN_CHAT_ID:
         return [ADMIN_CHAT_ID]
     return list(ADMIN_IDS)
+
+
+async def _send_to_admins_photo(bot, caption: str, photo_file_id: str) -> None:
+    """Adminlarga rasm + caption yuborish (screenshot va h.k.)."""
+    for target in _notification_targets():
+        try:
+            await bot.send_photo(target, photo=photo_file_id, caption=caption, parse_mode="HTML")
+        except Exception as e:
+            logger.warning("Admin %s ga rasm yuborilmadi: %s", target, e)
 
 
 async def _payment_api(method: str, path: str, json_body: dict | None = None) -> tuple[int, dict]:
@@ -885,16 +1187,36 @@ def main():
         .build()
     )
 
-    # ---- OTP ro'yxatdan o'tish (mavjud conversation) ----
+    # ---- OTP + menyu (akkaunt, Premium, to'ldirish, chiqarish) ----
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
             WAITING_PHONE: [
                 MessageHandler(filters.CONTACT, receive_phone),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, receive_phone),
+                CallbackQueryHandler(_cb_premium_plan, pattern="^premium_plan:"),
             ],
             CONFIRMING: [
                 CallbackQueryHandler(new_code_callback, pattern='^new_code$'),
+            ],
+            WAITING_PREMIUM_SCREENSHOT: [
+                MessageHandler(filters.PHOTO, _receive_premium_screenshot),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
+            WAITING_TOPUP_SCREENSHOT: [
+                MessageHandler(filters.PHOTO, _receive_topup_screenshot),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
+            WAITING_WITHDRAW_AMOUNT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, _receive_withdraw_amount),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
+            WITHDRAW_CONFIRM: [
+                CallbackQueryHandler(_cb_withdraw_confirm, pattern="^withdraw_confirm:"),
+            ],
+            WAITING_WITHDRAW_CARD: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, _receive_withdraw_card),
+                CommandHandler('cancel', _cancel_to_menu),
             ],
         },
         fallbacks=[CommandHandler('cancel', cancel)],

@@ -25,6 +25,7 @@ urlpatterns = [
     path("email/resend/", views.EmailResendView.as_view(), name="email-resend"),
     path("otp/request/", views.OTPRequestView.as_view(), name="otp-request"),
     path("otp/verify/", views.OTPVerifyView.as_view(), name="otp-verify"),
+    path("telegram/profile/", views.TelegramBotProfileView.as_view(), name="telegram-bot-profile"),
     path("telegram/otp/create/", views.BotCreateOTPView.as_view(), name="telegram-otp-create"),
     path("register/telegram/", views.TelegramRegisterView.as_view(), name="register-telegram"),
     path("me/", views.MeView.as_view(), name="me"),
