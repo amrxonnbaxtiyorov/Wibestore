@@ -226,81 +226,78 @@ export default function ChatPage() {
                             </p>
                         </div>
 
-                        {!activeRoom ? (
-                            <div className="empty-state" style={{ flex: 1 }}>
-                                <MessageCircle className="empty-state-icon" style={{ width: '64px', height: '64px' }} />
-                                <p className="empty-state-description">{t('chat.choose') || 'Chap tomondan suhbat tanlang'}</p>
-                            </div>
-                        ) : (
-                            <>
-                                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px', scrollbarGutter: 'stable' }}>
-                                    {isMessagesLoading ? (
-                                        <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-                                            {t('common.loading') || 'Yuklanmoqda...'}
-                                        </p>
-                                    ) : (
-                                        messages.map((msg) => {
-                                            const isMe = msg.sender?.id === user.id;
-                                            return (
-                                                <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
-                                                    <div
-                                                        style={{
-                                                            maxWidth: '78%',
-                                                            padding: '10px 12px',
-                                                            borderRadius: 'var(--radius-2xl)',
-                                                            ...(isMe
-                                                                ? {
-                                                                    backgroundColor: 'var(--color-accent-blue)',
-                                                                    color: 'var(--color-text-on-accent)',
-                                                                    borderBottomRightRadius: 'var(--radius-sm)',
-                                                                }
-                                                                : {
-                                                                    backgroundColor: 'var(--color-bg-tertiary)',
-                                                                    color: 'var(--color-text-primary)',
-                                                                    borderBottomLeftRadius: 'var(--radius-sm)',
-                                                                }),
-                                                        }}
-                                                    >
-                                                        <p style={{ fontSize: 'var(--font-size-sm)', margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
-                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginTop: '4px' }}>
-                                                            <span style={{ fontSize: 'var(--font-size-xs)', opacity: 0.85 }}>
-                                                                {msg.created_at ? new Date(msg.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : ''}
-                                                            </span>
-                                                            {isMe && (
-                                                                <span style={{ fontSize: '12px', opacity: 0.9, lineHeight: 1 }}>
-                                                                    {msg.is_read ? '✓✓' : '✓'}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
-                                    )}
-                                    <div ref={messagesEndRef} />
+                        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px', scrollbarGutter: 'stable' }}>
+                            {!activeRoom ? (
+                                <div className="empty-state" style={{ flex: 1, minHeight: 0, padding: '48px 16px' }}>
+                                    <MessageCircle className="empty-state-icon" style={{ width: '64px', height: '64px' }} />
+                                    <p className="empty-state-description">{t('chat.choose') || 'Chap tomondan suhbat tanlang'}</p>
                                 </div>
+                            ) : isMessagesLoading ? (
+                                <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                                    {t('common.loading') || 'Yuklanmoqda...'}
+                                </p>
+                            ) : (
+                                messages.map((msg) => {
+                                    const isMe = msg.sender?.id === user.id;
+                                    return (
+                                        <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                                            <div
+                                                style={{
+                                                    maxWidth: '78%',
+                                                    padding: '10px 12px',
+                                                    borderRadius: 'var(--radius-2xl)',
+                                                    ...(isMe
+                                                        ? {
+                                                            backgroundColor: 'var(--color-accent-blue)',
+                                                            color: 'var(--color-text-on-accent)',
+                                                            borderBottomRightRadius: 'var(--radius-sm)',
+                                                        }
+                                                        : {
+                                                            backgroundColor: 'var(--color-bg-tertiary)',
+                                                            color: 'var(--color-text-primary)',
+                                                            borderBottomLeftRadius: 'var(--radius-sm)',
+                                                        }),
+                                                }}
+                                            >
+                                                <p style={{ fontSize: 'var(--font-size-sm)', margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginTop: '4px' }}>
+                                                    <span style={{ fontSize: 'var(--font-size-xs)', opacity: 0.85 }}>
+                                                        {msg.created_at ? new Date(msg.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                    </span>
+                                                    {isMe && (
+                                                        <span style={{ fontSize: '12px', opacity: 0.9, lineHeight: 1 }}>
+                                                            {msg.is_read ? '✓✓' : '✓'}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
 
-                                <form onSubmit={handleSend} style={{ padding: '12px', borderTop: '1px solid var(--color-border-muted)', backgroundColor: 'var(--color-bg-primary)' }}>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <input
-                                            value={text}
-                                            onChange={(e) => setText(e.target.value)}
-                                            className="input input-md"
-                                            placeholder={t('detail.write_message') || 'Xabar yozing...'}
-                                            style={{ flex: 1 }}
-                                        />
-                                        <button
-                                            type="submit"
-                                            className="btn btn-primary btn-md"
-                                            disabled={!text.trim() || sendMessageMutation.isPending}
-                                            style={{ padding: '10px 14px', flexShrink: 0 }}
-                                        >
-                                            <Send className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                </form>
-                            </>
-                        )}
+                        <form onSubmit={handleSend} style={{ padding: '12px', borderTop: '1px solid var(--color-border-muted)', backgroundColor: 'var(--color-bg-primary)' }}>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <input
+                                    value={text}
+                                    onChange={(e) => setText(e.target.value)}
+                                    className="input input-md"
+                                    placeholder={activeRoom ? (t('detail.write_message') || 'Xabar yozing...') : (t('chat.choose') || 'Avval suhbatni tanlang')}
+                                    style={{ flex: 1 }}
+                                    disabled={!activeRoom || sendMessageMutation.isPending}
+                                />
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary btn-md"
+                                    disabled={!activeRoom || !text.trim() || sendMessageMutation.isPending}
+                                    style={{ padding: '10px 14px', flexShrink: 0 }}
+                                >
+                                    <Send className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
