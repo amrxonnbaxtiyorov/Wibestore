@@ -92,9 +92,64 @@ export const useSendMessage = (chatId) => {
             const { data } = await apiClient.post(`/chats/${chatId}/send/`, { content: text });
             return data;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['chats', chatId, 'messages'] });
+        onMutate: async (text) => {
+            // Optimistic UI: darhol xabarni listga qo'shamiz
+            await queryClient.cancelQueries({ queryKey: ['chats', chatId, 'messages'] });
+            const previous = queryClient.getQueryData(['chats', chatId, 'messages']);
+
+            const optimisticMessage = {
+                id: `optimistic-${Date.now()}`,
+                content: String(text ?? '').trim(),
+                created_at: new Date().toISOString(),
+                sender: null,
+                is_read: true,
+            };
+
+            queryClient.setQueryData(['chats', chatId, 'messages'], (old) => {
+                if (!old) return old;
+                if (!old.pages || old.pages.length === 0) return old;
+
+                const firstPage = old.pages[0];
+                const currentResults = Array.isArray(firstPage?.results)
+                    ? firstPage.results
+                    : (Array.isArray(firstPage) ? firstPage : []);
+
+                const nextFirstPage = Array.isArray(firstPage)
+                    ? [optimisticMessage, ...currentResults]
+                    : { ...firstPage, results: [optimisticMessage, ...currentResults] };
+
+                return {
+                    ...old,
+                    pages: [nextFirstPage, ...old.pages.slice(1)],
+                };
+            });
+
+            return { previous, optimisticId: optimisticMessage.id };
+        },
+        onError: (_err, _text, ctx) => {
+            if (ctx?.previous) {
+                queryClient.setQueryData(['chats', chatId, 'messages'], ctx.previous);
+            }
+        },
+        onSuccess: (res, _text, ctx) => {
+            // Optimistic message'ni backend qaytargan message bilan almashtiramiz
+            const realMessage = res?.data ?? null;
+            if (realMessage && ctx?.optimisticId) {
+                queryClient.setQueryData(['chats', chatId, 'messages'], (old) => {
+                    if (!old?.pages?.length) return old;
+                    const pages = old.pages.map((p) => {
+                        const arr = Array.isArray(p?.results) ? p.results : (Array.isArray(p) ? p : null);
+                        if (!arr) return p;
+                        const replaced = arr.map((m) => (m?.id === ctx.optimisticId ? realMessage : m));
+                        return Array.isArray(p) ? replaced : { ...p, results: replaced };
+                    });
+                    return { ...old, pages };
+                });
+            }
             queryClient.invalidateQueries({ queryKey: ['chats'] });
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['chats', chatId, 'messages'] });
         },
     });
 };
