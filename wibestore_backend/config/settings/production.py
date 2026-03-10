@@ -83,26 +83,57 @@ AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")  # noqa: F405
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")  # noqa: F405
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="wibestore-media")  # noqa: F405
 
+_endpoint = env("AWS_S3_ENDPOINT_URL", default="").strip()  # noqa: F405
+_custom_domain = env("AWS_S3_CUSTOM_DOMAIN", default="").strip()  # noqa: F405
+_custom_domain = _custom_domain.replace("https://", "").replace("http://", "").rstrip("/") if _custom_domain else ""
+
 if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
+    # Django 5.x: STORAGES dict is the proper way (DEFAULT_FILE_STORAGE is deprecated)
+    _s3_options = {
+        "bucket_name": AWS_STORAGE_BUCKET_NAME,
+        "region_name": env("AWS_S3_REGION_NAME", default="auto"),  # noqa: F405
+        "file_overwrite": False,
+        "default_acl": None,
+        "querystring_auth": False,
+        "object_parameters": {"CacheControl": "max-age=86400"},
+    }
+    if _endpoint:
+        _s3_options["endpoint_url"] = _endpoint.rstrip("/")
+    if _custom_domain:
+        _s3_options["custom_domain"] = _custom_domain
+
+    STORAGES = {  # noqa: F811
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": _s3_options,
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
+    # Legacy setting (ba'zi kutubxonalar uchun)
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = None
     AWS_QUERYSTRING_AUTH = False
     AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="auto")  # noqa: F405
-    AWS_S3_OBJECT_PARAMETERS = {
-        "CacheControl": "max-age=86400",
-    }
-    _endpoint = env("AWS_S3_ENDPOINT_URL", default="").strip()  # noqa: F405
+    AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
     if _endpoint:
         AWS_S3_ENDPOINT_URL = _endpoint.rstrip("/")
-    _custom_domain = env("AWS_S3_CUSTOM_DOMAIN", default="").strip()  # noqa: F405
     if _custom_domain:
-        AWS_S3_CUSTOM_DOMAIN = _custom_domain.replace("https://", "").replace("http://", "").rstrip("/")
+        AWS_S3_CUSTOM_DOMAIN = _custom_domain
+
+    # MEDIA_URL R2 ga yo'naltirish — rasmlar to'g'ri URL bilan qaytishi uchun
+    if _custom_domain:
+        MEDIA_URL = f"https://{_custom_domain}/"
+
     logger.info(
-        "S3/R2 storage ACTIVE: bucket=%s, endpoint=%s, custom_domain=%s",
+        "S3/R2 storage ACTIVE: bucket=%s, endpoint=%s, custom_domain=%s, MEDIA_URL=%s",
         AWS_STORAGE_BUCKET_NAME,
         _endpoint or "not set",
         _custom_domain or "not set",
+        MEDIA_URL,  # noqa: F405
     )
 else:
     logger.warning(
