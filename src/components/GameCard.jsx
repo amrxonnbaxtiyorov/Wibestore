@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const GameCard = ({ game }) => {
-    const gameId = game.slug || game.id;
+    const gameId = game.id || game.slug;
     const gameName = game.name;
     const gameIcon = game.icon;
     const gameImage = game.image || game.banner;
