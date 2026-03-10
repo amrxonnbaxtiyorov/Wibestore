@@ -56,7 +56,7 @@ const AdminDashboard = () => {
 
     const getStatusBadge = (status) => {
         const config = {
-            active: { bg: 'var(--color-success-bg)', color: 'var(--color-accent-green)', label: 'Faol' },
+            active: { bg: 'var(--color-success-bg)', color: 'var(--color-accent-green)', label: 'Tasdiqlandi' },
             pending: { bg: 'var(--color-warning-bg)', color: 'var(--color-accent-orange)', label: 'Kutilmoqda' },
             blocked: { bg: 'var(--color-error-bg)', color: 'var(--color-accent-red)', label: 'Bloklangan' },
             investigating: { bg: 'var(--color-info-bg)', color: 'var(--color-accent-blue)', label: 'Tekshirilmoqda' },

@@ -30,14 +30,14 @@ const AdminAccounts = () => {
     const statusFilters = [
         { value: 'all', label: 'Barchasi' },
         { value: 'pending', label: 'Kutilmoqda' },
-        { value: 'active', label: 'Faol' },
+        { value: 'active', label: 'Tasdiqlandi' },
         { value: 'rejected', label: 'Rad etilgan' },
         { value: 'sold', label: 'Sotilgan' },
     ];
 
     const getStatusBadge = (status) => {
         const config = {
-            active: { bg: 'var(--color-success-bg)', color: 'var(--color-accent-green)', label: 'Faol' },
+            active: { bg: 'var(--color-success-bg)', color: 'var(--color-accent-green)', label: 'Tasdiqlandi' },
             pending: { bg: 'var(--color-warning-bg)', color: 'var(--color-accent-orange)', label: 'Kutilmoqda' },
             rejected: { bg: 'var(--color-error-bg)', color: 'var(--color-accent-red)', label: 'Rad etilgan' },
             sold: { bg: 'var(--color-info-bg)', color: 'var(--color-accent-blue)', label: 'Sotilgan' },
