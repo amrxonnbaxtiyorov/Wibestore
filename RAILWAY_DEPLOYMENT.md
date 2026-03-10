@@ -77,3 +77,4 @@
 - Use **`--omit=optional`** to avoid optional native deps (e.g. sharp) breaking on Alpine.
 - Keep **Unicode quotes** out of source (run `node scripts/fix-unicode-quotes.js` in CI if needed).
 - **VITE_***: Empty defaults in Dockerfile; set real values in Railway Variables (and as build args when using Docker).
+- **O'yin/listing rasmlari:** Backend `/media/` da bo'ladi. Frontend build da `VITE_API_BASE_URL` ni to'liq backend URL ga o'rnating (masalan `https://your-backend.up.railway.app/api/v1`). Yoki faqat domen uchun `VITE_BACKEND_ORIGIN=https://your-backend.up.railway.app` qo'ying — rasmlar shu domen orqali yuklanadi.

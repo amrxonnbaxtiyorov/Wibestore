@@ -22,16 +22,28 @@ export function capitalizeFirst(str) {
 
 /**
  * Backend nisbiy URL'ni (/media/...) to'liq URL'ga aylantiradi.
- * To'liq URL yoki data: URL bo'lsa o'zgartirmaydi.
- * @param {string|null|undefined} url
+ * Rasmlar backend domenida bo'ladi — VITE_API_BASE_URL yoki VITE_BACKEND_ORIGIN to'liq backend manziliga o'rnatilishi kerak.
+ * @param {string|{url?:string, file?:string}|null|undefined} url - URL string yoki Django-style object
  * @returns {string|null}
  */
 export function resolveImageUrl(url) {
-  if (!url || typeof url !== 'string') return null;
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
-  const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-  const origin = base.replace(/\/api\/v1\/?$/, '');
-  return origin + (url.startsWith('/') ? url : '/' + url);
+  let path = url;
+  if (path && typeof path === 'object') {
+    path = path.url ?? path.file ?? path.image ?? null;
+  }
+  if (!path || typeof path !== 'string') return null;
+  path = path.trim();
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path;
+  // Backend origin: VITE_BACKEND_ORIGIN (faqat domen) yoki VITE_API_BASE_URL dan (/api/v1 ni olib tashlash)
+  const backendOrigin =
+    import.meta.env.VITE_BACKEND_ORIGIN ||
+    (() => {
+      const base = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+      return base.replace(/\/api\/v1\/?$/, '').trim();
+    })();
+  const origin = backendOrigin && !backendOrigin.startsWith('/') ? backendOrigin.replace(/\/$/, '') : '';
+  return origin ? origin + (path.startsWith('/') ? path : '/' + path) : path;
 }
 
 /** @deprecated resolveImageUrl ni ishlating */
