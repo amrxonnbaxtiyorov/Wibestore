@@ -58,8 +58,8 @@ export default function ChatRoomPage() {
     }
 
     return (
-        <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '80px' }}>
-            <div className="gh-container" style={{ maxWidth: '720px', margin: '0 auto', paddingTop: '24px' }}>
+        <div className="page-enter" style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
+            <div className="gh-container" style={{ flex: 1, minHeight: 0, maxWidth: '720px', margin: '0 auto', paddingTop: '24px', display: 'flex', flexDirection: 'column' }}>
                 <div
                     style={{
                         display: 'flex',
@@ -116,7 +116,8 @@ export default function ChatRoomPage() {
                         backgroundColor: 'var(--color-bg-secondary)',
                         borderRadius: 'var(--radius-xl)',
                         border: '1px solid var(--color-border-default)',
-                        minHeight: '400px',
+                        flex: 1,
+                        minHeight: 0,
                         display: 'flex',
                         flexDirection: 'column',
                         overflow: 'hidden',
@@ -125,12 +126,12 @@ export default function ChatRoomPage() {
                     <div
                         style={{
                             flex: 1,
+                            minHeight: 0,
                             overflowY: 'auto',
                             padding: '16px',
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '12px',
-                            maxHeight: '65vh',
                             scrollbarGutter: 'stable',
                             scrollbarWidth: 'thin',
                         }}

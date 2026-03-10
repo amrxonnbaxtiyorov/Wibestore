@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -97,49 +97,54 @@ const PageLoader = () => (
 );
 
 // Main layout component for public routes
-const PublicLayout = ({ children }) => (
-  <div
-    className="min-h-screen"
-    style={{
-      backgroundColor: 'var(--color-bg-primary)',
-      color: 'var(--color-text-primary)',
-    }}
-  >
-    <ScrollToTop />
-    {/* Skip to content for keyboard users */}
-    <a
-      href="#main-content"
-      className="skip-to-content"
+const PublicLayout = ({ children }) => {
+  const { pathname } = useLocation();
+  const isChatRoute = pathname === '/chat' || pathname.startsWith('/chat/');
+
+  return (
+    <div
+      className="min-h-screen"
       style={{
-        position: 'absolute',
-        top: '-100%',
-        left: '16px',
-        padding: '8px 16px',
-        backgroundColor: 'var(--color-accent-blue)',
-        color: '#ffffff',
-        borderRadius: 'var(--radius-md)',
-        fontSize: 'var(--font-size-sm)',
-        fontWeight: 'var(--font-weight-semibold)',
-        zIndex: 100,
-        textDecoration: 'none',
-        transition: 'top 0.2s ease',
+        backgroundColor: 'var(--color-bg-primary)',
+        color: 'var(--color-text-primary)',
       }}
-      onFocus={(e) => { e.currentTarget.style.top = '8px'; }}
-      onBlur={(e) => { e.currentTarget.style.top = '-100%'; }}
     >
-      Skip to content
-    </a>
-    <Navbar />
-    <main id="main-content" role="main" style={{ paddingTop: '64px' }}>
-      {children}
-    </main>
-    <Footer />
-    <CookieConsent />
-    <ChatWidget />
-    <CommandPalette />
-    <OnboardingTour />
-  </div>
-);
+      <ScrollToTop />
+      {/* Skip to content for keyboard users */}
+      <a
+        href="#main-content"
+        className="skip-to-content"
+        style={{
+          position: 'absolute',
+          top: '-100%',
+          left: '16px',
+          padding: '8px 16px',
+          backgroundColor: 'var(--color-accent-blue)',
+          color: '#ffffff',
+          borderRadius: 'var(--radius-md)',
+          fontSize: 'var(--font-size-sm)',
+          fontWeight: 'var(--font-weight-semibold)',
+          zIndex: 100,
+          textDecoration: 'none',
+          transition: 'top 0.2s ease',
+        }}
+        onFocus={(e) => { e.currentTarget.style.top = '8px'; }}
+        onBlur={(e) => { e.currentTarget.style.top = '-100%'; }}
+      >
+        Skip to content
+      </a>
+      <Navbar />
+      <main id="main-content" role="main" style={{ paddingTop: '64px' }}>
+        {children}
+      </main>
+      {!isChatRoute && <Footer />}
+      <CookieConsent />
+      <ChatWidget />
+      <CommandPalette />
+      <OnboardingTour />
+    </div>
+  );
+};
 
 function App() {
   return (
