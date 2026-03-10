@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MessageCircle, Gamepad2, Send, X } from 'lucide-react';
+import { MessageCircle, Gamepad2, Send, X, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useChats, useChatMessages, useMarkChatRead, useSendMessage } from '../hooks/useChat';
+import { useChats, useChatMessages, useMarkChatRead, useSendMessage, useChatSoundEnabled } from '../hooks/useChat';
 import { useLanguage } from '../context/LanguageContext';
 import { resolveImageUrl, getDisplayInitial } from '../lib/displayUtils';
 import { ensureSoundUnlocked, playChatNotificationSound } from '../lib/notificationSound';
@@ -23,6 +23,7 @@ export default function ChatPage() {
     const messagesEndRef = useRef(null);
     const lastNotifiedMessageIdRef = useRef(null);
 
+    const [soundEnabled, toggleSound] = useChatSoundEnabled();
     const activeRoom = useMemo(() => {
         if (!activeRoomId || !Array.isArray(chats)) return null;
         return chats.find((r) => String(r?.id) === String(activeRoomId)) ?? null;
@@ -129,12 +130,33 @@ export default function ChatPage() {
                     <span className="breadcrumb-current">{t('nav.chat') || 'Xabarlar'}</span>
                 </div>
 
-                {/* Page title */}
+                {/* Page title + ovoz tugmasi */}
                 <div className="chat-page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', marginBottom: '16px', paddingLeft: '12px', flexShrink: 0 }}>
                     <MessageCircle style={{ width: '28px', height: '28px', color: 'var(--color-accent-blue)' }} />
-                    <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', margin: 0 }}>
+                    <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', margin: 0, flex: 1 }}>
                         {t('nav.chat') || 'Xabarlar'}
                     </h1>
+                    <button
+                        type="button"
+                        onClick={toggleSound}
+                        className="btn btn-ghost btn-sm"
+                        aria-label={soundEnabled ? (t('chat.sound_off') || 'Ovozni o\'chirish') : (t('chat.sound_on') || 'Ovozni yoqish')}
+                        title={soundEnabled ? (t('chat.sound_off') || 'Ovozni o\'chirish') : (t('chat.sound_on') || 'Ovozni yoqish')}
+                        style={{
+                            width: '40px',
+                            height: '40px',
+                            padding: 0,
+                            borderRadius: 'var(--radius-lg)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: soundEnabled ? 'var(--color-accent-blue)' : 'var(--color-text-muted)',
+                            border: '1px solid var(--color-border-muted)',
+                            backgroundColor: 'var(--color-bg-primary)',
+                        }}
+                    >
+                        {soundEnabled ? <Volume2 style={{ width: '20px', height: '20px' }} /> : <VolumeX style={{ width: '20px', height: '20px' }} />}
+                    </button>
                 </div>
 
                 {/* Telegram-style layout */}

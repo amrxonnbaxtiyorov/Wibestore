@@ -1,5 +1,28 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import apiClient from '../lib/apiClient';
+import { isChatSoundEnabled, setChatSoundEnabled, getChatSoundChangedEventName } from '../lib/notificationSound';
+
+/**
+ * Chat ovozini yoqish/o'chirish — localStorage + barcha ochiq sahifalarda sinxron.
+ */
+export function useChatSoundEnabled() {
+    const [enabled, setEnabled] = useState(() => isChatSoundEnabled());
+
+    useEffect(() => {
+        const handler = () => setEnabled(isChatSoundEnabled());
+        window.addEventListener(getChatSoundChangedEventName(), handler);
+        return () => window.removeEventListener(getChatSoundChangedEventName(), handler);
+    }, []);
+
+    const toggle = () => {
+        const next = !enabled;
+        setChatSoundEnabled(next);
+        setEnabled(next);
+    };
+
+    return [enabled, toggle];
+}
 
 /**
  * Hook для получения списка чатов пользователя
@@ -194,4 +217,5 @@ export default {
     useCreateChat,
     useSendMessage,
     useMarkChatRead,
+    useChatSoundEnabled,
 };

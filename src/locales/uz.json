@@ -16,7 +16,9 @@
         "compare": "Solishtirish"
     },
     "chat": {
-        "conversations": "suhbat"
+        "conversations": "suhbat",
+        "sound_on": "Ovozni yoqish",
+        "sound_off": "Ovozni o'chirish"
     },
     "onboarding": {
         "welcome_title": "WibeStore ga xush kelibsiz",

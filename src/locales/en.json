@@ -16,7 +16,9 @@
         "compare": "Compare"
     },
     "chat": {
-        "conversations": "conversations"
+        "conversations": "conversations",
+        "sound_on": "Turn sound on",
+        "sound_off": "Turn sound off"
     },
     "onboarding": {
         "welcome_title": "Welcome to WibeStore",

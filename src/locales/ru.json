@@ -16,7 +16,9 @@
         "compare": "Сравнение"
     },
     "chat": {
-        "conversations": "диалогов"
+        "conversations": "диалогов",
+        "sound_on": "Включить звук",
+        "sound_off": "Выключить звук"
     },
     "onboarding": {
         "welcome_title": "Добро пожаловать в WibeStore",
