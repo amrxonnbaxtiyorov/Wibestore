@@ -79,17 +79,17 @@ export default function ChatPage() {
     if (!user) return null;
 
     return (
-        <div className="page-enter" style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
-            <div className="gh-container" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', maxWidth: 'none' }}>
+        <div className="page-enter" style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div className="gh-container" style={{ flex: '1 1 0%', minHeight: 0, display: 'flex', flexDirection: 'column', maxWidth: 'none', overflow: 'hidden' }}>
                 {/* Breadcrumbs */}
-                <div className="breadcrumbs">
+                <div className="breadcrumbs" style={{ flexShrink: 0 }}>
                     <Link to="/">{t('common.home')}</Link>
                     <span className="breadcrumb-separator">/</span>
                     <span className="breadcrumb-current">{t('nav.chat') || 'Xabarlar'}</span>
                 </div>
 
                 {/* Page title */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', marginBottom: '16px', paddingLeft: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', marginBottom: '16px', paddingLeft: '12px', flexShrink: 0 }}>
                     <MessageCircle style={{ width: '28px', height: '28px', color: 'var(--color-accent-blue)' }} />
                     <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', margin: 0 }}>
                         {t('nav.chat') || 'Xabarlar'}
@@ -99,15 +99,15 @@ export default function ChatPage() {
                 {/* Telegram-style layout */}
                 <div
                     style={{
-                        flex: 1,
+                        flex: '1 1 0%',
                         minHeight: 0,
                         display: 'grid',
                         gridTemplateColumns: '320px 1fr',
+                        gridTemplateRows: 'minmax(0, 1fr)',
                         backgroundColor: 'var(--color-bg-secondary)',
                         border: '1px solid var(--color-border-default)',
                         borderRadius: 'var(--radius-xl)',
                         overflow: 'hidden',
-                        height: '100%',
                         position: 'relative',
                     }}
                 >
@@ -219,14 +219,27 @@ export default function ChatPage() {
                     </div>
 
                     {/* Middle: messages */}
-                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, position: 'relative' }}>
+                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)', flexShrink: 0 }}>
                             <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
                                 {activeRoom ? (activeRoom?.participants?.find((p) => p?.id !== user.id)?.display_name || t('detail.seller') || 'Chat') : (t('chat.choose') || 'Suhbatni tanlang')}
                             </p>
                         </div>
 
-                        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px', scrollbarGutter: 'stable' }}>
+                        <div
+                            style={{
+                                flex: '1 1 0%',
+                                minHeight: 0,
+                                overflowY: 'auto',
+                                overflowX: 'hidden',
+                                WebkitOverflowScrolling: 'touch',
+                                padding: '14px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '10px',
+                                scrollbarGutter: 'stable',
+                            }}
+                        >
                             {!activeRoom ? (
                                 <div className="empty-state" style={{ flex: 1, minHeight: 0, padding: '48px 16px' }}>
                                     <MessageCircle className="empty-state-icon" style={{ width: '64px', height: '64px' }} />
