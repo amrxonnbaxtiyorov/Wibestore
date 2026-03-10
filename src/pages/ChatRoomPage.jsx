@@ -143,6 +143,7 @@ export default function ChatRoomPage() {
                         <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)', flexShrink: 0 }}>
                             <Link
                                 to={`/seller/${otherUser.id}`}
+                                state={{ seller: { id: otherUser.id, display_name: otherUser.display_name, name: otherUser.display_name, avatar: otherUser.avatar } }}
                                 style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}
                             >
                                 {resolveImageUrl(otherUser.avatar) ? (

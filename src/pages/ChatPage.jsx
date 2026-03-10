@@ -172,6 +172,9 @@ export default function ChatPage() {
                                     const title = other?.display_name || other?.name || t('detail.seller') || 'Sotuvchi';
                                     const listingTitle = room?.listing?.title || '';
                                     const listingImage = room?.listing?.primary_image || room?.listing?.image || null;
+                                    const otherAvatar = other?.avatar || other?.profile_image || other?.image || null;
+                                    const avatarUrl = resolveImageUrl(otherAvatar);
+                                    const listingUrl = resolveImageUrl(listingImage);
                                     const unread = Number(room?.unread_count ?? 0) || 0;
                                     const isActive = String(room?.id) === String(activeRoomId);
 
@@ -193,15 +196,21 @@ export default function ChatPage() {
                                                 marginBottom: '6px',
                                             }}
                                         >
-                                            {resolveImageUrl(listingImage) ? (
+                                            {avatarUrl ? (
                                                 <img
-                                                    src={resolveImageUrl(listingImage)}
+                                                    src={avatarUrl}
+                                                    alt=""
+                                                    style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
+                                                />
+                                            ) : listingUrl ? (
+                                                <img
+                                                    src={listingUrl}
                                                     alt=""
                                                     style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-lg)', objectFit: 'cover', flexShrink: 0 }}
                                                 />
                                             ) : (
-                                                <div style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                                    <Gamepad2 style={{ width: '22px', height: '22px', color: 'var(--color-text-muted)', opacity: 0.6 }} />
+                                                <div style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-muted)', flexShrink: 0 }}>
+                                                    {getDisplayInitial(title)}
                                                 </div>
                                             )}
                                             <div className="flex-1 min-w-0">
@@ -239,6 +248,7 @@ export default function ChatPage() {
                             {activeRoom && activeRoomOther ? (
                                 <Link
                                     to={`/seller/${activeRoomOther.id}`}
+                                    state={{ seller: { id: activeRoomOther.id, display_name: activeRoomOther.display_name, name: activeRoomOther.display_name, avatar: activeRoomOther.avatar } }}
                                     style={{
                                         display: 'flex',
                                         alignItems: 'center',

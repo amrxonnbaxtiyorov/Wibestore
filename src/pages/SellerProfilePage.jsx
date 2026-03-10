@@ -5,6 +5,7 @@ import AccountCard from '../components/AccountCard';
 import ReviewList from '../components/ReviewList';
 import { useLanguage } from '../context/LanguageContext';
 import SkeletonLoader from '../components/SkeletonLoader';
+import { resolveImageUrl } from '../lib/displayUtils';
 
 /**
  * Sotuvchi profil sahifasi — xaridorlar sotuvchini ko'rib chiqishi va uning e'lonlarini ko'rishi uchun.
@@ -30,8 +31,9 @@ const SellerProfilePage = () => {
         rating: '—',
         total_sales: 0,
     };
-
+    const sellerId = seller?.id ?? userId;
     const displayName = seller?.display_name || seller?.name || t('detail.seller');
+    const sellerAvatar = resolveImageUrl(seller?.avatar || seller?.profile_image || seller?.image);
     const rating = seller?.rating ?? '—';
     const totalSales = seller?.total_sales ?? 0;
 
@@ -57,16 +59,29 @@ const SellerProfilePage = () => {
                     border: '1px solid var(--color-border-default)',
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                        <div style={{
-                            width: '72px', height: '72px',
-                            borderRadius: 'var(--radius-full)',
-                            background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: '#fff', fontWeight: 'var(--font-weight-bold)',
-                            fontSize: 'var(--font-size-2xl)', flexShrink: 0,
-                        }}>
-                            {displayName?.charAt(0)?.toUpperCase() || 'S'}
-                        </div>
+                        {sellerAvatar ? (
+                            <img
+                                src={sellerAvatar}
+                                alt=""
+                                style={{
+                                    width: '72px', height: '72px',
+                                    borderRadius: 'var(--radius-full)',
+                                    objectFit: 'cover',
+                                    flexShrink: 0,
+                                }}
+                            />
+                        ) : (
+                            <div style={{
+                                width: '72px', height: '72px',
+                                borderRadius: 'var(--radius-full)',
+                                background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#fff', fontWeight: 'var(--font-weight-bold)',
+                                fontSize: 'var(--font-size-2xl)', flexShrink: 0,
+                            }}>
+                                {displayName?.charAt(0)?.toUpperCase() || 'S'}
+                            </div>
+                        )}
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <h1 style={{
                                 fontSize: 'var(--font-size-2xl)',
@@ -122,7 +137,7 @@ const SellerProfilePage = () => {
                         <MessageSquare style={{ width: '24px', height: '24px', color: 'var(--color-accent-blue)' }} />
                         {t('detail.reputation')} · {t('detail.reviews')}
                     </h2>
-                    <ReviewList userId={seller?.id || userId} type="received" />
+                    <ReviewList userId={sellerId} type="received" />
                 </div>
 
                 {/* Sotuvchining e'lonlari */}
