@@ -4,6 +4,7 @@ import { Gamepad2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
+import { formatUzPhoneDisplay, normalizeUzPhoneForSubmit } from '../lib/phoneFormat';
 
 const TELEGRAM_BOT_USERNAME = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'wibestorebot';
 const TELEGRAM_BOT_URL = `https://t.me/${TELEGRAM_BOT_USERNAME}`;
@@ -29,10 +30,10 @@ const LoginPage = () => {
     const handleTelegramLogin = async (e) => {
         e.preventDefault();
         setError('');
-        const rawPhone = telegramPhone.trim();
-        const digitsOnly = rawPhone.replace(/\D/g, '');
+        const phoneToSend = normalizeUzPhoneForSubmit(telegramPhone);
+        const digitsOnly = phoneToSend.replace(/\D/g, '');
         const code = telegramCode.trim().replace(/\D/g, '').slice(0, 6);
-        if (!digitsOnly || digitsOnly.length < 9) {
+        if (!digitsOnly || digitsOnly.length < 12) {
             setError(t('signup.telegram_phone_required') || 'Telefon raqamni kiriting');
             return;
         }
@@ -40,9 +41,6 @@ const LoginPage = () => {
             setError(t('signup.telegram_code_required') || 'Botdan olgan 6 xonali kodni kiriting');
             return;
         }
-        const phoneToSend = rawPhone.startsWith('+') ? rawPhone
-            : (digitsOnly.startsWith('998') && digitsOnly.length === 12) ? `+${digitsOnly}`
-            : (digitsOnly.length === 9 && digitsOnly[0] === '9') ? `+998${digitsOnly}` : `+${digitsOnly}`;
         setLoading(true);
         try {
             await loginWithTelegram(phoneToSend, code);
@@ -157,9 +155,11 @@ const LoginPage = () => {
                                 <label className="input-label" style={{ fontSize: 'var(--font-size-sm)' }}>{t('signup.phone') || 'Telefon raqam'}</label>
                                 <input
                                     type="tel"
+                                    inputMode="numeric"
+                                    autoComplete="tel"
                                     value={telegramPhone}
-                                    onChange={(e) => setTelegramPhone(e.target.value)}
-                                    placeholder="+998 90 123 45 67"
+                                    onChange={(e) => setTelegramPhone(formatUzPhoneDisplay(e.target.value))}
+                                    placeholder="+998 94-201-43-00"
                                     className="input input-md"
                                     style={{ paddingLeft: '12px' }}
                                 />
