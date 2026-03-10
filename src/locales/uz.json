@@ -315,6 +315,7 @@
     },
     "common": {
         "premium": "Premium",
+        "back": "Orqaga",
         "loading": "Yuklanmoqda...",
         "error": "Xatolik",
         "server_error_title": "Server xatosi",
@@ -616,6 +617,7 @@
         "liked_accounts": "Yoqqan akkauntlar",
         "no_likes": "Yoqqan akkauntlar yo'q",
         "my_reviews": "Mening sharhlarim",
+        "reviews": "Sharhlar",
         "deleted_success": "Listing muvaffaqiyatli o'chirildi",
         "delete_error": "O'chirishda xatolik yuz berdi"
     },

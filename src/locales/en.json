@@ -315,6 +315,7 @@
     },
     "common": {
         "premium": "Premium",
+        "back": "Back",
         "loading": "Loading...",
         "error": "Error",
         "server_error_title": "Server error",
@@ -616,6 +617,7 @@
         "liked_accounts": "Liked Accounts",
         "no_likes": "No liked accounts",
         "my_reviews": "My Reviews",
+        "reviews": "Reviews",
         "deleted_success": "Listing deleted successfully",
         "delete_error": "Error deleting listing"
     },
