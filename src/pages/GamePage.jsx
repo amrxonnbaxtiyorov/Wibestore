@@ -5,6 +5,7 @@ import { useGame, useGameListings } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
+import { resolveImageUrl } from '../lib/displayUtils';
 
 const GamePage = () => {
     const { t } = useLanguage();
@@ -69,28 +70,7 @@ const GamePage = () => {
     }
 
     const game = { ...displayGame, listings_count: displayGame.listings_count ?? listings.length };
-
-    const GAME_ICON_MAP = {
-        'pubg-mobile': '/img/icons/Pubg-icon.webp',
-        'pubg': '/img/icons/Pubg-icon.webp',
-        steam: '/img/icons/steam.png',
-        'free-fire': '/img/icons/free.webp',
-        'standoff-2': '/img/icons/st.webp',
-        'standoff2': '/img/icons/st.webp',
-        'mobile-legends': '/img/icons/ml.webp',
-        'clash-of-clans': '/img/icons/cc.webp',
-        'call-of-duty-mobile': '/img/icons/cal.webp',
-        codm: '/img/icons/cal.webp',
-        roblox: '/img/icons/roblox.webp',
-    };
-
-    const gameSlug = game.slug || game.id || gameId;
-    // GAME_ICON_MAP dan avval olish — API rasm noto'g'ri bo'lsa ham to'g'ri logo chiqadi
-    const headerIcon =
-        (gameSlug ? GAME_ICON_MAP[gameSlug] : null) ||
-        game.icon ||
-        game.image ||
-        game.banner;
+    const headerIcon = resolveImageUrl(game.image || game.banner) || game.icon || null;
 
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px' }}>
@@ -122,10 +102,10 @@ const GamePage = () => {
                             overflow: 'hidden',
                         }}
                     >
-                        {headerIcon ? (
+                        {headerIcon && (headerIcon.startsWith('http') || headerIcon.startsWith('/') || headerIcon.startsWith('data:')) ? (
                             <img src={headerIcon} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
-                            game.name?.charAt(0)
+                            <span style={{ fontSize: '28px' }}>{headerIcon || game.name?.charAt(0) || '🎮'}</span>
                         )}
                     </div>
                     <div>

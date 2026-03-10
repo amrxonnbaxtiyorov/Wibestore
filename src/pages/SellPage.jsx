@@ -17,7 +17,7 @@ function getTopGamesForSell(apiGames) {
             id: g.id,
             slug: g.slug,
             name: g.name,
-            image: resolveGameImageUrl(g.image || g.banner) || '/img/icons/placeholder.png',
+            image: resolveGameImageUrl(g.image || g.banner) || null,
             accountCount: g.active_listings_count ?? g.listings_count ?? 0,
         }))
         : [];
@@ -51,7 +51,7 @@ const SellPage = () => {
             id: g.id,
             slug: g.slug,
             name: g.name,
-            image: resolveGameImageUrl(g.image || g.banner) || '/img/icons/placeholder.png',
+            image: resolveGameImageUrl(g.image || g.banner) || null,
           }))
         : [];
 
@@ -330,7 +330,11 @@ title: t('common.error') || 'Xatolik',
                                             cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s ease',
                                         }}
                                     >
-                                        <img src={game.image} alt={game.name} style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', margin: '0 auto 8px', objectFit: 'cover' }} />
+                                        {game.image ? (
+                                            <img src={game.image} alt={game.name} style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', margin: '0 auto 8px', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', margin: '0 auto 8px', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>{game.name?.charAt(0) || '🎮'}</div>
+                                        )}
                                         <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>{game.name}</p>
                                     </button>
                                 ))}
@@ -431,7 +435,11 @@ title: t('common.error') || 'Xatolik',
                                                     cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s ease',
                                                 }}
                                             >
-                                                <img src={game.image} alt={game.name} style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', margin: '0 auto 6px', objectFit: 'cover' }} />
+                                                {game.image ? (
+                                                    <img src={game.image} alt={game.name} style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', margin: '0 auto 6px', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', margin: '0 auto 6px', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>{game.name?.charAt(0) || '🎮'}</div>
+                                                )}
                                                 <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>{game.name}</p>
                                             </button>
                                         ))}

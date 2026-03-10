@@ -49,48 +49,16 @@ const HomePage = () => {
     const { data: gamesData, isLoading: gamesLoading } = useGames();
     const { data: listingsData, isLoading: listingsLoading } = useListings({ limit: 8 });
 
-    // Use API data — mashhur o'yinlar Django admin'dan (to'liq image URL backenddan keladi)
+    // Faqat backend (API) dan kelgan o'yinlar
     const rawGames = gamesData?.results ?? gamesData ?? [];
     const allGames = Array.isArray(rawGames) ? rawGames.filter(Boolean) : [];
-    // Slug/id bo'yicha lokal rasm (API rasm yo'q yoki yuklanmasa ishlatiladi)
-    const gameImageFallbacks = {
-        'pubg-mobile': '/img/Pubg/pg.jpg',
-        'pubg': '/img/Pubg/pg.jpg',
-        'steam': 'https://store.cloudflare.steamstatic.com/public/shared/images/header/logo_steam.svg',
-        'free-fire': '/img/FireFree/game_logo.jpg',
-        'freefire': '/img/FireFree/game_logo.jpg',
-        'standoff2': '/img/Stendoff/stend_logo.jpeg',
-        'mobile-legends': '/img/Mobile/mobile-legends.jpg',
-        'clash-of-clans': '/img/Clash/clash_logo.jpg',
-        'codm': '/img/Callof/call_logo.jpg',
-        'call-of-duty-mobile': '/img/Callof/call_logo.jpg',
-        'roblox': '/img/Roblox/roblox_logo.jpg',
-    };
-    const popularGamesFallback = [
-        { id: 'pubg-mobile', name: 'PUBG Mobile', image: '/img/Pubg/pg.jpg' },
-        { id: 'steam', name: 'Steam', image: 'https://store.cloudflare.steamstatic.com/public/shared/images/header/logo_steam.svg' },
-        { id: 'free-fire', name: 'Free Fire', image: '/img/FireFree/game_logo.jpg' },
-        { id: 'standoff2', name: 'Standoff 2', image: '/img/Stendoff/stend_logo.jpeg' },
-        { id: 'mobile-legends', name: 'Mobile Legends', image: '/img/Mobile/mobile-legends.jpg' },
-        { id: 'clash-of-clans', name: 'Clash of Clans', image: '/img/Clash/clash_logo.jpg' },
-        { id: 'codm', name: 'Call of Duty Mobile', image: '/img/Callof/call_logo.jpg' },
-        { id: 'roblox', name: 'Roblox', image: '/img/Roblox/roblox_logo.jpg' },
-    ];
-    const games = allGames.length > 0
-        ? allGames.slice(0, 8).map((g) => {
-            const resolved = resolveGameImageUrl(g.image || g.banner);
-            const slug = (g.slug || g.id || '').toString().toLowerCase().replace(/\s+/g, '-');
-            const fallback = gameImageFallbacks[slug] || gameImageFallbacks[g.slug] || gameImageFallbacks[g.id];
-            return {
-                id: g.id,
-                slug: g.slug,
-                name: g.name,
-                image: resolved || fallback || null,
-                imageFallback: fallback || null,
-                active_listings_count: g.active_listings_count,
-            };
-        })
-        : popularGamesFallback;
+    const games = allGames.slice(0, 8).map((g) => ({
+        id: g.id,
+        slug: g.slug,
+        name: g.name,
+        image: resolveGameImageUrl(g.image || g.banner) || null,
+        active_listings_count: g.active_listings_count,
+    }));
 
     const rawListings = listingsData?.pages?.flatMap?.(page => page?.results ?? []) ?? listingsData?.results ?? listingsData ?? [];
     const allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
@@ -318,7 +286,11 @@ const HomePage = () => {
                             ))
                         ) : gamesLoading ? (
                             Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-                        ) : null}
+                        ) : (
+                            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', padding: 'var(--space-6)' }}>
+                                {t('sections.popular_games')} — {t('common.no_data') || "O'yinlar hozircha yo'q"}
+                            </p>
+                        )}
                     </div>
                 </div>
             </section>

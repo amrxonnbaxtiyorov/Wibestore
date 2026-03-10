@@ -2,25 +2,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const GameCard = ({ game }) => {
-    // API formatini qo'llab-quvvatlash
     const gameId = game.id || game.slug;
     const gameName = game.name;
     const gameIcon = game.icon;
     const gameImage = game.image || game.banner;
-    const imageFallback = game.imageFallback;
     const accountCount = game.accountCount ?? game.listingsCount ?? game.active_listings_count ?? 0;
     const [imageError, setImageError] = useState(false);
-    const [useFallback, setUseFallback] = useState(false);
-    const displayImage = useFallback && imageFallback ? imageFallback : gameImage;
-    const showImage = displayImage && !String(displayImage).includes('placeholder') && !imageError;
-
-    const handleImageError = () => {
-        if (imageFallback && !useFallback) {
-            setUseFallback(true);
-        } else {
-            setImageError(true);
-        }
-    };
+    const showImage = gameImage && !String(gameImage).includes('placeholder') && !imageError;
 
     return (
         <Link
@@ -44,10 +32,10 @@ const GameCard = ({ game }) => {
             >
                 {showImage ? (
                     <img
-                        src={displayImage}
+                        src={gameImage}
                         alt={gameName}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={handleImageError}
+                        onError={() => setImageError(true)}
                     />
                 ) : gameIcon ? (
                     <span className="text-4xl opacity-40">{gameIcon}</span>
