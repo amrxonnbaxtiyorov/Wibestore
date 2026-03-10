@@ -37,9 +37,16 @@ def storage_check(request):
     if is_s3:
         try:
             from django.core.files.storage import default_storage
-            info["can_write"] = hasattr(default_storage, "bucket")
+            from io import BytesIO
+            from django.core.files.base import ContentFile
+            test_name = default_storage.save("_test_write.txt", ContentFile(b"ok"))
+            test_url = default_storage.url(test_name)
+            default_storage.delete(test_name)
+            info["can_write"] = True
+            info["test_url_sample"] = test_url
         except Exception as e:
-            info["storage_error"] = str(e)
+            info["can_write"] = False
+            info["storage_error"] = f"{type(e).__name__}: {e}"
     return JsonResponse(info)
 
 
