@@ -126,7 +126,7 @@
         "payment_methods": "To'lov usullari",
         "auto_renew": "Obuna har oy avtomatik yangilanadi. Istalgan vaqtda bekor qilishingiz mumkin.",
         "secure_payment_telegram": "Xavfsiz to'lov Telegram @wibestorebot orqali",
-        "purchase_info": "Premium obunalarni faqat 50% chegirma va vaucherlar orqali sotib olish mumkin. Coinlarni yig'ib Premium ni 100 coin evaziga bepul oling yoki Telegram orqali to'lang."
+        "purchase_info": "Premium obunalarni faqat vaucherlar orqali sotib olish mumkin. 100 coin evaziga 50% Premium chegirma yoki 20% Pro chegirma vaucheridan birini oling, yoki Telegram orqali to'lang."
     },
     "login": {
         "welcome": "Xush kelibsiz!",
@@ -444,8 +444,10 @@
         "per_purchase": "Har bir xarid uchun",
         "important_note": "Muhim: Oyiga faqat birinchi {n} ta tranzaksiya uchun coin beriladi. Maksimum {max} coin oyiga.",
         "how_use_title": "Coinni qanday ishlatish mumkin?",
-        "premium_free": "Premium obuna BEPUL",
-        "premium_free_desc": "100 coin sarflab Premium obunani bepul oling",
+        "premium_free": "100 coin = 1 ta voucher",
+        "premium_free_desc": "50% Premium yoki 20% Pro chegirma — birini tanlang",
+        "voucher_for_coins": "100 coin = 1 ta voucher",
+        "voucher_for_coins_desc": "50% Premium chegirma yoki 20% Pro chegirma — ikki xil vaucherdan birini sotib oling",
         "voucher_about": "Voucher haqida",
         "premium_subscriber": "Premium obunachi",
         "pro_subscriber": "Pro obunachi",
@@ -459,8 +461,8 @@
         "use_btn": "Ishlatish",
         "coin_history": "Coin tarixi",
         "congrats_title": "Tabriklaymiz!",
-        "congrats_text": "Sizda {n} coin bor — Premium obunani BEPUL olishingiz mumkin!",
-        "get_premium_btn": "Premium olish"
+        "congrats_text": "Sizda {n} coin bor — 50% Premium yoki 20% Pro vaucherdan birini olishingiz mumkin!",
+        "get_premium_btn": "Voucher olish"
     },
     "sell": {
         "escrow_notice": "Bu ma'lumotlar faqat xarid tasdiqlangandan keyin xaridorga ko'rsatiladi. Bizning Escrow tizimimiz sizni himoya qiladi.",

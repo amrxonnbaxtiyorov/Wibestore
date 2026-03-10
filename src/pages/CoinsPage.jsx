@@ -182,13 +182,17 @@ const CoinsPage = () => {
                                     <Gift className="w-5 h-5" style={{ color: 'var(--color-accent-blue)' }} />
                                     {t('coins.how_use_title')}
                                 </h3>
-                                <div className="flex items-center gap-4" style={{ padding: '16px', borderRadius: 'var(--radius-lg)', background: 'linear-gradient(135deg, var(--color-info-bg) 0%, rgba(137,87,229,0.06) 100%)', border: '1px solid var(--color-accent-blue)' }}>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4" style={{ padding: '16px', borderRadius: 'var(--radius-lg)', background: 'linear-gradient(135deg, var(--color-info-bg) 0%, rgba(137,87,229,0.06) 100%)', border: '1px solid var(--color-accent-blue)' }}>
                                     <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-xl)', backgroundColor: 'var(--color-accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        <Star style={{ width: '24px', height: '24px', color: '#fff' }} />
+                                        <Gift style={{ width: '24px', height: '24px', color: '#fff' }} />
                                     </div>
                                     <div className="flex-1">
-                                        <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>{t('coins.premium_free')}</p>
-                                        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>{t('coins.premium_free_desc')}</p>
+                                        <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>{t('coins.voucher_for_coins')}</p>
+                                        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>{t('coins.voucher_for_coins_desc')}</p>
+                                        <div className="flex flex-wrap gap-2" style={{ marginTop: '10px' }}>
+                                            <span style={{ padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)', background: 'rgba(59,130,246,0.15)', color: 'var(--color-accent-blue)' }}>50% Premium</span>
+                                            <span style={{ padding: '4px 10px', borderRadius: 'var(--radius-full)', fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)', background: 'rgba(139,92,246,0.15)', color: 'var(--color-accent-purple)' }}>20% Pro</span>
+                                        </div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
                                         <p style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-premium-gold-light)' }}>{PREMIUM_COST_IN_COINS}</p>

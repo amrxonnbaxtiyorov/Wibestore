@@ -126,7 +126,7 @@
         "payment_methods": "Payment Methods",
         "auto_renew": "Subscription auto-renews monthly. Cancel anytime.",
         "secure_payment_telegram": "Secure payment via Telegram @wibestorebot",
-        "purchase_info": "Premium subscriptions can only be purchased with 50% discount and through vouchers. Earn coins and get Premium free for 100 coins, or pay via Telegram."
+        "purchase_info": "Premium plans are only available via vouchers. Use 100 coins to get one voucher: 50% Premium discount or 20% Pro discount, or pay via Telegram."
     },
     "login": {
         "welcome": "Welcome back!",
@@ -444,8 +444,10 @@
         "per_purchase": "Per purchase",
         "important_note": "Important: Coins are given only for the first {n} transactions per month. Max {max} coins per month.",
         "how_use_title": "How do I use coins?",
-        "premium_free": "Premium subscription FREE",
-        "premium_free_desc": "Spend 100 coins to get Premium for free",
+        "premium_free": "100 coins = 1 voucher",
+        "premium_free_desc": "50% Premium or 20% Pro discount — choose one",
+        "voucher_for_coins": "100 coins = 1 voucher",
+        "voucher_for_coins_desc": "Buy one of two vouchers: 50% Premium discount or 20% Pro discount",
         "voucher_about": "About vouchers",
         "premium_subscriber": "Premium subscriber",
         "pro_subscriber": "Pro subscriber",
@@ -459,8 +461,8 @@
         "use_btn": "Use",
         "coin_history": "Coin history",
         "congrats_title": "Congratulations!",
-        "congrats_text": "You have {n} coins — get Premium subscription for free!",
-        "get_premium_btn": "Get Premium"
+        "congrats_text": "You have {n} coins — get one voucher: 50% Premium or 20% Pro discount!",
+        "get_premium_btn": "Get voucher"
     },
     "sell": {
         "escrow_notice": "This info is shown to the buyer only after payment is confirmed. Our Escrow protects you.",
