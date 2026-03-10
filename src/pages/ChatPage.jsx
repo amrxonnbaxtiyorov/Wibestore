@@ -4,7 +4,7 @@ import { MessageCircle, Gamepad2, Send, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChats, useChatMessages, useMarkChatRead, useSendMessage } from '../hooks/useChat';
 import { useLanguage } from '../context/LanguageContext';
-import { resolveImageUrl } from '../lib/displayUtils';
+import { resolveImageUrl, getDisplayInitial } from '../lib/displayUtils';
 
 /**
  * Chat — bitta sahifa: suhbatlar ro'yxati va tanlangan suhbat xabarlari.
@@ -24,6 +24,19 @@ export default function ChatPage() {
         if (!activeRoomId || !Array.isArray(chats)) return null;
         return chats.find((r) => String(r?.id) === String(activeRoomId)) ?? null;
     }, [activeRoomId, chats]);
+
+    const activeRoomOther = useMemo(() => {
+        if (!activeRoom || !user) return null;
+        const participants = activeRoom?.participants ?? [];
+        const other = participants.find((p) => p?.id && p.id !== user.id) ?? participants[0] ?? null;
+        return other
+            ? {
+                  id: other.id,
+                  display_name: other.display_name || other.name || t('detail.seller') || 'Sotuvchi',
+                  avatar: other.avatar || other.profile_image || other.image || null,
+              }
+            : null;
+    }, [activeRoom, user, t]);
 
     const {
         data: messagesData,
@@ -79,7 +92,7 @@ export default function ChatPage() {
     if (!user) return null;
 
     return (
-        <div className="page-enter" style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div className="page-enter chat-page-wrap" style={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div className="gh-container" style={{ flex: '1 1 0%', minHeight: 0, display: 'flex', flexDirection: 'column', maxWidth: 'none', overflow: 'hidden' }}>
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs" style={{ flexShrink: 0 }}>
@@ -89,7 +102,7 @@ export default function ChatPage() {
                 </div>
 
                 {/* Page title */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', marginBottom: '16px', paddingLeft: '12px', flexShrink: 0 }}>
+                <div className="chat-page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', marginBottom: '16px', paddingLeft: '12px', flexShrink: 0 }}>
                     <MessageCircle style={{ width: '28px', height: '28px', color: 'var(--color-accent-blue)' }} />
                     <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', margin: 0 }}>
                         {t('nav.chat') || 'Xabarlar'}
@@ -98,6 +111,7 @@ export default function ChatPage() {
 
                 {/* Telegram-style layout */}
                 <div
+                    className="chat-page-grid"
                     style={{
                         flex: '1 1 0%',
                         minHeight: 0,
@@ -135,7 +149,7 @@ export default function ChatPage() {
                     </button>
 
                     {/* Left: conversations */}
-                    <div style={{ borderRight: '1px solid var(--color-border-muted)', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                    <div className="chat-page-list" style={{ borderRight: '1px solid var(--color-border-muted)', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                         <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)' }}>
                             <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
                                 {t('nav.chat') || 'Xabarlar'}
@@ -220,11 +234,55 @@ export default function ChatPage() {
                     </div>
 
                     {/* Middle: messages */}
-                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, position: 'relative' }}>
-                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)', flexShrink: 0 }}>
-                            <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
-                                {activeRoom ? (activeRoom?.participants?.find((p) => p?.id !== user.id)?.display_name || t('detail.seller') || 'Chat') : (t('chat.choose') || 'Suhbatni tanlang')}
-                            </p>
+                    <div className="chat-page-messages-panel" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, position: 'relative' }}>
+                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {activeRoom && activeRoomOther ? (
+                                <Link
+                                    to={`/seller/${activeRoomOther.id}`}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        textDecoration: 'none',
+                                        color: 'inherit',
+                                        flex: 1,
+                                        minWidth: 0,
+                                    }}
+                                >
+                                    {resolveImageUrl(activeRoomOther.avatar) ? (
+                                        <img
+                                            src={resolveImageUrl(activeRoomOther.avatar)}
+                                            alt=""
+                                            style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
+                                        />
+                                    ) : (
+                                        <div
+                                            style={{
+                                                width: '36px',
+                                                height: '36px',
+                                                borderRadius: 'var(--radius-full)',
+                                                backgroundColor: 'var(--color-bg-tertiary)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: 'var(--font-size-sm)',
+                                                fontWeight: 'var(--font-weight-semibold)',
+                                                color: 'var(--color-text-secondary)',
+                                                flexShrink: 0,
+                                            }}
+                                        >
+                                            {getDisplayInitial(activeRoomOther.display_name)}
+                                        </div>
+                                    )}
+                                    <p className="truncate" style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                                        {activeRoomOther.display_name}
+                                    </p>
+                                </Link>
+                            ) : (
+                                <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                                    {t('chat.choose') || 'Suhbatni tanlang'}
+                                </p>
+                            )}
                         </div>
 
                         <div
@@ -253,13 +311,44 @@ export default function ChatPage() {
                             ) : (
                                 messages.map((msg) => {
                                     const isMe = msg.sender?.id === user.id;
+                                    const senderAvatar = msg.sender?.avatar || msg.sender?.profile_image || msg.sender?.image || null;
+                                    const senderName = msg.sender?.display_name || msg.sender?.name || '';
                                     return (
-                                        <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                                        <div key={msg.id} style={{ display: 'flex', alignItems: 'flex-end', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px' }}>
+                                            {!isMe &&
+                                                (resolveImageUrl(senderAvatar) ? (
+                                                    <img
+                                                        src={resolveImageUrl(senderAvatar)}
+                                                        alt=""
+                                                        style={{ width: '28px', height: '28px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        style={{
+                                                            width: '28px',
+                                                            height: '28px',
+                                                            borderRadius: 'var(--radius-full)',
+                                                            backgroundColor: 'var(--color-bg-tertiary)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            fontSize: 'var(--font-size-xs)',
+                                                            fontWeight: 'var(--font-weight-semibold)',
+                                                            color: 'var(--color-text-muted)',
+                                                            flexShrink: 0,
+                                                        }}
+                                                    >
+                                                        {getDisplayInitial(senderName)}
+                                                    </div>
+                                                ))}
                                             <div
                                                 style={{
                                                     maxWidth: '78%',
+                                                    minWidth: 0,
                                                     padding: '10px 12px',
                                                     borderRadius: 'var(--radius-2xl)',
+                                                    overflowWrap: 'break-word',
+                                                    wordBreak: 'break-word',
                                                     ...(isMe
                                                         ? {
                                                             backgroundColor: 'var(--color-accent-blue)',
@@ -273,7 +362,7 @@ export default function ChatPage() {
                                                         }),
                                                 }}
                                             >
-                                                <p style={{ fontSize: 'var(--font-size-sm)', margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                                                <p style={{ fontSize: 'var(--font-size-sm)', margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'break-word' }}>{msg.content}</p>
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginTop: '4px' }}>
                                                     <span style={{ fontSize: 'var(--font-size-xs)', opacity: 0.85 }}>
                                                         {msg.created_at ? new Date(msg.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : ''}

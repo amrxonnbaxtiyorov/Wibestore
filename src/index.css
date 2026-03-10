@@ -3246,3 +3246,94 @@ p {
     transform: translateY(100%);
   }
 }
+
+/* ============================================
+   CHAT — RESPONSIVE (telefon, planshet)
+   ============================================ */
+
+/* ChatPage: mobil — faqat suhbatlar ro'yxati, to'liq kenglik */
+@media (max-width: 767px) {
+  .chat-page-wrap .breadcrumbs {
+    padding: var(--space-2) 0;
+  }
+
+  .chat-page-wrap .chat-page-title {
+    margin-top: 12px !important;
+    margin-bottom: 12px !important;
+    padding-left: 0 !important;
+  }
+
+  .chat-page-wrap .chat-page-title h1 {
+    font-size: var(--font-size-xl) !important;
+  }
+
+  .chat-page-grid {
+    grid-template-columns: 1fr !important;
+    margin-bottom: 10px;
+    border-radius: var(--radius-lg) !important;
+  }
+
+  .chat-page-messages-panel {
+    display: none !important;
+  }
+
+  .chat-page-list {
+    min-height: 200px;
+  }
+}
+
+/* ChatPage: planshet — chap ustun torroq */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .chat-page-grid {
+    grid-template-columns: 260px 1fr !important;
+  }
+}
+
+/* ChatRoomPage: mobil va kichik ekranlar */
+@media (max-width: 639px) {
+  .chat-room-page {
+    padding-top: 12px !important;
+    padding-left: var(--space-3) !important;
+    padding-right: var(--space-3) !important;
+  }
+
+  .chat-room-page .chat-room-header {
+    margin-bottom: 16px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .chat-room-page .chat-room-warning {
+    margin-bottom: 12px !important;
+    padding: 12px !important;
+  }
+
+  .chat-room-page .chat-room-messages {
+    padding: 12px !important;
+  }
+
+  .chat-room-page .chat-room-form {
+    padding: 12px !important;
+    padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Notchli qurilmalar: chat form pastki xavfsiz joy */
+@supports (padding: max(0px)) {
+  .chat-page-wrap form {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Touch: chat tugmalari va input min balandlik */
+@media (pointer: coarse) {
+  .chat-page-grid button[type="button"],
+  .chat-room-page .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .chat-page-grid input,
+  .chat-room-page input {
+    min-height: 44px;
+  }
+}

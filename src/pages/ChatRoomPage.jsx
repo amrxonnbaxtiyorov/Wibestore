@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Send, MessageCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChatMessages, useMarkChatRead, useSendMessage } from '../hooks/useChat.js';
 import { useLanguage } from '../context/LanguageContext';
+import { resolveImageUrl, getDisplayInitial } from '../lib/displayUtils';
 
 /**
  * Sahifa: xarid (to'lov) dan keyin ochiladigan chat — xaridor, sotuvchi va admin.
@@ -28,6 +29,19 @@ export default function ChatRoomPage() {
 
     const messages = messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [];
     const messagesEndRef = useRef(null);
+
+    const otherUser = useMemo(() => {
+        const list = messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [];
+        if (!user || !list.length) return null;
+        const firstOther = list.find((m) => m?.sender?.id && m.sender.id !== user.id);
+        const s = firstOther?.sender;
+        if (!s?.id) return null;
+        return {
+            id: s.id,
+            display_name: s.display_name || s.name || '',
+            avatar: s.avatar || s.profile_image || s.image || null,
+        };
+    }, [user, messagesData]);
 
     useEffect(() => {
         // yangi xabar kelganda pastga scroll
@@ -59,8 +73,9 @@ export default function ChatRoomPage() {
 
     return (
         <div className="page-enter" style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
-            <div className="gh-container" style={{ flex: 1, minHeight: 0, maxWidth: '720px', margin: '0 auto', paddingTop: '24px', display: 'flex', flexDirection: 'column' }}>
+            <div className="gh-container chat-room-page" style={{ flex: 1, minHeight: 0, maxWidth: '720px', margin: '0 auto', paddingTop: '24px', paddingLeft: 'var(--space-4)', paddingRight: 'var(--space-4)', display: 'flex', flexDirection: 'column' }}>
                 <div
+                    className="chat-room-header"
                     style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -89,6 +104,7 @@ export default function ChatRoomPage() {
                 {/* Ogohlantirish: firibgarlardan ehtiyot bo'lish */}
                 <div
                     role="alert"
+                    className="chat-room-warning"
                     style={{
                         marginBottom: '16px',
                         padding: '14px 16px',
@@ -123,7 +139,45 @@ export default function ChatRoomPage() {
                         overflow: 'hidden',
                     }}
                 >
+                    {otherUser && (
+                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)', flexShrink: 0 }}>
+                            <Link
+                                to={`/seller/${otherUser.id}`}
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}
+                            >
+                                {resolveImageUrl(otherUser.avatar) ? (
+                                    <img
+                                        src={resolveImageUrl(otherUser.avatar)}
+                                        alt=""
+                                        style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
+                                    />
+                                ) : (
+                                    <div
+                                        style={{
+                                            width: '36px',
+                                            height: '36px',
+                                            borderRadius: 'var(--radius-full)',
+                                            backgroundColor: 'var(--color-bg-tertiary)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: 'var(--font-size-sm)',
+                                            fontWeight: 'var(--font-weight-semibold)',
+                                            color: 'var(--color-text-secondary)',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {getDisplayInitial(otherUser.display_name)}
+                                    </div>
+                                )}
+                                <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                                    {otherUser.display_name || (t('detail.seller') || 'Sotuvchi')}
+                                </span>
+                            </Link>
+                        </div>
+                    )}
                     <div
+                        className="chat-room-messages"
                         style={{
                             flex: 1,
                             minHeight: 0,
@@ -161,19 +215,52 @@ export default function ChatRoomPage() {
 
                                 {messages.map((msg) => {
                                 const isMe = msg.sender?.id === user.id;
+                                const senderAvatar = msg.sender?.avatar || msg.sender?.profile_image || msg.sender?.image || null;
+                                const senderName = msg.sender?.display_name || msg.sender?.name || '';
                                 return (
                                     <div
                                         key={msg.id}
                                         style={{
                                             display: 'flex',
+                                            alignItems: 'flex-end',
                                             justifyContent: isMe ? 'flex-end' : 'flex-start',
+                                            gap: '8px',
                                         }}
                                     >
+                                        {!isMe &&
+                                            (resolveImageUrl(senderAvatar) ? (
+                                                <img
+                                                    src={resolveImageUrl(senderAvatar)}
+                                                    alt=""
+                                                    style={{ width: '28px', height: '28px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
+                                                />
+                                            ) : (
+                                                <div
+                                                    style={{
+                                                        width: '28px',
+                                                        height: '28px',
+                                                        borderRadius: 'var(--radius-full)',
+                                                        backgroundColor: 'var(--color-bg-tertiary)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: 'var(--font-size-xs)',
+                                                        fontWeight: 'var(--font-weight-semibold)',
+                                                        color: 'var(--color-text-muted)',
+                                                        flexShrink: 0,
+                                                    }}
+                                                >
+                                                    {getDisplayInitial(senderName)}
+                                                </div>
+                                            ))}
                                         <div
                                             style={{
                                                 maxWidth: '80%',
+                                                minWidth: 0,
                                                 padding: '10px 14px',
                                                 borderRadius: 'var(--radius-2xl)',
+                                                overflowWrap: 'break-word',
+                                                wordBreak: 'break-word',
                                                 ...(isMe
                                                     ? {
                                                         backgroundColor: 'var(--color-accent-blue)',
@@ -192,7 +279,7 @@ export default function ChatRoomPage() {
                                                     {msg.sender.display_name}
                                                 </p>
                                             )}
-                                            <p style={{ fontSize: 'var(--font-size-sm)', margin: 0 }}>{msg.content}</p>
+                                            <p style={{ fontSize: 'var(--font-size-sm)', margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'break-word' }}>{msg.content}</p>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginTop: '4px' }}>
                                                 <span style={{ fontSize: 'var(--font-size-xs)', opacity: 0.85 }}>
                                                     {msg.created_at ? new Date(msg.created_at).toLocaleString('uz-UZ') : ''}
@@ -214,6 +301,7 @@ export default function ChatRoomPage() {
 
                     <form
                         onSubmit={handleSend}
+                        className="chat-room-form"
                         style={{
                             padding: '16px',
                             borderTop: '1px solid var(--color-border-muted)',
