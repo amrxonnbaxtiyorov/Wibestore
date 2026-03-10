@@ -39,6 +39,7 @@ const SellerProfilePage = lazy(() => import('./pages/SellerProfilePage'));
 const ChatRoomPage = lazy(() => import('./pages/ChatRoomPage'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const ServerErrorPage = lazy(() => import('./pages/ServerErrorPage'));
 
 // Admin pages
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
@@ -306,6 +307,12 @@ function App() {
                           </Suspense>
                         } />
                         
+                        {/* 500 Server Error */}
+                        <Route path="/500" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <PublicLayout><ServerErrorPage /></PublicLayout>
+                          </Suspense>
+                        } />
                         {/* 404 Not Found */}
                         <Route path="*" element={
                           <Suspense fallback={<PageLoader />}>

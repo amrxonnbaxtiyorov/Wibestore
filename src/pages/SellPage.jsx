@@ -6,7 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import { useCreateListing, useGames } from '../hooks';
 import apiClient from '../lib/apiClient';
-import { resolveGameImageUrl } from '../lib/displayUtils';
+import { resolveImageUrl } from '../lib/displayUtils';
 import { CS2_WEAPON_TYPES, isCs2Game } from '../data/cs2WeaponTypes';
 import SellerRulesQuiz from '../components/SellerRulesQuiz';
 
@@ -17,7 +17,7 @@ function getTopGamesForSell(apiGames) {
             id: g.id,
             slug: g.slug,
             name: g.name,
-            image: resolveGameImageUrl(g.logo || g.image || g.banner) || null,
+            image: resolveImageUrl(g.logo || g.image || g.banner) || null,
             accountCount: g.active_listings_count ?? g.listings_count ?? 0,
         }))
         : [];
@@ -51,7 +51,7 @@ const SellPage = () => {
             id: g.id,
             slug: g.slug,
             name: g.name,
-            image: resolveGameImageUrl(g.logo || g.image || g.banner) || null,
+            image: resolveImageUrl(g.logo || g.image || g.banner) || null,
           }))
         : [];
 

@@ -6,7 +6,7 @@ import GameCard from '../components/GameCard';
 import AccountCard from '../components/AccountCard';
 import { SkeletonGrid, SkeletonCard } from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
-import { resolveGameImageUrl } from '../lib/displayUtils';
+import { resolveImageUrl } from '../lib/displayUtils';
 
 // Animated counter hook
 function useCounter(target, duration = 2000) {
@@ -56,7 +56,7 @@ const HomePage = () => {
         id: g.id,
         slug: g.slug,
         name: g.name,
-        image: resolveGameImageUrl(g.image || g.banner) || null,
+        image: resolveImageUrl(g.image || g.banner) || null,
         active_listings_count: g.active_listings_count,
     }));
 

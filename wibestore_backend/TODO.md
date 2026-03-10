@@ -23,9 +23,9 @@
 - ✅ `tests/test_reviews.py` — Review tests
 - ✅ `tests/test_reports.py` — Report tests
 - ✅ `tests/test_admin_panel.py` — Admin panel tests
-- ❌ `.env.example` — environment variable template file
-- ❌ `.gitignore` — Git ignore rules
-- ❌ `README.md` — project documentation
+- ✅ `.env.example` — environment variable template file
+- ✅ `.gitignore` — Git ignore rules
+- ✅ `README.md` — project documentation
 - ❌ `scripts/seed_data.py` — seed initial data (games, categories, plans)
 - ❌ `scripts/create_superuser.py` — automated superuser creation
 - ❌ `.pre-commit-config.yaml` — pre-commit hooks
@@ -60,7 +60,7 @@
 - ✅ `core/permissions.py` — IsOwner, IsAdmin, IsVerified etc.
 - ✅ `core/serializers.py` — empty, success, error serializers
 - ❌ `core/mixins.py` — reusable view/serializer mixins (field selection `?fields=`, expansion `?expand=`)
-- ❌ `core/filters.py` — shared filter backends
+- ✅ `core/filters.py` — shared filter backends
 
 ### 2.2 Accounts App
 - ✅ `models.py` — User, PasswordHistory, UserManager
@@ -76,8 +76,8 @@
 - ✅ `admin.py` — UserAdmin
 - ✅ `urls.py` + `profile_urls.py`
 - 🔧 `services.py`: `calculate_user_rating()` uses `Avg` correctly (imported from django.db.models.Avg) — already correct
-- ❌ `views.py`: Missing `ChangePasswordView` endpoint (serializer exists but view may need verification)
-- ❌ `views.py`: Missing `DeleteAccountView` endpoint (soft delete)
+- ✅ `views.py`: `ChangePasswordView` endpoint
+- ✅ `views.py`: `DeleteAccountView` endpoint (soft delete)
 
 ### 2.3 Games App
 - ✅ `models.py` — Game, Category
@@ -85,7 +85,7 @@
 - ✅ `views.py` — GameListView, GameDetailView, GameListingsView
 - ✅ `admin.py` — GameAdmin, CategoryAdmin (with proper annotation)
 - ✅ `urls.py`
-- ❌ `views.py`: Missing `CategoryListView` endpoint
+- ✅ `views.py`: `CategoryListView` endpoint
 - ❌ `services.py` — Missing services file
 
 ### 2.4 Marketplace App
@@ -98,7 +98,7 @@
 - ✅ `tasks.py` — admin notification, auto-approve, archive
 - ✅ `admin.py` — ListingAdmin, FavoriteAdmin, ListingViewAdmin
 - ✅ `urls.py`
-- ❌ `views.py`: Missing `ListingImageUploadView` — separate image upload endpoint
+- ✅ `views.py`: `ListingImageUploadView` — separate image upload endpoint
 - ❌ `filters.py`: Missing proper FilterSet class for advanced filtering
 
 ### 2.5 Payments App
@@ -111,7 +111,7 @@
 - ✅ `admin.py` — PaymentMethodAdmin, TransactionAdmin, EscrowTransactionAdmin
 - ✅ `urls.py` — including escrow confirm, dispute, methods, balance
 - 🔧 `views.py`: EscrowConfirmDeliveryView, EscrowDisputeView, PaymentMethodsListView, BalanceView referenced in urls.py but need implementation verification
-- 🔧 `services.py:169` — `seller.total_sales += 1` in `release_payment()` may conflict with `mark_as_sold()` (double-counting)
+- ✅ `services.py`: `release_payment()` uses `ListingService.mark_as_sold()` for `total_sales` — no double-counting
 
 ### 2.6 Subscriptions App
 - ✅ `models.py` — SubscriptionPlan, UserSubscription
@@ -161,23 +161,23 @@
 - ✅ `views.py` — dashboard, pending listings, approve/reject, disputes, reports, users, ban
 - ✅ `urls.py`
 - ❌ `tasks.py` — `calculate_daily_statistics` (referenced in celery beat but needs implementation)
-- ❌ `serializers.py` — AdminDashboardSerializer, admin-specific serializers
+- ✅ `serializers.py` — AdminDashboardSerializer, AdminTransactionSerializer, admin-specific serializers
 
 ---
 
 ## Phase 3: Remaining Work Items (Priority Order)
 
 ### 3.1 Bug Fixes (HIGH PRIORITY)
-1. 🔧 `apps/payments/services.py` — `seller.total_sales += 1` double-counting in `release_payment()` vs `mark_as_sold()`
-2. 🔧 `tests/factories.py` — CategoryFactory has `game` field but Category model doesn't have `game` FK
-3. 🔧 `tests/factories.py` — ListingFactory uses `server` and `account_age_months` which are not in model
+1. ✅ `apps/payments/services.py` — `total_sales` incremented only in `mark_as_sold()`; `release_payment()` calls it (no double-count)
+2. ✅ `tests/factories.py` — CategoryFactory has no `game` FK (Category model has no game); factories aligned
+3. ✅ `tests/factories.py` — ListingFactory uses `level`, `rank` (model fields); no `server`/`account_age_months`
 
 ### 3.2 Missing Views/Endpoints (HIGH PRIORITY)
-- ❌ `ChangePasswordView` — dedicated change password endpoint
-- ❌ `DeleteAccountView` — soft delete account
-- ❌ `CategoryListView` — list categories
-- ❌ `ListingImageUploadView` — image upload for listings
-- ❌ Health check endpoints (`/health/`, `/health/detailed/`)
+- ✅ `ChangePasswordView` — dedicated change password endpoint
+- ✅ `DeleteAccountView` — soft delete account
+- ✅ `CategoryListView` — list categories
+- ✅ `ListingImageUploadView` — image upload for listings
+- ✅ Health check endpoints (`/health/`, `/health/detailed/`)
 
 ### 3.3 Missing Service Files (MEDIUM PRIORITY)
 - ❌ `apps/reviews/services.py` — ReviewService  
@@ -186,10 +186,10 @@
 - ❌ `apps/admin_panel/serializers.py` — admin serializers
 
 ### 3.4 Missing Infrastructure Files (MEDIUM PRIORITY)
-- ❌ `.env.example` — environment variable template
-- ❌ `.gitignore` — Git ignore rules
-- ❌ `README.md` — project documentation
-- ❌ `core/filters.py` — shared filter backends
+- ✅ `.env.example` — environment variable template
+- ✅ `.gitignore` — Git ignore rules
+- ✅ `README.md` — project documentation
+- ✅ `core/filters.py` — shared filter backends
 - ❌ `marketplace/filters.py` — listing FilterSet
 
 ### 3.5 Missing Scripts (LOW PRIORITY)
