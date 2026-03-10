@@ -3280,6 +3280,26 @@ p {
   .chat-page-list {
     min-height: 200px;
   }
+
+  /* X (yopish) tugmasi mobil da aniq ko'rinsin */
+  .chat-page-grid .chat-close-btn {
+    top: 10px !important;
+    right: 10px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    z-index: 20 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ChatRoomPage: mobil X tugmasi — userlar ro'yxatiga qaytish */
+@media (max-width: 639px) {
+  .chat-room-page .chat-room-header a[href="/chat"] {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 /* ChatPage: planshet — chap ustun torroq */

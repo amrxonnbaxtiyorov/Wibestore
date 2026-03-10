@@ -176,26 +176,29 @@ export default function ChatPage() {
                         marginBottom: '10px',
                     }}
                 >
-                    {/* Close / back button */}
+                    {/* Close / back button — mobil: aniq ko'rinsin, X bosilganda userlar ro'yxati (yoki bosh sahifa) */}
                     <button
                         type="button"
                         onClick={handleClose}
-                        className="btn btn-ghost btn-sm"
+                        className="btn btn-ghost btn-sm chat-close-btn"
                         aria-label={t('common.back') || 'Orqaga'}
                         style={{
                             position: 'absolute',
                             top: '10px',
                             right: '10px',
-                            zIndex: 5,
-                            width: '36px',
-                            height: '36px',
+                            zIndex: 15,
+                            width: '44px',
+                            height: '44px',
                             padding: 0,
-                            borderRadius: '10px',
+                            borderRadius: 'var(--radius-lg)',
                             backgroundColor: 'var(--color-bg-primary)',
                             border: '1px solid var(--color-border-muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                         }}
                     >
-                        <X style={{ width: '18px', height: '18px' }} />
+                        <X style={{ width: '20px', height: '20px' }} />
                     </button>
 
                     {/* Left: conversations */}

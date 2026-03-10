@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Send, MessageCircle, AlertTriangle, Volume2, VolumeX } from 'lucide-react';
+import { Send, MessageCircle, AlertTriangle, X, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChatMessages, useMarkChatRead, useSendMessage, useChatSoundEnabled } from '../hooks/useChat.js';
 import { useLanguage } from '../context/LanguageContext';
@@ -114,15 +114,26 @@ export default function ChatRoomPage() {
                     }}
                 >
                     <Link
-                        to="/"
+                        to="/chat"
                         className="btn btn-ghost btn-sm"
-                        style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            minWidth: '44px',
+                            minHeight: '44px',
+                            padding: '10px',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--color-border-muted)',
+                            backgroundColor: 'var(--color-bg-primary)',
+                        }}
+                        aria-label={t('common.back') || 'Orqaga — userlar ro\'yxati'}
                     >
-                        <ArrowLeft style={{ width: '18px', height: '18px' }} />
-                        {t('common.back') || 'Orqaga'}
+                        <X style={{ width: '20px', height: '20px' }} />
                     </Link>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                        <MessageCircle style={{ width: '22px', height: '22px', color: 'var(--color-accent-blue)' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+                        <MessageCircle style={{ width: '22px', height: '22px', color: 'var(--color-accent-blue)', flexShrink: 0 }} />
                         <h1 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', margin: 0 }}>
                             {t('detail.order_chat') || 'Buyurtma chat'}
                         </h1>
