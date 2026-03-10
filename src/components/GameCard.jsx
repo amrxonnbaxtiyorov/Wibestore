@@ -7,9 +7,20 @@ const GameCard = ({ game }) => {
     const gameName = game.name;
     const gameIcon = game.icon;
     const gameImage = game.image || game.banner;
+    const imageFallback = game.imageFallback;
     const accountCount = game.accountCount ?? game.listingsCount ?? game.active_listings_count ?? 0;
     const [imageError, setImageError] = useState(false);
-    const showImage = gameImage && !gameImage.includes('placeholder') && !imageError;
+    const [useFallback, setUseFallback] = useState(false);
+    const displayImage = useFallback && imageFallback ? imageFallback : gameImage;
+    const showImage = displayImage && !String(displayImage).includes('placeholder') && !imageError;
+
+    const handleImageError = () => {
+        if (imageFallback && !useFallback) {
+            setUseFallback(true);
+        } else {
+            setImageError(true);
+        }
+    };
 
     return (
         <Link
@@ -33,10 +44,10 @@ const GameCard = ({ game }) => {
             >
                 {showImage ? (
                     <img
-                        src={gameImage}
+                        src={displayImage}
                         alt={gameName}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={() => setImageError(true)}
+                        onError={handleImageError}
                     />
                 ) : gameIcon ? (
                     <span className="text-4xl opacity-40">{gameIcon}</span>
