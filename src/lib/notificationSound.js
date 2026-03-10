@@ -86,6 +86,44 @@ export function playChatNotificationSound() {
 }
 
 /**
+ * Ovoz: umumiy bildirishnoma (masalan akkaunt tasdiqlandi).
+ */
+export function playNotificationSound() {
+  if (typeof window === 'undefined') return;
+  const now = Date.now();
+  if (now - lastPlayedAt < 2000) return;
+  lastPlayedAt = now;
+
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(660, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+    osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.2);
+
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.25);
+
+    osc.onended = () => {
+      try { ctx.close?.(); } catch { /* ignore */ }
+    };
+  } catch {
+    // ignore
+  }
+}
+
+/**
  * Play a different sound for background (when not in chat page).
  */
 export function playChatBackgroundSound() {

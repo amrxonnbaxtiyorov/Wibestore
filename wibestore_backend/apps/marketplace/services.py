@@ -55,6 +55,20 @@ class ListingService:
         listing.approved_at = timezone.now()
         listing.save(update_fields=["status", "moderated_by", "moderated_at", "approved_at"])
 
+        # Sotuvchiga bildirishnoma: akkaunt tasdiqlandi va sotuvda
+        try:
+            from apps.notifications.services import NotificationService
+
+            NotificationService.create_notification(
+                user=listing.seller,
+                title="Akkaunt tasdiqlandi",
+                message="Sizning akkauntingiz tasdiqlandi va sotuvda.",
+                type_code="listing_approved",
+                data={"listing_id": str(listing.id), "listing_title": listing.title},
+            )
+        except Exception as e:
+            logger.warning("Failed to send listing_approved notification: %s", e)
+
         logger.info("Listing approved: %s by admin %s", listing.id, admin_user.email)
         return listing
 

@@ -1,13 +1,53 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Bell, Check, Trash2, X } from 'lucide-react';
-import { useNotifications } from '../context/NotificationContext';
+import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '../hooks/useNotifications';
 import { useLanguage } from '../context/LanguageContext';
+import { ensureSoundUnlocked, playNotificationSound } from '../lib/notificationSound';
 
 const NotificationWidget = () => {
     const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
-    const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAll } = useNotifications();
+    const prevUnreadRef = useRef(null);
+
+    const { data: notificationsData, isLoading } = useNotifications();
+    const markAsReadMutation = useMarkNotificationRead();
+    const markAllReadMutation = useMarkAllNotificationsRead();
+
+    const rawList = notificationsData?.results ?? (Array.isArray(notificationsData) ? notificationsData : []);
+    const notifications = useMemo(() => rawList.map((n) => ({
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        read: !!n.is_read,
+        time: n.created_at,
+        icon: n.type?.icon || '🔔',
+    })), [rawList]);
+    const unreadCount = notifications.filter((n) => !n.read).length;
+
+    useEffect(() => {
+        ensureSoundUnlocked();
+    }, []);
+
+    useEffect(() => {
+        if (prevUnreadRef.current === null) {
+            prevUnreadRef.current = unreadCount;
+            return;
+        }
+        if (unreadCount > prevUnreadRef.current) {
+            playNotificationSound();
+        }
+        prevUnreadRef.current = unreadCount;
+    }, [unreadCount]);
+
+    const markAsRead = (id) => {
+        markAsReadMutation.mutate(id);
+    };
+    const markAllAsRead = () => {
+        markAllReadMutation.mutate();
+    };
+    const deleteNotification = (id) => markAsRead(id);
+    const clearAll = () => markAllReadMutation.mutate();
 
     // Close on outside click
     useEffect(() => {
@@ -129,18 +169,18 @@ const NotificationWidget = () => {
                                         borderBottom: '1px solid var(--color-border-muted)',
                                         cursor: 'pointer',
                                         transition: 'background-color 0.15s ease',
-                                        backgroundColor: !notification.read
-                                            ? 'var(--color-info-bg)'
-                                            : 'transparent',
+                                        backgroundColor: notification.read
+                                            ? 'transparent'
+                                            : 'var(--color-info-bg)',
                                     }}
                                     onClick={() => markAsRead(notification.id)}
                                     onMouseEnter={(e) => {
                                         e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)';
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.currentTarget.style.backgroundColor = !notification.read
-                                            ? 'var(--color-info-bg)'
-                                            : 'transparent';
+                                        e.currentTarget.style.backgroundColor = notification.read
+                                            ? 'transparent'
+                                            : 'var(--color-info-bg)';
                                     }}
                                 >
                                     <div className="flex items-start gap-3">
@@ -164,12 +204,12 @@ const NotificationWidget = () => {
                                                 <p
                                                     className="truncate"
                                                     style={{
-                                                        fontWeight: !notification.read
-                                                            ? 'var(--font-weight-medium)'
-                                                            : 'var(--font-weight-normal)',
-                                                        color: !notification.read
-                                                            ? 'var(--color-text-primary)'
-                                                            : 'var(--color-text-secondary)',
+                                                        fontWeight: notification.read
+                                                            ? 'var(--font-weight-normal)'
+                                                            : 'var(--font-weight-medium)',
+                                                        color: notification.read
+                                                            ? 'var(--color-text-secondary)'
+                                                            : 'var(--color-text-primary)',
                                                         fontSize: 'var(--font-size-base)',
                                                     }}
                                                 >

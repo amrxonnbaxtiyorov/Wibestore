@@ -64,10 +64,11 @@ const ProfilePage = () => {
 
     const getStatusBadge = (status) => {
         const map = {
-            pending: { icon: Clock, text: t('status.pending') || 'Pending', color: 'var(--color-accent-orange)', bg: 'var(--color-warning-bg)' },
-            approved: { icon: CheckCircle, text: t('status.approved') || 'Approved', color: 'var(--color-accent-green)', bg: 'var(--color-success-bg)' },
-            rejected: { icon: XCircle, text: t('status.rejected') || 'Rejected', color: 'var(--color-error)', bg: 'var(--color-error-bg)' },
-            sold: { icon: CheckCircle, text: t('status.sold') || 'Sold', color: 'var(--color-accent-blue)', bg: 'var(--color-info-bg)' },
+            pending: { icon: Clock, text: t('status.pending') || 'Kutilmoqda', color: 'var(--color-accent-orange)', bg: 'var(--color-warning-bg)' },
+            active: { icon: CheckCircle, text: t('status.approved') || 'Tasdiqlandi', color: 'var(--color-accent-green)', bg: 'var(--color-success-bg)' },
+            approved: { icon: CheckCircle, text: t('status.approved') || 'Tasdiqlandi', color: 'var(--color-accent-green)', bg: 'var(--color-success-bg)' },
+            rejected: { icon: XCircle, text: t('status.rejected') || 'Rad etilgan', color: 'var(--color-error)', bg: 'var(--color-error-bg)' },
+            sold: { icon: CheckCircle, text: t('status.sold') || 'Sotilgan', color: 'var(--color-accent-blue)', bg: 'var(--color-info-bg)' },
         };
         return map[status] || map.pending;
     };

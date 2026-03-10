@@ -582,7 +582,7 @@
     },
     "status": {
         "pending": "Kutilmoqda",
-        "approved": "Tasdiqlangan",
+        "approved": "Tasdiqlandi",
         "rejected": "Rad etilgan",
         "sold": "Sotilgan"
     },
