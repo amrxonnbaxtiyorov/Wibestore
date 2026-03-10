@@ -10,14 +10,14 @@ import { resolveGameImageUrl } from '../lib/displayUtils';
 import { CS2_WEAPON_TYPES, isCs2Game } from '../data/cs2WeaponTypes';
 import SellerRulesQuiz from '../components/SellerRulesQuiz';
 
-// Backend listing yaratish uchun game_id UUID kerak; o'yin rasmi to'liq URL (backend) yoki resolveGameImageUrl orqali
+// Backend: logo = logotip, image = banner. Akkaunt sotishda o'yin uchun logoni ko'rsatamiz.
 function getTopGamesForSell(apiGames) {
     const list = Array.isArray(apiGames) && apiGames.length > 0
         ? apiGames.map((g) => ({
             id: g.id,
             slug: g.slug,
             name: g.name,
-            image: resolveGameImageUrl(g.image || g.banner) || null,
+            image: resolveGameImageUrl(g.logo || g.image || g.banner) || null,
             accountCount: g.active_listings_count ?? g.listings_count ?? 0,
         }))
         : [];
@@ -51,7 +51,7 @@ const SellPage = () => {
             id: g.id,
             slug: g.slug,
             name: g.name,
-            image: resolveGameImageUrl(g.image || g.banner) || null,
+            image: resolveGameImageUrl(g.logo || g.image || g.banner) || null,
           }))
         : [];
 
@@ -648,7 +648,7 @@ title: t('common.error') || 'Xatolik',
                                     backgroundColor: 'var(--color-warning-bg)',
                                     border: '1px solid var(--color-accent-orange)',
                                 }}>
-                                    <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-accent-orange)' }} />
+                                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: 'var(--color-accent-orange)' }} />
                                     <div style={{ fontSize: 'var(--font-size-sm)' }}>
                                         <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-accent-orange)', marginBottom: '4px' }}>{t('sell.important')}</p>
                                         <p style={{ color: 'var(--color-text-secondary)' }}>{t('sell.escrow_notice')}</p>
