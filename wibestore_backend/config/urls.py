@@ -2,17 +2,45 @@
 WibeStore Backend - Root URL Configuration
 """
 
+import os
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 
 def health_check(request):
     """Basic health check — returns 200 OK."""
     return JsonResponse({"status": "ok"})
+
+
+def storage_check(request):
+    """Storage diagnostics — shows which file storage backend is active."""
+    from django.conf import settings as s
+    storage_backend = getattr(s, "DEFAULT_FILE_STORAGE", "django.core.files.storage.FileSystemStorage")
+    is_s3 = "s3" in storage_backend.lower() or "S3Boto3" in storage_backend
+    info = {
+        "storage_backend": storage_backend,
+        "is_s3_active": is_s3,
+        "media_url": getattr(s, "MEDIA_URL", "/media/"),
+        "aws_key_set": bool(getattr(s, "AWS_ACCESS_KEY_ID", "")),
+        "aws_secret_set": bool(getattr(s, "AWS_SECRET_ACCESS_KEY", "")),
+        "aws_bucket": getattr(s, "AWS_STORAGE_BUCKET_NAME", ""),
+        "aws_endpoint_set": bool(getattr(s, "AWS_S3_ENDPOINT_URL", "")),
+        "aws_custom_domain": getattr(s, "AWS_S3_CUSTOM_DOMAIN", ""),
+        "django_settings_module": os.environ.get("DJANGO_SETTINGS_MODULE", "NOT SET"),
+    }
+    if is_s3:
+        try:
+            from django.core.files.storage import default_storage
+            info["can_write"] = hasattr(default_storage, "bucket")
+        except Exception as e:
+            info["storage_error"] = str(e)
+    return JsonResponse(info)
 
 
 def health_check_detailed(request):
@@ -79,6 +107,7 @@ urlpatterns = [
     # Health Checks
     path("health/", health_check, name="health-check"),
     path("health/detailed/", health_check_detailed, name="health-check-detailed"),
+    path("health/storage/", storage_check, name="storage-check"),
 ]
 
 # Include social auth URLs if available
@@ -89,7 +118,14 @@ try:
 except ImportError:
     pass
 
-# Serve media files in development
+# Serve media files via Django when S3/R2 is NOT active (fallback for local storage)
+_storage = getattr(settings, "DEFAULT_FILE_STORAGE", "")
+_is_s3 = "s3" in _storage.lower() or "S3Boto3" in _storage
+if not _is_s3:
+    urlpatterns += [
+        re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+    ]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

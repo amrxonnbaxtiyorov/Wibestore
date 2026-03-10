@@ -98,6 +98,19 @@ if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY:
     _custom_domain = env("AWS_S3_CUSTOM_DOMAIN", default="").strip()  # noqa: F405
     if _custom_domain:
         AWS_S3_CUSTOM_DOMAIN = _custom_domain.replace("https://", "").replace("http://", "").rstrip("/")
+    logger.info(
+        "S3/R2 storage ACTIVE: bucket=%s, endpoint=%s, custom_domain=%s",
+        AWS_STORAGE_BUCKET_NAME,
+        _endpoint or "not set",
+        _custom_domain or "not set",
+    )
+else:
+    logger.warning(
+        "S3/R2 storage NOT active: AWS_ACCESS_KEY_ID=%s, AWS_SECRET_ACCESS_KEY=%s. "
+        "Media files will be stored on ephemeral filesystem!",
+        "SET" if AWS_ACCESS_KEY_ID else "EMPTY",
+        "SET" if AWS_SECRET_ACCESS_KEY else "EMPTY",
+    )
 
 # ============================================================
 # STATIC FILES (WhiteNoise)

@@ -194,7 +194,7 @@ class ListingImageUploadView(APIView):
             )
             created_images.append(image_obj)
 
-        serializer = ListingImageSerializer(created_images, many=True)
+        serializer = ListingImageSerializer(created_images, many=True, context={"request": request})
         return Response(
             {
                 "success": True,

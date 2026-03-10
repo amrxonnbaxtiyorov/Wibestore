@@ -24,9 +24,22 @@ class SavedSearchSerializer(serializers.ModelSerializer):
 
 
 class ListingImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = ListingImage
         fields = ["id", "image", "is_primary", "sort_order"]
+
+    def get_image(self, obj):
+        if not obj.image:
+            return None
+        request = self.context.get("request")
+        url = obj.image.url
+        if url and url.startswith("http"):
+            return url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
 
 
 class ListingSerializer(serializers.ModelSerializer):
