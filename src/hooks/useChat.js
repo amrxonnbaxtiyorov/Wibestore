@@ -54,7 +54,10 @@ export const useChatMessages = (chatId) => {
             }
             return undefined;
         },
-        staleTime: 30 * 1000, // 30 seconds
+        staleTime: 2 * 1000, // chat: tez-tez yangilanadi
+        refetchInterval: 2 * 1000, // saytni yangilamasdan ham xabarlar kelsin (polling)
+        refetchOnWindowFocus: true,
+        gcTime: 24 * 60 * 60 * 1000, // 24h cache (yozishmalar yo'qolib ketmasin)
     });
 };
 
@@ -97,11 +100,21 @@ export const useSendMessage = (chatId) => {
             await queryClient.cancelQueries({ queryKey: ['chats', chatId, 'messages'] });
             const previous = queryClient.getQueryData(['chats', chatId, 'messages']);
 
+            let currentUser = null;
+            try {
+                currentUser = JSON.parse(localStorage.getItem('wibeUser') || 'null');
+            } catch {
+                currentUser = null;
+            }
+
             const optimisticMessage = {
                 id: `optimistic-${Date.now()}`,
                 content: String(text ?? '').trim(),
                 created_at: new Date().toISOString(),
-                sender: null,
+                sender: currentUser ? {
+                    id: currentUser.id,
+                    display_name: currentUser.display_name || currentUser.name || currentUser.email,
+                } : null,
                 is_read: true,
             };
 
@@ -109,18 +122,19 @@ export const useSendMessage = (chatId) => {
                 if (!old) return old;
                 if (!old.pages || old.pages.length === 0) return old;
 
-                const firstPage = old.pages[0];
-                const currentResults = Array.isArray(firstPage?.results)
-                    ? firstPage.results
-                    : (Array.isArray(firstPage) ? firstPage : []);
+                const lastIdx = old.pages.length - 1;
+                const lastPage = old.pages[lastIdx];
+                const currentResults = Array.isArray(lastPage?.results)
+                    ? lastPage.results
+                    : (Array.isArray(lastPage) ? lastPage : []);
 
-                const nextFirstPage = Array.isArray(firstPage)
-                    ? [optimisticMessage, ...currentResults]
-                    : { ...firstPage, results: [optimisticMessage, ...currentResults] };
+                const nextLastPage = Array.isArray(lastPage)
+                    ? [...currentResults, optimisticMessage]
+                    : { ...lastPage, results: [...currentResults, optimisticMessage] };
 
                 return {
                     ...old,
-                    pages: [nextFirstPage, ...old.pages.slice(1)],
+                    pages: [...old.pages.slice(0, lastIdx), nextLastPage],
                 };
             });
 

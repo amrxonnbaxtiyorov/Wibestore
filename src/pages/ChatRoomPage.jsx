@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Send, MessageCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -16,10 +16,22 @@ export default function ChatRoomPage() {
     const { t } = useLanguage();
     const [text, setText] = useState('');
 
-    const { data: messagesData, isLoading } = useChatMessages(roomId);
+    const {
+        data: messagesData,
+        isLoading,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useChatMessages(roomId);
     const sendMessageMutation = useSendMessage(roomId);
 
     const messages = messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [];
+    const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        // yangi xabar kelganda pastga scroll
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages.length]);
 
     const handleSend = (e) => {
         e.preventDefault();
@@ -99,7 +111,19 @@ export default function ChatRoomPage() {
                         overflow: 'hidden',
                     }}
                 >
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div
+                        style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: '16px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px',
+                            maxHeight: '65vh',
+                            scrollbarGutter: 'stable',
+                            scrollbarWidth: 'thin',
+                        }}
+                    >
                         {isLoading ? (
                             <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
                                 {t('common.loading') || 'Yuklanmoqda...'}
@@ -110,7 +134,20 @@ export default function ChatRoomPage() {
                                 <p>{t('detail.no_messages') || 'Xabar yo\'q. Birinchi xabarni yozing.'}</p>
                             </div>
                         ) : (
-                            messages.map((msg) => {
+                            <>
+                                {hasNextPage && (
+                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => fetchNextPage()}
+                                            disabled={isFetchingNextPage}
+                                        >
+                                            {isFetchingNextPage ? (t('common.loading') || 'Yuklanmoqda...') : (t('chat.load_older') || 'Eski xabarlar')}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {messages.map((msg) => {
                                 const isMe = msg.sender?.id === user.id;
                                 return (
                                     <div
@@ -150,7 +187,9 @@ export default function ChatRoomPage() {
                                         </div>
                                     </div>
                                 );
-                            })
+                                })}
+                                <div ref={messagesEndRef} />
+                            </>
                         )}
                     </div>
 
