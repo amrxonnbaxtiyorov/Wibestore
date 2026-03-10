@@ -70,7 +70,11 @@ const GamePage = () => {
     }
 
     const game = { ...displayGame, listings_count: displayGame.listings_count ?? listings.length };
-    const headerIcon = resolveImageUrl(game.image || game.banner) || game.icon || null;
+    const headerIcon =
+        resolveImageUrl(game.logo) ||
+        resolveImageUrl(game.image || game.banner) ||
+        game.icon ||
+        null;
 
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px' }}>
