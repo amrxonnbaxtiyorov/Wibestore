@@ -64,19 +64,36 @@ export const useApplyPromo = () => {
 };
 
 /**
+ * Normalize listing detail response — backend ba'zan { data } yoki { listing } qaytarishi mumkin
+ */
+function normalizeListingResponse(data) {
+    if (data == null) return null;
+    if (typeof data === 'object' && !Array.isArray(data) && (data.data != null || data.listing != null)) {
+        return data.data ?? data.listing ?? null;
+    }
+    return data;
+}
+
+/**
  * Hook для получения конкретного listing'а по ID
  */
 export const useListing = (id) => {
     return useQuery({
         queryKey: ['listings', id],
         queryFn: async () => {
-            const { data } = await apiClient.get(`/listings/${id}/`);
-            return data;
+            const res = await apiClient.get(`/listings/${id}/`);
+            const body = res?.data;
+            return normalizeListingResponse(body);
         },
         enabled: !!id,
         staleTime: 2 * 60 * 1000,
         gcTime: 10 * 60 * 1000,
-        retry: 2,
+        retry: (failureCount, err) => {
+            // 404 yoki 403 da qayta urinmaslik
+            const status = err?.response?.status;
+            if (status === 404 || status === 403) return false;
+            return failureCount < 2;
+        },
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
     });
 };

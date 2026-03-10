@@ -204,21 +204,34 @@ const AccountDetailPage = () => {
     const { data: apiListing, isLoading, error, refetch } = useListing(accountId);
     const { mutate: addToFavorites } = useAddToFavorites();
     const { mutate: removeFromFavorites } = useRemoveFromFavorites();
-    const listing = apiListing ? {
-        ...apiListing,
-        description: apiListing.description || '',
-        images: apiListing.images?.length ? apiListing.images : (apiListing.image ? [{ image: apiListing.image }] : []),
-        image: apiListing.image || apiListing.images?.[0]?.image,
-        seller: {
-            ...(apiListing.seller || {}),
-            display_name: apiListing.seller?.display_name ?? apiListing.seller?.name,
-            name: apiListing.seller?.name ?? apiListing.seller?.display_name,
-            total_sales: apiListing.seller?.total_sales ?? apiListing.seller?.sales ?? 0,
-            rating: apiListing.seller?.rating ?? 5,
-        },
-        price: apiListing.price,
-        features: apiListing.features?.length ? apiListing.features : [],
-    } : null;
+
+    const listing = useMemo(() => {
+        try {
+            const raw = apiListing != null && typeof apiListing === 'object' && !Array.isArray(apiListing) ? apiListing : null;
+            if (!raw) return null;
+            const seller = raw.seller && typeof raw.seller === 'object'
+                ? {
+                    ...raw.seller,
+                    display_name: raw.seller.display_name ?? raw.seller.name,
+                    name: raw.seller.name ?? raw.seller.display_name,
+                    total_sales: raw.seller.total_sales ?? raw.seller.sales ?? 0,
+                    rating: raw.seller.rating ?? 5,
+                }
+                : { display_name: '', name: '', total_sales: 0, rating: 5 };
+            return {
+                ...raw,
+                description: raw.description ?? '',
+                images: Array.isArray(raw.images) && raw.images.length ? raw.images : (raw.image ? [{ image: raw.image }] : []),
+                image: raw.image ?? raw.images?.[0]?.image,
+                seller,
+                price: raw.price,
+                features: Array.isArray(raw.features) ? raw.features : [],
+            };
+        } catch {
+            return null;
+        }
+    }, [apiListing]);
+
     const { data: relatedData } = useListings({ game: listing?.game?.slug, limit: 4 });
 
     const { data: reviewsData } = useListingReviews(accountId);
