@@ -125,7 +125,8 @@
         "ben_position_desc": "First in homepage and search",
         "payment_methods": "Payment Methods",
         "auto_renew": "Subscription auto-renews monthly. Cancel anytime.",
-        "secure_payment_telegram": "Secure payment via Telegram @wibestorebot"
+        "secure_payment_telegram": "Secure payment via Telegram @wibestorebot",
+        "purchase_info": "Premium subscriptions can only be purchased with 50% discount and through vouchers. Earn coins and get Premium free for 100 coins, or pay via Telegram."
     },
     "login": {
         "welcome": "Welcome back!",

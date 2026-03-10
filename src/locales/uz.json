@@ -125,7 +125,8 @@
         "ben_position_desc": "Bosh sahifa va qidiruvda birinchi",
         "payment_methods": "To'lov usullari",
         "auto_renew": "Obuna har oy avtomatik yangilanadi. Istalgan vaqtda bekor qilishingiz mumkin.",
-        "secure_payment_telegram": "Xavfsiz to'lov Telegram @wibestorebot orqali"
+        "secure_payment_telegram": "Xavfsiz to'lov Telegram @wibestorebot orqali",
+        "purchase_info": "Premium obunalarni faqat 50% chegirma va vaucherlar orqali sotib olish mumkin. Coinlarni yig'ib Premium ni 100 coin evaziga bepul oling yoki Telegram orqali to'lang."
     },
     "login": {
         "welcome": "Xush kelibsiz!",

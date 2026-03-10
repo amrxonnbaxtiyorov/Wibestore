@@ -125,7 +125,8 @@
         "ben_position_desc": "Первые на главной и в поиске",
         "payment_methods": "Способы оплаты",
         "auto_renew": "Подписка продлевается ежемесячно. Отменить можно в любой момент.",
-        "secure_payment_telegram": "Безопасная оплата через Telegram @wibestorebot"
+        "secure_payment_telegram": "Безопасная оплата через Telegram @wibestorebot",
+        "purchase_info": "Премиум-подписки можно оформить только со скидкой 50% и через ваучеры. Копите монеты и получите Premium бесплатно за 100 монет или оплатите через Telegram."
     },
     "login": {
         "welcome": "Добро пожаловать!",
