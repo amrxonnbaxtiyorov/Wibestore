@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useChatMessages, useMarkChatRead, useSendMessage } from '../hooks/useChat.js';
 import { useLanguage } from '../context/LanguageContext';
 import { resolveImageUrl, getDisplayInitial } from '../lib/displayUtils';
+import { ensureSoundUnlocked, playChatNotificationSound } from '../lib/notificationSound';
 
 /**
  * Sahifa: xarid (to'lov) dan keyin ochiladigan chat — xaridor, sotuvchi va admin.
@@ -14,6 +15,7 @@ export default function ChatRoomPage() {
     const { roomId } = useParams();
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
+    const userId = user?.id ?? null;
     const { t } = useLanguage();
     const [text, setText] = useState('');
 
@@ -27,8 +29,9 @@ export default function ChatRoomPage() {
     const sendMessageMutation = useSendMessage(roomId);
     const markReadMutation = useMarkChatRead(roomId);
 
-    const messages = messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [];
+    const messages = useMemo(() => messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [], [messagesData]);
     const messagesEndRef = useRef(null);
+    const lastNotifiedMessageIdRef = useRef(null);
 
     const otherUser = useMemo(() => {
         const list = messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [];
@@ -49,14 +52,34 @@ export default function ChatRoomPage() {
     }, [messages.length]);
 
     useEffect(() => {
+        ensureSoundUnlocked();
+    }, []);
+
+    useEffect(() => {
+        if (!userId) return;
+        if (!messages.length) return;
+        const last = messages[messages.length - 1];
+        const lastId = last?.id ?? null;
+        if (!lastId || lastId === lastNotifiedMessageIdRef.current) return;
+
+        const senderId = last?.sender?.id ?? null;
+        const isIncoming = senderId && senderId !== userId;
+        const isOptimistic = String(lastId).startsWith('optimistic-');
+        if (isIncoming && !isOptimistic) {
+            playChatNotificationSound();
+        }
+        lastNotifiedMessageIdRef.current = lastId;
+    }, [userId, messages]);
+
+    useEffect(() => {
         // Chat ochilganda kelgan xabarlarni "o'qildi" qilish
-        if (!roomId || !user) return;
-        const hasIncomingUnread = messages.some((m) => m?.sender?.id && m.sender.id !== user.id && m.is_read === false);
+        if (!roomId || !userId) return;
+        const hasIncomingUnread = messages.some((m) => m?.sender?.id && m.sender.id !== userId && m.is_read === false);
         if (hasIncomingUnread && !markReadMutation.isPending) {
             markReadMutation.mutate();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [roomId, user?.id, messages.length]);
+    }, [roomId, userId, messages.length]);
 
     const handleSend = (e) => {
         e.preventDefault();

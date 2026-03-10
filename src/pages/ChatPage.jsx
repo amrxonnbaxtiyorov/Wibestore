@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useChats, useChatMessages, useMarkChatRead, useSendMessage } from '../hooks/useChat';
 import { useLanguage } from '../context/LanguageContext';
 import { resolveImageUrl, getDisplayInitial } from '../lib/displayUtils';
+import { ensureSoundUnlocked, playChatNotificationSound } from '../lib/notificationSound';
 
 /**
  * Chat — bitta sahifa: suhbatlar ro'yxati va tanlangan suhbat xabarlari.
@@ -12,6 +13,7 @@ import { resolveImageUrl, getDisplayInitial } from '../lib/displayUtils';
  */
 export default function ChatPage() {
     const { user, isAuthenticated } = useAuth();
+    const userId = user?.id ?? null;
     const navigate = useNavigate();
     const { t } = useLanguage();
     const { data: chatsData, isLoading } = useChats();
@@ -19,6 +21,7 @@ export default function ChatPage() {
     const [activeRoomId, setActiveRoomId] = useState(null);
     const [text, setText] = useState('');
     const messagesEndRef = useRef(null);
+    const lastNotifiedMessageIdRef = useRef(null);
 
     const activeRoom = useMemo(() => {
         if (!activeRoomId || !Array.isArray(chats)) return null;
@@ -44,11 +47,15 @@ export default function ChatPage() {
     } = useChatMessages(activeRoomId);
     const sendMessageMutation = useSendMessage(activeRoomId);
     const markReadMutation = useMarkChatRead(activeRoomId);
-    const messages = messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [];
+    const messages = useMemo(() => messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [], [messagesData]);
 
     useEffect(() => {
         if (!isAuthenticated) navigate('/login?redirect=' + encodeURIComponent('/chat'));
     }, [isAuthenticated, navigate]);
+
+    useEffect(() => {
+        ensureSoundUnlocked();
+    }, []);
 
     useEffect(() => {
         if (!activeRoomId) return;
@@ -56,13 +63,30 @@ export default function ChatPage() {
     }, [activeRoomId, messages.length]);
 
     useEffect(() => {
-        if (!activeRoomId || !user) return;
-        const hasIncomingUnread = messages.some((m) => m?.sender?.id && m.sender.id !== user.id && m.is_read === false);
+        if (!activeRoomId || !userId) return;
+        if (!messages.length) return;
+        const last = messages[messages.length - 1];
+        const lastId = last?.id ?? null;
+        if (!lastId || lastId === lastNotifiedMessageIdRef.current) return;
+
+        // Only notify for incoming messages (not mine / not optimistic)
+        const senderId = last?.sender?.id ?? null;
+        const isIncoming = senderId && senderId !== userId;
+        const isOptimistic = String(lastId).startsWith('optimistic-');
+        if (isIncoming && !isOptimistic) {
+            playChatNotificationSound();
+        }
+        lastNotifiedMessageIdRef.current = lastId;
+    }, [activeRoomId, userId, messages]);
+
+    useEffect(() => {
+        if (!activeRoomId || !userId) return;
+        const hasIncomingUnread = messages.some((m) => m?.sender?.id && m.sender.id !== userId && m.is_read === false);
         if (hasIncomingUnread && !markReadMutation.isPending) {
             markReadMutation.mutate();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeRoomId, user?.id, messages.length]);
+    }, [activeRoomId, userId, messages.length]);
 
     const handleOpenRoom = (roomId) => {
         // Mobile: alohida chat sahifasi
