@@ -47,7 +47,11 @@ export default function ChatPage() {
     } = useChatMessages(activeRoomId);
     const sendMessageMutation = useSendMessage(activeRoomId);
     const markReadMutation = useMarkChatRead(activeRoomId);
-    const messages = useMemo(() => messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [], [messagesData]);
+    // API yangisi birinchi qaytaradi; ekranda eskisi tepada, yangisi pastda bo'lishi uchun teskari
+    const messages = useMemo(() => {
+        const arr = messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [];
+        return [...arr].reverse();
+    }, [messagesData]);
 
     useEffect(() => {
         if (!isAuthenticated) navigate('/login?redirect=' + encodeURIComponent('/chat'));

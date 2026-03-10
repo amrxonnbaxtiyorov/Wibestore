@@ -136,23 +136,23 @@ export const useSendMessage = (chatId) => {
                 is_read: false,
             };
 
+            // API yangisi birinchi qaytaradi — birinchi sahifa (index 0) eng yangi xabarlar
             queryClient.setQueryData(['chats', chatId, 'messages'], (old) => {
                 if (!old) return old;
                 if (!old.pages || old.pages.length === 0) return old;
 
-                const lastIdx = old.pages.length - 1;
-                const lastPage = old.pages[lastIdx];
-                const currentResults = Array.isArray(lastPage?.results)
-                    ? lastPage.results
-                    : (Array.isArray(lastPage) ? lastPage : []);
+                const firstPage = old.pages[0];
+                const currentResults = Array.isArray(firstPage?.results)
+                    ? firstPage.results
+                    : (Array.isArray(firstPage) ? firstPage : []);
 
-                const nextLastPage = Array.isArray(lastPage)
-                    ? [...currentResults, optimisticMessage]
-                    : { ...lastPage, results: [...currentResults, optimisticMessage] };
+                const nextFirstPage = Array.isArray(firstPage)
+                    ? [optimisticMessage, ...currentResults]
+                    : { ...firstPage, results: [optimisticMessage, ...currentResults] };
 
                 return {
                     ...old,
-                    pages: [...old.pages.slice(0, lastIdx), nextLastPage],
+                    pages: [nextFirstPage, ...old.pages.slice(1)],
                 };
             });
 
@@ -181,7 +181,8 @@ export const useSendMessage = (chatId) => {
             queryClient.invalidateQueries({ queryKey: ['chats'] });
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['chats', chatId, 'messages'] });
+            // Faqat chat ro'yxatini yangilaymiz (unread va last_message); xabarlar onSuccess da allaqachon yangilangan
+            queryClient.invalidateQueries({ queryKey: ['chats'] });
         },
     });
 };

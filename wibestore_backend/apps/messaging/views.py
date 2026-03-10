@@ -102,9 +102,13 @@ class ChatRoomMessagesView(generics.ListAPIView):
 
     def get_queryset(self):
         room_id = self.kwargs.get("room_id")
-        return Message.objects.filter(
-            room_id=room_id, room__participants=self.request.user
-        ).select_related("sender")
+        return (
+            Message.objects.filter(
+                room_id=room_id, room__participants=self.request.user
+            )
+            .select_related("sender")
+            .order_by("-created_at")
+        )
 
 
 @extend_schema(tags=["Messaging"])
