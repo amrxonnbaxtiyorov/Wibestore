@@ -104,13 +104,13 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
     def get_avatar(self, obj):
-        if obj.avatar_url:
-            return obj.avatar_url
         request = self.context.get("request")
         if obj.avatar:
             if request:
                 return request.build_absolute_uri(obj.avatar.url)
             return obj.avatar.url
+        if obj.avatar_url:
+            return obj.avatar_url
         return None
 
 
@@ -133,13 +133,13 @@ class UserPublicSerializer(serializers.ModelSerializer):
         ]
 
     def get_avatar(self, obj):
-        if obj.avatar_url:
-            return obj.avatar_url
         request = self.context.get("request")
         if obj.avatar:
             if request:
                 return request.build_absolute_uri(obj.avatar.url)
             return obj.avatar.url
+        if obj.avatar_url:
+            return obj.avatar_url
         return None
 
 
@@ -163,6 +163,13 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         if User.objects.exclude(pk=user.pk).filter(username=value).exists():
             raise serializers.ValidationError("This username is already taken.")
         return value
+
+    def update(self, instance, validated_data):
+        # Agar foydalanuvchi yangi avatar fayl yuklasa — eski avatar_url (Telegram/Google) ni tozalaymiz.
+        # Aks holda serializer avatar_url'ni ustun qo'yib, vaqtinchalik URL sabab avatar yo'qolib qolishi mumkin.
+        if "avatar" in validated_data and validated_data.get("avatar") is not None:
+            validated_data["avatar_url"] = None
+        return super().update(instance, validated_data)
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
