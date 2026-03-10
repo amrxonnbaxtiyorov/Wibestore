@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MessageCircle, Gamepad2, Send } from 'lucide-react';
+import { MessageCircle, Gamepad2, Send, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChats, useChatMessages, useMarkChatRead, useSendMessage } from '../hooks/useChat';
 import { useLanguage } from '../context/LanguageContext';
@@ -15,7 +15,7 @@ export default function ChatPage() {
     const navigate = useNavigate();
     const { t } = useLanguage();
     const { data: chatsData, isLoading } = useChats();
-    const chats = chatsData?.results ?? chatsData ?? [];
+    const chats = useMemo(() => chatsData?.results ?? chatsData ?? [], [chatsData]);
     const [activeRoomId, setActiveRoomId] = useState(null);
     const [text, setText] = useState('');
     const messagesEndRef = useRef(null);
@@ -36,8 +36,6 @@ export default function ChatPage() {
     useEffect(() => {
         if (!isAuthenticated) navigate('/login?redirect=' + encodeURIComponent('/chat'));
     }, [isAuthenticated, navigate]);
-
-    if (!user) return null;
 
     useEffect(() => {
         if (!activeRoomId) return;
@@ -70,9 +68,19 @@ export default function ChatPage() {
         });
     };
 
+    const handleClose = () => {
+        try {
+            navigate(-1);
+        } catch {
+            navigate('/');
+        }
+    };
+
+    if (!user) return null;
+
     return (
-        <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px', display: 'flex', flexDirection: 'column' }}>
-            <div className="gh-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: '1100px', margin: '0 auto' }}>
+        <div className="page-enter" style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
+            <div className="gh-container" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', maxWidth: 'none' }}>
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs">
                     <Link to="/">{t('common.home')}</Link>
@@ -81,7 +89,7 @@ export default function ChatPage() {
                 </div>
 
                 {/* Page title */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', marginBottom: '16px', paddingLeft: '12px' }}>
                     <MessageCircle style={{ width: '28px', height: '28px', color: 'var(--color-accent-blue)' }} />
                     <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', margin: 0 }}>
                         {t('nav.chat') || 'Xabarlar'}
@@ -92,17 +100,41 @@ export default function ChatPage() {
                 <div
                     style={{
                         flex: 1,
+                        minHeight: 0,
                         display: 'grid',
                         gridTemplateColumns: '320px 1fr',
                         backgroundColor: 'var(--color-bg-secondary)',
                         border: '1px solid var(--color-border-default)',
                         borderRadius: 'var(--radius-xl)',
                         overflow: 'hidden',
-                        minHeight: '65vh',
+                        height: '100%',
+                        position: 'relative',
                     }}
                 >
+                    {/* Close / back button */}
+                    <button
+                        type="button"
+                        onClick={handleClose}
+                        className="btn btn-ghost btn-sm"
+                        aria-label={t('common.back') || 'Orqaga'}
+                        style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            zIndex: 5,
+                            width: '36px',
+                            height: '36px',
+                            padding: 0,
+                            borderRadius: '10px',
+                            backgroundColor: 'var(--color-bg-primary)',
+                            border: '1px solid var(--color-border-muted)',
+                        }}
+                    >
+                        <X style={{ width: '18px', height: '18px' }} />
+                    </button>
+
                     {/* Left: conversations */}
-                    <div style={{ borderRight: '1px solid var(--color-border-muted)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ borderRight: '1px solid var(--color-border-muted)', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                         <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)' }}>
                             <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
                                 {t('nav.chat') || 'Xabarlar'}
@@ -187,7 +219,7 @@ export default function ChatPage() {
                     </div>
 
                     {/* Middle: messages */}
-                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
                         <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)' }}>
                             <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
                                 {activeRoom ? (activeRoom?.participants?.find((p) => p?.id !== user.id)?.display_name || t('detail.seller') || 'Chat') : (t('chat.choose') || 'Suhbatni tanlang')}
@@ -201,7 +233,7 @@ export default function ChatPage() {
                             </div>
                         ) : (
                             <>
-                                <div style={{ flex: 1, overflowY: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px', scrollbarGutter: 'stable' }}>
                                     {isMessagesLoading ? (
                                         <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
                                             {t('common.loading') || 'Yuklanmoqda...'}
