@@ -1,6 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { useChats } from '../hooks/useChat';
+import { ensureSoundUnlocked, playChatBackgroundSound } from '../lib/notificationSound';
+import { useEffect, useRef } from 'react';
 
 /**
  * Chat widget: faqat /chat sahifasiga olib boradigan suzuvchi tugma.
@@ -13,12 +15,25 @@ const ChatWidget = () => {
     const unreadCount = Array.isArray(chats)
         ? chats.reduce((sum, r) => sum + (Number(r?.unread_count ?? 0) || 0), 0)
         : 0;
+    const prevUnreadRef = useRef(unreadCount);
 
     const isAdminPage = pathname.includes('/admin');
     const isChatPage = pathname === '/chat' || pathname.startsWith('/chat/');
     if (isAdminPage || isChatPage) {
         return null;
     }
+
+    useEffect(() => {
+        ensureSoundUnlocked();
+    }, []);
+
+    useEffect(() => {
+        const prev = prevUnreadRef.current ?? 0;
+        if (unreadCount > prev) {
+            playChatBackgroundSound();
+        }
+        prevUnreadRef.current = unreadCount;
+    }, [unreadCount]);
 
     return (
         <Link

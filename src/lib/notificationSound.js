@@ -85,3 +85,41 @@ export function playChatNotificationSound() {
   }
 }
 
+/**
+ * Play a different sound for background (when not in chat page).
+ */
+export function playChatBackgroundSound() {
+  if (typeof window === 'undefined') return;
+  const now = Date.now();
+  if (now - lastPlayedAt < 1500) return; // throttle
+  lastPlayedAt = now;
+
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    // slightly lower / "different" tone than in-chat
+    osc.frequency.setValueAtTime(520, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(390, ctx.currentTime + 0.18);
+
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.24);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.25);
+
+    osc.onended = () => {
+      try { ctx.close?.(); } catch { /* ignore */ }
+    };
+  } catch {
+    // ignore
+  }
+}
+
