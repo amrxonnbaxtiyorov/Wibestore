@@ -1,14 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const GameCard = ({ game }) => {
     const gameId = game.slug || game.id;
     const gameName = game.name;
-    const gameIcon = game.icon;
-    const gameImage = game.image || game.banner;
+    const initialSrc = game.logoUrl || game.image || game.icon || game.logo;
+    const fallbackSrc = game.bannerUrl || game.banner || game.image;
+
     const accountCount = game.accountCount ?? game.listingsCount ?? game.active_listings_count ?? 0;
+    const [imgSrc, setImgSrc] = useState(initialSrc);
     const [imageError, setImageError] = useState(false);
-    const showImage = gameImage && !String(gameImage).includes('placeholder') && !imageError;
+
+    // Update src conditionally if initial changes
+    useEffect(() => {
+        setImgSrc(initialSrc);
+        setImageError(false);
+    }, [initialSrc]);
+
+    const showImage = imgSrc && !String(imgSrc).includes('placeholder') && !imageError;
+
+    const handleError = () => {
+        if (imgSrc === initialSrc && initialSrc !== fallbackSrc) {
+            setImgSrc(fallbackSrc);
+        } else {
+            setImageError(true);
+        }
+    };
 
     return (
         <Link
@@ -32,13 +49,13 @@ const GameCard = ({ game }) => {
             >
                 {showImage ? (
                     <img
-                        src={gameImage}
+                        src={imgSrc}
                         alt={gameName}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={() => setImageError(true)}
+                        onError={handleError}
                     />
-                ) : gameIcon ? (
-                    <span className="text-4xl opacity-40">{gameIcon}</span>
+                ) : game.icon ? (
+                    <span className="text-4xl opacity-40">{game.icon}</span>
                 ) : (
                     <span className="text-4xl opacity-40">🎮</span>
                 )}

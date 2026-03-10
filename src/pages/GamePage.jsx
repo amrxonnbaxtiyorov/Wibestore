@@ -102,10 +102,25 @@ const GamePage = () => {
                             overflow: 'hidden',
                         }}
                     >
-                        {headerIcon && (headerIcon.startsWith('http') || headerIcon.startsWith('/') || headerIcon.startsWith('data:')) ? (
-                            <img src={headerIcon} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {headerIcon || fallbackIcon ? (
+                            <>
+                                <img
+                                    src={headerIcon || fallbackIcon}
+                                    alt={game.name}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    onError={(e) => {
+                                        if (e.target.src === headerIcon && fallbackIcon && headerIcon !== fallbackIcon) {
+                                            e.target.src = fallbackIcon;
+                                        } else {
+                                            e.target.style.display = 'none';
+                                            e.target.nextElementSibling.style.display = 'inline';
+                                        }
+                                    }}
+                                />
+                                <span style={{ display: 'none', fontSize: '28px' }}>{game.name?.charAt(0) || '🎮'}</span>
+                            </>
                         ) : (
-                            <span style={{ fontSize: '28px' }}>{headerIcon || game.name?.charAt(0) || '🎮'}</span>
+                            <span style={{ fontSize: '28px' }}>{game.name?.charAt(0) || '🎮'}</span>
                         )}
                     </div>
                     <div>

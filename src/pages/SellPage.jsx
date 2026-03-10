@@ -17,7 +17,8 @@ function getTopGamesForSell(apiGames) {
             id: g.id,
             slug: g.slug,
             name: g.name,
-            image: resolveGameImageUrl(g.image || g.banner) || null,
+            logoUrl: resolveGameImageUrl(g.logo || g.icon || g.image || g.banner) || null,
+            bannerUrl: resolveGameImageUrl(g.banner || g.image || g.logo || g.icon) || null,
             accountCount: g.active_listings_count ?? g.listings_count ?? 0,
         }))
         : [];
@@ -36,7 +37,7 @@ const SellPage = () => {
     const [submitted, setSubmitted] = useState(false);
     const [showGameModal, setShowGameModal] = useState(false);
     const [modalGameSearch, setModalGameSearch] = useState('');
-    
+
     // API hooks
     const { mutate: createListing, isPending: _isCreating } = useCreateListing();
     const { data: gamesData, isLoading: gamesLoading, isError: gamesError } = useGames();
@@ -51,8 +52,9 @@ const SellPage = () => {
             id: g.id,
             slug: g.slug,
             name: g.name,
-            image: resolveGameImageUrl(g.image || g.banner) || null,
-          }))
+            logoUrl: resolveGameImageUrl(g.logo || g.icon || g.image || g.banner) || null,
+            bannerUrl: resolveGameImageUrl(g.banner || g.image || g.logo || g.icon) || null,
+        }))
         : [];
 
     const filteredModalGames = modalGameSearch
@@ -170,7 +172,7 @@ const SellPage = () => {
                     ? { note: formData.additionalInfo.trim() }
                     : {},
             };
-            
+
             createListing(listingData, {
                 onSuccess: async (response) => {
                     const listingId = response?.data?.id || response?.id;
@@ -234,8 +236,8 @@ const SellPage = () => {
         } catch (error) {
             addToast({
                 type: 'error',
-title: t('common.error') || 'Xatolik',
-                        message: error?.message || t('settings.generic_error') || 'Noma\'lum xatolik',
+                title: t('common.error') || 'Xatolik',
+                message: error?.message || t('settings.generic_error') || 'Noma\'lum xatolik',
             });
             setIsSubmitting(false);
         }
@@ -330,10 +332,25 @@ title: t('common.error') || 'Xatolik',
                                             cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s ease',
                                         }}
                                     >
-                                        {game.image ? (
-                                            <img src={game.image} alt={game.name} style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', margin: '0 auto 8px', objectFit: 'cover' }} />
+                                        {game.logoUrl || game.bannerUrl ? (
+                                            <>
+                                                <img
+                                                    src={game.logoUrl || game.bannerUrl}
+                                                    alt={game.name}
+                                                    style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', margin: '0 auto 8px', objectFit: 'cover' }}
+                                                    onError={(e) => {
+                                                        if (e.target.src === game.logoUrl && game.bannerUrl && game.logoUrl !== game.bannerUrl) {
+                                                            e.target.src = game.bannerUrl;
+                                                        } else {
+                                                            e.target.style.display = 'none';
+                                                            e.target.nextElementSibling.style.display = 'flex';
+                                                        }
+                                                    }}
+                                                />
+                                                <div style={{ display: 'none', width: '48px', height: '48px', borderRadius: 'var(--radius-md)', margin: '0 auto 8px', backgroundColor: 'var(--color-bg-tertiary)', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>{game.name?.charAt(0) || '🎮'}</div>
+                                            </>
                                         ) : (
-                                            <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', margin: '0 auto 8px', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>{game.name?.charAt(0) || '🎮'}</div>
+                                            <div style={{ display: 'flex', width: '48px', height: '48px', borderRadius: 'var(--radius-md)', margin: '0 auto 8px', backgroundColor: 'var(--color-bg-tertiary)', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>{game.name?.charAt(0) || '🎮'}</div>
                                         )}
                                         <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>{game.name}</p>
                                     </button>
@@ -435,10 +452,25 @@ title: t('common.error') || 'Xatolik',
                                                     cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s ease',
                                                 }}
                                             >
-                                                {game.image ? (
-                                                    <img src={game.image} alt={game.name} style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', margin: '0 auto 6px', objectFit: 'cover' }} />
+                                                {game.logoUrl || game.bannerUrl ? (
+                                                    <>
+                                                        <img
+                                                            src={game.logoUrl || game.bannerUrl}
+                                                            alt={game.name}
+                                                            style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', margin: '0 auto 6px', objectFit: 'cover' }}
+                                                            onError={(e) => {
+                                                                if (e.target.src === game.logoUrl && game.bannerUrl && game.logoUrl !== game.bannerUrl) {
+                                                                    e.target.src = game.bannerUrl;
+                                                                } else {
+                                                                    e.target.style.display = 'none';
+                                                                    e.target.nextElementSibling.style.display = 'flex';
+                                                                }
+                                                            }}
+                                                        />
+                                                        <div style={{ display: 'none', width: '40px', height: '40px', borderRadius: 'var(--radius-md)', margin: '0 auto 6px', backgroundColor: 'var(--color-bg-tertiary)', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>{game.name?.charAt(0) || '🎮'}</div>
+                                                    </>
                                                 ) : (
-                                                    <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', margin: '0 auto 6px', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>{game.name?.charAt(0) || '🎮'}</div>
+                                                    <div style={{ display: 'flex', width: '40px', height: '40px', borderRadius: 'var(--radius-md)', margin: '0 auto 6px', backgroundColor: 'var(--color-bg-tertiary)', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>{game.name?.charAt(0) || '🎮'}</div>
                                                 )}
                                                 <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>{game.name}</p>
                                             </button>
