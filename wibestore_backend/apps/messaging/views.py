@@ -147,3 +147,31 @@ class SendMessageView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+@extend_schema(tags=["Messaging"])
+class MarkChatReadView(APIView):
+    """POST /api/v1/chats/{room_id}/read/ — Mark incoming messages as read."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, room_id):
+        try:
+            room = ChatRoom.objects.get(
+                id=room_id, participants=request.user, is_active=True
+            )
+        except ChatRoom.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"message": "Chat room not found."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        from django.utils import timezone
+
+        updated = (
+            Message.objects.filter(room=room, is_read=False)
+            .exclude(sender=request.user)
+            .update(is_read=True, read_at=timezone.now())
+        )
+
+        return Response({"success": True, "data": {"updated": updated}}, status=status.HTTP_200_OK)

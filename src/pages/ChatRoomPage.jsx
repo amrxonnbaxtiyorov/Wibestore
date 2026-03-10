@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Send, MessageCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useChatMessages, useSendMessage } from '../hooks/useChat.js';
+import { useChatMessages, useMarkChatRead, useSendMessage } from '../hooks/useChat.js';
 import { useLanguage } from '../context/LanguageContext';
 
 /**
@@ -24,6 +24,7 @@ export default function ChatRoomPage() {
         isFetchingNextPage,
     } = useChatMessages(roomId);
     const sendMessageMutation = useSendMessage(roomId);
+    const markReadMutation = useMarkChatRead(roomId);
 
     const messages = messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [];
     const messagesEndRef = useRef(null);
@@ -32,6 +33,16 @@ export default function ChatRoomPage() {
         // yangi xabar kelganda pastga scroll
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages.length]);
+
+    useEffect(() => {
+        // Chat ochilganda kelgan xabarlarni "o'qildi" qilish
+        if (!roomId || !user) return;
+        const hasIncomingUnread = messages.some((m) => m?.sender?.id && m.sender.id !== user.id && m.is_read === false);
+        if (hasIncomingUnread && !markReadMutation.isPending) {
+            markReadMutation.mutate();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [roomId, user?.id, messages.length]);
 
     const handleSend = (e) => {
         e.preventDefault();
@@ -181,9 +192,16 @@ export default function ChatRoomPage() {
                                                 </p>
                                             )}
                                             <p style={{ fontSize: 'var(--font-size-sm)', margin: 0 }}>{msg.content}</p>
-                                            <p style={{ fontSize: 'var(--font-size-xs)', marginTop: '4px', opacity: 0.8 }}>
-                                                {msg.created_at ? new Date(msg.created_at).toLocaleString('uz-UZ') : ''}
-                                            </p>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginTop: '4px' }}>
+                                                <span style={{ fontSize: 'var(--font-size-xs)', opacity: 0.85 }}>
+                                                    {msg.created_at ? new Date(msg.created_at).toLocaleString('uz-UZ') : ''}
+                                                </span>
+                                                {isMe && (
+                                                    <span style={{ fontSize: '12px', opacity: 0.9, lineHeight: 1 }}>
+                                                        {msg.is_read ? '✓✓' : '✓'}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 );

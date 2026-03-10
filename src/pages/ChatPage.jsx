@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MessageCircle, Gamepad2 } from 'lucide-react';
+import { MessageCircle, Gamepad2, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useChats } from '../hooks/useChat';
+import { useChats, useChatMessages, useMarkChatRead, useSendMessage } from '../hooks/useChat';
 import { useLanguage } from '../context/LanguageContext';
 import { resolveImageUrl } from '../lib/displayUtils';
 
@@ -16,6 +16,22 @@ export default function ChatPage() {
     const { t } = useLanguage();
     const { data: chatsData, isLoading } = useChats();
     const chats = chatsData?.results ?? chatsData ?? [];
+    const [activeRoomId, setActiveRoomId] = useState(null);
+    const [text, setText] = useState('');
+    const messagesEndRef = useRef(null);
+
+    const activeRoom = useMemo(() => {
+        if (!activeRoomId || !Array.isArray(chats)) return null;
+        return chats.find((r) => String(r?.id) === String(activeRoomId)) ?? null;
+    }, [activeRoomId, chats]);
+
+    const {
+        data: messagesData,
+        isLoading: isMessagesLoading,
+    } = useChatMessages(activeRoomId);
+    const sendMessageMutation = useSendMessage(activeRoomId);
+    const markReadMutation = useMarkChatRead(activeRoomId);
+    const messages = messagesData?.pages?.flatMap((p) => p.results ?? p) ?? [];
 
     useEffect(() => {
         if (!isAuthenticated) navigate('/login?redirect=' + encodeURIComponent('/chat'));
@@ -23,9 +39,40 @@ export default function ChatPage() {
 
     if (!user) return null;
 
+    useEffect(() => {
+        if (!activeRoomId) return;
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [activeRoomId, messages.length]);
+
+    useEffect(() => {
+        if (!activeRoomId || !user) return;
+        const hasIncomingUnread = messages.some((m) => m?.sender?.id && m.sender.id !== user.id && m.is_read === false);
+        if (hasIncomingUnread && !markReadMutation.isPending) {
+            markReadMutation.mutate();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeRoomId, user?.id, messages.length]);
+
+    const handleOpenRoom = (roomId) => {
+        // Mobile: alohida chat sahifasi
+        if (typeof window !== 'undefined' && window.innerWidth < 768) {
+            navigate(`/chat/${roomId}`);
+            return;
+        }
+        setActiveRoomId(roomId);
+    };
+
+    const handleSend = (e) => {
+        e.preventDefault();
+        if (!activeRoomId || !text.trim() || sendMessageMutation.isPending) return;
+        sendMessageMutation.mutate(text.trim(), {
+            onSuccess: () => setText(''),
+        });
+    };
+
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px', display: 'flex', flexDirection: 'column' }}>
-            <div className="gh-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: '900px', margin: '0 auto' }}>
+            <div className="gh-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: '1100px', margin: '0 auto' }}>
                 {/* Breadcrumbs */}
                 <div className="breadcrumbs">
                     <Link to="/">{t('common.home')}</Link>
@@ -41,33 +88,35 @@ export default function ChatPage() {
                     </h1>
                 </div>
 
-                {/* Chat area — card */}
+                {/* Telegram-style layout */}
                 <div
                     style={{
                         flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
+                        display: 'grid',
+                        gridTemplateColumns: '320px 1fr',
                         backgroundColor: 'var(--color-bg-secondary)',
                         border: '1px solid var(--color-border-default)',
                         borderRadius: 'var(--radius-xl)',
                         overflow: 'hidden',
-                        minHeight: '60vh',
+                        minHeight: '65vh',
                     }}
                 >
-                    {/* Content */}
-                    <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ padding: 'var(--space-4)' }}>
+                    {/* Left: conversations */}
+                    <div style={{ borderRight: '1px solid var(--color-border-muted)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)' }}>
+                            <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                                {t('nav.chat') || 'Xabarlar'}
+                            </p>
+                        </div>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
                             {isLoading ? (
                                 <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
                                     {t('common.loading') || 'Yuklanmoqda...'}
                                 </p>
                             ) : !Array.isArray(chats) || chats.length === 0 ? (
                                 <div className="empty-state">
-                                    <MessageCircle className="empty-state-icon" style={{ width: '64px', height: '64px' }} />
+                                    <MessageCircle className="empty-state-icon" style={{ width: '56px', height: '56px' }} />
                                     <p className="empty-state-description">Suhbatlar yo'q</p>
-                                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: '8px', textAlign: 'center' }}>
-                                        Akkaunt sahifasidan sotuvchi bilan bog'laning
-                                    </p>
                                 </div>
                             ) : (
                                 chats.map((room) => {
@@ -77,66 +126,55 @@ export default function ChatPage() {
                                     const listingTitle = room?.listing?.title || '';
                                     const listingImage = room?.listing?.primary_image || room?.listing?.image || null;
                                     const unread = Number(room?.unread_count ?? 0) || 0;
+                                    const isActive = String(room?.id) === String(activeRoomId);
 
                                     return (
                                         <button
                                             key={room.id}
-                                            onClick={() => navigate(`/chat/${room.id}`)}
+                                            onClick={() => handleOpenRoom(room.id)}
                                             style={{
                                                 width: '100%',
-                                                padding: 'var(--space-3)',
+                                                padding: '10px 10px',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '12px',
+                                                gap: '10px',
                                                 borderRadius: 'var(--radius-xl)',
-                                                background: 'none',
+                                                backgroundColor: isActive ? 'var(--color-bg-tertiary)' : 'transparent',
                                                 border: 'none',
                                                 cursor: 'pointer',
-                                                transition: 'background-color 0.15s ease',
                                                 textAlign: 'left',
-                                                marginBottom: '4px',
+                                                marginBottom: '6px',
                                             }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                                         >
                                             {resolveImageUrl(listingImage) ? (
                                                 <img
                                                     src={resolveImageUrl(listingImage)}
                                                     alt=""
-                                                    style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', objectFit: 'cover' }}
+                                                    style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-lg)', objectFit: 'cover', flexShrink: 0 }}
                                                 />
                                             ) : (
-                                                <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <Gamepad2 style={{ width: '24px', height: '24px', color: 'var(--color-text-muted)', opacity: 0.6 }} />
+                                                <div style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                    <Gamepad2 style={{ width: '22px', height: '22px', color: 'var(--color-text-muted)', opacity: 0.6 }} />
                                                 </div>
                                             )}
-                                            <div className="flex-1 min-w-0" style={{ textAlign: 'left' }}>
+                                            <div className="flex-1 min-w-0">
                                                 <div className="flex items-center justify-between gap-3">
-                                                    <p className="truncate" style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>
+                                                    <p className="truncate" style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', margin: 0 }}>
                                                         {title}
                                                     </p>
                                                     {unread > 0 && (
-                                                        <span
-                                                            style={{
-                                                                fontSize: 'var(--font-size-xs)',
-                                                                padding: '2px 8px',
-                                                                borderRadius: '999px',
-                                                                backgroundColor: 'var(--color-accent-blue)',
-                                                                color: '#fff',
-                                                                flexShrink: 0,
-                                                            }}
-                                                        >
+                                                        <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: '999px', backgroundColor: 'var(--color-accent-blue)', color: '#fff', flexShrink: 0 }}>
                                                             {unread}
                                                         </span>
                                                     )}
                                                 </div>
                                                 {!!listingTitle && (
-                                                    <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                                    <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
                                                         {listingTitle}
                                                     </p>
                                                 )}
                                                 {!!room?.last_message_preview && (
-                                                    <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                                                    <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
                                                         {room.last_message_preview}
                                                     </p>
                                                 )}
@@ -146,6 +184,91 @@ export default function ChatPage() {
                                 })
                             )}
                         </div>
+                    </div>
+
+                    {/* Middle: messages */}
+                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)' }}>
+                            <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                                {activeRoom ? (activeRoom?.participants?.find((p) => p?.id !== user.id)?.display_name || t('detail.seller') || 'Chat') : (t('chat.choose') || 'Suhbatni tanlang')}
+                            </p>
+                        </div>
+
+                        {!activeRoom ? (
+                            <div className="empty-state" style={{ flex: 1 }}>
+                                <MessageCircle className="empty-state-icon" style={{ width: '64px', height: '64px' }} />
+                                <p className="empty-state-description">{t('chat.choose') || 'Chap tomondan suhbat tanlang'}</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ flex: 1, overflowY: 'auto', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {isMessagesLoading ? (
+                                        <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                                            {t('common.loading') || 'Yuklanmoqda...'}
+                                        </p>
+                                    ) : (
+                                        messages.map((msg) => {
+                                            const isMe = msg.sender?.id === user.id;
+                                            return (
+                                                <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                                                    <div
+                                                        style={{
+                                                            maxWidth: '78%',
+                                                            padding: '10px 12px',
+                                                            borderRadius: 'var(--radius-2xl)',
+                                                            ...(isMe
+                                                                ? {
+                                                                    backgroundColor: 'var(--color-accent-blue)',
+                                                                    color: 'var(--color-text-on-accent)',
+                                                                    borderBottomRightRadius: 'var(--radius-sm)',
+                                                                }
+                                                                : {
+                                                                    backgroundColor: 'var(--color-bg-tertiary)',
+                                                                    color: 'var(--color-text-primary)',
+                                                                    borderBottomLeftRadius: 'var(--radius-sm)',
+                                                                }),
+                                                        }}
+                                                    >
+                                                        <p style={{ fontSize: 'var(--font-size-sm)', margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginTop: '4px' }}>
+                                                            <span style={{ fontSize: 'var(--font-size-xs)', opacity: 0.85 }}>
+                                                                {msg.created_at ? new Date(msg.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                            </span>
+                                                            {isMe && (
+                                                                <span style={{ fontSize: '12px', opacity: 0.9, lineHeight: 1 }}>
+                                                                    {msg.is_read ? '✓✓' : '✓'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                    <div ref={messagesEndRef} />
+                                </div>
+
+                                <form onSubmit={handleSend} style={{ padding: '12px', borderTop: '1px solid var(--color-border-muted)', backgroundColor: 'var(--color-bg-primary)' }}>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <input
+                                            value={text}
+                                            onChange={(e) => setText(e.target.value)}
+                                            className="input input-md"
+                                            placeholder={t('detail.write_message') || 'Xabar yozing...'}
+                                            style={{ flex: 1 }}
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="btn btn-primary btn-md"
+                                            disabled={!text.trim() || sendMessageMutation.isPending}
+                                            style={{ padding: '10px 14px', flexShrink: 0 }}
+                                        >
+                                            <Send className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </form>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

@@ -62,6 +62,24 @@ export const useChatMessages = (chatId) => {
 };
 
 /**
+ * Mark chat messages as read
+ */
+export const useMarkChatRead = (chatId) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async () => {
+            const { data } = await apiClient.post(`/chats/${chatId}/read/`);
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['chats'] });
+            queryClient.invalidateQueries({ queryKey: ['chats', chatId, 'messages'] });
+        },
+    });
+};
+
+/**
  * Hook для создания нового чата
  */
 export const useCreateChat = () => {
@@ -115,7 +133,7 @@ export const useSendMessage = (chatId) => {
                     id: currentUser.id,
                     display_name: currentUser.display_name || currentUser.name || currentUser.email,
                 } : null,
-                is_read: true,
+                is_read: false,
             };
 
             queryClient.setQueryData(['chats', chatId, 'messages'], (old) => {
@@ -174,4 +192,5 @@ export default {
     useChatMessages,
     useCreateChat,
     useSendMessage,
+    useMarkChatRead,
 };
