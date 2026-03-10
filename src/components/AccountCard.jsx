@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Crown, Heart } from 'lucide-react';
 import { formatPrice } from '../data/mockData';
@@ -12,13 +12,8 @@ const AccountCard = ({ account, featured = false }) => {
     const { t } = useLanguage();
     const addToFavorites = useAddToFavorites();
     const removeFromFavorites = useRemoveFromFavorites();
-    const isFavoritedFromApi = account.is_favorited === true;
-    const [isLiked, setIsLiked] = useState(isFavoritedFromApi);
-
-    useEffect(() => {
-        if (typeof account.is_favorited === 'boolean') setIsLiked(account.is_favorited);
-    }, [account.id, account.is_favorited]);
-
+    // API dan kelgan is_favorited ustun; optimistik o'zgarish uchun faqat local isLiked
+    const [isLiked, setIsLiked] = useState(() => !!account.is_favorited);
     const isLikedState = typeof account.is_favorited === 'boolean' ? account.is_favorited : isLiked;
 
     const handleLike = (e) => {
@@ -56,7 +51,7 @@ const AccountCard = ({ account, featured = false }) => {
     return (
         <Link
             to={`/account/${accountId}`}
-            className={`group relative account-card-hover block ${accountIsPremium ? 'account-card-premium' : ''} ${featured ? 'flex-shrink-0 snap-start' : ''}`}
+            className={`group relative account-card-hover block ${accountIsPremium ? 'account-card-premium' : ''} ${featured ? 'shrink-0 snap-start' : ''}`}
             style={{
                 backgroundColor: 'var(--color-bg-primary)',
                 border: `1px solid ${accountIsPremium ? 'var(--color-premium-gold-light)' : 'var(--color-border-default)'}`,
@@ -234,7 +229,7 @@ const AccountCard = ({ account, featured = false }) => {
                             {[1, 2, 3, 4, 5].map((star) => (
                                 <Star
                                     key={star}
-                                    className="w-3 h-3 flex-shrink-0"
+                                    className="w-3 h-3 shrink-0"
                                     style={{
                                         color: star <= Math.round(sellerRating) ? 'var(--color-premium-gold-light)' : 'var(--color-text-muted)',
                                         fill: star <= Math.round(sellerRating) ? 'currentColor' : 'none',
@@ -254,7 +249,7 @@ const AccountCard = ({ account, featured = false }) => {
                             </>
                         )}
                         {seller.isPremium && (
-                            <Crown className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--color-premium-gold-light)' }} />
+                            <Crown className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-premium-gold-light)' }} />
                         )}
                     </div>
                 </div>
