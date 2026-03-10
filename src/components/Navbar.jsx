@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCoins } from '../context/CoinContext';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
-import { getDisplayInitial, capitalizeFirst } from '../lib/displayUtils';
+import { getDisplayInitial, capitalizeFirst, resolveImageUrl } from '../lib/displayUtils';
 import NotificationWidget from './NotificationWidget';
 import Logo from './Logo';
 
@@ -423,7 +423,7 @@ const Navbar = () => {
                                                 }}
                                             >
                                                 {user?.avatar ? (
-                                                    <img src={user.avatar} alt={user?.name || 'User'} className="w-full h-full" style={{ objectFit: 'cover' }} />
+                                                    <img src={resolveImageUrl(user.avatar) || user.avatar} alt={user?.name || 'User'} className="w-full h-full" style={{ objectFit: 'cover' }} />
                                                 ) : (
                                                     getDisplayInitial(
                                                         user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''),

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MessageCircle, ArrowLeft, Send, Star, AlertTriangle } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Send, Star, AlertTriangle, Gamepad2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -23,6 +23,10 @@ export default function ChatPage() {
 
     const [messageText, setMessageText] = useState('');
     const messagesEndRef = useRef(null);
+    const [activeImageError, setActiveImageError] = useState(false);
+    const [failedImageIds, setFailedImageIds] = useState(() => new Set());
+
+    useEffect(() => setActiveImageError(false), [activeChat?.id]);
 
     useEffect(() => {
         if (!isAuthenticated) navigate('/login?redirect=' + encodeURIComponent('/chat'));
@@ -148,11 +152,18 @@ export default function ChatPage() {
                                         padding: 'var(--space-3)',
                                     }}
                                 >
-                                    <img
-                                        src={resolveImageUrl(activeChat.accountImage) || '/placeholder.jpg'}
-                                        alt=""
-                                        style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', objectFit: 'cover' }}
-                                    />
+                                    {(resolveImageUrl(activeChat.accountImage) && !activeImageError) ? (
+                                        <img
+                                            src={resolveImageUrl(activeChat.accountImage)}
+                                            alt=""
+                                            onError={() => setActiveImageError(true)}
+                                            style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Gamepad2 style={{ width: '24px', height: '24px', color: 'var(--color-text-muted)', opacity: 0.6 }} />
+                                        </div>
+                                    )}
                                     <div className="flex-1 min-w-0">
                                         <p className="truncate" style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)' }}>
                                             {activeChat.accountTitle}
@@ -240,11 +251,18 @@ export default function ChatPage() {
                                             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-bg-tertiary)'; }}
                                             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                                         >
-                                            <img
-                                                src={resolveImageUrl(conv.accountImage) || '/placeholder.jpg'}
-                                                alt=""
-                                                style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', objectFit: 'cover' }}
-                                            />
+                                            {(resolveImageUrl(conv.accountImage) && !failedImageIds.has(conv.id)) ? (
+                                                <img
+                                                    src={resolveImageUrl(conv.accountImage)}
+                                                    alt=""
+                                                    onError={() => setFailedImageIds(prev => new Set(prev).add(conv.id))}
+                                                    style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', objectFit: 'cover' }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <Gamepad2 style={{ width: '24px', height: '24px', color: 'var(--color-text-muted)', opacity: 0.6 }} />
+                                                </div>
+                                            )}
                                             <div className="flex-1 min-w-0" style={{ textAlign: 'left' }}>
                                                 <p className="truncate" style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>
                                                     {conv.sellerName}
