@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const GameCard = ({ game }) => {
-    const gameId = game.id || game.slug;
+    const gameId = game.slug || game.id;
     const gameName = game.name;
     const gameIcon = game.icon;
     const gameImage = game.image || game.banner;
@@ -69,7 +69,7 @@ const GameCard = ({ game }) => {
                 style={{ padding: 'var(--space-3) var(--space-4)' }}
             >
                 {gameIcon && (
-                    <span className="text-lg flex-shrink-0">{gameIcon}</span>
+                    <span className="text-lg shrink-0">{gameIcon}</span>
                 )}
                 <div className="min-w-0">
                     <h3
