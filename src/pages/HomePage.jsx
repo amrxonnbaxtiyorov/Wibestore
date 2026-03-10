@@ -56,8 +56,7 @@ const HomePage = () => {
         id: g.id,
         slug: g.slug,
         name: g.name,
-        logoUrl: resolveGameImageUrl(g.logo || g.icon || g.image || g.banner) || null,
-        bannerUrl: resolveGameImageUrl(g.banner || g.image || g.logo || g.icon) || null,
+        image: resolveGameImageUrl(g.image || g.banner) || null,
         active_listings_count: g.active_listings_count,
     }));
 
@@ -279,8 +278,8 @@ const HomePage = () => {
                                         id: game.id,
                                         name: game.name,
                                         slug: game.slug || game.id,
-                                        logoUrl: game.logoUrl,
-                                        bannerUrl: game.bannerUrl,
+                                        icon: game.icon,
+                                        image: game.image,
                                         listingsCount: game.active_listings_count ?? game.listings_count ?? game.listingsCount ?? game.accountCount ?? 0,
                                     }}
                                 />
