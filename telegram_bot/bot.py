@@ -316,6 +316,54 @@ async def _add_user_balance_api(telegram_id: int, amount: int) -> tuple[int, dic
     return 503, {"error": "aiohttp yo'q"}
 
 
+async def _sync_all_admin_msgs(
+    bot,
+    bot_data: dict,
+    key: str,
+    new_caption: str,
+    acting_chat_id: int,
+    acting_message_id: int,
+) -> None:
+    """Bir admin harakat qilganda — BARCHA adminlarga yuborilgan xabarlarni yangilash.
+
+    Tugmalarni olib tashlaydi va status matni qo'shadi.
+    acting_chat_id/acting_message_id — bu xabar allaqachon yangilangan, qolganlarini yangilaymiz.
+    """
+    msgs: list[tuple[int, int]] = bot_data.pop(key, [])
+    for chat_id, msg_id in msgs:
+        if chat_id == acting_chat_id and msg_id == acting_message_id:
+            continue  # bu xabar allaqachon yangilangan
+        try:
+            # Telegram foto xabarlarda caption ni o'zgartirish mumkin emas to'g'ridan-to'g'ri,
+            # shuning uchun faqat reply_markup ni olib tashlaymiz va alohida xabar yuboramiz
+            await bot.edit_message_reply_markup(chat_id=chat_id, message_id=msg_id, reply_markup=None)
+            await bot.send_message(
+                chat_id,
+                new_caption,
+                parse_mode="HTML",
+                reply_to_message_id=msg_id,
+            )
+        except Exception as e:
+            logger.warning("Admin xabarini yangilashda xato (chat=%s, msg=%s): %s", chat_id, msg_id, e)
+
+
+async def _get_plans_api() -> dict:
+    """Backend API dan tarif narxlarini olish. {'premium': {'name': 'Premium', 'price': '50000'}, ...}"""
+    if not BOT_SECRET_KEY or not _AIOHTTP_AVAILABLE:
+        return {}
+    url = f"{WEBSITE_URL}/api/v1/auth/telegram/plans/"
+    payload = {"secret_key": BOT_SECRET_KEY}
+    try:
+        async with _aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, timeout=_aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return data.get("plans", {})
+    except Exception as e:
+        logger.warning("Plans API xato: %s", e)
+    return {}
+
+
 async def _activate_premium_api(telegram_id: int, plan: str, use_balance: bool = False) -> tuple[int, dict]:
     """Backend API orqali foydalanuvchiga Premium/Pro tarif berish.
 
@@ -535,7 +583,12 @@ async def _cmd_my_account(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 
 async def _cmd_premium(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Premium olish: tarif tanlash (Premium / Pro / Menu)."""
+    """Premium olish: tarif tanlash (narxlarni DB dan olib ko'rsatish)."""
+    plans = await _get_plans_api()
+    premium_price = plans.get("premium", {}).get("price", PREMIUM_PRICE_UZS)
+    pro_price = plans.get("pro", {}).get("price", PRO_PRICE_UZS)
+    # Narxlarni context ga saqlaymiz — keyinchalik qayta so'rovga hojat qolmasin
+    context.user_data["plan_prices"] = {"Premium": premium_price, "Pro": pro_price}
     keyboard = [
         [
             InlineKeyboardButton("Premium", callback_data="premium_plan:premium"),
@@ -544,9 +597,9 @@ async def _cmd_premium(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
         [InlineKeyboardButton("Menu", callback_data="premium_plan:menu")],
     ]
     await update.message.reply_html(
-        "⭐ <b>Premium tarifini tanlang</b>\n\n"
-        "1️⃣ <b>Premium</b>\n"
-        "2️⃣ <b>Pro</b>\n\n"
+        f"⭐ <b>Premium tarifini tanlang</b>\n\n"
+        f"1️⃣ <b>Premium</b> — {premium_price} UZS / oy\n"
+        f"2️⃣ <b>Pro</b> — {pro_price} UZS / oy\n\n"
         "Quyidagi tugmalardan birini bosing:",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
@@ -567,9 +620,19 @@ async def _cb_premium_plan(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         )
         return WAITING_PHONE
     if data == "premium_plan:pro":
-        plan_name, price = "Pro", PRO_PRICE_UZS
+        plan_name = "Pro"
+        plan_slug = "pro"
     else:
-        plan_name, price = "Premium", PREMIUM_PRICE_UZS
+        plan_name = "Premium"
+        plan_slug = "premium"
+
+    # Saqlangan narxlardan foydalanish (yoki API dan yangi olish)
+    cached_prices = context.user_data.get("plan_prices", {})
+    price = cached_prices.get(plan_name)
+    if not price:
+        plans = await _get_plans_api()
+        price = plans.get(plan_slug, {}).get("price", PREMIUM_PRICE_UZS if plan_slug == "premium" else PRO_PRICE_UZS)
+
     context.user_data["premium_plan"] = plan_name
     context.user_data["premium_price"] = price
     keyboard = InlineKeyboardMarkup([
@@ -580,7 +643,7 @@ async def _cb_premium_plan(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         [InlineKeyboardButton("⬅️ Orqaga", callback_data="premium_pay:back")],
     ])
     await query.edit_message_text(
-        f"⭐ <b>{plan_name}</b> tarifi — <b>{price} UZS</b>\n\n"
+        f"⭐ <b>{plan_name}</b> tarifi — <b>{price} UZS</b> / oy\n\n"
         "To'lov usulini tanlang:",
         parse_mode="HTML",
         reply_markup=keyboard,
@@ -621,6 +684,30 @@ async def _cb_premium_payment_method(update: Update, context: ContextTypes.DEFAU
     _, pay_method, plan_name = parts
     price = context.user_data.get("premium_price", PREMIUM_PRICE_UZS if plan_name == "Premium" else PRO_PRICE_UZS)
     telegram_id = query.from_user.id
+    plan_slug = plan_name.lower()
+
+    # Allaqachon aktiv tarif borligini tekshirish (har qanday to'lov usuli uchun)
+    profile = await get_telegram_profile_via_api(telegram_id)
+    if profile and profile.get("has_account"):
+        cur_plan = profile.get("data", {}).get("plan", "free")
+        if cur_plan == plan_slug:
+            end_date = profile.get("data", {}).get("sub_end_date", "")
+            days_left = profile.get("data", {}).get("sub_days_left", 0)
+            await query.edit_message_text(
+                f"ℹ️ <b>Sizda allaqachon {plan_name} tarifi bor!</b>\n\n"
+                f"📅 Muddati: <b>{end_date}</b>\n"
+                f"⏳ Qoldi: <b>{days_left} kun</b>\n\n"
+                f"Muddati tugagach yangilay olasiz.",
+                parse_mode="HTML",
+            )
+            await context.bot.send_message(
+                query.message.chat_id,
+                "Quyidagi tugmalardan birini tanlang:",
+                reply_markup=_get_main_keyboard(),
+            )
+            context.user_data.pop("premium_plan", None)
+            context.user_data.pop("premium_price", None)
+            return WAITING_PHONE
 
     if pay_method == "balance":
         # Sayt hisobidan to'lash: balans tekshirish + premium berish
@@ -635,6 +722,21 @@ async def _cb_premium_payment_method(update: Update, context: ContextTypes.DEFAU
                 f"✅ <b>{plan_name}</b> tarifi faollashtirildi!\n\n"
                 f"💰 Qolgan balans: <b>{new_balance} UZS</b>\n\n"
                 f"Saytga kiring va imkoniyatlardan foydalaning: {SITE_URL}",
+                parse_mode="HTML",
+            )
+            await context.bot.send_message(
+                query.message.chat_id,
+                "Quyidagi tugmalardan birini tanlang:",
+                reply_markup=_get_main_keyboard(),
+            )
+        elif status_code == 409 or result.get("error") == "already_subscribed":
+            days_left = result.get("days_left", "?")
+            end_date = result.get("end_date", "")
+            await query.edit_message_text(
+                f"ℹ️ <b>Sizda allaqachon {plan_name} tarifi bor!</b>\n\n"
+                f"📅 Muddati: <b>{end_date}</b>\n"
+                f"⏳ Qoldi: <b>{days_left} kun</b>\n\n"
+                f"Muddati tugagach yangilay olasiz.",
                 parse_mode="HTML",
             )
             await context.bot.send_message(
@@ -844,6 +946,7 @@ async def _receive_premium_screenshot(update: Update, context: ContextTypes.DEFA
         return WAITING_PREMIUM_SCREENSHOT
     plan = context.user_data.get("premium_plan", "Premium")
     telegram_id = update.effective_user.id
+
     result = await get_telegram_profile_via_api(telegram_id)
     username = result.get("data", {}).get("username", "") if result and result.get("has_account") else str(telegram_id)
     if not username and result and result.get("has_account"):
@@ -859,14 +962,19 @@ async def _receive_premium_screenshot(update: Update, context: ContextTypes.DEFA
         InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"premium_adm_ok:{telegram_id}:{plan}"),
         InlineKeyboardButton("❌ Rad etish", callback_data=f"premium_adm_no:{telegram_id}"),
     ]])
+    sent_msgs = []
     for target in _notification_targets():
         try:
-            await context.bot.send_photo(
+            msg = await context.bot.send_photo(
                 target, photo=file_id, caption=caption,
                 parse_mode="HTML", reply_markup=keyboard
             )
+            sent_msgs.append((msg.chat_id, msg.message_id))
         except Exception as e:
             logger.warning("Admin %s ga rasm yuborilmadi: %s", target, e)
+    # Barcha yuborilgan xabarlarni bot_data ga saqlash — boshqa adminlar ham ko'rishi uchun
+    if sent_msgs:
+        context.bot_data[f"admin_msgs_premium:{telegram_id}"] = sent_msgs
     context.user_data.pop("premium_plan", None)
     await update.message.reply_html(
         "✅ Skrinshot qabul qilindi. Admin tekshiradi va tasdiqlagach xabar beramiz.",
@@ -893,14 +1001,18 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
         InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"topup_approve:{telegram_id}"),
         InlineKeyboardButton("❌ Rad etish", callback_data=f"topup_reject:{telegram_id}"),
     ]])
+    sent_msgs = []
     for target in _notification_targets():
         try:
-            await context.bot.send_photo(
+            msg = await context.bot.send_photo(
                 target, photo=file_id, caption=caption,
                 parse_mode="HTML", reply_markup=keyboard
             )
+            sent_msgs.append((msg.chat_id, msg.message_id))
         except Exception as e:
             logger.warning("Admin %s ga rasm yuborilmadi: %s", target, e)
+    if sent_msgs:
+        context.bot_data[f"admin_msgs_topup:{telegram_id}"] = sent_msgs
     await update.message.reply_html(
         "✅ Skrinshot qabul qilindi. Admin tekshiradi va balans yangilanadi.",
         reply_markup=_get_main_keyboard(),
@@ -1585,11 +1697,23 @@ async def _cb_topup_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     await query.answer()
     user_id = int(query.data.replace("topup_approve:", "", 1))
     context.user_data["pending_topup_user_id"] = user_id
-    # Tugmalarni olib tashlash
+    admin_tag = f"@{query.from_user.username}" if query.from_user.username else str(query.from_user.id)
+
+    # Shu admin xabarining tugmalarini olib tashlash
     try:
         await query.edit_message_reply_markup(reply_markup=None)
     except Exception:
         pass
+
+    # Boshqa adminlarga: "Tasdiqlash jarayonida" deb xabar yuborish
+    await _sync_all_admin_msgs(
+        context.bot, context.bot_data,
+        key=f"admin_msgs_topup:{user_id}",
+        new_caption=f"⏳ <b>Tasdiqlash jarayonida</b> ({admin_tag})\nSumma kiritilmoqda...",
+        acting_chat_id=query.message.chat_id,
+        acting_message_id=query.message.message_id,
+    )
+
     await context.bot.send_message(
         query.message.chat_id,
         f"💰 Foydalanuvchi <code>{user_id}</code> hisobiga qancha <b>UZS</b> qo'shilsin?\n\n"
@@ -1672,6 +1796,8 @@ async def _cb_topup_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     orig = query.message.caption or query.message.text or ""
     admin_tag = f"@{query.from_user.username}" if query.from_user.username else str(query.from_user.id)
     suffix = f"\n\n━━━━━━━━━━━━━━━━━━━━\n❌ <b>RAD ETILDI</b> ({admin_tag})"
+
+    # Shu admin xabarini yangilash
     try:
         if query.message.caption is not None:
             await query.message.edit_caption(caption=orig + suffix, parse_mode="HTML")
@@ -1682,6 +1808,15 @@ async def _cb_topup_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             await query.message.edit_reply_markup(reply_markup=None)
         except Exception:
             pass
+
+    # Boshqa adminlar xabarlarini ham yangilash
+    await _sync_all_admin_msgs(
+        context.bot, context.bot_data,
+        key=f"admin_msgs_topup:{user_id}",
+        new_caption=f"❌ <b>RAD ETILDI</b> ({admin_tag})",
+        acting_chat_id=query.message.chat_id,
+        acting_message_id=query.message.message_id,
+    )
 
     try:
         await context.bot.send_message(
@@ -1749,6 +1884,8 @@ async def _cb_premium_admin_approve(update: Update, context: ContextTypes.DEFAUL
         f"✅ <b>TASDIQLANDI</b> ({admin_tag})\n"
         f"Tarif: <b>{plan}</b>"
     )
+
+    # Shu admin xabarini yangilash
     try:
         if query.message.caption is not None:
             await query.message.edit_caption(caption=orig + suffix, parse_mode="HTML")
@@ -1759,6 +1896,15 @@ async def _cb_premium_admin_approve(update: Update, context: ContextTypes.DEFAUL
             await query.message.edit_reply_markup(reply_markup=None)
         except Exception:
             pass
+
+    # Boshqa adminlar xabarlarini ham yangilash
+    await _sync_all_admin_msgs(
+        context.bot, context.bot_data,
+        key=f"admin_msgs_premium:{user_id}",
+        new_caption=f"✅ <b>TASDIQLANDI</b> ({admin_tag})\nTarif: <b>{plan}</b>",
+        acting_chat_id=query.message.chat_id,
+        acting_message_id=query.message.message_id,
+    )
 
     try:
         await context.bot.send_message(
@@ -1784,6 +1930,8 @@ async def _cb_premium_admin_reject(update: Update, context: ContextTypes.DEFAULT
     orig = query.message.caption or query.message.text or ""
     admin_tag = f"@{query.from_user.username}" if query.from_user.username else str(query.from_user.id)
     suffix = f"\n\n━━━━━━━━━━━━━━━━━━━━\n❌ <b>RAD ETILDI</b> ({admin_tag})"
+
+    # Shu admin xabarini yangilash
     try:
         if query.message.caption is not None:
             await query.message.edit_caption(caption=orig + suffix, parse_mode="HTML")
@@ -1794,6 +1942,15 @@ async def _cb_premium_admin_reject(update: Update, context: ContextTypes.DEFAULT
             await query.message.edit_reply_markup(reply_markup=None)
         except Exception:
             pass
+
+    # Boshqa adminlar xabarlarini ham yangilash
+    await _sync_all_admin_msgs(
+        context.bot, context.bot_data,
+        key=f"admin_msgs_premium:{user_id}",
+        new_caption=f"❌ <b>RAD ETILDI</b> ({admin_tag})",
+        acting_chat_id=query.message.chat_id,
+        acting_message_id=query.message.message_id,
+    )
 
     try:
         await context.bot.send_message(

@@ -323,11 +323,26 @@ class TelegramBotProfileView(APIView):
                 status=status.HTTP_200_OK,
             )
 
+        from django.utils import timezone
+
         from apps.payments.models import EscrowTransaction
+        from apps.subscriptions.models import UserSubscription
 
         sold_count = EscrowTransaction.objects.filter(
             seller=user, status="confirmed"
         ).count()
+
+        # Aktiv obuna ma'lumotlari
+        active_sub = UserSubscription.objects.filter(
+            user=user, status="active", end_date__gt=timezone.now()
+        ).select_related("plan").order_by("-end_date").first()
+        plan_slug = "free"
+        sub_end_date = None
+        sub_days_left = 0
+        if active_sub and not active_sub.is_expired:
+            plan_slug = active_sub.plan.slug
+            sub_end_date = active_sub.end_date.strftime("%d.%m.%Y")
+            sub_days_left = max(0, (active_sub.end_date - timezone.now()).days)
 
         return Response(
             {
@@ -338,6 +353,9 @@ class TelegramBotProfileView(APIView):
                     "email": user.email or "",
                     "balance": str(user.balance),
                     "sold_count": sold_count,
+                    "plan": plan_slug,
+                    "sub_end_date": sub_end_date,
+                    "sub_days_left": sub_days_left,
                 },
             },
             status=status.HTTP_200_OK,
@@ -427,6 +445,38 @@ class TelegramBotAddBalanceView(APIView):
         )
 
 
+class TelegramBotPlansView(APIView):
+    """
+    Bot uchun tarif narxlarini qaytarish.
+    POST /api/v1/auth/telegram/plans/
+    Body: { "secret_key": "..." }
+    Response: { "plans": { "premium": {"price": "50000", "name": "Premium"}, "pro": {...} } }
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
+
+    def post(self, request):
+        from django.conf import settings
+
+        from apps.subscriptions.models import SubscriptionPlan
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or request.data.get("secret_key") != secret:
+            return Response({"success": False, "error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+        plans = SubscriptionPlan.objects.filter(slug__in=("premium", "pro"), is_active=True).values(
+            "slug", "name", "price_monthly"
+        )
+        result = {}
+        for p in plans:
+            result[p["slug"]] = {
+                "name": p["name"],
+                "price": str(p["price_monthly"]),
+            }
+        return Response({"success": True, "plans": result}, status=status.HTTP_200_OK)
+
+
 class TelegramBotPremiumPurchaseView(APIView):
     """
     Bot uchun premium tarif sotib olish (balans orqali yoki admin tasdiqlagan so'ng).
@@ -440,18 +490,15 @@ class TelegramBotPremiumPurchaseView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_scope = "auth"
 
-    # Narxlar (UZS) — .env dan o'qilsa yanada yaxshi, hozircha kod ichida
-    PLAN_PRICES = {
-        "premium": None,  # settings dan olinadi
-        "pro": None,
-    }
-
     def post(self, request):
-        from decimal import Decimal, InvalidOperation
+        from decimal import Decimal
 
         from django.conf import settings
         from django.db import transaction
         from django.db.models import F
+        from django.utils import timezone
+
+        from apps.subscriptions.models import SubscriptionPlan, UserSubscription
 
         data = request.data
 
@@ -484,16 +531,36 @@ class TelegramBotPremiumPurchaseView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if use_balance:
-            # Narxni settings dan olish (PREMIUM_PRICE_UZS, PRO_PRICE_UZS)
-            try:
-                if plan_slug == "premium":
-                    price = Decimal(str(getattr(settings, "PREMIUM_PRICE_UZS", "50000")))
-                else:
-                    price = Decimal(str(getattr(settings, "PRO_PRICE_UZS", "30000")))
-            except (InvalidOperation, ValueError):
-                price = Decimal("50000")
+        # Allaqachon aktiv shu tarif borligini tekshirish
+        existing = UserSubscription.objects.filter(
+            user=user,
+            status="active",
+            plan__slug=plan_slug,
+            end_date__gt=timezone.now(),
+        ).first()
+        if existing:
+            days_left = max(0, (existing.end_date - timezone.now()).days)
+            return Response(
+                {
+                    "success": False,
+                    "error": "already_subscribed",
+                    "plan": plan_slug,
+                    "days_left": days_left,
+                    "end_date": existing.end_date.strftime("%d.%m.%Y"),
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
 
+        # Narxni DB dan olish (SubscriptionPlan.price_monthly)
+        plan_obj = SubscriptionPlan.objects.filter(slug=plan_slug, is_active=True).first()
+        if not plan_obj:
+            return Response(
+                {"success": False, "error": f"Tarif topilmadi: {plan_slug}"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        price = plan_obj.price_monthly or Decimal("0")
+
+        if use_balance:
             # Balansni atomik tekshirish va ushlab qolish
             with transaction.atomic():
                 user_locked = User.objects.select_for_update().get(pk=user.pk)
