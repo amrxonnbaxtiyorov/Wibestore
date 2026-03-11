@@ -9,6 +9,22 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
 
+def _get_user_plan_slug(user) -> str:
+    """
+    Returns: 'free' | 'premium' | 'pro'
+    Uses subscriptions service; safe fallback to 'free' if not available.
+    """
+    try:
+        from apps.subscriptions.services import SubscriptionService
+        return SubscriptionService.get_user_plan(user)
+    except Exception:
+        return "free"
+
+def _plan_flags(plan_slug: str) -> tuple[bool, bool]:
+    is_pro = plan_slug == "pro"
+    is_premium = plan_slug in ("premium", "pro")
+    return is_premium, is_pro
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Custom JWT token serializer with additional claims."""
@@ -66,6 +82,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     display_name = serializers.CharField(read_only=True)
     avatar = serializers.SerializerMethodField()
+    plan = serializers.SerializerMethodField()
+    is_premium = serializers.SerializerMethodField()
+    is_pro = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -78,6 +97,9 @@ class UserSerializer(serializers.ModelSerializer):
             "phone_number",
             "telegram_id",
             "avatar",
+            "plan",
+            "is_premium",
+            "is_pro",
             "is_verified",
             "is_staff",
             "rating",
@@ -113,12 +135,28 @@ class UserSerializer(serializers.ModelSerializer):
             return obj.avatar_url
         return None
 
+    def get_plan(self, obj) -> str:
+        return _get_user_plan_slug(obj)
+
+    def get_is_premium(self, obj) -> bool:
+        plan = _get_user_plan_slug(obj)
+        is_premium, _is_pro = _plan_flags(plan)
+        return is_premium
+
+    def get_is_pro(self, obj) -> bool:
+        plan = _get_user_plan_slug(obj)
+        _is_premium, is_pro = _plan_flags(plan)
+        return is_pro
+
 
 class UserPublicSerializer(serializers.ModelSerializer):
     """Public user info (visible to other users)."""
 
     display_name = serializers.CharField(read_only=True)
     avatar = serializers.SerializerMethodField()
+    plan = serializers.SerializerMethodField()
+    is_premium = serializers.SerializerMethodField()
+    is_pro = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -127,6 +165,9 @@ class UserPublicSerializer(serializers.ModelSerializer):
             "username",
             "display_name",
             "avatar",
+            "plan",
+            "is_premium",
+            "is_pro",
             "rating",
             "total_sales",
             "created_at",
@@ -141,6 +182,19 @@ class UserPublicSerializer(serializers.ModelSerializer):
         if obj.avatar_url:
             return obj.avatar_url
         return None
+
+    def get_plan(self, obj) -> str:
+        return _get_user_plan_slug(obj)
+
+    def get_is_premium(self, obj) -> bool:
+        plan = _get_user_plan_slug(obj)
+        is_premium, _is_pro = _plan_flags(plan)
+        return is_premium
+
+    def get_is_pro(self, obj) -> bool:
+        plan = _get_user_plan_slug(obj)
+        _is_premium, is_pro = _plan_flags(plan)
+        return is_pro
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):

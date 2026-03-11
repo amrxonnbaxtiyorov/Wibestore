@@ -323,11 +323,26 @@ class TelegramBotProfileView(APIView):
                 status=status.HTTP_200_OK,
             )
 
+        from django.utils import timezone
+
         from apps.payments.models import EscrowTransaction
+        from apps.subscriptions.models import UserSubscription
 
         sold_count = EscrowTransaction.objects.filter(
             seller=user, status="confirmed"
         ).count()
+
+        # Aktiv obuna ma'lumotlari
+        active_sub = UserSubscription.objects.filter(
+            user=user, status="active", end_date__gt=timezone.now()
+        ).select_related("plan").order_by("-end_date").first()
+        plan_slug = "free"
+        sub_end_date = None
+        sub_days_left = 0
+        if active_sub and not active_sub.is_expired:
+            plan_slug = active_sub.plan.slug
+            sub_end_date = active_sub.end_date.strftime("%d.%m.%Y")
+            sub_days_left = max(0, (active_sub.end_date - timezone.now()).days)
 
         return Response(
             {
@@ -338,7 +353,264 @@ class TelegramBotProfileView(APIView):
                     "email": user.email or "",
                     "balance": str(user.balance),
                     "sold_count": sold_count,
+                    "plan": plan_slug,
+                    "sub_end_date": sub_end_date,
+                    "sub_days_left": sub_days_left,
                 },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(tags=["Authentication"])
+class TelegramBotAddBalanceView(APIView):
+    """
+    Bot uchun foydalanuvchi balansini oshirish (admin screenshot tasdiqlash oqimi).
+    POST /api/v1/auth/telegram/balance/add/
+    Body: { "secret_key": "...", "telegram_id": 123456789, "amount": 50000 }
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
+
+    def post(self, request):
+        from decimal import Decimal, InvalidOperation
+
+        from django.conf import settings
+
+        data = request.data
+
+        # Secret key tekshirish
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or data.get("secret_key") != secret:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        telegram_id = data.get("telegram_id")
+        amount_raw = data.get("amount")
+
+        if not telegram_id or amount_raw is None:
+            return Response(
+                {"success": False, "error": "telegram_id va amount majburiy."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            amount = Decimal(str(amount_raw))
+        except (InvalidOperation, ValueError):
+            return Response(
+                {"success": False, "error": "amount noto'g'ri format."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if amount <= 0:
+            return Response(
+                {"success": False, "error": "amount musbat bo'lishi kerak."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(
+            telegram_id=telegram_id,
+            is_active=True,
+            deleted_at__isnull=True,
+        ).first()
+
+        if not user:
+            return Response(
+                {"success": False, "error": "Foydalanuvchi topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Atomik yangilash — race condition oldini olish
+        from django.db.models import F
+        User.objects.filter(pk=user.pk).update(balance=F("balance") + amount)
+        user.refresh_from_db(fields=["balance"])
+
+        logger.info(
+            "TelegramBot: %s (tg_id=%s) hisobiga %s UZS qo'shildi. Yangi balans: %s",
+            user.email, telegram_id, amount, user.balance,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "telegram_id": telegram_id,
+                "added": str(amount),
+                "new_balance": str(user.balance),
+                "username": user.username or user.email or str(telegram_id),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class TelegramBotPlansView(APIView):
+    """
+    Bot uchun tarif narxlarini qaytarish.
+    POST /api/v1/auth/telegram/plans/
+    Body: { "secret_key": "..." }
+    Response: { "plans": { "premium": {"price": "50000", "name": "Premium"}, "pro": {...} } }
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
+
+    def post(self, request):
+        from django.conf import settings
+
+        from apps.subscriptions.models import SubscriptionPlan
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or request.data.get("secret_key") != secret:
+            return Response({"success": False, "error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+        plans = SubscriptionPlan.objects.filter(slug__in=("premium", "pro"), is_active=True).values(
+            "slug", "name", "price_monthly"
+        )
+        result = {}
+        for p in plans:
+            result[p["slug"]] = {
+                "name": p["name"],
+                "price": str(p["price_monthly"]),
+            }
+        return Response({"success": True, "plans": result}, status=status.HTTP_200_OK)
+
+
+class TelegramBotPremiumPurchaseView(APIView):
+    """
+    Bot uchun premium tarif sotib olish (balans orqali yoki admin tasdiqlagan so'ng).
+    POST /api/v1/auth/telegram/premium/purchase/
+    Body: { "secret_key": "...", "telegram_id": 123, "plan": "premium|pro", "use_balance": true }
+
+    use_balance=True: balansdan ushlab, premium beradi (mablag' yetmasa xato qaytaradi)
+    use_balance=False: faqat premium beradi (admin tasdiqlagan to'lov uchun)
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
+
+    def post(self, request):
+        from decimal import Decimal
+
+        from django.conf import settings
+        from django.db import transaction
+        from django.db.models import F
+        from django.utils import timezone
+
+        from apps.subscriptions.models import SubscriptionPlan, UserSubscription
+
+        data = request.data
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or data.get("secret_key") != secret:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        telegram_id = data.get("telegram_id")
+        plan_slug = str(data.get("plan", "")).lower().strip()
+        use_balance = bool(data.get("use_balance", False))
+
+        if not telegram_id or plan_slug not in ("premium", "pro"):
+            return Response(
+                {"success": False, "error": "telegram_id va plan (premium/pro) majburiy."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(
+            telegram_id=telegram_id,
+            is_active=True,
+            deleted_at__isnull=True,
+        ).first()
+
+        if not user:
+            return Response(
+                {"success": False, "error": "Foydalanuvchi topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Allaqachon aktiv shu tarif borligini tekshirish
+        existing = UserSubscription.objects.filter(
+            user=user,
+            status="active",
+            plan__slug=plan_slug,
+            end_date__gt=timezone.now(),
+        ).first()
+        if existing:
+            days_left = max(0, (existing.end_date - timezone.now()).days)
+            return Response(
+                {
+                    "success": False,
+                    "error": "already_subscribed",
+                    "plan": plan_slug,
+                    "days_left": days_left,
+                    "end_date": existing.end_date.strftime("%d.%m.%Y"),
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        # Narxni DB dan olish (SubscriptionPlan.price_monthly)
+        plan_obj = SubscriptionPlan.objects.filter(slug=plan_slug, is_active=True).first()
+        if not plan_obj:
+            return Response(
+                {"success": False, "error": f"Tarif topilmadi: {plan_slug}"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        price = plan_obj.price_monthly or Decimal("0")
+
+        if use_balance:
+            # Balansni atomik tekshirish va ushlab qolish
+            with transaction.atomic():
+                user_locked = User.objects.select_for_update().get(pk=user.pk)
+                current_balance = user_locked.balance or Decimal("0")
+                if current_balance < price:
+                    return Response(
+                        {
+                            "success": False,
+                            "error": "insufficient_balance",
+                            "balance": str(current_balance),
+                            "required": str(price),
+                        },
+                        status=status.HTTP_402_PAYMENT_REQUIRED,
+                    )
+                User.objects.filter(pk=user.pk).update(balance=F("balance") - price)
+                user_locked.refresh_from_db(fields=["balance"])
+                new_balance = user_locked.balance
+
+            logger.info(
+                "TelegramBot balance purchase: %s (tg=%s) %s tarifi uchun %s UZS ushlab qolindi.",
+                user.email, telegram_id, plan_slug, price,
+            )
+        else:
+            new_balance = user.balance
+
+        # Premium/Pro berish
+        try:
+            from apps.subscriptions.services import SubscriptionService
+            SubscriptionService.grant_subscription(user, plan_slug, months=1)
+        except Exception as e:
+            # Agar balans allaqachon ushlab qolgan bo'lsa, qaytarib berish
+            if use_balance:
+                User.objects.filter(pk=user.pk).update(balance=F("balance") + price)
+            logger.error("Premium grant xato (tg=%s): %s", telegram_id, e)
+            return Response(
+                {"success": False, "error": f"Tarif berishda xato: {e}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        logger.info(
+            "TelegramBot: %s (tg=%s) ga %s tarifi berildi (use_balance=%s).",
+            user.email, telegram_id, plan_slug, use_balance,
+        )
+        return Response(
+            {
+                "success": True,
+                "plan": plan_slug,
+                "telegram_id": telegram_id,
+                "new_balance": str(new_balance) if use_balance else None,
+                "username": user.username or user.email or str(telegram_id),
             },
             status=status.HTTP_200_OK,
         )

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Tag, Heart, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle, BarChart3, UserPlus, Copy, Star } from 'lucide-react';
+import { ShoppingBag, Tag, Heart, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle, BarChart3, UserPlus, Copy, Star, Crown, Gem, Wallet, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing, useSellerDashboard, useReferral, useGames } from '../hooks';
 import AccountCard from '../components/AccountCard';
@@ -132,26 +132,45 @@ const ProfilePage = () => {
                 <div
                     style={{
                         backgroundColor: 'var(--color-bg-secondary)',
-                        border: '1px solid var(--color-border-default)',
+                        border: `2px solid ${user.plan === 'pro' ? 'var(--color-pro-purple)' : user.plan === 'premium' || user.is_premium ? 'var(--color-premium-gold-light)' : 'var(--color-border-default)'}`,
                         borderRadius: 'var(--radius-xl)',
                         padding: '24px',
                         marginTop: '16px',
                         marginBottom: '24px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        boxShadow: user.plan === 'pro'
+                            ? '0 0 20px rgba(111, 66, 193, 0.15), 0 0 40px rgba(111, 66, 193, 0.05)'
+                            : (user.plan === 'premium' || user.is_premium)
+                                ? '0 0 20px rgba(212, 167, 44, 0.15), 0 0 40px rgba(212, 167, 44, 0.05)'
+                                : 'none',
                     }}
                 >
-                    <div className="flex flex-col md:flex-row items-center gap-5">
+                    {/* Premium/Pro top accent line */}
+                    {(user.plan === 'pro' || user.plan === 'premium' || user.is_premium) && (
+                        <div style={{
+                            position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+                            background: user.plan === 'pro' ? 'var(--color-pro-gradient)' : 'var(--color-premium-gradient)',
+                        }} />
+                    )}
+                    <div className="flex items-center gap-5" style={{ flexWrap: 'wrap' }}>
                         {/* Avatar — yuklangan rasm bor bo'lsa rasm, yo'q bo'lsa ismning birinchi harfi */}
-                        <div className="relative">
+                        <div className="relative" style={{ flexShrink: 0 }}>
                             <div
                                 className="avatar"
                                 style={{
                                     width: '80px', height: '80px',
-                                    background: user.avatar ? 'transparent' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                    background: user.avatar ? 'transparent' : (user.plan === 'pro' ? 'var(--color-pro-gradient)' : user.plan === 'premium' || user.is_premium ? 'var(--color-premium-gradient)' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))'),
                                     fontSize: '32px', fontWeight: 'var(--font-weight-bold)',
                                     color: '#ffffff',
                                     borderRadius: 'var(--radius-full)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     overflow: 'hidden',
+                                    boxShadow: user.plan === 'pro'
+                                        ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-pro-purple)'
+                                        : (user.plan === 'premium' || user.is_premium)
+                                            ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-premium-gold-light)'
+                                            : 'none',
                                 }}
                             >
                                 {user.avatar ? (
@@ -175,29 +194,74 @@ const ProfilePage = () => {
                                 <Edit2 className="w-3 h-3" />
                             </button>
                         </div>
-                        {/* Info — ism ostida faqat Telegram ID */}
-                        <div className="flex-1 text-center md:text-left">
-                            <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-                                {capitalizeFirst(user.name ?? user.display_name ?? user.full_name ?? user.email) || '—'}
-                            </h1>
-                            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                        {/* Info — ism avatar yonida, Telegram ID pastda */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '0' }}>
+                                    {capitalizeFirst(user.name ?? user.display_name ?? user.full_name ?? user.email) || '—'}
+                                </h1>
+                                {user.plan === 'pro' && (
+                                    <span className="badge badge-pro" style={{ fontSize: '11px', padding: '3px 10px', gap: '4px' }}>
+                                        <Gem className="w-3 h-3" /> Pro
+                                    </span>
+                                )}
+                                {(user.plan === 'premium' || (user.is_premium && user.plan !== 'pro')) && (
+                                    <span className="badge badge-premium" style={{ fontSize: '11px', padding: '3px 10px', gap: '4px' }}>
+                                        <Crown className="w-3 h-3" /> Premium
+                                    </span>
+                                )}
+                            </div>
+                            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginTop: '4px' }}>
                                 {user.telegram_id || user.telegram_username || user.email || ''}
                             </p>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-2">
-                            <Link to="/settings" className="btn btn-secondary btn-md" style={{ textDecoration: 'none' }}>
-                                <Settings className="w-4 h-4" />
-                            </Link>
-                            <button onClick={handleLogout} className="btn btn-md" style={{
-                                backgroundColor: 'var(--color-error-bg)',
-                                color: 'var(--color-error)',
-                                border: '1px solid transparent',
+                        {/* Balance Card */}
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-end',
+                            gap: '8px',
+                            marginLeft: 'auto',
+                        }}>
+                            <div style={{
+                                backgroundColor: 'var(--color-bg-primary)',
+                                border: '1px solid var(--color-border-default)',
+                                borderRadius: 'var(--radius-lg)',
+                                padding: '12px 20px',
+                                minWidth: '160px',
+                                textAlign: 'center',
                             }}>
-                                <LogOut className="w-4 h-4" />
-                                <span className="hidden sm:inline">{t('auth.logout') || 'Logout'}</span>
-                            </button>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
+                                    <Wallet style={{ width: '14px', height: '14px', color: 'var(--color-accent-blue)' }} />
+                                    <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {t('profile.balance') || 'Mablag\''}
+                                    </span>
+                                </div>
+                                <div style={{
+                                    fontSize: '22px',
+                                    fontWeight: '700',
+                                    color: 'var(--color-text-primary)',
+                                    lineHeight: 1.2,
+                                }}>
+                                    {Number(user.balance ?? 0).toLocaleString('uz-UZ')}
+                                </div>
+                                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '2px' }}>UZS</div>
+                            </div>
+                            {/* Actions */}
+                            <div className="flex items-center gap-2">
+                                <Link to="/settings" className="btn btn-secondary btn-md" style={{ textDecoration: 'none' }}>
+                                    <Settings className="w-4 h-4" />
+                                </Link>
+                                <button onClick={handleLogout} className="btn btn-md" style={{
+                                    backgroundColor: 'var(--color-error-bg)',
+                                    color: 'var(--color-error)',
+                                    border: '1px solid transparent',
+                                }}>
+                                    <LogOut className="w-4 h-4" />
+                                    <span className="hidden sm:inline">{t('auth.logout') || 'Logout'}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -231,30 +295,63 @@ const ProfilePage = () => {
                     }}
                 >
                     {activeTab === 'dashboard' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px' }}>
-                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-primary)' }}>{dashboardData?.active_listings ?? 0}</div>
-                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.active_listings') || 'Active listings'}</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            {/* Balance Banner */}
+                            <div style={{
+                                background: 'linear-gradient(135deg, var(--color-accent-blue) 0%, var(--color-accent-purple) 100%)',
+                                borderRadius: 'var(--radius-xl)',
+                                padding: '24px',
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                flexWrap: 'wrap',
+                                gap: '16px',
+                            }}>
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.85 }}>
+                                        <Wallet style={{ width: '18px', height: '18px' }} />
+                                        <span style={{ fontSize: '14px', fontWeight: 500 }}>{t('profile.my_balance') || 'Mening mablag\'im'}</span>
+                                    </div>
+                                    <div style={{ fontSize: '36px', fontWeight: 800, letterSpacing: '-0.5px' }}>
+                                        {Number(user.balance ?? 0).toLocaleString('uz-UZ')}
+                                        <span style={{ fontSize: '18px', fontWeight: 500, marginLeft: '8px', opacity: 0.8 }}>UZS</span>
+                                    </div>
+                                    <div style={{ fontSize: '13px', marginTop: '6px', opacity: 0.7 }}>
+                                        {t('profile.balance_hint') || 'Telegram bot orqali to\'ldiring'}
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.85 }}>
+                                    <TrendingUp style={{ width: '40px', height: '40px' }} />
+                                </div>
                             </div>
-                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.sold_listings ?? 0}</div>
-                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.sold') || 'Sold'}</div>
-                            </div>
-                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.total_views ?? 0}</div>
-                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.views') || 'Views'}</div>
-                            </div>
-                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.total_sales_count ?? 0}</div>
-                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.sales_count') || 'Sales'}</div>
-                            </div>
-                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '24px', fontWeight: 700 }}>{formatPrice(dashboardData?.total_sales_amount ?? 0)}</div>
-                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.earnings') || 'Earnings'}</div>
-                            </div>
-                            <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.conversion ?? 0}%</div>
-                                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.conversion') || 'Conversion'}</div>
+
+                            {/* Stats Grid */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '16px' }}>
+                                <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-primary)' }}>{dashboardData?.active_listings ?? 0}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.active_listings') || 'Active listings'}</div>
+                                </div>
+                                <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.sold_listings ?? 0}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.sold') || 'Sold'}</div>
+                                </div>
+                                <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.total_views ?? 0}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.views') || 'Views'}</div>
+                                </div>
+                                <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.total_sales_count ?? 0}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.sales_count') || 'Sales'}</div>
+                                </div>
+                                <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '24px', fontWeight: 700 }}>{formatPrice(dashboardData?.total_sales_amount ?? 0)}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.earnings') || 'Earnings'}</div>
+                                </div>
+                                <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.conversion ?? 0}%</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.conversion') || 'Conversion'}</div>
+                                </div>
                             </div>
                         </div>
                     )}

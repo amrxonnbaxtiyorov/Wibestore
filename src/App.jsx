@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useLanguage } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
@@ -17,41 +17,42 @@ import CommandPalette from './components/CommandPalette';
 import ScrollToTop from './components/ScrollToTop';
 import OnboardingTour from './components/OnboardingTour';
 import CookieConsent from './components/CookieConsent';
+import { lazyWithRetry } from './lib/lazyWithRetry';
 
 // Lazy-loaded pages for code-splitting & performance
-const HomePage = lazy(() => import('./pages/HomePage'));
-const GamePage = lazy(() => import('./pages/GamePage'));
-const AccountDetailPage = lazy(() => import('./pages/AccountDetailPage'));
-const ProductsPage = lazy(() => import('./pages/ProductsPage'));
-const PremiumPage = lazy(() => import('./pages/PremiumPage'));
-const TopAccountsPage = lazy(() => import('./pages/TopAccountsPage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const SignupPage = lazy(() => import('./pages/SignupPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
-const TermsPage = lazy(() => import('./pages/TermsPage'));
-const SellPage = lazy(() => import('./pages/SellPage'));
-const FAQPage = lazy(() => import('./pages/FAQPage'));
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
-const StatisticsPage = lazy(() => import('./pages/StatisticsPage'));
-const CoinsPage = lazy(() => import('./pages/CoinsPage'));
-const SellerProfilePage = lazy(() => import('./pages/SellerProfilePage'));
-const ChatRoomPage = lazy(() => import('./pages/ChatRoomPage'));
-const ChatPage = lazy(() => import('./pages/ChatPage'));
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
-const ServerErrorPage = lazy(() => import('./pages/ServerErrorPage'));
+const HomePage = lazyWithRetry(() => import('./pages/HomePage'));
+const GamePage = lazyWithRetry(() => import('./pages/GamePage'));
+const AccountDetailPage = lazyWithRetry(() => import('./pages/AccountDetailPage'));
+const ProductsPage = lazyWithRetry(() => import('./pages/ProductsPage'));
+const PremiumPage = lazyWithRetry(() => import('./pages/PremiumPage'));
+const TopAccountsPage = lazyWithRetry(() => import('./pages/TopAccountsPage'));
+const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'));
+const SignupPage = lazyWithRetry(() => import('./pages/SignupPage'));
+const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage'));
+const TermsPage = lazyWithRetry(() => import('./pages/TermsPage'));
+const SellPage = lazyWithRetry(() => import('./pages/SellPage'));
+const FAQPage = lazyWithRetry(() => import('./pages/FAQPage'));
+const ResetPasswordPage = lazyWithRetry(() => import('./pages/ResetPasswordPage'));
+const ForgotPasswordPage = lazyWithRetry(() => import('./pages/ForgotPasswordPage'));
+const SettingsPage = lazyWithRetry(() => import('./pages/SettingsPage'));
+const StatisticsPage = lazyWithRetry(() => import('./pages/StatisticsPage'));
+const CoinsPage = lazyWithRetry(() => import('./pages/CoinsPage'));
+const SellerProfilePage = lazyWithRetry(() => import('./pages/SellerProfilePage'));
+const ChatRoomPage = lazyWithRetry(() => import('./pages/ChatRoomPage'));
+const ChatPage = lazyWithRetry(() => import('./pages/ChatPage'));
+const NotFoundPage = lazyWithRetry(() => import('./pages/NotFoundPage'));
+const ServerErrorPage = lazyWithRetry(() => import('./pages/ServerErrorPage'));
 
 // Admin pages
-const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
-const AdminAccounts = lazy(() => import('./pages/admin/AdminAccounts'));
-const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
-const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
-const AdminPremium = lazy(() => import('./pages/admin/AdminPremium'));
-const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
-const AdminFinance = lazy(() => import('./pages/admin/AdminFinance'));
-const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminLayout = lazyWithRetry(() => import('./pages/admin/AdminLayout'));
+const AdminDashboard = lazyWithRetry(() => import('./pages/admin/AdminDashboard'));
+const AdminAccounts = lazyWithRetry(() => import('./pages/admin/AdminAccounts'));
+const AdminUsers = lazyWithRetry(() => import('./pages/admin/AdminUsers'));
+const AdminLogin = lazyWithRetry(() => import('./pages/admin/AdminLogin'));
+const AdminPremium = lazyWithRetry(() => import('./pages/admin/AdminPremium'));
+const AdminReports = lazyWithRetry(() => import('./pages/admin/AdminReports'));
+const AdminFinance = lazyWithRetry(() => import('./pages/admin/AdminFinance'));
+const AdminSettings = lazyWithRetry(() => import('./pages/admin/AdminSettings'));
 
 // Page loading fallback with skeleton shimmer
 const PageLoader = () => (

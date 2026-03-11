@@ -1,5 +1,5 @@
 import { useParams, Link, useLocation } from 'react-router-dom';
-import { Star, Shield, ArrowLeft, Package, MessageSquare } from 'lucide-react';
+import { Star, Shield, ArrowLeft, Package, MessageSquare, Crown, Gem } from 'lucide-react';
 import { useListings } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import ReviewList from '../components/ReviewList';
@@ -56,8 +56,22 @@ const SellerProfilePage = () => {
                     padding: '24px',
                     borderRadius: 'var(--radius-xl)',
                     backgroundColor: 'var(--color-bg-secondary)',
-                    border: '1px solid var(--color-border-default)',
+                    border: `2px solid ${seller?.plan === 'pro' ? 'var(--color-pro-purple)' : (seller?.plan === 'premium' || seller?.is_premium) ? 'var(--color-premium-gold-light)' : 'var(--color-border-default)'}`,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: seller?.plan === 'pro'
+                        ? '0 0 20px rgba(111, 66, 193, 0.15), 0 0 40px rgba(111, 66, 193, 0.05)'
+                        : (seller?.plan === 'premium' || seller?.is_premium)
+                            ? '0 0 20px rgba(212, 167, 44, 0.15), 0 0 40px rgba(212, 167, 44, 0.05)'
+                            : 'none',
                 }}>
+                    {/* Premium/Pro top accent line */}
+                    {(seller?.plan === 'pro' || seller?.plan === 'premium' || seller?.is_premium) && (
+                        <div style={{
+                            position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+                            background: seller?.plan === 'pro' ? 'var(--color-pro-gradient)' : 'var(--color-premium-gradient)',
+                        }} />
+                    )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
                         {sellerAvatar ? (
                             <img
@@ -74,10 +88,15 @@ const SellerProfilePage = () => {
                             <div style={{
                                 width: '72px', height: '72px',
                                 borderRadius: 'var(--radius-full)',
-                                background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                background: seller?.plan === 'pro' ? 'var(--color-pro-gradient)' : (seller?.plan === 'premium' || seller?.is_premium) ? 'var(--color-premium-gradient)' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: '#fff', fontWeight: 'var(--font-weight-bold)',
                                 fontSize: 'var(--font-size-2xl)', flexShrink: 0,
+                                boxShadow: seller?.plan === 'pro'
+                                    ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-pro-purple)'
+                                    : (seller?.plan === 'premium' || seller?.is_premium)
+                                        ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-premium-gold-light)'
+                                        : 'none',
                             }}>
                                 {displayName?.charAt(0)?.toUpperCase() || 'S'}
                             </div>
@@ -110,6 +129,16 @@ const SellerProfilePage = () => {
                                 }}>
                                     <Shield style={{ width: '14px', height: '14px' }} /> {t('detail.verified_seller') || 'Tasdiqlangan sotuvchi'}
                                 </span>
+                                {seller?.plan === 'pro' && (
+                                    <span className="badge badge-pro" style={{ fontSize: '12px', padding: '4px 10px', gap: '4px' }}>
+                                        <Gem style={{ width: '13px', height: '13px' }} /> Pro
+                                    </span>
+                                )}
+                                {(seller?.plan === 'premium' || (seller?.is_premium && seller?.plan !== 'pro')) && (
+                                    <span className="badge badge-premium" style={{ fontSize: '12px', padding: '4px 10px', gap: '4px' }}>
+                                        <Crown style={{ width: '13px', height: '13px' }} /> Premium
+                                    </span>
+                                )}
                             </div>
                         </div>
                         <Link

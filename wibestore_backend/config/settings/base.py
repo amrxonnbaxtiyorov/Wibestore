@@ -289,6 +289,10 @@ CORS_ALLOW_CREDENTIALS = True
 # Telegram bot: bot create-otp endpoint uchun maxfiy kalit (env da TELEGRAM_BOT_SECRET yoki BOT_SECRET_KEY)
 TELEGRAM_BOT_SECRET = os.environ.get("TELEGRAM_BOT_SECRET") or os.environ.get("BOT_SECRET_KEY", "")
 
+# Premium/Pro tarif narxlari (UZS) — bot va backend bir xil qiymatni ishlatsin
+PREMIUM_PRICE_UZS = os.environ.get("PREMIUM_PRICE_UZS", "50000")
+PRO_PRICE_UZS = os.environ.get("PRO_PRICE_UZS", "30000")
+
 CORS_ALLOW_HEADERS = [
     "accept",
     "authorization",

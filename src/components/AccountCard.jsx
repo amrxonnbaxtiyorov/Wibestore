@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Crown, Heart } from 'lucide-react';
+import { Star, Crown, Heart, Gem } from 'lucide-react';
 import { formatPrice } from '../data/mockData';
 import { resolveImageUrl } from '../lib/displayUtils';
 import { useAuth } from '../context/AuthContext';
@@ -40,29 +40,31 @@ const AccountCard = ({ account, featured = false }) => {
         account.image ?? account.primary_image ?? account.images?.[0]?.image
     );
     const accountIsPremium = account.isPremium || account.is_premium || false;
+    const accountIsPro = account.is_pro || false;
     const seller = account.seller || { rating: 5.0, isPremium: false, total_sales: 0, sales_count: 0 };
+    const sellerPlan = seller.plan || (accountIsPro ? 'pro' : accountIsPremium ? 'premium' : 'free');
     const sellerRating = Number(seller.rating) || 5;
     const sellerSales = seller.total_sales ?? seller.sales_count ?? 0;
     const warrantyDays = account.warranty_days ?? 0;
     const salePercent = account.sale_percent ?? 0;
     const saleEndsAt = account.sale_ends_at ? new Date(account.sale_ends_at) : null;
     const isOnSale = salePercent > 0 && (!saleEndsAt || saleEndsAt > new Date());
-    
+
     return (
         <Link
             to={`/account/${accountId}`}
             className={`group relative account-card-hover block ${accountIsPremium ? 'account-card-premium' : ''} ${featured ? 'shrink-0 snap-start' : ''}`}
             style={{
                 backgroundColor: 'var(--color-bg-primary)',
-                border: `1px solid ${accountIsPremium ? 'var(--color-premium-gold-light)' : 'var(--color-border-default)'}`,
+                border: `1px solid ${accountIsPro ? 'var(--color-pro-purple)' : accountIsPremium ? 'var(--color-premium-gold-light)' : 'var(--color-border-default)'}`,
                 borderRadius: 'var(--radius-lg)',
                 overflow: 'hidden',
                 width: featured ? '280px' : 'auto',
                 textDecoration: 'none',
             }}
         >
-            {/* Premium top accent */}
-            {accountIsPremium && (
+            {/* Premium/Pro top accent */}
+            {(accountIsPremium || accountIsPro) && (
                 <div
                     style={{
                         position: 'absolute',
@@ -70,7 +72,7 @@ const AccountCard = ({ account, featured = false }) => {
                         left: 0,
                         right: 0,
                         height: '2px',
-                        background: `linear-gradient(90deg, var(--color-premium-gold), var(--color-premium-gold-light))`,
+                        background: accountIsPro ? 'var(--color-pro-gradient)' : 'linear-gradient(90deg, var(--color-premium-gold), var(--color-premium-gold-light))',
                         zIndex: 2,
                     }}
                 />
@@ -148,8 +150,16 @@ const AccountCard = ({ account, featured = false }) => {
                     </button>
                 )}
 
-                {/* Premium Badge */}
-                {accountIsPremium && (
+                {/* Premium/Pro Badge */}
+                {accountIsPro ? (
+                    <div
+                        className="badge badge-pro absolute flex items-center gap-1"
+                        style={{ top: '12px', right: '12px', padding: '4px 8px', fontSize: '11px' }}
+                    >
+                        <Gem className="w-3 h-3" />
+                        Pro
+                    </div>
+                ) : accountIsPremium ? (
                     <div
                         className="badge badge-premium absolute flex items-center gap-1"
                         style={{ top: '12px', right: '12px', padding: '4px 8px', fontSize: '11px' }}
@@ -157,7 +167,7 @@ const AccountCard = ({ account, featured = false }) => {
                         <Crown className="w-3 h-3" />
                         Premium
                     </div>
-                )}
+                ) : null}
 
                 {/* Game Badge */}
                 <div
@@ -248,9 +258,11 @@ const AccountCard = ({ account, featured = false }) => {
                                 </span>
                             </>
                         )}
-                        {seller.isPremium && (
+                        {(sellerPlan === 'pro' || seller.isPro) ? (
+                            <Gem className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-pro-purple)' }} />
+                        ) : (sellerPlan === 'premium' || seller.isPremium || seller.is_premium) ? (
                             <Crown className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-premium-gold-light)' }} />
-                        )}
+                        ) : null}
                     </div>
                 </div>
             </div>
