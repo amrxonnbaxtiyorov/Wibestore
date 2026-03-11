@@ -317,7 +317,7 @@ const PremiumPage = () => {
                                                 {formatUZS(plan.discountPriceUZS ?? plan.priceUZS)}
                                             </span>
                                         </div>
-                                        <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>UZS / {t('common.month') || 'oy'}</span>
+                                        <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>UZS / oy</span>
                                         <p style={{ marginTop: '6px', fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-green)', fontWeight: 600 }}>
                                             {t('premium.first_month_discount') || '50% off first month'}
                                         </p>
@@ -331,7 +331,7 @@ const PremiumPage = () => {
                                         fontWeight: 'var(--font-weight-bold)',
                                         color: 'var(--color-text-primary)',
                                     }}>
-                                        {t('premium.free_price') || 'Bepul'}
+                                        Bepul
                                     </span>
                                 )}
                             </div>
