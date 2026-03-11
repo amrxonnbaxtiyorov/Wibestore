@@ -153,9 +153,9 @@ const ProfilePage = () => {
                             background: user.plan === 'pro' ? 'var(--color-pro-gradient)' : 'var(--color-premium-gradient)',
                         }} />
                     )}
-                    <div className="flex flex-col md:flex-row items-center gap-5">
+                    <div className="flex items-center gap-5" style={{ flexWrap: 'wrap' }}>
                         {/* Avatar — yuklangan rasm bor bo'lsa rasm, yo'q bo'lsa ismning birinchi harfi */}
-                        <div className="relative">
+                        <div className="relative" style={{ flexShrink: 0 }}>
                             <div
                                 className="avatar"
                                 style={{
@@ -194,9 +194,9 @@ const ProfilePage = () => {
                                 <Edit2 className="w-3 h-3" />
                             </button>
                         </div>
-                        {/* Info — ism ostida faqat Telegram ID */}
-                        <div className="flex-1 text-center md:text-left">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }} className="md:justify-start">
+                        {/* Info — ism avatar yonida, Telegram ID pastda */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                 <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '0' }}>
                                     {capitalizeFirst(user.name ?? user.display_name ?? user.full_name ?? user.email) || '—'}
                                 </h1>
