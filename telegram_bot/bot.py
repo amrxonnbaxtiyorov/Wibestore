@@ -47,7 +47,7 @@ try:
 except ImportError:
     pass
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton, WebAppInfo
 from telegram.error import Conflict as TelegramConflict, BadRequest
 from telegram.ext import (
     Application,
@@ -126,15 +126,20 @@ COUNTDOWN_INTERVAL = 1
 # ===== HELPER FUNCTIONS =====
 
 def _normalize_phone(phone: str) -> str:
-    """Telefonni +998XXXXXXXXX ko'rinishiga keltirish (backend bilan bir xil)."""
+    """Telefonni +998XXXXXXXXX ko'rinishiga keltirish (O'zbekiston raqamlari)."""
     cleaned = "".join(c for c in phone if c.isdigit())
     if not cleaned:
         return phone.strip()
+    # 998XXXXXXXXX (12 ta raqam) — to'liq O'zbekiston raqami
     if cleaned.startswith("998") and len(cleaned) == 12:
         return "+" + cleaned
+    # 9XXXXXXXX (9 ta raqam) — qisqartirilgan O'zbekiston raqami
     if len(cleaned) == 9 and cleaned[0] == "9":
         return "+998" + cleaned
-    return "+" + cleaned if not phone.strip().startswith("+") else phone.strip()
+    # Boshqa holatda — noto'g'ri format
+    if not phone.strip().startswith("+"):
+        return "+" + cleaned
+    return phone.strip()
 
 
 async def get_telegram_profile_photo_url(bot, user_id: int) -> str | None:
@@ -152,11 +157,11 @@ async def get_telegram_profile_photo_url(bot, user_id: int) -> str | None:
         return None
 
 
-def create_otp_via_api(telegram_id: int, phone: str, full_name: str = "", photo_url: str = "") -> dict:
-    """Backend API orqali OTP kod yaratish (urllib — qo'shimcha paket kerak emas)."""
+async def create_otp_via_api(telegram_id: int, phone: str, full_name: str = "", photo_url: str = "") -> dict:
+    """Backend API orqali OTP kod yaratish (aiohttp — asinxron, event loop bloklanmaydi)."""
     if not BOT_SECRET_KEY:
         logger.error("BOT_SECRET_KEY yoki TELEGRAM_BOT_SECRET o'rnatilmagan")
-        return None
+        return {}
     if "localhost" in WEBSITE_URL or "127.0.0.1" in WEBSITE_URL:
         logger.warning("WEBSITE_URL localhost — Railway'da backend manzilini (https://...) o'rnating!")
     url = f"{WEBSITE_URL.rstrip('/')}/api/v1/auth/telegram/otp/create/"
@@ -168,54 +173,89 @@ def create_otp_via_api(telegram_id: int, phone: str, full_name: str = "", photo_
     }
     if photo_url:
         payload["photo_url"] = photo_url[:500]
-    body = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=body,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            if resp.status == 200:
-                return json.loads(resp.read().decode("utf-8"))
-            raw = resp.read().decode()
-            logger.error("API javob: %s - %s", resp.status, raw[:500])
-            return None
-    except urllib.error.HTTPError as e:
-        raw = e.read().decode() if e.fp else ""
-        logger.error("Backend HTTP %s: %s", e.code, raw[:500])
-        if e.code == 403:
-            logger.error("403: BOT_SECRET_KEY backend dagi TELEGRAM_BOT_SECRET bilan bir xil bo'lishi kerak.")
-        return None
-    except (urllib.error.URLError, OSError) as e:
-        logger.error(
-            "Backend ga ulanish xatosi: %s | WEBSITE_URL=%s | Backend ishlayotganini va URL to'g'riligini tekshiring (RAILWAY_VARIABLES.md)",
-            e, WEBSITE_URL
+    if _AIOHTTP_AVAILABLE:
+        try:
+            async with _aiohttp.ClientSession() as session:
+                async with session.post(
+                    url, json=payload,
+                    timeout=_aiohttp.ClientTimeout(total=15),
+                ) as resp:
+                    if resp.status == 200:
+                        return await resp.json()
+                    raw = await resp.text()
+                    logger.error("API javob: %s - %s", resp.status, raw[:500])
+                    if resp.status == 403:
+                        logger.error("403: BOT_SECRET_KEY backend dagi TELEGRAM_BOT_SECRET bilan bir xil bo'lishi kerak.")
+                    return {}
+        except Exception as e:
+            logger.error(
+                "Backend ga ulanish xatosi: %s | WEBSITE_URL=%s | Backend ishlayotganini va URL to'g'riligini tekshiring",
+                e, WEBSITE_URL
+            )
+            return {}
+    else:
+        # Fallback: sinxron urllib (aiohttp o'rnatilmagan bo'lsa)
+        body = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
         )
-        return None
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                if resp.status == 200:
+                    return json.loads(resp.read().decode("utf-8"))
+                raw = resp.read().decode()
+                logger.error("API javob: %s - %s", resp.status, raw[:500])
+                return {}
+        except urllib.error.HTTPError as e:
+            raw = e.read().decode() if e.fp else ""
+            logger.error("Backend HTTP %s: %s", e.code, raw[:500])
+            if e.code == 403:
+                logger.error("403: BOT_SECRET_KEY backend dagi TELEGRAM_BOT_SECRET bilan bir xil bo'lishi kerak.")
+            return {}
+        except (urllib.error.URLError, OSError) as e:
+            logger.error(
+                "Backend ga ulanish xatosi: %s | WEBSITE_URL=%s",
+                e, WEBSITE_URL
+            )
+            return {}
 
 
-def get_telegram_profile_via_api(telegram_id: int) -> dict | None:
+async def get_telegram_profile_via_api(telegram_id: int) -> dict:
     """Backend API orqali foydalanuvchi profili: username, balance, sold_count."""
     if not BOT_SECRET_KEY:
-        return None
+        return {}
     url = f"{WEBSITE_URL.rstrip('/')}/api/v1/auth/telegram/profile/"
     payload = {"secret_key": BOT_SECRET_KEY, "telegram_id": telegram_id}
-    body = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=body,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            if resp.status == 200:
-                return json.loads(resp.read().decode("utf-8"))
-    except Exception as e:
-        logger.warning("Profil API xato: %s", e)
-    return None
+    if _AIOHTTP_AVAILABLE:
+        try:
+            async with _aiohttp.ClientSession() as session:
+                async with session.post(
+                    url, json=payload,
+                    timeout=_aiohttp.ClientTimeout(total=10),
+                ) as resp:
+                    if resp.status == 200:
+                        return await resp.json()
+        except Exception as e:
+            logger.warning("Profil API xato: %s", e)
+        return {}
+    else:
+        body = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                if resp.status == 200:
+                    return json.loads(resp.read().decode("utf-8"))
+        except Exception as e:
+            logger.warning("Profil API xato: %s", e)
+        return {}
 
 
 def _make_progress_bar(remaining: int, total: int) -> str:
@@ -298,7 +338,7 @@ async def _countdown_updater(context: ContextTypes.DEFAULT_TYPE):
 
 def _schedule_countdown(context: ContextTypes.DEFAULT_TYPE, chat_id: int, message_id: int,
                         code: str, total_seconds: int, reply_markup=None):
-    """Countdown job'larni rejalashtirish."""
+    """Countdown job'ni rejalashtirish (bitta run_repeating — xotira tejash)."""
     # Oldingi countdown joblarini tozalash
     current_jobs = context.job_queue.get_jobs_by_name(f"countdown_{chat_id}")
     for job in current_jobs:
@@ -314,15 +354,14 @@ def _schedule_countdown(context: ContextTypes.DEFAULT_TYPE, chat_id: int, messag
         "reply_markup": reply_markup,
     }
 
-    # Har COUNTDOWN_INTERVAL sekundda yangilash
-    intervals = list(range(COUNTDOWN_INTERVAL, total_seconds + COUNTDOWN_INTERVAL, COUNTDOWN_INTERVAL))
-    for sec in intervals:
-        context.job_queue.run_once(
-            _countdown_updater,
-            when=sec,
-            data=job_data,
-            name=f"countdown_{chat_id}",
-        )
+    # Bitta takrorlanuvchi job — har COUNTDOWN_INTERVAL sekundda
+    context.job_queue.run_repeating(
+        _countdown_updater,
+        interval=COUNTDOWN_INTERVAL,
+        first=COUNTDOWN_INTERVAL,
+        data=job_data,
+        name=f"countdown_{chat_id}",
+    )
 
 
 # ===== ASOSIY KLAVIATURA =====
@@ -378,7 +417,7 @@ async def _handle_menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def _cmd_my_account(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Mening saytdagi akkauntim: username, balans, sotilgan akkauntlar soni."""
     telegram_id = update.effective_user.id
-    result = get_telegram_profile_via_api(telegram_id)
+    result = await get_telegram_profile_via_api(telegram_id)
     if not result or not result.get("success"):
         await update.message.reply_html(
             "❌ Ma'lumotlarni olish mumkin emas. Keyinroq urinib ko'ring yoki /start bosing."
@@ -450,7 +489,7 @@ async def _cb_premium_plan(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def _cmd_topup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Xisobni to'ldirish: balans + karta, screenshot so'rash."""
     telegram_id = update.effective_user.id
-    result = get_telegram_profile_via_api(telegram_id)
+    result = await get_telegram_profile_via_api(telegram_id)
     balance = "0"
     if result and result.get("success") and result.get("has_account"):
         balance = result.get("data", {}).get("balance", "0")
@@ -466,7 +505,7 @@ async def _cmd_topup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 async def _cmd_withdraw_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Xisobdan pul yechish: balans ko'rsatib, summa so'rash."""
     telegram_id = update.effective_user.id
-    result = get_telegram_profile_via_api(telegram_id)
+    result = await get_telegram_profile_via_api(telegram_id)
     if not result or not result.get("success") or not result.get("has_account"):
         await update.message.reply_html(
             "❌ Saytda akkauntingiz yo'q yoki ma'lumot olinmadi. Avval ro'yxatdan o'ting."
@@ -510,7 +549,7 @@ async def receive_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     wait_msg = await update.message.reply_html("⏳ Kod tayyorlanmoqda...")
 
-    result = create_otp_via_api(
+    result = await create_otp_via_api(
         telegram_id=telegram_id,
         phone=phone_normalized,
         full_name=full_name,
@@ -521,7 +560,7 @@ async def receive_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 
     if result and result.get("success"):
         code = result["code"]
-        total_seconds = result.get("remaining_seconds", 600)
+        total_seconds = result.get("remaining_seconds", 60)
 
         otp_msg = format_otp_message(code, total_seconds, total_seconds, REGISTER_URL)
         keyboard = [
@@ -531,7 +570,7 @@ async def receive_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         reply_markup = InlineKeyboardMarkup(keyboard)
         context.user_data["phone"] = phone_normalized
 
-        from telegram import ReplyKeyboardRemove
+
         sent_msg = await update.message.reply_html(
             otp_msg,
             reply_markup=reply_markup,
@@ -568,14 +607,14 @@ async def new_code_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     full_name = user.full_name or ""
     photo_url = await get_telegram_profile_photo_url(context.bot, user.id) or ""
 
-    result = create_otp_via_api(
+    result = await create_otp_via_api(
         telegram_id=user.id,
         phone=phone,
         full_name=full_name,
         photo_url=photo_url,
     )
     if result and result.get('success'):
-        total_seconds = result.get('remaining_seconds', 600)
+        total_seconds = result.get('remaining_seconds', 60)
         code = result['code']
         otp_msg = format_otp_message(code, total_seconds, total_seconds, REGISTER_URL)
         keyboard = [
@@ -601,7 +640,7 @@ async def _receive_premium_screenshot(update: Update, context: ContextTypes.DEFA
         return WAITING_PREMIUM_SCREENSHOT
     plan = context.user_data.get("premium_plan", "Premium")
     telegram_id = update.effective_user.id
-    result = get_telegram_profile_via_api(telegram_id)
+    result = await get_telegram_profile_via_api(telegram_id)
     username = result.get("data", {}).get("username", "") if result and result.get("has_account") else str(telegram_id)
     if not username and result and result.get("has_account"):
         username = result.get("data", {}).get("email", str(telegram_id))
@@ -627,7 +666,7 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
         await update.message.reply_text("📸 Iltimos, to'lov skrinshotini (rasm) yuboring.")
         return WAITING_TOPUP_SCREENSHOT
     telegram_id = update.effective_user.id
-    result = get_telegram_profile_via_api(telegram_id)
+    result = await get_telegram_profile_via_api(telegram_id)
     username = result.get("data", {}).get("username", "") if result and result.get("has_account") else str(telegram_id)
     caption = (
         f"💰 <b>Hisobni to'ldirish (skrinshot)</b>\n"
@@ -650,17 +689,13 @@ async def _receive_withdraw_amount(update: Update, context: ContextTypes.DEFAULT
         await update.message.reply_text("❌ Summani faqat raqamda yuboring (masalan: 50000)")
         return WAITING_WITHDRAW_AMOUNT
     amount_str = text
-    try:
-        amount_float = float(amount_str)
-    except ValueError:
-        await update.message.reply_text("❌ Noto'g'ri summa. Raqam kiriting.")
-        return WAITING_WITHDRAW_AMOUNT
+    amount_float = float(amount_str)
     if amount_float <= 0:
         await update.message.reply_text("❌ Summa 0 dan katta bo'lishi kerak.")
         return WAITING_WITHDRAW_AMOUNT
 
     telegram_id = update.effective_user.id
-    result = get_telegram_profile_via_api(telegram_id)
+    result = await get_telegram_profile_via_api(telegram_id)
     if not result or not result.get("success") or not result.get("has_account"):
         await update.message.reply_html("❌ Balansni tekshirib bo'lmadi. Qayta urinib ko'ring.")
         return WAITING_PHONE
@@ -713,7 +748,7 @@ async def _receive_withdraw_card(update: Update, context: ContextTypes.DEFAULT_T
         return WAITING_WITHDRAW_CARD
     amount = context.user_data.pop("withdraw_amount", "?")
     telegram_id = update.effective_user.id
-    result = get_telegram_profile_via_api(telegram_id)
+    result = await get_telegram_profile_via_api(telegram_id)
     username = result.get("data", {}).get("username", "") if result and result.get("has_account") else str(telegram_id)
     balance = result.get("data", {}).get("balance", "0") if result and result.get("has_account") else "0"
     for target in _notification_targets():
@@ -1209,6 +1244,11 @@ def main():
             "WEBSITE_URL localhost/127.0.0.1 — lokal ishlab chiqish rejimi. "
             "Railway deploy uchun WEBSITE_URL = Backend URL (masalan https://your-app.up.railway.app) qo'ying."
         )
+    if not ADMIN_IDS and not ADMIN_CHAT_ID:
+        logger.warning(
+            "ADMIN_TELEGRAM_IDS va ADMIN_CHAT_ID o'rnatilmagan! "
+            "Screenshot va pul yechish so'rovlari hech kimga yetmaydi."
+        )
 
     app = (
         Application.builder()
@@ -1270,15 +1310,12 @@ def main():
     app.add_handler(CommandHandler('help', help_command))
     app.add_handler(MessageHandler(filters.COMMAND, unknown))
 
-    # Conflict (409): logni to'ldirmaslik uchun 5 daqiqada bir marta xabar
-    _last_conflict_log = [0.0]  # [timestamp]
-
     async def error_handler(update, context):
         if isinstance(context.error, TelegramConflict):
-            import time
-            now = time.time()
-            if now - _last_conflict_log[0] >= 300:  # 5 daqiqa
-                _last_conflict_log[0] = now
+            now = _time.time()
+            last_log = getattr(error_handler, '_last_conflict_log', 0.0)
+            if now - last_log >= 300:  # 5 daqiqa
+                error_handler._last_conflict_log = now
                 logger.warning(
                     "Conflict: Bot boshqa joyda ham ishlayapti. Faqat bitta instance (Railway yoki kompyuter)."
                 )

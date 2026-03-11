@@ -145,7 +145,7 @@ class OTPStatusView(APIView):
 
         telegram_id = request.data.get('telegram_id')
         email = request.data.get('email')
-        phone = request.data.get('phone')
+        phone = request.data.get('phone_number') or request.data.get('phone')
 
         if not telegram_id:
             return Response({'error': 'telegram_id required'},
