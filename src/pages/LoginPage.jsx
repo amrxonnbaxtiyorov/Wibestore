@@ -159,7 +159,7 @@ const LoginPage = () => {
                                     autoComplete="tel"
                                     value={telegramPhone}
                                     onChange={(e) => setTelegramPhone(formatUzPhoneDisplay(e.target.value))}
-                                    placeholder="+998 94-201-43-00"
+                                    placeholder="+998 99-999-99-99"
                                     className="input input-md"
                                     style={{ paddingLeft: '12px' }}
                                 />
