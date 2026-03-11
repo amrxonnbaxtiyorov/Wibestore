@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Tag, Heart, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle, BarChart3, UserPlus, Copy, Star } from 'lucide-react';
+import { ShoppingBag, Tag, Heart, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle, BarChart3, UserPlus, Copy, Star, Crown, Gem } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing, useSellerDashboard, useReferral, useGames } from '../hooks';
 import AccountCard from '../components/AccountCard';
@@ -132,13 +132,27 @@ const ProfilePage = () => {
                 <div
                     style={{
                         backgroundColor: 'var(--color-bg-secondary)',
-                        border: '1px solid var(--color-border-default)',
+                        border: `2px solid ${user.plan === 'pro' ? 'var(--color-pro-purple)' : user.plan === 'premium' || user.is_premium ? 'var(--color-premium-gold-light)' : 'var(--color-border-default)'}`,
                         borderRadius: 'var(--radius-xl)',
                         padding: '24px',
                         marginTop: '16px',
                         marginBottom: '24px',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        boxShadow: user.plan === 'pro'
+                            ? '0 0 20px rgba(111, 66, 193, 0.15), 0 0 40px rgba(111, 66, 193, 0.05)'
+                            : (user.plan === 'premium' || user.is_premium)
+                                ? '0 0 20px rgba(212, 167, 44, 0.15), 0 0 40px rgba(212, 167, 44, 0.05)'
+                                : 'none',
                     }}
                 >
+                    {/* Premium/Pro top accent line */}
+                    {(user.plan === 'pro' || user.plan === 'premium' || user.is_premium) && (
+                        <div style={{
+                            position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+                            background: user.plan === 'pro' ? 'var(--color-pro-gradient)' : 'var(--color-premium-gradient)',
+                        }} />
+                    )}
                     <div className="flex flex-col md:flex-row items-center gap-5">
                         {/* Avatar — yuklangan rasm bor bo'lsa rasm, yo'q bo'lsa ismning birinchi harfi */}
                         <div className="relative">
@@ -146,12 +160,17 @@ const ProfilePage = () => {
                                 className="avatar"
                                 style={{
                                     width: '80px', height: '80px',
-                                    background: user.avatar ? 'transparent' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
+                                    background: user.avatar ? 'transparent' : (user.plan === 'pro' ? 'var(--color-pro-gradient)' : user.plan === 'premium' || user.is_premium ? 'var(--color-premium-gradient)' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))'),
                                     fontSize: '32px', fontWeight: 'var(--font-weight-bold)',
                                     color: '#ffffff',
                                     borderRadius: 'var(--radius-full)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     overflow: 'hidden',
+                                    boxShadow: user.plan === 'pro'
+                                        ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-pro-purple)'
+                                        : (user.plan === 'premium' || user.is_premium)
+                                            ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-premium-gold-light)'
+                                            : 'none',
                                 }}
                             >
                                 {user.avatar ? (
@@ -177,10 +196,22 @@ const ProfilePage = () => {
                         </div>
                         {/* Info — ism ostida faqat Telegram ID */}
                         <div className="flex-1 text-center md:text-left">
-                            <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-                                {capitalizeFirst(user.name ?? user.display_name ?? user.full_name ?? user.email) || '—'}
-                            </h1>
-                            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }} className="md:justify-start">
+                                <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '0' }}>
+                                    {capitalizeFirst(user.name ?? user.display_name ?? user.full_name ?? user.email) || '—'}
+                                </h1>
+                                {user.plan === 'pro' && (
+                                    <span className="badge badge-pro" style={{ fontSize: '11px', padding: '3px 10px', gap: '4px' }}>
+                                        <Gem className="w-3 h-3" /> Pro
+                                    </span>
+                                )}
+                                {(user.plan === 'premium' || (user.is_premium && user.plan !== 'pro')) && (
+                                    <span className="badge badge-premium" style={{ fontSize: '11px', padding: '3px 10px', gap: '4px' }}>
+                                        <Crown className="w-3 h-3" /> Premium
+                                    </span>
+                                )}
+                            </div>
+                            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginTop: '4px' }}>
                                 {user.telegram_id || user.telegram_username || user.email || ''}
                             </p>
                         </div>

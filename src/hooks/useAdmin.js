@@ -244,6 +244,26 @@ export const useAdminTransactions = (filters = {}) => {
     });
 };
 
+/**
+ * Hook for granting/revoking subscription (admin)
+ */
+export const useAdminGrantSubscription = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ userId, planSlug, months = 1 }) => {
+            const { data } = await apiClient.post(`${ADMIN_BASE}/users/${userId}/subscription/`, {
+                plan_slug: planSlug,
+                months,
+            });
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+            queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
+        },
+    });
+};
+
 export default {
     useAdminDashboard,
     useAdminFraudStats,
@@ -261,4 +281,5 @@ export default {
     useAdminDisputes,
     useAdminResolveDispute,
     useAdminTransactions,
+    useAdminGrantSubscription,
 };

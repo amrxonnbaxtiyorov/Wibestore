@@ -40,6 +40,13 @@
   --color-premium-gold-light: #d4a72c;
   --color-premium-gold-bg: rgba(212, 167, 44, 0.1);
 
+  /* Pro */
+  --color-pro-purple: #6f42c1;
+  --color-pro-blue: #0969da;
+  --color-pro-bg: rgba(111, 66, 193, 0.08);
+  --color-pro-gradient: linear-gradient(135deg, #6f42c1, #0969da);
+  --color-premium-gradient: linear-gradient(135deg, #9a6700, #d4a72c);
+
   /* States */
   --color-success: #1a7f37;
   --color-success-bg: rgba(26, 127, 55, 0.1);
@@ -103,6 +110,13 @@
   --color-premium-gold: #d29922;
   --color-premium-gold-light: #f0b724;
   --color-premium-gold-bg: rgba(210, 153, 34, 0.12);
+
+  /* Pro */
+  --color-pro-purple: #a371f7;
+  --color-pro-blue: #58a6ff;
+  --color-pro-bg: rgba(163, 113, 247, 0.12);
+  --color-pro-gradient: linear-gradient(135deg, #a371f7, #58a6ff);
+  --color-premium-gradient: linear-gradient(135deg, #d29922, #f0b724);
 
   /* States */
   --color-success: #238636;
@@ -685,6 +699,12 @@ p {
 
 .badge-premium {
   background: linear-gradient(135deg, var(--color-premium-gold), var(--color-premium-gold-light));
+  color: #ffffff;
+  font-weight: var(--font-weight-semibold);
+}
+
+.badge-pro {
+  background: var(--color-pro-gradient);
   color: #ffffff;
   font-weight: var(--font-weight-semibold);
 }

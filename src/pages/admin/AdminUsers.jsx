@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Search, Crown, Ban, Eye, Mail, MoreVertical, UserCheck } from 'lucide-react';
+import { Search, Crown, Ban, Eye, Mail, UserCheck, Gem } from 'lucide-react';
 import { getDisplayInitial } from '../../lib/displayUtils';
 import { useLanguage } from '../../context/LanguageContext';
-import { useAdminUsers } from '../../hooks/useAdmin';
+import { useAdminUsers, useAdminGrantSubscription } from '../../hooks/useAdmin';
 
 const AdminUsers = () => {
     const { t } = useLanguage();
@@ -10,6 +10,7 @@ const AdminUsers = () => {
     const [searchQuery, setSearchQuery] = useState('');
 
     const { data: usersData, isLoading } = useAdminUsers();
+    const grantSubscription = useAdminGrantSubscription();
     const rawUsers = Array.isArray(usersData) ? usersData : (usersData?.results ?? []);
     const users = rawUsers.map(u => ({
         id: u.id,
@@ -17,6 +18,8 @@ const AdminUsers = () => {
         email: u.email ?? '-',
         role: u.seller_profile ? 'seller' : 'buyer',
         isPremium: u.is_premium ?? false,
+        isPro: u.is_pro ?? false,
+        plan: u.plan ?? 'free',
         status: u.is_active === false ? 'blocked' : 'active',
         sales: u.seller_profile?.total_sales ?? u.sales_count ?? 0,
         purchases: u.purchases_count ?? 0,
@@ -40,10 +43,18 @@ const AdminUsers = () => {
         return <span className="badge" style={{ backgroundColor: s.bg, color: s.color }}>{s.label}</span>;
     };
 
-    const getRoleBadge = (role, isPremium) => {
+    const getRoleBadge = (role, isPremium, isPro) => {
+        if (isPro) {
+            return (
+                <span className="badge badge-pro" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+                    <Gem style={{ width: '12px', height: '12px' }} />
+                    Pro {role === 'seller' ? t('admin.role_seller') : t('admin.role_buyer')}
+                </span>
+            );
+        }
         if (isPremium) {
             return (
-                <span className="badge" style={{ backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-premium-gold-light)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <span className="badge badge-premium" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
                     <Crown style={{ width: '12px', height: '12px' }} />
                     Premium {role === 'seller' ? t('admin.role_seller') : t('admin.role_buyer')}
                 </span>
@@ -57,6 +68,10 @@ const AdminUsers = () => {
                 {role === 'seller' ? t('admin.role_seller') : t('admin.role_buyer')}
             </span>
         );
+    };
+
+    const handlePlanChange = (userId, planSlug) => {
+        grantSubscription.mutate({ userId, planSlug, months: 1 });
     };
 
     if (isLoading) {
@@ -132,8 +147,8 @@ const AdminUsers = () => {
             }}>
                 <div style={{ overflowX: 'auto' }}>
                     <table className="gh-table">
-<thead>
-                        <tr>
+                        <thead>
+                            <tr>
                                 <th>{t('admin.table_user')}</th>
                                 <th>{t('admin.table_email')}</th>
                                 <th>{t('admin.table_role')}</th>
@@ -169,7 +184,7 @@ const AdminUsers = () => {
                                         </div>
                                     </td>
                                     <td style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>{user.email}</td>
-                                    <td>{getRoleBadge(user.role, user.isPremium)}</td>
+                                    <td>{getRoleBadge(user.role, user.isPremium, user.isPro)}</td>
                                     <td style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
                                         {user.role === 'seller' ? `${user.sales} ta sotuvlar` : `${user.purchases} ta xaridlar`}
                                     </td>
@@ -177,11 +192,23 @@ const AdminUsers = () => {
                                     <td style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>{user.joined}</td>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <select
+                                                value={user.plan}
+                                                onChange={(e) => handlePlanChange(user.id, e.target.value)}
+                                                disabled={grantSubscription.isPending}
+                                                className="input input-sm"
+                                                style={{
+                                                    width: '90px', fontSize: '11px', height: '28px', padding: '0 6px',
+                                                    cursor: 'pointer',
+                                                    borderColor: user.plan === 'pro' ? 'var(--color-pro-purple)' : user.plan === 'premium' ? 'var(--color-premium-gold-light)' : 'var(--color-border-default)',
+                                                }}
+                                            >
+                                                <option value="free">Free</option>
+                                                <option value="premium">Premium</option>
+                                                <option value="pro">Pro</option>
+                                            </select>
                                             <button className="btn btn-ghost btn-sm" style={{ padding: '6px' }} title="Ko'rish" aria-label="View">
                                                 <Eye style={{ width: '14px', height: '14px' }} />
-                                            </button>
-                                            <button className="btn btn-ghost btn-sm" style={{ padding: '6px', color: 'var(--color-accent-blue)' }} title="Email" aria-label="Email">
-                                                <Mail style={{ width: '14px', height: '14px' }} />
                                             </button>
                                             {user.status === 'active' ? (
                                                 <button className="btn btn-ghost btn-sm" style={{ padding: '6px', color: 'var(--color-accent-red)' }} title="Bloklash" aria-label="Block">
@@ -192,9 +219,6 @@ const AdminUsers = () => {
                                                     <UserCheck style={{ width: '14px', height: '14px' }} />
                                                 </button>
                                             )}
-                                            <button className="btn btn-ghost btn-sm" style={{ padding: '6px' }} aria-label="More">
-                                                <MoreVertical style={{ width: '14px', height: '14px' }} />
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>

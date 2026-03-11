@@ -324,6 +324,60 @@ class AdminUserBanView(APIView):
 
 
 @extend_schema(tags=["Admin"])
+class AdminGrantSubscriptionView(APIView):
+    """POST /api/v1/admin-panel/users/{id}/subscription/ — Grant or revoke subscription."""
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"message": "User not found."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        plan_slug = request.data.get("plan_slug", "").strip().lower()
+        months = int(request.data.get("months", 1))
+
+        if plan_slug == "free":
+            # Revoke: cancel active subscription
+            from apps.subscriptions.models import UserSubscription
+            cancelled = UserSubscription.objects.filter(
+                user=user, status="active"
+            ).update(status="cancelled", cancelled_at=timezone.now())
+            if cancelled:
+                from apps.subscriptions.services import SubscriptionService
+                SubscriptionService._sync_seller_listings_premium(user)
+            return Response({
+                "success": True,
+                "message": f"Subscription revoked for {user.email}.",
+                "plan": "free",
+            })
+
+        if plan_slug not in ("premium", "pro"):
+            return Response(
+                {"success": False, "error": {"message": "Invalid plan. Use: premium, pro, or free."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            from apps.subscriptions.services import SubscriptionService
+            subscription = SubscriptionService.grant_subscription(user, plan_slug, months)
+            return Response({
+                "success": True,
+                "message": f"{plan_slug.capitalize()} granted to {user.email} for {months} month(s).",
+                "plan": plan_slug,
+            })
+        except Exception as e:
+            return Response(
+                {"success": False, "error": {"message": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+@extend_schema(tags=["Admin"])
 class AdminTransactionsView(generics.ListAPIView):
     """GET /api/v1/admin-panel/transactions/ — All transactions."""
 

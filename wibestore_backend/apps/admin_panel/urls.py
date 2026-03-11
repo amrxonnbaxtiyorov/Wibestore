@@ -22,5 +22,6 @@ urlpatterns = [
     path("reports/<uuid:pk>/resolve/", views.AdminResolveReportView.as_view(), name="resolve-report"),
     path("users/", views.AdminUsersView.as_view(), name="users"),
     path("users/<uuid:pk>/ban/", views.AdminUserBanView.as_view(), name="user-ban"),
+    path("users/<uuid:pk>/subscription/", views.AdminGrantSubscriptionView.as_view(), name="user-subscription"),
     path("transactions/", views.AdminTransactionsView.as_view(), name="transactions"),
 ]

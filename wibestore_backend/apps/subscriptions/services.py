@@ -20,6 +20,25 @@ class SubscriptionService:
     """Service layer for subscription operations."""
 
     @staticmethod
+    def _sync_seller_listings_premium(user) -> None:
+        """
+        Listing.is_premium must follow seller's current plan.
+        Premium & Pro sellers' listings are marked premium (pending+active).
+        """
+        try:
+            from apps.marketplace.models import Listing
+            plan = SubscriptionService.get_user_plan(user)
+            should_be_premium = plan in ("premium", "pro")
+            Listing.objects.filter(
+                seller=user,
+                status__in=["pending", "active"],
+                deleted_at__isnull=True,
+            ).update(is_premium=should_be_premium)
+        except Exception as e:
+            # Never block subscription flow due to marketplace sync
+            logger.warning("Failed to sync seller listings premium: %s", e)
+
+    @staticmethod
     @transaction.atomic
     def purchase_subscription(
         user, plan_slug: str, billing_period: str = "monthly"
@@ -76,6 +95,7 @@ class SubscriptionService:
             "Subscription purchased: %s -> %s (%s)",
             user.email, plan.name, billing_period,
         )
+        SubscriptionService._sync_seller_listings_premium(user)
         return subscription
 
     @staticmethod
@@ -96,6 +116,7 @@ class SubscriptionService:
         )
 
         logger.info("Subscription cancelled for: %s", user.email)
+        SubscriptionService._sync_seller_listings_premium(user)
         return subscription
 
     @staticmethod
@@ -131,6 +152,7 @@ class SubscriptionService:
             }],
         )
         logger.info("Admin granted %s to %s for %s month(s)", plan_slug, user.email, months)
+        SubscriptionService._sync_seller_listings_premium(user)
         return subscription
 
     @staticmethod
