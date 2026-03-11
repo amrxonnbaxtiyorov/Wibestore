@@ -132,7 +132,13 @@ Agar Backend domeningiz boshqa bo‘lsa (masalan `exemplary-fascination-producti
 
 ---
 
-## 8. "Bog'lanish xatosi" chiqsa (Frontend sahifada)
+## 8. 502 Bad Gateway yoki "Application failed to respond"
+
+Agar Backend sahifasi 502 qaytarsa yoki frontend akkauntlar/o‘yinlarni ko‘rsatmasa, batafsil qadamlar: **[RAILWAY_502_TROUBLESHOOTING.md](../RAILWAY_502_TROUBLESHOOTING.md)**.
+
+---
+
+## 9. "Bog'lanish xatosi" chiqsa (Frontend sahifada)
 
 Bu xabar frontend backend API’ga so‘rov yuborayotganda javob olmasa ko‘rinadi.
 
@@ -147,7 +153,7 @@ Bu xabar frontend backend API’ga so‘rov yuborayotganda javob olmasa ko‘rin
 
 ---
 
-## 9. Frontend build (Railway / Linux)
+## 10. Frontend build (Railway / Linux)
 
 - **Node:** Loyiha `engines.node >= 20` va `.nvmrc` (22) qo‘llaydi; Railway’da Node 20 yoki 22 ishlatiladi.
 - **Build:** `npm run build` (Vite). Lock file bo‘lsa `npm ci --omit=optional`, bo‘lmasa `npm install --omit=optional` — optional (masalan sharp) Linux container’da build xatosiz ishlashi uchun.

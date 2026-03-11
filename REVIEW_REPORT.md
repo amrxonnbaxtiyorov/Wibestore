@@ -93,4 +93,12 @@
 
 ---
 
+## 8. 502 Bad Gateway / Backend ishlamayapti / Akkauntlar chiqmayapti
+
+- **Belgi:** Brauzerda 502, admin ochilmaydi, frontend "0 ta akkaunt", mashhur o'yinlar bo'sh.
+- **Sabab:** Django backend Railway'da javob bermayapti (container ishga tushmagan yoki port ochilmagan).
+- **Qo'llanma:** **[RAILWAY_502_TROUBLESHOOTING.md](./RAILWAY_502_TROUBLESHOOTING.md)** — loglarni ko'rish, DATABASE_URL/DATABASE_PUBLIC_URL, Postgres Reference, frontend URL moslash.
+
+---
+
 *Hisobot yangilandi: 2026-03-11*
