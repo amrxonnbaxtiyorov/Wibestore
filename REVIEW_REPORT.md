@@ -53,7 +53,7 @@
 - App.jsx da "Skip to content" va `main id="main-content" role="main"` mavjud — yaxshi.
 - Ba’zi tugmalar/inputlar da `aria-label` bor; barcha interfeys elementlari uchun tekshirib, yetishmasa qo‘shish tavsiya etiladi.
 
-### 5.3 Statistics sahifa
+### 5.3 ~~Statistics sahifa~~ ✅ Tuzatildi
 - `/statistics` AuthGuard’siz — ochiq statistika sahifasi bo‘lishi mumkin. Agar faqat kirgan foydalanuvchilar uchun bo‘lishi kerak bo‘lsa, AuthGuard qo‘shish kerak.
 
 ---
@@ -71,7 +71,7 @@
 | 7 | Reset password confirm | ✅ /reset-password sahifa va route |
 | 8 | SellPage i18n | ✅ Validatsiya va featureOptions t() |
 | 9 | AdminLogin i18n | ✅ admin.* tarjimalar |
-| 10 | Statistics | Kerak bo‘lsa AuthGuard qo‘shish (ixtiyoriy) |
+| 10 | Statistics | ✅ AuthGuard qo'shildi |
 | 11 | AccountDetailPage qattiq matnlar | ✅ Rasm yo'q, Rasm yuklanmadi, chat, features, reviewer i18n |
 | 12 | ReviewList qattiq matnlar | ✅ reviews.* tarjimalar qo‘shildi |
 | 13 | Login/Signup toast | ✅ auth.success_title, error_title, welcome, google_login_success va boshqalar |
@@ -80,4 +80,17 @@
 
 ---
 
-*Hisobot yangilandi: 2026-02-28*
+---
+
+## 7. Qo'shimcha tuzatishlar (2026-03-11)
+
+### 7.1 Parol o'zgartirish — autentifikatsiya
+- **Muammo:** Sozlamalar sahifasida parol o'zgartirish `createPublicClient()` orqali chaqirilardi, token yuborilmasdi. Backend `POST /auth/password/change/` esa `IsAuthenticated` talab qiladi.
+- **Tuzatildi:** Parol o'zgartirish endi `apiClient` (Bearer token bilan) orqali amalga oshiriladi.
+
+### 7.2 Skip to content (a11y)
+- **Tuzatildi:** `common.skip_to_content` kaliti uz/en/ru locale'larga qo'shildi va App.jsx dagi "Skip to content" linkida `t('common.skip_to_content')` ishlatiladi.
+
+---
+
+*Hisobot yangilandi: 2026-03-11*

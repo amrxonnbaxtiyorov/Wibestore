@@ -339,7 +339,8 @@
         "copied": "Скопировано",
         "days_warranty": "дней гарантии",
         "days": "дн.",
-        "go_to_profile": "Перейти в профиль"
+        "go_to_profile": "Перейти в профиль",
+        "skip_to_content": "Перейти к содержимому"
     },
     "auth": {
         "login_title": "Войти",

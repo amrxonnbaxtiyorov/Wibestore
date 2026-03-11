@@ -339,7 +339,8 @@
         "copied": "Nusxalandi",
         "days_warranty": "kun kafolat",
         "days": "kun",
-        "go_to_profile": "Profilga o'tish"
+        "go_to_profile": "Profilga o'tish",
+        "skip_to_content": "Asosiy kontentga o'tish"
     },
     "auth": {
         "login_title": "Tizimga kirish",

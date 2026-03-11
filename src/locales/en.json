@@ -339,7 +339,8 @@
         "copied": "Copied",
         "days_warranty": "days warranty",
         "days": "days",
-        "go_to_profile": "Go to profile"
+        "go_to_profile": "Go to profile",
+        "skip_to_content": "Skip to content"
     },
     "auth": {
         "login_title": "Sign in",

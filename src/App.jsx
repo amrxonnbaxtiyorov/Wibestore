@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useLanguage } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -100,6 +101,7 @@ const PageLoader = () => (
 // Main layout component for public routes
 const PublicLayout = ({ children }) => {
   const { pathname } = useLocation();
+  const { t } = useLanguage();
   const isChatRoute = pathname === '/chat' || pathname.startsWith('/chat/');
 
   return (
@@ -111,7 +113,7 @@ const PublicLayout = ({ children }) => {
       }}
     >
       <ScrollToTop />
-      {/* Skip to content for keyboard users */}
+      {/* Skip to content for keyboard users (a11y) */}
       <a
         href="#main-content"
         className="skip-to-content"
@@ -132,7 +134,7 @@ const PublicLayout = ({ children }) => {
         onFocus={(e) => { e.currentTarget.style.top = '8px'; }}
         onBlur={(e) => { e.currentTarget.style.top = '-100%'; }}
       >
-        Skip to content
+        {t('common.skip_to_content') || 'Skip to content'}
       </a>
       <Navbar />
       <main id="main-content" role="main" style={{ paddingTop: '64px' }}>
@@ -283,7 +285,7 @@ function App() {
                         } />
                         <Route path="/statistics" element={
                           <Suspense fallback={<PageLoader />}>
-                            <PublicLayout><StatisticsPage /></PublicLayout>
+                            <PublicLayout><AuthGuard><StatisticsPage /></AuthGuard></PublicLayout>
                           </Suspense>
                         } />
                         <Route path="/coins" element={

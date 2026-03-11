@@ -113,11 +113,9 @@ const SettingsPage = () => {
         setIsSaving(true);
 
         try {
-            // Use backend API for password change
-            const { createPublicClient } = await import('../lib/apiClient');
-            const publicClient = createPublicClient();
-            
-            await publicClient.post('/auth/password/change/', {
+            // Backend requires authenticated user — use apiClient (sends Bearer token)
+            const apiClient = (await import('../lib/apiClient')).default;
+            await apiClient.post('/auth/password/change/', {
                 old_password: passwordData.currentPassword,
                 new_password: passwordData.newPassword,
                 new_password_confirm: passwordData.confirmPassword,
