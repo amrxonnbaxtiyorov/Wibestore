@@ -11,25 +11,20 @@
  */
 export function formatUzPhoneDisplay(value) {
   if (value == null || typeof value !== 'string') return '';
-  let digits = value.replace(/\D/g, '').slice(0, 12);
+  let digits = value.replace(/\D/g, '');
   if (digits.length === 0) return '';
 
-  // 8 94 201 43 00 kiritilganda 998 ga aylantirish
-  if (digits.startsWith('8') && digits.length <= 11) {
-    digits = '998' + digits.slice(1);
+  if (digits.startsWith('998')) {
+    digits = digits.slice(3);
   }
-  // 9 raqam (94 201 43 00) kiritilganda 998 qo'shish
-  if (digits.length <= 9 && digits[0] === '9') {
-    digits = '998' + digits;
-  }
-  // 998 dan keyingi 9 ta raqam
-  const rest = digits.startsWith('998') ? digits.slice(3, 12) : digits.slice(0, 9);
+
+  digits = digits.slice(0, 9);
 
   let out = '+998 ';
-  if (rest.length > 0) out += rest.slice(0, 2);
-  if (rest.length > 2) out += '-' + rest.slice(2, 5);
-  if (rest.length > 5) out += '-' + rest.slice(5, 7);
-  if (rest.length > 7) out += '-' + rest.slice(7, 9);
+  if (digits.length > 0) out += digits.slice(0, 2);
+  if (digits.length > 2) out += '-' + digits.slice(2, 5);
+  if (digits.length > 5) out += '-' + digits.slice(5, 7);
+  if (digits.length > 7) out += '-' + digits.slice(7, 9);
   return out;
 }
 
