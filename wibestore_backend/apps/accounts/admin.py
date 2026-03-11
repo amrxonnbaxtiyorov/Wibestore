@@ -2,14 +2,29 @@
 WibeStore Backend - Accounts Admin
 """
 
+from decimal import Decimal
+
+from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.db.models import Sum
 
 from apps.accounts.models import PasswordHistory, Referral, TelegramRegistrationCode
 from apps.subscriptions.models import UserSubscription
 
 User = get_user_model()
+
+
+class AddBalanceForm(forms.Form):
+    """Tanlab olingan foydalanuvchilarga mablag' qo'shish formasi."""
+    amount = forms.DecimalField(
+        label="Qo'shilajak summa (UZS)",
+        min_value=Decimal("1"),
+        max_digits=15,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={"style": "width:200px", "placeholder": "Masalan: 50000"}),
+    )
 
 
 class UserSubscriptionInline(admin.TabularInline):
@@ -46,14 +61,42 @@ class UserAdmin(BaseUserAdmin):
         "_current_plan",
         "rating",
         "total_sales",
-        "balance",
+        "_balance_display",
         "created_at",
     ]
     list_filter = ["is_active", "is_staff", "is_verified", "created_at"]
     search_fields = ["email", "username", "full_name", "phone_number"]
     ordering = ["-created_at"]
-    actions = ["grant_premium_action", "grant_pro_action"]
+    actions = ["grant_premium_action", "grant_pro_action", "add_balance_action", "reset_balance_action"]
     inlines = [UserSubscriptionInline]
+
+    @admin.display(description="💰 Mablag' (UZS)", ordering="balance")
+    def _balance_display(self, obj):
+        val = obj.balance or 0
+        color = "#22c55e" if val > 0 else "#6b7280"
+        return f'<span style="color:{color};font-weight:600">{val:,.0f} UZS</span>'
+
+    _balance_display.allow_tags = True  # Django 3.x compat
+
+    @admin.action(description="💰 Tanlanganlarga mablag' qo'shish (50 000 UZS)")
+    def add_balance_action(self, request, queryset):
+        updated = 0
+        for user in queryset:
+            user.balance = (user.balance or 0) + Decimal("50000")
+            user.save(update_fields=["balance"])
+            updated += 1
+        self.message_user(request, f"{updated} ta foydalanuvchiga 50 000 UZS qo'shildi.", level=messages.SUCCESS)
+
+    @admin.action(description="🔄 Tanlanganlarga balansni nolga tushirish")
+    def reset_balance_action(self, request, queryset):
+        count = queryset.update(balance=Decimal("0"))
+        self.message_user(request, f"{count} ta foydalanuvchi balansi nolga tushirildi.", level=messages.WARNING)
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        totals = User.objects.aggregate(total_balance=Sum("balance"))
+        extra_context["total_balance"] = totals.get("total_balance") or 0
+        return super().changelist_view(request, extra_context=extra_context)
 
     @admin.display(description="Tarif")
     def _current_plan(self, obj):

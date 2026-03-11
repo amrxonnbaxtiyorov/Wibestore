@@ -123,6 +123,9 @@ PRO_PRICE_UZS = os.getenv("PRO_PRICE_UZS", "30000")
 # Countdown update interval (seconds) — har soniyada teskari sanoq
 COUNTDOWN_INTERVAL = 1
 
+# Admin topup summa kutish holati (ConversationHandler uchun alohida)
+ADMIN_TOPUP_AMOUNT = 10
+
 # Foydalanuvchilar ID larini saqlash fayli (broadcast uchun)
 USERS_FILE = Path(__file__).resolve().parent / "users.json"
 
@@ -287,6 +290,52 @@ async def get_telegram_profile_via_api(telegram_id: int) -> dict:
         except Exception as e:
             logger.warning("Profil API xato: %s", e)
         return {}
+
+
+async def _add_user_balance_api(telegram_id: int, amount: int) -> tuple[int, dict]:
+    """Backend API orqali foydalanuvchi balansiga summa qo'shish."""
+    if not BOT_SECRET_KEY:
+        return 500, {"error": "BOT_SECRET_KEY yo'q"}
+    url = f"{WEBSITE_URL}/api/v1/auth/telegram/balance/add/"
+    payload = {"secret_key": BOT_SECRET_KEY, "telegram_id": telegram_id, "amount": amount}
+    if _AIOHTTP_AVAILABLE:
+        try:
+            async with _aiohttp.ClientSession() as session:
+                async with session.post(
+                    url, json=payload, timeout=_aiohttp.ClientTimeout(total=15)
+                ) as resp:
+                    try:
+                        data = await resp.json()
+                    except Exception:
+                        data = {}
+                    return resp.status, data
+        except Exception as e:
+            logger.error("Balance add API xato: %s", e)
+            return 503, {}
+    return 503, {"error": "aiohttp yo'q"}
+
+
+async def _activate_premium_api(telegram_id: int, plan: str) -> tuple[int, dict]:
+    """Backend API orqali foydalanuvchiga Premium/Pro tarif berish."""
+    if not BOT_SECRET_KEY:
+        return 500, {"error": "BOT_SECRET_KEY yo'q"}
+    url = f"{WEBSITE_URL}/api/v1/auth/telegram/premium/activate/"
+    payload = {"secret_key": BOT_SECRET_KEY, "telegram_id": telegram_id, "plan": plan.lower()}
+    if _AIOHTTP_AVAILABLE:
+        try:
+            async with _aiohttp.ClientSession() as session:
+                async with session.post(
+                    url, json=payload, timeout=_aiohttp.ClientTimeout(total=15)
+                ) as resp:
+                    try:
+                        data = await resp.json()
+                    except Exception:
+                        data = {}
+                    return resp.status, data
+        except Exception as e:
+            logger.error("Premium activate API xato: %s", e)
+            return 503, {}
+    return 503, {"error": "aiohttp yo'q"}
 
 
 def _make_progress_bar(remaining: int, total: int) -> str:
@@ -672,7 +721,7 @@ async def new_code_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def _receive_premium_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Premium to'lov screenshot qabul qilish va adminga yuborish."""
+    """Premium to'lov screenshot qabul qilish va adminga Tasdiqlash/Rad etish tugmalari bilan yuborish."""
     if not update.message.photo:
         await update.message.reply_text("📸 Iltimos, to'lov skrinshotini (rasm) yuboring.")
         return WAITING_PREMIUM_SCREENSHOT
@@ -689,7 +738,18 @@ async def _receive_premium_screenshot(update: Update, context: ContextTypes.DEFA
         f"🆔 Telegram ID: <code>{telegram_id}</code>"
     )
     file_id = update.message.photo[-1].file_id
-    await _send_to_admins_photo(context.bot, caption, file_id)
+    keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"premium_adm_ok:{telegram_id}:{plan}"),
+        InlineKeyboardButton("❌ Rad etish", callback_data=f"premium_adm_no:{telegram_id}"),
+    ]])
+    for target in _notification_targets():
+        try:
+            await context.bot.send_photo(
+                target, photo=file_id, caption=caption,
+                parse_mode="HTML", reply_markup=keyboard
+            )
+        except Exception as e:
+            logger.warning("Admin %s ga rasm yuborilmadi: %s", target, e)
     context.user_data.pop("premium_plan", None)
     await update.message.reply_html(
         "✅ Skrinshot qabul qilindi. Admin tekshiradi va tasdiqlagach xabar beramiz.",
@@ -699,7 +759,7 @@ async def _receive_premium_screenshot(update: Update, context: ContextTypes.DEFA
 
 
 async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Hisobni to'ldirish screenshot qabul qilish va adminga yuborish."""
+    """Hisobni to'ldirish screenshot qabul qilish va adminga Tasdiqlash/Rad etish tugmalari bilan yuborish."""
     if not update.message.photo:
         await update.message.reply_text("📸 Iltimos, to'lov skrinshotini (rasm) yuboring.")
         return WAITING_TOPUP_SCREENSHOT
@@ -712,7 +772,18 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
         f"🆔 Telegram ID: <code>{telegram_id}</code>"
     )
     file_id = update.message.photo[-1].file_id
-    await _send_to_admins_photo(context.bot, caption, file_id)
+    keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"topup_approve:{telegram_id}"),
+        InlineKeyboardButton("❌ Rad etish", callback_data=f"topup_reject:{telegram_id}"),
+    ]])
+    for target in _notification_targets():
+        try:
+            await context.bot.send_photo(
+                target, photo=file_id, caption=caption,
+                parse_mode="HTML", reply_markup=keyboard
+            )
+        except Exception as e:
+            logger.warning("Admin %s ga rasm yuborilmadi: %s", target, e)
     await update.message.reply_html(
         "✅ Skrinshot qabul qilindi. Admin tekshiradi va balans yangilanadi.",
         reply_markup=_get_main_keyboard(),
@@ -1274,14 +1345,18 @@ async def cmd_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
     _, data = await _payment_api("GET", "/transactions?status=PENDING&limit=100")
     count = len(data.get("data", [])) if data.get("success") else "?"
+    users_count = len(_load_users())
     await update.message.reply_html(
         "🛠 <b>Admin Panel</b>\n"
         "━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"📋 Kutilayotgan to'lovlar: <b>{count}</b>\n\n"
+        f"📋 Kutilayotgan to'lovlar: <b>{count}</b>\n"
+        f"👥 Bot foydalanuvchilari: <b>{users_count}</b>\n\n"
         "<b>Buyruqlar:</b>\n"
         "/pending — kutilayotgan to'lovlar ro'yxati\n"
-        "/stats — statistika\n"
-        "/balance &lt;telegram_id&gt; — foydalanuvchi balansi",
+        "/stats — to'lov statistikasi\n"
+        "/balance &lt;telegram_id&gt; — foydalanuvchi balansi\n"
+        "/broadcast &lt;matn&gt; — barcha userlarga xabar\n"
+        "/notify — soatlik xabarni hozir yuborish",
     )
 
 
@@ -1378,6 +1453,241 @@ async def cmd_balance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             )
         else:
             await update.message.reply_text("To'lov tizimi hali sozlanmagan.")
+
+
+# ============================================================
+# ===== ADMIN TOPUP TASDIQLASH OQIMI ==========================
+# ============================================================
+
+async def _cb_topup_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin: to'ldirish tasdiqlash — summa so'rash."""
+    query = update.callback_query
+    if not _is_admin(query.from_user.id):
+        await query.answer("⛔ Ruxsat yo'q.", show_alert=True)
+        return ConversationHandler.END
+    await query.answer()
+    user_id = int(query.data.replace("topup_approve:", "", 1))
+    context.user_data["pending_topup_user_id"] = user_id
+    # Tugmalarni olib tashlash
+    try:
+        await query.edit_message_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+    await context.bot.send_message(
+        query.message.chat_id,
+        f"💰 Foydalanuvchi <code>{user_id}</code> hisobiga qancha <b>UZS</b> qo'shilsin?\n\n"
+        f"Raqamni yozing (masalan: <code>50000</code>)\n"
+        f"Bekor qilish: /cancel",
+        parse_mode="HTML",
+    )
+    return ADMIN_TOPUP_AMOUNT
+
+
+async def _admin_receive_topup_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin: topup summasi qabul qilinib balans qo'shiladi va foydalanuvchi xabardor qilinadi."""
+    user_id = context.user_data.get("pending_topup_user_id")
+    if not user_id:
+        await update.message.reply_text("❌ Xatolik: foydalanuvchi ID topilmadi. Qayta urinib ko'ring.")
+        return ConversationHandler.END
+
+    text = (update.message.text or "").strip().replace(" ", "").replace(",", "")
+    if not text.isdigit() or int(text) <= 0:
+        await update.message.reply_text(
+            "❌ Summani faqat raqamda yozing (masalan: 50000)\n/cancel — bekor qilish"
+        )
+        return ADMIN_TOPUP_AMOUNT
+
+    amount = int(text)
+    context.user_data.pop("pending_topup_user_id", None)
+
+    await update.message.reply_text("⏳ Balans qo'shilmoqda...")
+
+    status, data = await _add_user_balance_api(user_id, amount)
+
+    if status != 200:
+        err_msg = data.get("error") or data.get("detail") or str(data)[:200]
+        await update.message.reply_html(
+            f"❌ <b>Balans qo'shilmadi!</b>\n\n"
+            f"Backend javobi: <code>{status}</code>\n"
+            f"{err_msg}\n\n"
+            f"<i>Backend'da <code>/api/v1/auth/telegram/balance/add/</code> endpointi borligini tekshiring.</i>"
+        )
+        return ConversationHandler.END
+
+    new_balance = data.get("new_balance") or data.get("balance") or "?"
+
+    # Foydalanuvchiga xabar
+    try:
+        await context.bot.send_message(
+            user_id,
+            f"✅ <b>To'lovingiz tasdiqlandi!</b>\n\n"
+            f"💰 Hisobingizga <b>{amount:,} UZS</b> qo'shildi.\n"
+            f"📊 Yangi balans: <b>{new_balance} UZS</b>\n\n"
+            f"Saytga kirib balansni ko'ring! 🎉",
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.warning("Foydalanuvchi %s ga xabar yuborib bo'lmadi: %s", user_id, e)
+
+    await update.message.reply_html(
+        f"✅ Foydalanuvchi <code>{user_id}</code> hisobiga <b>{amount:,} UZS</b> qo'shildi.\n"
+        f"📊 Yangi balans: <b>{new_balance} UZS</b>"
+    )
+    return ConversationHandler.END
+
+
+async def _admin_topup_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin: topup tasdiqlashni bekor qilish."""
+    context.user_data.pop("pending_topup_user_id", None)
+    await update.message.reply_text("❌ Bekor qilindi.", reply_markup=ReplyKeyboardRemove())
+    return ConversationHandler.END
+
+
+async def _cb_topup_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin: to'ldirish so'rovini rad etish va foydalanuvchiga xabar."""
+    query = update.callback_query
+    if not _is_admin(query.from_user.id):
+        await query.answer("⛔ Ruxsat yo'q.", show_alert=True)
+        return
+    await query.answer("❌ Rad etildi.")
+    user_id = int(query.data.replace("topup_reject:", "", 1))
+
+    orig = query.message.caption or query.message.text or ""
+    admin_tag = f"@{query.from_user.username}" if query.from_user.username else str(query.from_user.id)
+    suffix = f"\n\n━━━━━━━━━━━━━━━━━━━━\n❌ <b>RAD ETILDI</b> ({admin_tag})"
+    try:
+        if query.message.caption is not None:
+            await query.message.edit_caption(caption=orig + suffix, parse_mode="HTML")
+        else:
+            await query.message.edit_text(text=orig + suffix, parse_mode="HTML")
+    except Exception:
+        try:
+            await query.message.edit_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+
+    try:
+        await context.bot.send_message(
+            user_id,
+            "❌ <b>To'lovingiz rad etildi.</b>\n\n"
+            "Siz to'lov qilmagansiz yoki chek ma'lumotingiz xato.\n\n"
+            "Qayta to'lov qilmoqchi bo'lsangiz, yana skrinshot yuboring.",
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.warning("Foydalanuvchi %s ga xabar yuborib bo'lmadi: %s", user_id, e)
+
+
+# ============================================================
+# ===== ADMIN PREMIUM TASDIQLASH OQIMI ========================
+# ============================================================
+
+async def _cb_premium_admin_approve(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin: premium to'lovini tasdiqlash va foydalanuvchiga Premium berish."""
+    query = update.callback_query
+    if not _is_admin(query.from_user.id):
+        await query.answer("⛔ Ruxsat yo'q.", show_alert=True)
+        return
+    await query.answer("⏳ Tasdiqlanmoqda...")
+
+    # callback_data: "premium_adm_ok:{user_id}:{plan}"
+    parts = query.data.replace("premium_adm_ok:", "", 1).split(":", 1)
+    user_id = int(parts[0])
+    plan = parts[1] if len(parts) > 1 else "Premium"
+
+    status, data = await _activate_premium_api(user_id, plan)
+
+    orig = query.message.caption or query.message.text or ""
+    admin_tag = f"@{query.from_user.username}" if query.from_user.username else str(query.from_user.id)
+
+    if status != 200:
+        err_msg = data.get("error") or data.get("detail") or str(data)[:200]
+        suffix = (
+            f"\n\n━━━━━━━━━━━━━━━━━━━━\n"
+            f"⚠️ <b>API XATOLIK</b> ({admin_tag})\n"
+            f"<code>{status}</code>: {err_msg}\n"
+            f"<i>Backend'da premium/activate endpointi borligini tekshiring.</i>"
+        )
+        try:
+            if query.message.caption is not None:
+                await query.message.edit_caption(caption=orig + suffix, parse_mode="HTML")
+            else:
+                await query.message.edit_text(text=orig + suffix, parse_mode="HTML")
+        except Exception:
+            pass
+        # API xato bo'lsa ham foydalanuvchiga xabar beramiz (manual tasdiqlash)
+        try:
+            await context.bot.send_message(
+                user_id,
+                f"✅ <b>{plan} tarifingiz tasdiqlandi!</b>\n\n"
+                f"Saytga kirib Premium imkoniyatlardan foydalaning! 🎉",
+                parse_mode="HTML",
+            )
+        except Exception as e:
+            logger.warning("Foydalanuvchi %s ga xabar yuborib bo'lmadi: %s", user_id, e)
+        return
+
+    suffix = (
+        f"\n\n━━━━━━━━━━━━━━━━━━━━\n"
+        f"✅ <b>TASDIQLANDI</b> ({admin_tag})\n"
+        f"Tarif: <b>{plan}</b>"
+    )
+    try:
+        if query.message.caption is not None:
+            await query.message.edit_caption(caption=orig + suffix, parse_mode="HTML")
+        else:
+            await query.message.edit_text(text=orig + suffix, parse_mode="HTML")
+    except Exception:
+        try:
+            await query.message.edit_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+
+    try:
+        await context.bot.send_message(
+            user_id,
+            f"✅ <b>{plan} tarifingiz tasdiqlandi!</b>\n\n"
+            f"🎉 Siz endi <b>{plan}</b> foydalanuvchisiz!\n"
+            f"Saytga kirib barcha imkoniyatlardan foydalaning.",
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.warning("Foydalanuvchi %s ga xabar yuborib bo'lmadi: %s", user_id, e)
+
+
+async def _cb_premium_admin_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin: premium to'lovini rad etish."""
+    query = update.callback_query
+    if not _is_admin(query.from_user.id):
+        await query.answer("⛔ Ruxsat yo'q.", show_alert=True)
+        return
+    await query.answer("❌ Rad etildi.")
+    user_id = int(query.data.replace("premium_adm_no:", "", 1))
+
+    orig = query.message.caption or query.message.text or ""
+    admin_tag = f"@{query.from_user.username}" if query.from_user.username else str(query.from_user.id)
+    suffix = f"\n\n━━━━━━━━━━━━━━━━━━━━\n❌ <b>RAD ETILDI</b> ({admin_tag})"
+    try:
+        if query.message.caption is not None:
+            await query.message.edit_caption(caption=orig + suffix, parse_mode="HTML")
+        else:
+            await query.message.edit_text(text=orig + suffix, parse_mode="HTML")
+    except Exception:
+        try:
+            await query.message.edit_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+
+    try:
+        await context.bot.send_message(
+            user_id,
+            "❌ <b>Premium to'lovingiz rad etildi.</b>\n\n"
+            "Siz to'lov qilmagansiz yoki chek ma'lumotingiz xato.\n\n"
+            "Qayta to'lov qilmoqchi bo'lsangiz, yana skrinshot yuboring.",
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.warning("Foydalanuvchi %s ga xabar yuborib bo'lmadi: %s", user_id, e)
 
 
 async def cmd_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -1500,12 +1810,39 @@ def main():
         per_message=False,
         allow_reentry=True,
     )
+    # ---- Admin topup tasdiqlash ConversationHandler (asosiy conv_handler DAN OLDIN) ----
+    # Bu ConversationHandler faqat admin uchun: screenshot tasdiqlanganida summa so'raladi
+    admin_topup_conv = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(_cb_topup_approve, pattern=r'^topup_approve:\d+$'),
+        ],
+        states={
+            ADMIN_TOPUP_AMOUNT: [
+                CommandHandler('cancel', _admin_topup_cancel),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, _admin_receive_topup_amount),
+            ],
+        },
+        fallbacks=[CommandHandler('cancel', _admin_topup_cancel)],
+        per_message=False,
+        per_user=True,
+        per_chat=True,
+        allow_reentry=True,
+    )
+    app.add_handler(admin_topup_conv)
+
     app.add_handler(conv_handler)
 
     # ---- To'lov tizimi handlerlari ----
-    # Approve/Reject callback — barcha foydalanuvchilar uchun (admin tekshiruvi ichida)
+    # Wallet TopUp: Approve/Reject callback — barcha foydalanuvchilar uchun (admin tekshiruvi ichida)
     app.add_handler(CallbackQueryHandler(cb_approve, pattern=r'^approve:'))
     app.add_handler(CallbackQueryHandler(cb_reject, pattern=r'^reject:'))
+
+    # Screenshot topup: rad etish
+    app.add_handler(CallbackQueryHandler(_cb_topup_reject, pattern=r'^topup_reject:\d+$'))
+
+    # Premium admin: tasdiqlash va rad etish
+    app.add_handler(CallbackQueryHandler(_cb_premium_admin_approve, pattern=r'^premium_adm_ok:'))
+    app.add_handler(CallbackQueryHandler(_cb_premium_admin_reject, pattern=r'^premium_adm_no:\d+$'))
 
     # Admin buyruqlari (faqat adminlar uchun, lekin global — conversation tashqarida)
     app.add_handler(CommandHandler('admin', cmd_admin_panel))

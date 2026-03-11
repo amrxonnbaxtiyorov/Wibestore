@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Crown, Ban, Eye, Mail, UserCheck, Gem } from 'lucide-react';
+import { Search, Crown, Ban, Eye, UserCheck, Gem, Wallet } from 'lucide-react';
 import { getDisplayInitial } from '../../lib/displayUtils';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAdminUsers, useAdminGrantSubscription } from '../../hooks/useAdmin';
@@ -14,16 +14,17 @@ const AdminUsers = () => {
     const rawUsers = Array.isArray(usersData) ? usersData : (usersData?.results ?? []);
     const users = rawUsers.map(u => ({
         id: u.id,
-        name: u.display_name ?? u.username ?? u.email ?? '-',
+        name: u.display_name ?? u.full_name ?? u.username ?? u.email ?? '-',
         email: u.email ?? '-',
         role: u.seller_profile ? 'seller' : 'buyer',
         isPremium: u.is_premium ?? false,
         isPro: u.is_pro ?? false,
         plan: u.plan ?? 'free',
         status: u.is_active === false ? 'blocked' : 'active',
-        sales: u.seller_profile?.total_sales ?? u.sales_count ?? 0,
+        sales: u.total_sales ?? u.seller_profile?.total_sales ?? 0,
         purchases: u.purchases_count ?? 0,
-        joined: u.date_joined ? u.date_joined.slice(0, 10) : '-',
+        balance: Number(u.balance ?? 0),
+        joined: (u.created_at ?? u.date_joined) ? (u.created_at ?? u.date_joined).slice(0, 10) : '-',
     }));
 
     const roleFilters = [
@@ -101,12 +102,16 @@ const AdminUsers = () => {
                         {t('admin.users_subtitle')}
                     </p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span className="badge" style={{ backgroundColor: 'var(--color-info-bg)', color: 'var(--color-accent-blue)', padding: '6px 12px' }}>
                         {users.filter(u => u.role === 'seller').length} {t('admin.count_sellers')}
                     </span>
                     <span className="badge" style={{ backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-premium-gold-light)', padding: '6px 12px' }}>
                         {users.filter(u => u.isPremium).length} {t('admin.count_premium')}
+                    </span>
+                    <span className="badge" style={{ backgroundColor: 'var(--color-success-bg)', color: 'var(--color-accent-green)', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Wallet style={{ width: '12px', height: '12px' }} />
+                        {users.reduce((sum, u) => sum + u.balance, 0).toLocaleString('uz-UZ')} UZS
                     </span>
                 </div>
             </div>
@@ -153,6 +158,12 @@ const AdminUsers = () => {
                                 <th>{t('admin.table_email')}</th>
                                 <th>{t('admin.table_role')}</th>
                                 <th>{t('admin.table_activity')}</th>
+                                <th>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <Wallet style={{ width: '13px', height: '13px' }} />
+                                        Mablag'
+                                    </span>
+                                </th>
                                 <th>{t('admin.table_status')}</th>
                                 <th>{t('admin.table_joined')}</th>
                                 <th>{t('admin.table_actions')}</th>
@@ -187,6 +198,19 @@ const AdminUsers = () => {
                                     <td>{getRoleBadge(user.role, user.isPremium, user.isPro)}</td>
                                     <td style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
                                         {user.role === 'seller' ? `${user.sales} ta sotuvlar` : `${user.purchases} ta xaridlar`}
+                                    </td>
+                                    <td>
+                                        <span style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            fontWeight: user.balance > 0 ? '600' : '400',
+                                            color: user.balance > 0 ? 'var(--color-accent-blue)' : 'var(--color-text-muted)',
+                                            fontSize: 'var(--font-size-sm)',
+                                        }}>
+                                            {user.balance.toLocaleString('uz-UZ')}
+                                            <span style={{ fontSize: '10px', opacity: 0.7 }}>UZS</span>
+                                        </span>
                                     </td>
                                     <td>{getStatusBadge(user.status)}</td>
                                     <td style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>{user.joined}</td>
