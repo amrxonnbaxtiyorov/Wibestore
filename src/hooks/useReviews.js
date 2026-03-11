@@ -39,33 +39,41 @@ export const useCreateReview = () => {
 
 /**
  * Hook для обновления отзыва
+ * reviewId argumentni mutate({ reviewId, rating, comment }) orqali qabul qiladi
  */
-export const useUpdateReview = (reviewId) => {
+export const useUpdateReview = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ rating, comment }) => {
+        mutationFn: async ({ reviewId, rating, comment }) => {
             const { data } = await apiClient.put(`/reviews/${reviewId}/`, { rating, comment });
             return data;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['reviews', reviewId] });
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['reviews'] });
+            if (variables.listingId) {
+                queryClient.invalidateQueries({ queryKey: ['reviews', 'listing', variables.listingId] });
+            }
         },
     });
 };
 
 /**
  * Hook для удаления отзыва
+ * reviewId argumentni mutate({ reviewId, listingId? }) orqali qabul qiladi
  */
-export const useDeleteReview = (reviewId) => {
+export const useDeleteReview = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async () => {
+        mutationFn: async ({ reviewId }) => {
             await apiClient.delete(`/reviews/${reviewId}/`);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['reviews', reviewId] });
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['reviews'] });
+            if (variables.listingId) {
+                queryClient.invalidateQueries({ queryKey: ['reviews', 'listing', variables.listingId] });
+            }
         },
     });
 };

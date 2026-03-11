@@ -17,7 +17,6 @@ export const NotificationProvider = ({ children }) => {
 
     const getStorageKey = () => `wibeNotifications_${getCurrentUserId()}`;
     const [notifications, setNotifications] = useState(() => {
-        // Lazy initialization - birinchi renderda localStorage dan o'qish
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem(getStorageKey());
             if (saved) {
@@ -28,49 +27,10 @@ export const NotificationProvider = ({ children }) => {
                 }
             }
         }
-        // Demo notifications
-        return [
-            {
-                id: 1,
-                type: 'sale',
-                title: 'Akkaunt sotildi!',
-                message: 'Sizning "PUBG Level 50" akkauntingiz 500,000 so\'mga sotildi.',
-                time: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-                read: false,
-                icon: '💰'
-            },
-            {
-                id: 2,
-                type: 'message',
-                title: 'Yangi xabar',
-                message: 'GamerPro sizga xabar yubordi.',
-                time: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-                read: false,
-                icon: '💬'
-            },
-            {
-                id: 3,
-                type: 'system',
-                title: 'Xush kelibsiz!',
-                message: 'WibeStore platformasiga xush kelibsiz. Premium obunani sinab ko\'ring!',
-                time: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-                read: true,
-                icon: '🎉'
-            },
-            {
-                id: 4,
-                type: 'security',
-                title: 'Yangi kirish',
-                message: 'Hisobingizga yangi qurilmadan kirildi.',
-                time: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-                read: true,
-                icon: '🔐'
-            }
-        ];
+        return [];
     });
 
     const [unreadCount, setUnreadCount] = useState(() => {
-        // Lazy initialization for unread count
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem(getStorageKey());
             if (saved) {
@@ -82,7 +42,7 @@ export const NotificationProvider = ({ children }) => {
                 }
             }
         }
-        return 2; // Demo notifications dagi o'qilmagan xabarlar soni
+        return 0;
     });
 
     // Save to localStorage

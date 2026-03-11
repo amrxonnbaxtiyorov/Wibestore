@@ -124,7 +124,6 @@ const SettingsPage = () => {
             setMessage({ type: 'success', text: t('settings.password_changed') });
             setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
         } catch (err) {
-            console.error(err);
             const errorMsg = err.response?.data?.error || err.response?.data?.detail || t('settings.generic_error');
             setMessage({ type: 'error', text: errorMsg });
         } finally {
@@ -132,8 +131,16 @@ const SettingsPage = () => {
         }
     };
 
-    const handleDeleteAccount = () => {
-        if (window.confirm(t('settings.delete_confirm'))) { logout(); navigate('/'); }
+    const handleDeleteAccount = async () => {
+        if (!window.confirm(t('settings.delete_confirm'))) return;
+        try {
+            const apiClient = (await import('../lib/apiClient')).default;
+            await apiClient.delete('/auth/account/delete/');
+        } catch {
+            // Account o'chirilgan yoki token yaroqsiz — baribir logout qilamiz
+        }
+        await logout();
+        navigate('/');
     };
 
     const notificationItems = [

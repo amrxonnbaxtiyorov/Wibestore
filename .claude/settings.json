@@ -3,7 +3,8 @@
     "allow": [
       "Bash(railway redeploy --service \"Telegram bot\" --yes)",
       "Bash(railway logs --service \"Telegram bot\" --lines 30)",
-      "Bash(railway logs --service Backend)"
+      "Bash(railway logs --service Backend)",
+      "Bash(git stash:*)"
     ]
   }
 }

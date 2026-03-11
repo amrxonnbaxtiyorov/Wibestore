@@ -23,7 +23,7 @@ const StatisticsPage = () => {
     };
 
     const stats = [
-        { icon: Users, label: t('stats.total_users') || 'Total Users', value: totalListings > 0 ? `${totalListings}+` : '—', color: 'var(--color-accent-blue)' },
+        { icon: ShoppingBag, label: t('stats.total_listings') || 'Total Listings', value: totalListings > 0 ? `${totalListings}+` : '—', color: 'var(--color-accent-blue)' },
         { icon: ShoppingBag, label: t('stats.games') || 'Games', value: gamesCount > 0 ? `${gamesCount}` : '—', color: 'var(--color-accent-green)' },
         { icon: Star, label: t('stats.avg_rating') || 'Avg Rating', value: '4.8+', color: 'var(--color-premium-gold-light)' },
     ];

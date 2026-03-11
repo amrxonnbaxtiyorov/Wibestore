@@ -113,6 +113,7 @@ class ChatConsumer(AsyncJsonWebSocketConsumer):
             },
             "content": message.content,
             "created_at": message.created_at.isoformat(),
+            "is_read": message.is_read,
         }
 
     @database_sync_to_async

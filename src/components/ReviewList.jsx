@@ -1,39 +1,48 @@
-import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Star, MessageSquare } from 'lucide-react';
 import { getDisplayInitial } from '../lib/displayUtils';
 import { useLanguage } from '../context/LanguageContext';
+import apiClient from '../lib/apiClient';
 
 const ReviewList = ({ userId, type = 'received' }) => {
     const { t } = useLanguage();
-    const reviews = useMemo(() => {
-        const savedReviews = localStorage.getItem('wibeReviews');
-        if (!savedReviews) return [];
-        let allReviews;
-        try {
-            allReviews = JSON.parse(savedReviews);
-        } catch {
-            return [];
-        }
-        const filtered = type === 'received'
-            ? allReviews.filter(r => r.sellerId === userId)
-            : allReviews.filter(r => r.reviewerId === userId);
-        return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    }, [userId, type]);
+
+    const { data, isLoading } = useQuery({
+        queryKey: ['reviews', 'user', userId, type],
+        queryFn: async () => {
+            const { data } = await apiClient.get(`/reviews/user/${userId}/`, {
+                params: { type },
+            });
+            return data;
+        },
+        enabled: !!userId,
+        staleTime: 2 * 60 * 1000,
+    });
+
+    const reviews = Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : []);
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('uz-UZ', {
             year: 'numeric',
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
         });
     };
 
     const getAverageRating = () => {
         if (reviews.length === 0) return 0;
-        const total = reviews.reduce((sum, r) => sum + r.rating, 0);
+        const total = reviews.reduce((sum, r) => sum + (r.rating ?? 0), 0);
         return (total / reviews.length).toFixed(1);
     };
+
+    if (isLoading) {
+        return (
+            <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                {t('common.loading') || 'Yuklanmoqda...'}
+            </div>
+        );
+    }
 
     if (reviews.length === 0) {
         return (
@@ -98,94 +107,101 @@ const ReviewList = ({ userId, type = 'received' }) => {
 
             {/* Reviews List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {reviews.map((review) => (
-                    <div
-                        key={review.id}
-                        style={{
-                            padding: 'var(--space-4)',
-                            backgroundColor: 'var(--color-bg-secondary)',
-                            borderRadius: 'var(--radius-xl)',
-                            border: '1px solid var(--color-border-muted)',
-                        }}
-                    >
-                        <div className="flex items-start gap-4">
-                            {/* Avatar */}
-                            <div
-                                className="avatar avatar-lg"
-                                style={{
-                                    backgroundColor: 'var(--color-accent-blue)',
-                                    color: '#fff',
-                                    flexShrink: 0,
-                                }}
-                            >
-                                {getDisplayInitial(review.reviewerName, 'U')}
-                            </div>
+                {reviews.map((review) => {
+                    const reviewer = review.reviewer ?? {};
+                    const reviewerName = reviewer.display_name ?? reviewer.name ?? reviewer.username ?? 'User';
+                    const createdAt = review.created_at ?? review.createdAt ?? '';
+                    const accountTitle = review.listing?.title ?? review.accountTitle ?? null;
 
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-4" style={{ marginBottom: '8px' }}>
-                                    <div>
-                                        <span
-                                            style={{
-                                                fontWeight: 'var(--font-weight-medium)',
-                                                color: 'var(--color-text-primary)',
-                                            }}
-                                        >
-                                            {review.reviewerName}
-                                        </span>
-                                        <span
-                                            style={{
-                                                fontSize: 'var(--font-size-sm)',
-                                                color: 'var(--color-text-muted)',
-                                                marginLeft: '8px',
-                                            }}
-                                        >
-                                            {formatDate(review.createdAt)}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        {[1, 2, 3, 4, 5].map((star) => (
-                                            <Star
-                                                key={star}
-                                                className="w-4 h-4"
-                                                style={{
-                                                    color: star <= review.rating
-                                                        ? 'var(--color-premium-gold-light)'
-                                                        : 'var(--color-text-muted)',
-                                                    fill: star <= review.rating ? 'currentColor' : 'none',
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
+                    return (
+                        <div
+                            key={review.id}
+                            style={{
+                                padding: 'var(--space-4)',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                borderRadius: 'var(--radius-xl)',
+                                border: '1px solid var(--color-border-muted)',
+                            }}
+                        >
+                            <div className="flex items-start gap-4">
+                                {/* Avatar */}
+                                <div
+                                    className="avatar avatar-lg"
+                                    style={{
+                                        backgroundColor: 'var(--color-accent-blue)',
+                                        color: '#fff',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    {getDisplayInitial(reviewerName, 'U')}
                                 </div>
 
-                                {/* Account Info */}
-                                {review.accountTitle && (
-                                    <p style={{
-                                        fontSize: 'var(--font-size-sm)',
-                                        color: 'var(--color-text-muted)',
-                                        marginBottom: '8px',
-                                    }}>
-                                        {t('reviews.account_label')}:{' '}
-                                        <span style={{ color: 'var(--color-text-secondary)' }}>
-                                            {review.accountTitle}
-                                        </span>
-                                    </p>
-                                )}
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-4" style={{ marginBottom: '8px' }}>
+                                        <div>
+                                            <span
+                                                style={{
+                                                    fontWeight: 'var(--font-weight-medium)',
+                                                    color: 'var(--color-text-primary)',
+                                                }}
+                                            >
+                                                {reviewerName}
+                                            </span>
+                                            <span
+                                                style={{
+                                                    fontSize: 'var(--font-size-sm)',
+                                                    color: 'var(--color-text-muted)',
+                                                    marginLeft: '8px',
+                                                }}
+                                            >
+                                                {createdAt ? formatDate(createdAt) : ''}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <Star
+                                                    key={star}
+                                                    className="w-4 h-4"
+                                                    style={{
+                                                        color: star <= review.rating
+                                                            ? 'var(--color-premium-gold-light)'
+                                                            : 'var(--color-text-muted)',
+                                                        fill: star <= review.rating ? 'currentColor' : 'none',
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
 
-                                {/* Comment */}
-                                {review.comment && (
-                                    <p style={{
-                                        color: 'var(--color-text-secondary)',
-                                        lineHeight: 'var(--line-height-base)',
-                                    }}>
-                                        {review.comment}
-                                    </p>
-                                )}
+                                    {/* Account Info */}
+                                    {accountTitle && (
+                                        <p style={{
+                                            fontSize: 'var(--font-size-sm)',
+                                            color: 'var(--color-text-muted)',
+                                            marginBottom: '8px',
+                                        }}>
+                                            {t('reviews.account_label')}:{' '}
+                                            <span style={{ color: 'var(--color-text-secondary)' }}>
+                                                {accountTitle}
+                                            </span>
+                                        </p>
+                                    )}
+
+                                    {/* Comment */}
+                                    {review.comment && (
+                                        <p style={{
+                                            color: 'var(--color-text-secondary)',
+                                            lineHeight: 'var(--line-height-base)',
+                                        }}>
+                                            {review.comment}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );

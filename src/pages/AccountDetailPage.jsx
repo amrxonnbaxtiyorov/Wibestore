@@ -19,7 +19,7 @@ import { useCreateChat } from '../hooks/useChat';
 import BuyerRulesQuiz from '../components/BuyerRulesQuiz';
 import ReviewModal from '../components/ReviewModal';
 
-const TELEGRAM_URL = 'https://t.me/wibestoreuz';
+const TELEGRAM_URL = import.meta.env.VITE_TELEGRAM_URL || 'https://t.me/wibestoreuz';
 const FAV_STORAGE_KEY = 'wibeFavoriteListingIds';
 
 /* ─── Image Carousel ──────────────────────────────────────────── */

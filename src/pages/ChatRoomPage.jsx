@@ -61,6 +61,12 @@ export default function ChatRoomPage() {
     }, []);
 
     useEffect(() => {
+        if (!isAuthenticated || !user) {
+            navigate('/login?redirect=' + encodeURIComponent('/chat/' + roomId), { replace: true });
+        }
+    }, [isAuthenticated, user, navigate, roomId]);
+
+    useEffect(() => {
         if (!userId) return;
         if (!messages.length) return;
         const last = messages[messages.length - 1];
@@ -94,10 +100,7 @@ export default function ChatRoomPage() {
         });
     };
 
-    if (!isAuthenticated || !user) {
-        navigate('/login?redirect=' + encodeURIComponent('/chat/' + roomId));
-        return null;
-    }
+    if (!isAuthenticated || !user) return null;
 
     return (
         <div className="page-enter" style={{ minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>

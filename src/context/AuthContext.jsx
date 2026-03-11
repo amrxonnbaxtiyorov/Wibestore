@@ -53,6 +53,7 @@ export const AuthProvider = ({ children }) => {
 
         // Слушаем событие logout из apiClient
         const handleLogout = () => {
+            localStorage.removeItem('wibeUser');
             setUser(null);
         };
 
@@ -77,8 +78,10 @@ export const AuthProvider = ({ children }) => {
             const tokens = payload?.tokens || {};
             if (tokens.access) setTokens({ access: tokens.access, refresh: tokens.refresh || '' });
             const userData = payload?.user;
-            setUser(normalizeUser(userData));
-            return normalizeUser(userData);
+            const normalized = normalizeUser(userData);
+            setUser(normalized);
+            if (normalized) localStorage.setItem('wibeUser', JSON.stringify(normalized));
+            return normalized;
         } catch (error) {
             console.error('[Auth] Telegram login failed:', error);
             const res = error.response?.data;
@@ -95,10 +98,11 @@ export const AuthProvider = ({ children }) => {
             
             // Backend returns: { success: true, data: { user, tokens: { access, refresh } } }
             const { user: newUser, tokens } = data.data || data;
-            
+            const normalized = normalizeUser(newUser);
             setTokens({ access: tokens.access, refresh: tokens.refresh });
-            setUser(normalizeUser(newUser));
-            return normalizeUser(newUser);
+            setUser(normalized);
+            if (normalized) localStorage.setItem('wibeUser', JSON.stringify(normalized));
+            return normalized;
         } catch (error) {
             console.error('[Auth] Register failed:', error);
             throw error.response?.data?.error || error.response?.data || new Error('Register failed');
@@ -113,13 +117,15 @@ export const AuthProvider = ({ children }) => {
                 phone: String(phone).trim(),
                 code: String(code).trim(),
             }, { withCredentials: true });
-            
+
             const payload = data?.data || data;
             const tokens = payload?.tokens || {};
             if (tokens.access) setTokens({ access: tokens.access, refresh: tokens.refresh || '' });
             const newUser = payload?.user;
-            setUser(normalizeUser(newUser));
-            return normalizeUser(newUser);
+            const normalized = normalizeUser(newUser);
+            setUser(normalized);
+            if (normalized) localStorage.setItem('wibeUser', JSON.stringify(normalized));
+            return normalized;
         } catch (error) {
             console.error('[Auth] Telegram register failed:', error);
             const res = error.response?.data;
@@ -135,9 +141,11 @@ export const AuthProvider = ({ children }) => {
             const { data } = await publicClient.post('/auth/google/', { access_token: credential });
             
             const { user: userData, tokens } = data.data || data;
+            const normalized = normalizeUser(userData);
             setTokens({ access: tokens.access, refresh: tokens.refresh });
-            setUser(normalizeUser(userData));
-            return normalizeUser(userData);
+            setUser(normalized);
+            if (normalized) localStorage.setItem('wibeUser', JSON.stringify(normalized));
+            return normalized;
         } catch (error) {
             console.error('[Auth] Google login failed:', error);
             const data = error.response?.data;
@@ -165,6 +173,7 @@ export const AuthProvider = ({ children }) => {
             console.error('[Auth] Logout request failed:', error);
         } finally {
             removeTokens();
+            localStorage.removeItem('wibeUser');
             setUser(null);
         }
     };
@@ -208,13 +217,13 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Confirm reset пароля
-    const confirmResetPassword = async (uid, token, newPassword) => {
+    const confirmResetPassword = async (_uid, token, newPassword) => {
         try {
             const publicClient = createPublicClient();
             await publicClient.post('/auth/password/reset/confirm/', {
-                uid,
                 token,
-                new_password: newPassword,
+                password: newPassword,
+                password_confirm: newPassword,
             });
             return true;
         } catch (error) {

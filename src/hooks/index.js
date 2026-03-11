@@ -36,6 +36,8 @@ export {
     useChatMessages,
     useCreateChat,
     useSendMessage,
+    useMarkChatRead,
+    useChatSoundEnabled,
 } from './useChat';
 export {
     useNotifications,
@@ -75,6 +77,7 @@ export {
     useAdminDisputes,
     useAdminResolveDispute,
     useAdminTransactions,
+    useAdminGrantSubscription,
 } from './useAdmin';
 export { useUploadImage, useUploadImages } from './useUpload';
 export { useWebSocket, useChatWebSocket, useNotificationWebSocket } from './useWebSocket';

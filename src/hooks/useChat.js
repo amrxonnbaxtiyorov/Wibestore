@@ -188,7 +188,7 @@ export const useSendMessage = (chatId) => {
         },
         onSuccess: (res, _text, ctx) => {
             // Optimistic message'ni backend qaytargan message bilan almashtiramiz
-            const realMessage = res?.data ?? null;
+            const realMessage = res ?? null;
             if (realMessage && ctx?.optimisticId) {
                 queryClient.setQueryData(['chats', chatId, 'messages'], (old) => {
                     if (!old?.pages?.length) return old;
