@@ -27,7 +27,9 @@
       "Bash(python3 -c \"import json; p=json.load\\(open\\(''package.json''\\)\\); print\\(''deps:'', ''@tanstack/react-query-devtools'' in p.get\\(''dependencies'',{}\\)\\); print\\(''devDeps:'', ''@tanstack/react-query-devtools'' in p.get\\(''devDependencies'',{}\\)\\)\")",
       "Bash(node -e \"const p=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''package.json'',''utf8''\\)\\); console.log\\(''deps:'', ''@tanstack/react-query-devtools'' in \\(p.dependencies||{}\\)\\); console.log\\(''devDeps:'', ''@tanstack/react-query-devtools'' in \\(p.devDependencies||{}\\)\\); console.log\\(''sharp in optional:'', ''sharp'' in \\(p.optionalDependencies||{}\\)\\); console.log\\(''sharp in devDeps:'', ''sharp'' in \\(p.devDependencies||{}\\)\\);\")",
       "Bash(ls -1 *.*)",
-      "Bash(/c/Users/cyberavaz/AppData/Local/Programs/Python/Python314/python.exe -m py_compile apps/accounts/admin.py)"
+      "Bash(/c/Users/cyberavaz/AppData/Local/Programs/Python/Python314/python.exe -m py_compile apps/accounts/admin.py)",
+      "Bash(/c/Users/cyberavaz/AppData/Local/Programs/Python/Python314/python.exe -m py_compile apps/accounts/views.py)",
+      "Bash(/c/Users/cyberavaz/AppData/Local/Programs/Python/Python314/python.exe -m py_compile apps/accounts/urls.py)"
     ]
   }
 }

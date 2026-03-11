@@ -345,6 +345,89 @@ class TelegramBotProfileView(APIView):
 
 
 @extend_schema(tags=["Authentication"])
+class TelegramBotAddBalanceView(APIView):
+    """
+    Bot uchun foydalanuvchi balansini oshirish (admin screenshot tasdiqlash oqimi).
+    POST /api/v1/auth/telegram/balance/add/
+    Body: { "secret_key": "...", "telegram_id": 123456789, "amount": 50000 }
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
+
+    def post(self, request):
+        from decimal import Decimal, InvalidOperation
+
+        from django.conf import settings
+
+        data = request.data
+
+        # Secret key tekshirish
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or data.get("secret_key") != secret:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        telegram_id = data.get("telegram_id")
+        amount_raw = data.get("amount")
+
+        if not telegram_id or amount_raw is None:
+            return Response(
+                {"success": False, "error": "telegram_id va amount majburiy."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            amount = Decimal(str(amount_raw))
+        except (InvalidOperation, ValueError):
+            return Response(
+                {"success": False, "error": "amount noto'g'ri format."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if amount <= 0:
+            return Response(
+                {"success": False, "error": "amount musbat bo'lishi kerak."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(
+            telegram_id=telegram_id,
+            is_active=True,
+            deleted_at__isnull=True,
+        ).first()
+
+        if not user:
+            return Response(
+                {"success": False, "error": "Foydalanuvchi topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Atomik yangilash — race condition oldini olish
+        from django.db.models import F
+        User.objects.filter(pk=user.pk).update(balance=F("balance") + amount)
+        user.refresh_from_db(fields=["balance"])
+
+        logger.info(
+            "TelegramBot: %s (tg_id=%s) hisobiga %s UZS qo'shildi. Yangi balans: %s",
+            user.email, telegram_id, amount, user.balance,
+        )
+
+        return Response(
+            {
+                "success": True,
+                "telegram_id": telegram_id,
+                "added": str(amount),
+                "new_balance": str(user.balance),
+                "username": user.username or user.email or str(telegram_id),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(tags=["Authentication"])
 class BotCreateOTPView(APIView):
     """
     Bot uchun bir martalik kod yaratish.

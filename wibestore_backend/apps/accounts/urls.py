@@ -27,6 +27,7 @@ urlpatterns = [
     path("otp/verify/", views.OTPVerifyView.as_view(), name="otp-verify"),
     path("telegram/profile/", views.TelegramBotProfileView.as_view(), name="telegram-bot-profile"),
     path("telegram/otp/create/", views.BotCreateOTPView.as_view(), name="telegram-otp-create"),
+    path("telegram/balance/add/", views.TelegramBotAddBalanceView.as_view(), name="telegram-balance-add"),
     path("register/telegram/", views.TelegramRegisterView.as_view(), name="register-telegram"),
     path("me/", views.MeView.as_view(), name="me"),
     path("account/delete/", views.DeleteAccountView.as_view(), name="account-delete"),
