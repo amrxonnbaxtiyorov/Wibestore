@@ -38,7 +38,8 @@ def main():
     # Ensure migration recorder table exists
     recorder.ensure_schema()
 
-    applied = {(r.app, r.name) for r in recorder.applied_migrations()}
+    # applied_migrations() returns (app_label, migration_name) tuples, not named objects
+    applied = {(r[0], r[1]) for r in recorder.applied_migrations()}
     tables = get_existing_tables()
 
     faked = []

@@ -44,6 +44,27 @@ Bu logdagi “noto‘g‘ri” URL xatolarini kamaytiradi va backend uchun ham y
 
 ---
 
+## Log tahlili (2026-03-10/11 — Railway backend)
+
+### fix_migrations.py AttributeError (tuzatildi)
+- **Belgi:** `AttributeError: 'tuple' object has no attribute 'app'` — `applied = {(r.app, r.name) for r in recorder.applied_migrations()}`.
+- **Sabab:** Django `MigrationRecorder.applied_migrations()` `(app_label, migration_name)` **tuple** lar ro‘yxatini qaytaradi, `.app`/`.name` atributlari yo‘q.
+- **Tuzatildi:** `fix_migrations.py` da `r.app, r.name` o‘rniga `r[0], r[1]` ishlatildi.
+
+### Migratsiya ogohlantirishi (accounts, games, marketplace)
+- **Belgi:** "Your models in app(s): 'accounts', 'games', 'marketplace' have changes that are not yet reflected in a migration".
+- **Qanday tuzatish:** Loyiha root’da: `cd wibestore_backend && python manage.py makemigrations` — keyin yangi fayllarni commit qilib, backend’ni qayta deploy qiling.
+
+### JWT InsecureKeyLengthWarning
+- **Belgi:** "The HMAC key is 31 bytes long, which is below the minimum recommended length of 32 bytes for SHA256".
+- **Sabab:** `SECRET_KEY` 31 belgili (yoki 31 bayt).
+- **Tavsiya:** Railway Variables da **SECRET_KEY** ni kamida 32 belgili qiling: `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` — chiqqan qiymat odatda 50 belgi, 32+ bo‘ladi.
+
+### Container "Stopping Container"
+- Logda `Stopping Container` va `Worker exiting` — Railway container’ni to‘xtatgan (redeploy, sleep rejimi yoki manual stop). Shundan keyin backend 502 qaytarishi mumkin; **Redeploy** yoki servisni qayta ishga tushirish kerak.
+
+---
+
 ## Django backend tuzatishlar (2026)
 
 - **seed_data buyrug‘i:** `apps/core/management/commands/` dan asosiy **core** app ga ko‘chirildi (`core/management/commands/seed_data.py`). Endi `python manage.py seed_data` ishlaydi.
