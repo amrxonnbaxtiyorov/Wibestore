@@ -73,6 +73,7 @@ export const AuthProvider = ({ children }) => {
             const { data } = await publicClient.post('/auth/register/telegram/', {
                 phone: String(phone).trim(),
                 code: String(code).trim(),
+                mode: 'login',
             }, { withCredentials: true });
             const payload = data?.data || data;
             const tokens = payload?.tokens || {};

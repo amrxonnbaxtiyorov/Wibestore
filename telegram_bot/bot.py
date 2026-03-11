@@ -119,7 +119,7 @@ BTN_WITHDRAW = "Xisobdan pul yechish"
 # Premium / to'ldirish / chiqarish uchun sozlamalar
 ADMIN_CARD_NUMBER = os.getenv("ADMIN_CARD_NUMBER", "").strip()
 PREMIUM_PRICE_UZS = os.getenv("PREMIUM_PRICE_UZS", "50000")
-PRO_PRICE_UZS = os.getenv("PRO_PRICE_UZS", "30000")
+PRO_PRICE_UZS = os.getenv("PRO_PRICE_UZS", "100000")
 
 # Countdown update interval (seconds) — har soniyada teskari sanoq
 COUNTDOWN_INTERVAL = 1
@@ -584,22 +584,69 @@ async def _cmd_my_account(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
 async def _cmd_premium(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Premium olish: tarif tanlash (narxlarni DB dan olib ko'rsatish)."""
+    telegram_id = update.effective_user.id
+
+    # Joriy obunani tekshirish
+    profile = await get_telegram_profile_via_api(telegram_id)
+    cur_plan = "free"
+    end_date = ""
+    days_left = 0
+    if profile and profile.get("has_account"):
+        pdata = profile.get("data", {})
+        cur_plan = pdata.get("plan", "free")
+        end_date = pdata.get("sub_end_date", "")
+        days_left = pdata.get("sub_days_left", 0)
+
     plans = await _get_plans_api()
     premium_price = plans.get("premium", {}).get("price", PREMIUM_PRICE_UZS)
     pro_price = plans.get("pro", {}).get("price", PRO_PRICE_UZS)
     # Narxlarni context ga saqlaymiz — keyinchalik qayta so'rovga hojat qolmasin
     context.user_data["plan_prices"] = {"Premium": premium_price, "Pro": pro_price}
+
+    # Pro foydalanuvchi: downgrade yo'q, faqat ma'lumot berish
+    if cur_plan == "pro":
+        await update.message.reply_html(
+            f"💎 <b>Sizda Pro tarifi bor!</b>\n\n"
+            f"📅 Muddati: <b>{end_date}</b>\n"
+            f"⏳ Qoldi: <b>{days_left} kun</b>\n\n"
+            "Pro tarifdan pastga tushib bo'lmaydi.\n"
+            "Muddati tugagach yangilash mumkin.",
+            reply_markup=_get_main_keyboard(),
+        )
+        return WAITING_PHONE
+
+    # Premium foydalanuvchi: faqat Pro ga o'tish taklifi
+    if cur_plan == "premium":
+        keyboard = [
+            [InlineKeyboardButton("💎 Pro ga o'tish", callback_data="premium_plan:pro")],
+            [InlineKeyboardButton("❌ Bekor qilish", callback_data="premium_plan:menu")],
+        ]
+        await update.message.reply_html(
+            f"⭐ <b>Sizda Premium tarifi bor!</b>\n\n"
+            f"📅 Muddati: <b>{end_date}</b>\n"
+            f"⏳ Qoldi: <b>{days_left} kun</b>\n\n"
+            f"💎 <b>Pro</b> ga yangilash uchun — {pro_price} UZS / oy\n\n"
+            "Faqat Pro ga o'tish mumkin (Premium → Pro).",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+        return WAITING_PHONE
+
+    # Free foydalanuvchi: barcha tariflar
     keyboard = [
         [
-            InlineKeyboardButton("Premium", callback_data="premium_plan:premium"),
-            InlineKeyboardButton("Pro", callback_data="premium_plan:pro"),
+            InlineKeyboardButton(f"⭐ Premium — {premium_price} UZS", callback_data="premium_plan:premium"),
+            InlineKeyboardButton(f"💎 Pro — {pro_price} UZS", callback_data="premium_plan:pro"),
         ],
-        [InlineKeyboardButton("Menu", callback_data="premium_plan:menu")],
+        [InlineKeyboardButton("❌ Bekor qilish", callback_data="premium_plan:menu")],
     ]
     await update.message.reply_html(
         f"⭐ <b>Premium tarifini tanlang</b>\n\n"
         f"1️⃣ <b>Premium</b> — {premium_price} UZS / oy\n"
-        f"2️⃣ <b>Pro</b> — {pro_price} UZS / oy\n\n"
+        f"   • Komissiya: 8%\n"
+        f"   • 3x ko'rinish\n\n"
+        f"2️⃣ <b>Pro</b> — {pro_price} UZS / oy\n"
+        f"   • Komissiya: 5%\n"
+        f"   • Top pozitsiya\n\n"
         "Quyidagi tugmalardan birini bosing:",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
@@ -722,6 +769,21 @@ async def _cb_premium_payment_method(update: Update, context: ContextTypes.DEFAU
                 f"✅ <b>{plan_name}</b> tarifi faollashtirildi!\n\n"
                 f"💰 Qolgan balans: <b>{new_balance} UZS</b>\n\n"
                 f"Saytga kiring va imkoniyatlardan foydalaning: {SITE_URL}",
+                parse_mode="HTML",
+            )
+            await context.bot.send_message(
+                query.message.chat_id,
+                "Quyidagi tugmalardan birini tanlang:",
+                reply_markup=_get_main_keyboard(),
+            )
+        elif result.get("error") == "downgrade_not_allowed":
+            days_left = result.get("days_left", "?")
+            end_date = result.get("end_date", "")
+            await query.edit_message_text(
+                f"⚠️ <b>Pro tarifdan Premium ga tushib bo'lmaydi!</b>\n\n"
+                f"📅 Pro muddati: <b>{end_date}</b>\n"
+                f"⏳ Qoldi: <b>{days_left} kun</b>\n\n"
+                f"Muddati tugagach yangi tarif olishingiz mumkin.",
                 parse_mode="HTML",
             )
             await context.bot.send_message(
@@ -883,8 +945,9 @@ async def receive_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
             disable_web_page_preview=True,
         )
         await update.effective_chat.send_message(
-            "✅ Yuqoridagi kodni saytda telefon raqam bilan birga kiriting.",
-            reply_markup=ReplyKeyboardRemove(),
+            "✅ Yuqoridagi kodni saytda telefon raqam bilan birga kiriting.\n\n"
+            "📱 Yangi kod olish uchun telefon raqamni yuboring.",
+            reply_markup=_get_main_keyboard(),
         )
 
         # Countdown boshlash

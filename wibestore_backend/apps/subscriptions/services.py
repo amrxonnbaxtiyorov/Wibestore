@@ -61,10 +61,31 @@ class SubscriptionService:
             if not has_ever_paid:
                 price = (price * Decimal("0.5")).quantize(Decimal("0.01"))
 
+        # Check existing active subscription for upgrade/downgrade logic
+        existing = UserSubscription.objects.filter(
+            user=user, status="active", end_date__gt=timezone.now()
+        ).select_related("plan").first()
+        if existing:
+            current_slug = existing.plan.slug
+            # Block re-purchase of same plan before expiry
+            if current_slug == plan_slug:
+                days_left = max(0, (existing.end_date - timezone.now()).days)
+                raise BusinessLogicError(
+                    f"Sizda allaqachon {plan_slug} tarifi bor. "
+                    f"Muddati: {existing.end_date.strftime('%d.%m.%Y')} ({days_left} kun qoldi)."
+                )
+            # Block Pro → Premium downgrade
+            if current_slug == "pro" and plan_slug == "premium":
+                raise BusinessLogicError(
+                    "Pro tarifdan Premium ga tushib bo'lmaydi. "
+                    "Faqat yangilash (Premium → Pro) mumkin."
+                )
+            # Premium → Pro upgrade is allowed; existing will be cancelled below
+
         if user.balance < price:
             raise InsufficientFundsError("Insufficient balance for subscription.")
 
-        # Cancel existing subscription
+        # Cancel existing subscription (handles upgrade case)
         UserSubscription.objects.filter(user=user, status="active").update(
             status="cancelled", cancelled_at=timezone.now()
         )

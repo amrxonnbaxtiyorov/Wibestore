@@ -260,10 +260,12 @@ class AuthService:
         )
 
     @staticmethod
-    def validate_telegram_code_and_register(*, phone_number: str, code: str) -> User:
+    def validate_telegram_code_and_register(*, phone_number: str, code: str, mode: str = "register") -> User:
         """
         Kod va telefonni tekshirish, agar to'g'ri bo'lsa User yaratish (yoki mavjudni qaytarish).
         Kod bir marta ishlatiladi.
+        mode='login': yangi user yaratilmaydi; topilmasa xato chiqaradi.
+        mode='register': topilmasa yangi user yaratiladi.
         """
         from .models import TelegramRegistrationCode
 
@@ -319,6 +321,12 @@ class AuthService:
             record.is_used = True
             record.save(update_fields=["is_used"])
             return user
+
+        # Login rejimida yangi user yaratilmaydi
+        if mode == "login":
+            raise BusinessLogicError(
+                "Bu raqam ro'yxatdan o'tmagan. Iltimos, ro'yxatdan o'ting."
+            )
 
         # Yangi user: placeholder email, parolsiz (set_password(None) = unusable)
         placeholder_email = f"tg_{record.telegram_id}@telegram.wibestore.local"

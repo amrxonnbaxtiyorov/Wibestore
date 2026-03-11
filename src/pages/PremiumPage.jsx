@@ -3,8 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Check, Crown, Star, Zap, Shield, TrendingUp, X, Send, Info } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { useSubscriptionPlans } from '../hooks/useSubscriptions';
 
 const TELEGRAM_BOT_USERNAME = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'wibestorebot';
+
+const formatUZS = (amount) => {
+    if (!amount) return '0';
+    return Number(amount).toLocaleString('uz-UZ');
+};
 
 const PremiumPage = () => {
     const { t } = useLanguage();
@@ -12,6 +18,7 @@ const PremiumPage = () => {
     const [searchParams] = useSearchParams();
     const [_loading, _setLoading] = useState(null); // plan id when loading (for future use)
     const [error, setError] = useState('');
+    const { data: plansData } = useSubscriptionPlans();
 
     // Check for payment result from URL params
     const paymentStatus = searchParams.get('payment');
@@ -49,11 +56,18 @@ const PremiumPage = () => {
         ],
     };
 
+    // Get UZS prices from API, fallback to defaults
+    const apiPlans = Array.isArray(plansData) ? plansData : (Array.isArray(plansData?.results) ? plansData.results : []);
+    const premiumPlan = apiPlans.find(p => p.slug === 'premium');
+    const proPlan = apiPlans.find(p => p.slug === 'pro');
+    const premiumPriceUZS = premiumPlan ? Number(premiumPlan.price_monthly) : 50000;
+    const proPriceUZS = proPlan ? Number(proPlan.price_monthly) : 100000;
+
     const plans = [
         {
             id: 'free',
             name: 'Free',
-            priceUSD: 0,
+            priceUZS: 0,
             icon: '🆓',
             description: t('premium.free_desc') || 'Get started',
             features: features.free,
@@ -61,8 +75,8 @@ const PremiumPage = () => {
         {
             id: 'premium',
             name: 'Premium',
-            priceUSD: 4.99,
-            regularPriceUSD: 9.99,
+            priceUZS: premiumPriceUZS,
+            discountPriceUZS: Math.round(premiumPriceUZS * 0.5),
             icon: '⭐',
             description: t('premium.premium_desc') || 'More visibility',
             features: features.premium,
@@ -70,8 +84,8 @@ const PremiumPage = () => {
         {
             id: 'pro',
             name: 'Pro',
-            priceUSD: 11.99,
-            regularPriceUSD: 24.99,
+            priceUZS: proPriceUZS,
+            discountPriceUZS: Math.round(proPriceUZS * 0.5),
             icon: '💎',
             description: t('premium.pro_desc') || 'Maximum benefits',
             features: features.pro,
@@ -282,17 +296,17 @@ const PremiumPage = () => {
 
                             {/* Price */}
                             <div className="text-center" style={{ marginBottom: '24px' }}>
-                                {plan.priceUSD > 0 ? (
+                                {plan.priceUZS > 0 ? (
                                     <>
                                         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '10px' }}>
-                                            {plan.regularPriceUSD != null && (
+                                            {plan.discountPriceUZS != null && (
                                                 <span style={{
                                                     fontSize: 'var(--font-size-xl)',
                                                     fontWeight: 'var(--font-weight-semibold)',
                                                     color: 'var(--color-text-muted)',
                                                     textDecoration: 'line-through'
                                                 }}>
-                                                    ${plan.regularPriceUSD}
+                                                    {formatUZS(plan.priceUZS)}
                                                 </span>
                                             )}
                                             <span style={{
@@ -300,18 +314,16 @@ const PremiumPage = () => {
                                                 fontWeight: 'var(--font-weight-bold)',
                                                 color: 'var(--color-text-primary)',
                                             }}>
-                                                ${plan.priceUSD}
+                                                {formatUZS(plan.discountPriceUZS ?? plan.priceUZS)}
                                             </span>
                                         </div>
-                                        <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>/mo</span>
+                                        <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>UZS / {t('common.month') || 'oy'}</span>
                                         <p style={{ marginTop: '6px', fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-green)', fontWeight: 600 }}>
                                             {t('premium.first_month_discount') || '50% off first month'}
                                         </p>
-                                        {plan.regularPriceUSD != null && (
-                                            <p style={{ marginTop: '4px', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-                                                {(t('premium.from_next_month') || 'From next month: {price}/mo').replace('{price}', `$${plan.regularPriceUSD}`)}
-                                            </p>
-                                        )}
+                                        <p style={{ marginTop: '4px', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                            {(t('premium.from_next_month') || 'From next month: {price} UZS/oy').replace('{price}', formatUZS(plan.priceUZS))}
+                                        </p>
                                     </>
                                 ) : (
                                     <span style={{
@@ -319,7 +331,7 @@ const PremiumPage = () => {
                                         fontWeight: 'var(--font-weight-bold)',
                                         color: 'var(--color-text-primary)',
                                     }}>
-                                        {t('premium.free_price') || '$0 free'}
+                                        {t('premium.free_price') || 'Bepul'}
                                     </span>
                                 )}
                             </div>

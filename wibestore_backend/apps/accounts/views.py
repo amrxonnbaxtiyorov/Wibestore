@@ -531,25 +531,40 @@ class TelegramBotPremiumPurchaseView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # Allaqachon aktiv shu tarif borligini tekshirish
+        # Allaqachon aktiv tarif borligini tekshirish (har qanday tarif)
         existing = UserSubscription.objects.filter(
             user=user,
             status="active",
-            plan__slug=plan_slug,
             end_date__gt=timezone.now(),
-        ).first()
+        ).select_related("plan").first()
         if existing:
+            current_slug = existing.plan.slug
             days_left = max(0, (existing.end_date - timezone.now()).days)
-            return Response(
-                {
-                    "success": False,
-                    "error": "already_subscribed",
-                    "plan": plan_slug,
-                    "days_left": days_left,
-                    "end_date": existing.end_date.strftime("%d.%m.%Y"),
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
+            # Block re-purchase of same plan
+            if current_slug == plan_slug:
+                return Response(
+                    {
+                        "success": False,
+                        "error": "already_subscribed",
+                        "plan": plan_slug,
+                        "days_left": days_left,
+                        "end_date": existing.end_date.strftime("%d.%m.%Y"),
+                    },
+                    status=status.HTTP_409_CONFLICT,
+                )
+            # Block Pro → Premium downgrade
+            if current_slug == "pro" and plan_slug == "premium":
+                return Response(
+                    {
+                        "success": False,
+                        "error": "downgrade_not_allowed",
+                        "plan": current_slug,
+                        "days_left": days_left,
+                        "end_date": existing.end_date.strftime("%d.%m.%Y"),
+                    },
+                    status=status.HTTP_409_CONFLICT,
+                )
+            # Premium → Pro upgrade: cancel existing, continue with purchase
 
         # Narxni DB dan olish (SubscriptionPlan.price_monthly)
         plan_obj = SubscriptionPlan.objects.filter(slug=plan_slug, is_active=True).first()
@@ -691,10 +706,18 @@ class TelegramRegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        user = AuthService.validate_telegram_code_and_register(
-            phone_number=data["phone"],
-            code=data["code"],
-        )
+        mode = request.data.get("mode", "register")
+        try:
+            user = AuthService.validate_telegram_code_and_register(
+                phone_number=data["phone"],
+                code=data["code"],
+                mode=mode,
+            )
+        except BusinessLogicError as e:
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         tokens = RefreshToken.for_user(user)
         access = str(tokens.access_token)

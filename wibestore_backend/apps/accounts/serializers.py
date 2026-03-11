@@ -162,7 +162,6 @@ class UserPublicSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             "id",
-            "username",
             "display_name",
             "avatar",
             "plan",
