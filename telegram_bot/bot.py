@@ -107,7 +107,8 @@ WAITING_PHONE, CONFIRMING = range(2)
     WAITING_WITHDRAW_AMOUNT,
     WITHDRAW_CONFIRM,
     WAITING_WITHDRAW_CARD,
-) = range(2, 7)
+    WAITING_PREMIUM_PAY_METHOD,
+) = range(2, 8)
 
 # Yangi keyboard tugmalar matni
 BTN_MY_ACCOUNT = "Mening saytdagi akkauntim"
@@ -315,12 +316,21 @@ async def _add_user_balance_api(telegram_id: int, amount: int) -> tuple[int, dic
     return 503, {"error": "aiohttp yo'q"}
 
 
-async def _activate_premium_api(telegram_id: int, plan: str) -> tuple[int, dict]:
-    """Backend API orqali foydalanuvchiga Premium/Pro tarif berish."""
+async def _activate_premium_api(telegram_id: int, plan: str, use_balance: bool = False) -> tuple[int, dict]:
+    """Backend API orqali foydalanuvchiga Premium/Pro tarif berish.
+
+    use_balance=True: balansdan ushlab, premium beradi.
+    use_balance=False: faqat premium beradi (admin tasdiqlagandan keyin).
+    """
     if not BOT_SECRET_KEY:
         return 500, {"error": "BOT_SECRET_KEY yo'q"}
-    url = f"{WEBSITE_URL}/api/v1/auth/telegram/premium/activate/"
-    payload = {"secret_key": BOT_SECRET_KEY, "telegram_id": telegram_id, "plan": plan.lower()}
+    url = f"{WEBSITE_URL}/api/v1/auth/telegram/premium/purchase/"
+    payload = {
+        "secret_key": BOT_SECRET_KEY,
+        "telegram_id": telegram_id,
+        "plan": plan.lower(),
+        "use_balance": use_balance,
+    }
     if _AIOHTTP_AVAILABLE:
         try:
             async with _aiohttp.ClientSession() as session:
@@ -544,7 +554,7 @@ async def _cmd_premium(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
 
 async def _cb_premium_plan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Premium yoki Pro tanlanganida: narx + karta + screenshot so'rash."""
+    """Premium yoki Pro tanlanganida: to'lov usulini tanlash."""
     query = update.callback_query
     await query.answer()
     data = query.data
@@ -561,15 +571,122 @@ async def _cb_premium_plan(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     else:
         plan_name, price = "Premium", PREMIUM_PRICE_UZS
     context.user_data["premium_plan"] = plan_name
-    card_line = f"\n💳 To'lov kartasi: <code>{ADMIN_CARD_NUMBER}</code>" if ADMIN_CARD_NUMBER else ""
+    context.user_data["premium_price"] = price
+    keyboard = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("💳 Sayt hisobim orqali", callback_data=f"premium_pay:balance:{plan_name}"),
+            InlineKeyboardButton("🏦 Kartaga to'lov", callback_data=f"premium_pay:card:{plan_name}"),
+        ],
+        [InlineKeyboardButton("⬅️ Orqaga", callback_data="premium_pay:back")],
+    ])
     await query.edit_message_text(
-        f"✅ Tarif: <b>{plan_name}</b>\n\n"
-        f"💰 Narx: <b>{price} UZS</b>{card_line}\n\n"
-        "📸 To'lov qilganingizdan keyin <b>screenshot</b> (skrinshot) yuboring. "
-        "Admin tekshirib tasdiqlaydi.",
+        f"⭐ <b>{plan_name}</b> tarifi — <b>{price} UZS</b>\n\n"
+        "To'lov usulini tanlang:",
         parse_mode="HTML",
+        reply_markup=keyboard,
     )
-    return WAITING_PREMIUM_SCREENSHOT
+    return WAITING_PREMIUM_PAY_METHOD
+
+
+async def _cb_premium_payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """To'lov usuli tanlanganda: balans yoki karta orqali to'lash."""
+    query = update.callback_query
+    await query.answer()
+    data = query.data  # "premium_pay:balance:Premium" | "premium_pay:card:Pro" | "premium_pay:back"
+
+    if data == "premium_pay:back":
+        # Orqaga — tarif tanlash ekraniga qaytish
+        keyboard = InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("Premium", callback_data="premium_plan:premium"),
+                InlineKeyboardButton("Pro", callback_data="premium_plan:pro"),
+            ],
+            [InlineKeyboardButton("Menu", callback_data="premium_plan:menu")],
+        ])
+        await query.edit_message_text(
+            "⭐ <b>Premium tarifini tanlang</b>\n\n"
+            "1️⃣ <b>Premium</b>\n"
+            "2️⃣ <b>Pro</b>\n\n"
+            "Quyidagi tugmalardan birini bosing:",
+            parse_mode="HTML",
+            reply_markup=keyboard,
+        )
+        return WAITING_PHONE
+
+    parts = data.split(":", 2)
+    if len(parts) < 3:
+        await query.edit_message_text("❌ Noma'lum xato. Qayta urinib ko'ring.")
+        return WAITING_PHONE
+
+    _, pay_method, plan_name = parts
+    price = context.user_data.get("premium_price", PREMIUM_PRICE_UZS if plan_name == "Premium" else PRO_PRICE_UZS)
+    telegram_id = query.from_user.id
+
+    if pay_method == "balance":
+        # Sayt hisobidan to'lash: balans tekshirish + premium berish
+        await query.edit_message_text(
+            f"⏳ <b>{plan_name}</b> tarifi uchun hisobingiz tekshirilmoqda...",
+            parse_mode="HTML",
+        )
+        status_code, result = await _activate_premium_api(telegram_id, plan_name, use_balance=True)
+        if status_code == 200 and result.get("success"):
+            new_balance = result.get("new_balance", "—")
+            await query.edit_message_text(
+                f"✅ <b>{plan_name}</b> tarifi faollashtirildi!\n\n"
+                f"💰 Qolgan balans: <b>{new_balance} UZS</b>\n\n"
+                f"Saytga kiring va imkoniyatlardan foydalaning: {SITE_URL}",
+                parse_mode="HTML",
+            )
+            await context.bot.send_message(
+                query.message.chat_id,
+                "Quyidagi tugmalardan birini tanlang:",
+                reply_markup=_get_main_keyboard(),
+            )
+        elif status_code == 402 or result.get("error") == "insufficient_balance":
+            balance = result.get("balance", "0")
+            required = result.get("required", price)
+            await query.edit_message_text(
+                f"❌ <b>Hisobingizda yetarli mablag' yo'q!</b>\n\n"
+                f"💰 Joriy balans: <b>{balance} UZS</b>\n"
+                f"💳 Kerakli summa: <b>{required} UZS</b>\n\n"
+                f"Hisobingizni to'ldiring va qayta urining.",
+                parse_mode="HTML",
+            )
+            await context.bot.send_message(
+                query.message.chat_id,
+                "Quyidagi tugmalardan birini tanlang:",
+                reply_markup=_get_main_keyboard(),
+            )
+        else:
+            err = result.get("error", "Noma'lum xato")
+            await query.edit_message_text(
+                f"❌ <b>Xato yuz berdi:</b> {err}\n\nQayta urinib ko'ring yoki admin bilan bog'laning.",
+                parse_mode="HTML",
+            )
+            await context.bot.send_message(
+                query.message.chat_id,
+                "Quyidagi tugmalardan birini tanlang:",
+                reply_markup=_get_main_keyboard(),
+            )
+        context.user_data.pop("premium_plan", None)
+        context.user_data.pop("premium_price", None)
+        return WAITING_PHONE
+
+    elif pay_method == "card":
+        # Kartaga to'lov: karta raqam ko'rsatib, screenshot so'rash
+        card_line = f"\n💳 To'lov kartasi: <code>{ADMIN_CARD_NUMBER}</code>" if ADMIN_CARD_NUMBER else ""
+        await query.edit_message_text(
+            f"🏦 <b>Kartaga to'lov</b> — {plan_name} ({price} UZS)\n"
+            f"{card_line}\n\n"
+            "Kartaga pul o'tkazgach, to'lov <b>screenshot</b>ini (skrinshot) yuboring.\n"
+            "Admin tekshirib, tarifingizni faollashtiradi.",
+            parse_mode="HTML",
+        )
+        return WAITING_PREMIUM_SCREENSHOT
+
+    # Noma'lum holat
+    await query.edit_message_text("❌ Noma'lum xato. Qayta urinib ko'ring.")
+    return WAITING_PHONE
 
 
 async def _cmd_topup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -1799,6 +1916,11 @@ def main():
             WAITING_WITHDRAW_CARD: [
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, _receive_withdraw_card),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
+            WAITING_PREMIUM_PAY_METHOD: [
+                CallbackQueryHandler(_cb_premium_payment_method, pattern="^premium_pay:"),
+                MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
                 CommandHandler('cancel', _cancel_to_menu),
             ],
         },
