@@ -63,7 +63,7 @@ const HomePage = () => {
     const rawListings = listingsData?.pages?.flatMap?.(page => page?.results ?? []) ?? listingsData?.results ?? listingsData ?? [];
     const allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
 
-    const premiumAccounts = allListings.filter(l => l?.is_premium || l?.isPremium).slice(0, 6);
+    const premiumAccounts = allListings.filter(l => l?.is_premium || l?.isPremium || l?.seller?.is_premium || l?.seller?.plan === 'premium' || l?.seller?.plan === 'pro').slice(0, 6);
     const recommendedAccounts = allListings.slice(0, 8);
 
     // Listing → AccountCard format (API va mock ikkalasini qo'llab-quvvatlash)
@@ -77,7 +77,8 @@ const HomePage = () => {
         seller: account?.seller ?? {},
         image: account?.images?.[0]?.image ?? account?.primary_image ?? account?.image ?? '',
         isLiked: account?.is_favorited ?? account?.isLiked ?? false,
-        isPremium: account?.is_premium ?? account?.isPremium ?? false,
+        isPremium: account?.is_premium ?? account?.isPremium ?? account?.seller?.is_premium ?? false,
+        is_pro: account?.seller?.is_pro ?? account?.seller?.plan === 'pro' ?? false,
     });
 
     // Top accounts - sorted by premium status and rating
