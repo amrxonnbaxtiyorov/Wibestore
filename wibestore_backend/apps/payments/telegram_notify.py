@@ -202,3 +202,34 @@ def notify_escrow_released(escrow) -> None:
             f"🌐 <a href='{SITE_URL}'>Saytga kiring</a>"
         )
         _send_message(seller.telegram_id, seller_text)
+
+
+def notify_deposit_approved(deposit_request, new_balance) -> None:
+    """Admin hisob to'ldirishni tasdiqlaganda foydalanuvchiga Telegram xabar."""
+    telegram_id = deposit_request.telegram_id
+    if not telegram_id:
+        return
+    amount_str = _fmt_price(deposit_request.amount) if deposit_request.amount else "—"
+    balance_str = _fmt_price(new_balance)
+    text = (
+        f"✅ <b>Hisob to'ldirish tasdiqlandi!</b>\n\n"
+        f"💰 Qo'shilgan summa: <b>{amount_str}</b>\n"
+        f"📊 Yangi balans: <b>{balance_str}</b>\n\n"
+        f"🎉 Rahmat! Saytga kirib xarid qilishingiz mumkin.\n"
+        f"🌐 <a href='{SITE_URL}'>{SITE_URL}</a>"
+    )
+    _send_message(telegram_id, text)
+
+
+def notify_deposit_rejected(deposit_request) -> None:
+    """Admin hisob to'ldirishni rad etganda foydalanuvchiga Telegram xabar."""
+    telegram_id = deposit_request.telegram_id
+    if not telegram_id:
+        return
+    text = (
+        f"❌ <b>Hisob to'ldirish so'rovi rad etildi.</b>\n\n"
+        f"Agar to'lov qilgan bo'lsangiz, to'lov chekingizni qayta yuboring "
+        f"yoki admin bilan bog'laning.\n\n"
+        f"🌐 <a href='{SITE_URL}'>{SITE_URL}</a>"
+    )
+    _send_message(telegram_id, text)

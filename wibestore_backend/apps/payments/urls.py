@@ -19,6 +19,8 @@ urlpatterns = [
     path("escrow/<uuid:pk>/confirm/", views.EscrowConfirmDeliveryView.as_view(), name="escrow-confirm"),
     path("escrow/<uuid:pk>/dispute/", views.EscrowDisputeView.as_view(), name="escrow-dispute"),
     path("webhooks/<str:provider>/", views.WebhookView.as_view(), name="webhook"),
+    # Telegram bot: hisob to'ldirish so'rovini saqlash
+    path("telegram/deposit-request/", views.TelegramDepositRequestView.as_view(), name="telegram-deposit-request"),
 ]
 
 # Stripe routes (optional: only if stripe package is installed)

@@ -1,6 +1,6 @@
 """
 WibeStore Backend - Payments Models
-PaymentMethod, Transaction, EscrowTransaction models.
+PaymentMethod, Transaction, EscrowTransaction, DepositRequest models.
 """
 
 from django.conf import settings
@@ -124,3 +124,71 @@ class EscrowTransaction(BaseModel):
 
     def __str__(self) -> str:
         return f"Escrow: {self.listing.title} ({self.status})"
+
+
+class DepositRequest(BaseModel):
+    """Telegram bot orqali yuborilgan hisob to'ldirish so'rovi (screenshot bilan)."""
+
+    STATUS_PENDING = "pending"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Kutilmoqda"),
+        (STATUS_APPROVED, "Tasdiqlandi"),
+        (STATUS_REJECTED, "Rad etildi"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="deposit_requests",
+        null=True,
+        blank=True,
+    )
+    telegram_id = models.BigIntegerField(db_index=True)
+    telegram_username = models.CharField(max_length=100, blank=True, default="")
+    phone_number = models.CharField(max_length=20, blank=True, default="")
+    amount = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    screenshot = models.ImageField(
+        upload_to="deposit_screenshots/%Y/%m/",
+        null=True,
+        blank=True,
+        verbose_name="Skrinshot",
+    )
+    sent_at = models.DateTimeField(verbose_name="Yuborilgan vaqt")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        db_index=True,
+        verbose_name="Holat",
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_deposit_requests",
+        verbose_name="Ko'rib chiqqan admin",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Ko'rib chiqilgan vaqt")
+    admin_note = models.TextField(blank=True, default="", verbose_name="Admin izohi")
+    transaction = models.OneToOneField(
+        Transaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="deposit_request",
+        verbose_name="Tranzaksiya",
+    )
+
+    class Meta:
+        db_table = "deposit_requests"
+        ordering = ["-sent_at"]
+        verbose_name = "Hisob to'ldirish so'rovi"
+        verbose_name_plural = "Hisob to'ldirish so'rovlari"
+
+    def __str__(self) -> str:
+        amount_str = f"{int(self.amount):,} UZS" if self.amount else "Noma'lum summa"
+        return f"DepositRequest #{str(self.id)[:8]} — {amount_str} ({self.get_status_display()})"

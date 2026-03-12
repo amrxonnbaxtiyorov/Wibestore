@@ -3,13 +3,17 @@ WibeStore Backend - Payments Views
 """
 
 import logging
+from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import EscrowTransaction, Transaction
+from .models import DepositRequest, EscrowTransaction, Transaction
 from .serializers import (
     DepositSerializer,
     EscrowTransactionSerializer,
@@ -250,5 +254,76 @@ class BalanceView(APIView):
                 },
             },
             status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(tags=["Payments"])
+class TelegramDepositRequestView(APIView):
+    """
+    POST /api/v1/payments/telegram/deposit-request/
+    Telegram bot tomonidan hisob to'ldirish so'rovini saqlash.
+    Multipart form: secret_key, telegram_id, phone_number, telegram_username, amount (ixtiyoriy), screenshot (fayl)
+    """
+
+    permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        # Secret key tekshirish
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or request.data.get("secret_key") != secret:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        telegram_id_raw = request.data.get("telegram_id")
+        if not telegram_id_raw:
+            return Response(
+                {"success": False, "error": "telegram_id majburiy"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            telegram_id = int(telegram_id_raw)
+        except (ValueError, TypeError):
+            return Response(
+                {"success": False, "error": "telegram_id noto'g'ri"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Foydalanuvchini topish (ixtiyoriy)
+        from apps.accounts.models import User
+
+        user = None
+        try:
+            user = User.objects.get(telegram_id=telegram_id)
+        except User.DoesNotExist:
+            pass
+
+        # Summa (ixtiyoriy)
+        amount = None
+        amount_raw = request.data.get("amount")
+        if amount_raw:
+            try:
+                amount = Decimal(str(amount_raw))
+                if amount <= 0:
+                    amount = None
+            except (InvalidOperation, ValueError):
+                amount = None
+
+        dr = DepositRequest.objects.create(
+            user=user,
+            telegram_id=telegram_id,
+            telegram_username=request.data.get("telegram_username", ""),
+            phone_number=request.data.get("phone_number", ""),
+            amount=amount,
+            screenshot=request.FILES.get("screenshot"),
+            sent_at=timezone.now(),
+        )
+
+        return Response(
+            {"success": True, "id": str(dr.id)},
+            status=status.HTTP_201_CREATED,
         )
 

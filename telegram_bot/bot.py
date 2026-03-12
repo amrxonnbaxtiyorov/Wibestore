@@ -108,7 +108,8 @@ WAITING_PHONE, CONFIRMING = range(2)
     WITHDRAW_CONFIRM,
     WAITING_WITHDRAW_CARD,
     WAITING_PREMIUM_PAY_METHOD,
-) = range(2, 8)
+    WAITING_TOPUP_AMOUNT,
+) = range(2, 9)
 
 # Yangi keyboard tugmalar matni
 BTN_MY_ACCOUNT = "Mening saytdagi akkauntim"
@@ -854,7 +855,7 @@ async def _cb_premium_payment_method(update: Update, context: ContextTypes.DEFAU
 
 
 async def _cmd_topup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Xisobni to'ldirish: balans + karta, screenshot so'rash."""
+    """Xisobni to'ldirish: avval summa, keyin skrinshot so'rash."""
     telegram_id = update.effective_user.id
     result = await get_telegram_profile_via_api(telegram_id)
     balance = "0"
@@ -864,7 +865,35 @@ async def _cmd_topup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_html(
         f"💰 <b>Hisobni to'ldirish</b>\n\n"
         f"Joriy balans: <b>{balance} UZS</b>{card_line}\n\n"
-        "Kartaga pul o'tkazgach, to'lov <b>screenshot</b>ini (skrinshot) yuboring. Admin tekshiradi."
+        "Qancha summa to'lamoqchisiz? Raqamni kiriting (masalan: <code>50000</code>)\n\n"
+        "❌ Bekor qilish: /cancel"
+    )
+    return WAITING_TOPUP_AMOUNT
+
+
+async def _receive_topup_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Topup summasi qabul qilinadi va skrinshot so'raladi."""
+    text = (update.message.text or "").strip()
+    # Menyu tugmalarini ushlash
+    if text in (BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW):
+        state = await _handle_menu_button(update, context, text)
+        return state if state is not None else WAITING_PHONE
+
+    cleaned = text.replace(" ", "").replace(",", "")
+    if not cleaned.isdigit() or int(cleaned) <= 0:
+        await update.message.reply_text(
+            "❌ Summani faqat raqamda yozing (masalan: 50000)\n/cancel — bekor qilish"
+        )
+        return WAITING_TOPUP_AMOUNT
+
+    amount = int(cleaned)
+    context.user_data["topup_amount"] = amount
+    card_line = f"\n💳 To'lov kartasi: <code>{ADMIN_CARD_NUMBER}</code>" if ADMIN_CARD_NUMBER else ""
+    await update.message.reply_html(
+        f"✅ Summa: <b>{amount:,} UZS</b>\n"
+        f"{card_line}\n\n"
+        "Kartaga pul o'tkazgach, to'lov <b>skrinshot</b>ini yuboring. Admin tekshiradi.\n\n"
+        "❌ Bekor qilish: /cancel"
     )
     return WAITING_TOPUP_SCREENSHOT
 
@@ -1051,13 +1080,32 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
     if not update.message.photo:
         await update.message.reply_text("📸 Iltimos, to'lov skrinshotini (rasm) yuboring.")
         return WAITING_TOPUP_SCREENSHOT
+
     telegram_id = update.effective_user.id
+    tg_user = update.effective_user
+    tg_username = f"@{tg_user.username}" if tg_user.username else "—"
+    phone_number = context.user_data.get("phone", "—")
+    amount = context.user_data.get("topup_amount")
+    amount_str = f"{amount:,} UZS" if amount else "Noma'lum"
+
+    # Vaqt — O'zbekiston vaqti (UTC+5)
+    import datetime as _dt
+    sent_time = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
     result = await get_telegram_profile_via_api(telegram_id)
-    username = result.get("data", {}).get("username", "") if result and result.get("has_account") else str(telegram_id)
+    site_username = ""
+    if result and result.get("has_account"):
+        site_username = result.get("data", {}).get("username", "")
+
     caption = (
-        f"💰 <b>Hisobni to'ldirish (skrinshot)</b>\n"
-        f"👤 Sayt username: <b>{username}</b>\n"
-        f"🆔 Telegram ID: <code>{telegram_id}</code>"
+        f"💰 <b>Hisobni to'ldirish so'rovi</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 Sayt username: <b>{site_username or '—'}</b>\n"
+        f"🆔 Telegram ID: <code>{telegram_id}</code>\n"
+        f"📱 Telegram: <b>{tg_username}</b>\n"
+        f"📞 Telefon: <b>{phone_number}</b>\n"
+        f"💰 To'lov summasi: <b>{amount_str}</b>\n"
+        f"⏰ Yuborilgan vaqt: {sent_time}"
     )
     file_id = update.message.photo[-1].file_id
     keyboard = InlineKeyboardMarkup([[
@@ -1076,6 +1124,37 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
             logger.warning("Admin %s ga rasm yuborilmadi: %s", target, e)
     if sent_msgs:
         context.bot_data[f"admin_msgs_topup:{telegram_id}"] = sent_msgs
+
+    # Backend ga so'rovni saqlash (DepositRequest)
+    if BOT_SECRET_KEY and _AIOHTTP_AVAILABLE:
+        try:
+            tg_file = await context.bot.get_file(file_id)
+            file_bytes = await tg_file.download_as_bytearray()
+            url = f"{WEBSITE_URL}/api/v1/payments/telegram/deposit-request/"
+            form_data = _aiohttp.FormData()
+            form_data.add_field("secret_key", BOT_SECRET_KEY)
+            form_data.add_field("telegram_id", str(telegram_id))
+            form_data.add_field("telegram_username", tg_user.username or "")
+            form_data.add_field("phone_number", context.user_data.get("phone", ""))
+            if amount:
+                form_data.add_field("amount", str(amount))
+            form_data.add_field(
+                "screenshot",
+                bytes(file_bytes),
+                filename="screenshot.jpg",
+                content_type="image/jpeg",
+            )
+            async with _aiohttp.ClientSession() as session:
+                async with session.post(
+                    url, data=form_data, timeout=_aiohttp.ClientTimeout(total=20)
+                ) as resp:
+                    if resp.status not in (200, 201):
+                        raw = await resp.text()
+                        logger.warning("DepositRequest saqlashda xato %s: %s", resp.status, raw[:200])
+        except Exception as e:
+            logger.warning("DepositRequest backend ga saqlanmadi: %s", e)
+
+    context.user_data.pop("topup_amount", None)
     await update.message.reply_html(
         "✅ Skrinshot qabul qilindi. Admin tekshiradi va balans yangilanadi.",
         reply_markup=_get_main_keyboard(),
@@ -2265,6 +2344,11 @@ def main():
             WAITING_PREMIUM_SCREENSHOT: [
                 MessageHandler(filters.PHOTO, _receive_premium_screenshot),
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
+            WAITING_TOPUP_AMOUNT: [
+                MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, _receive_topup_amount),
                 CommandHandler('cancel', _cancel_to_menu),
             ],
             WAITING_TOPUP_SCREENSHOT: [
