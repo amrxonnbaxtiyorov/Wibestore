@@ -126,6 +126,12 @@ class EscrowService:
         buyer.total_purchases += 1
         buyer.save(update_fields=["total_purchases"])
 
+        # Mark listing as sold immediately — hide from public listings.
+        # seller.total_sales is incremented later in release_payment → mark_as_sold.
+        listing.status = "sold"
+        listing.sold_at = timezone.now()
+        listing.save(update_fields=["status", "sold_at"])
+
         logger.info(
             "Escrow created: %s (buyer: %s, seller: %s, amount: %s)",
             escrow.id, buyer.email, listing.seller.email, listing.price,
@@ -285,6 +291,12 @@ class EscrowService:
                 "status", "dispute_resolved_by", "dispute_resolution", "admin_released_at"
             ]
         )
+
+        # Restore listing to active so it can be re-listed or sold again
+        listing = escrow.listing
+        listing.status = "active"
+        listing.sold_at = None
+        listing.save(update_fields=["status", "sold_at"])
 
         logger.info("Escrow refunded: %s by admin %s", escrow.id, admin_user.email)
         return escrow
