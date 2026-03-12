@@ -340,7 +340,7 @@ const AccountDetailPage = () => {
     const location = useLocation();
     const { t } = useLanguage();
     const { addToast } = useToast();
-    const { user, isAuthenticated } = useAuth();
+    const { user, isAuthenticated, refreshUser } = useAuth();
     const createChatMutation = useCreateChat();
 
     const { data: apiListing, isLoading, error, refetch } = useListing(accountId);
@@ -392,6 +392,12 @@ const AccountDetailPage = () => {
     useEffect(() => {
         if (typeof listing?.is_favorited === 'boolean') setIsLiked(listing.is_favorited);
     }, [listing?.id, listing?.is_favorited]);
+
+    // Sahifa ochilganda balansni yangilash — eskirgan kesh muammosini oldini olish
+    useEffect(() => {
+        if (isAuthenticated) refreshUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAuthenticated]);
 
     useEffect(() => {
         if (!listing?.id || isAuthenticated) return;
@@ -499,6 +505,13 @@ const AccountDetailPage = () => {
             navigate('/login?redirect=' + encodeURIComponent(location.pathname));
             return;
         }
+        // Balansni darhol tekshirish — yetarli bo'lmasa quizga o'tmasdan modalga o'tish
+        const userBal = Number(user?.balance ?? 0);
+        const price = Number(listing?.price ?? 0);
+        if (price > 0 && userBal < price) {
+            setShowInsufficientModal(true);
+            return;
+        }
         setShowBuyerRulesModal(true);
     };
 
@@ -510,6 +523,8 @@ const AccountDetailPage = () => {
             {
                 onSuccess: (data) => {
                     setShowBuyerRulesModal(false);
+                    // Balansni yangilash — xarid keyinoq yangi qiymat ko'rinsin
+                    refreshUser();
                     const chatRoomId = data?.data?.chat_room_id;
                     if (chatRoomId) {
                         setPendingChatRoomId(chatRoomId);
