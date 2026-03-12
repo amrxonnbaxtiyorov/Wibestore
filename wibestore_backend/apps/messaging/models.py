@@ -25,6 +25,8 @@ class ChatRoom(BaseModel):
     last_message = models.TextField(blank=True, default="")
     last_message_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    # True once admin writes first message and credentials are auto-sent to chat
+    credentials_sent = models.BooleanField(default=False)
 
     class Meta:
         db_table = "chat_rooms"

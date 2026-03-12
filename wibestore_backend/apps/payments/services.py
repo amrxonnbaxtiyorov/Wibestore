@@ -131,12 +131,15 @@ class EscrowService:
             escrow.id, buyer.email, listing.seller.email, listing.price,
         )
 
-        # Schedule auto-release
-        from .tasks import release_escrow_payment
-        release_escrow_payment.apply_async(
-            args=[str(escrow.id)],
-            countdown=settings.ESCROW_AUTO_RELEASE_HOURS * 3600,
-        )
+        # Schedule auto-release (optional — fails silently if Celery/Redis unavailable)
+        try:
+            from .tasks import release_escrow_payment
+            release_escrow_payment.apply_async(
+                args=[str(escrow.id)],
+                countdown=getattr(settings, "ESCROW_AUTO_RELEASE_HOURS", 24) * 3600,
+            )
+        except Exception as celery_err:
+            logger.warning("Could not schedule auto-release for escrow %s: %s", escrow.id, celery_err)
 
         # Haridor va sotuvchiga Telegram xabari
         try:

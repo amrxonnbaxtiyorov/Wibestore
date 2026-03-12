@@ -127,13 +127,39 @@ class PurchaseListingView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        escrow = EscrowService.create_escrow(buyer=request.user, listing=listing)
+        from core.exceptions import BusinessLogicError, InsufficientFundsError
+
+        try:
+            escrow = EscrowService.create_escrow(buyer=request.user, listing=listing)
+        except InsufficientFundsError as e:
+            return Response(
+                {"success": False, "error": {"message": str(e) or "Balans yetarli emas."}},
+                status=status.HTTP_402_PAYMENT_REQUIRED,
+            )
+        except BusinessLogicError as e:
+            return Response(
+                {"success": False, "error": {"message": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            logger.error("Unexpected error creating escrow for listing %s: %s", listing.id, e, exc_info=True)
+            return Response(
+                {"success": False, "error": {"message": "Xarid yaratishda xatolik. Qayta urinib ko'ring."}},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         # Open chat between buyer, seller and site admin(s) after payment
-        from apps.messaging.services import create_order_chat_for_escrow
-        chat_room = create_order_chat_for_escrow(escrow)
+        chat_room_id = None
+        try:
+            from apps.messaging.services import create_order_chat_for_escrow
+            chat_room = create_order_chat_for_escrow(escrow)
+            chat_room_id = str(chat_room.id)
+        except Exception as chat_err:
+            logger.warning("Could not create order chat for escrow %s: %s", escrow.id, chat_err)
+
         escrow_data = EscrowTransactionSerializer(escrow).data
-        escrow_data["chat_room_id"] = str(chat_room.id)
+        if chat_room_id:
+            escrow_data["chat_room_id"] = chat_room_id
 
         return Response(
             {
@@ -180,6 +206,26 @@ class EscrowConfirmDeliveryView(APIView):
             )
 
         escrow = EscrowService.confirm_delivery(escrow, request.user)
+
+        # Post system message to order chat
+        try:
+            from apps.messaging.services import post_system_message_to_order_chat
+            post_system_message_to_order_chat(
+                escrow,
+                "✅ Haridor akkauntni to'liq qabul qilganini tasdiqladi.\n"
+                "💰 Mablag' sotuvchiga o'tkazilmoqda. Xarid yakunlandi!"
+            )
+        except Exception:
+            pass
+
+        # Notify all parties via Telegram
+        try:
+            from .telegram_notify import notify_buyer_confirmed, notify_both_parties_confirmation
+            notify_buyer_confirmed(escrow)
+            notify_both_parties_confirmation(escrow, confirmed_by="buyer")
+        except Exception as tg_err:
+            logger.warning("Telegram buyer-confirm notification failed: %s", tg_err)
+
         return Response(
             {
                 "success": True,
@@ -327,3 +373,166 @@ class TelegramDepositRequestView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+
+@extend_schema(tags=["Payments"])
+class EscrowSellerConfirmView(APIView):
+    """POST /api/v1/payments/escrow/{id}/seller-confirm/ - Seller confirms account transfer."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            escrow = EscrowTransaction.objects.get(pk=pk, seller=request.user)
+        except EscrowTransaction.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"message": "Escrow transaction not found."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        from core.exceptions import BusinessLogicError
+        try:
+            escrow = EscrowService.seller_confirm_transfer(escrow, request.user)
+        except BusinessLogicError as e:
+            return Response(
+                {"success": False, "error": {"message": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            from apps.messaging.services import post_system_message_to_order_chat
+            post_system_message_to_order_chat(
+                escrow,
+                "Sotuvchi akkauntni topshirganini tasdiqladi. "
+                "Haridor endi akkauntni tekshirib, tasdiqlashi kerak."
+            )
+        except Exception:
+            pass
+
+        try:
+            from .telegram_notify import notify_seller_confirmed, notify_both_parties_confirmation
+            notify_seller_confirmed(escrow)
+            notify_both_parties_confirmation(escrow, confirmed_by="seller")
+        except Exception as tg_err:
+            logger.warning("Telegram seller-confirm notification failed: %s", tg_err)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Akkaunt topshirilganingiz tasdiqlandi. Haridor tekshiradi.",
+                "data": EscrowTransactionSerializer(escrow).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(tags=["Payments"])
+class TelegramCallbackView(APIView):
+    """POST /api/v1/payments/telegram/callback/ - Telegram bot inline keyboard callback handler."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from .telegram_notify import _answer_callback_query, notify_both_parties_confirmation
+
+        update = request.data
+        callback_query = update.get("callback_query")
+        if not callback_query:
+            return Response({"ok": True})
+
+        callback_id = callback_query.get("id", "")
+        data = callback_query.get("data", "")
+        from_user = callback_query.get("from", {})
+        telegram_id = from_user.get("id")
+
+        if not data or not telegram_id:
+            _answer_callback_query(callback_id, "Xatolik yuz berdi.")
+            return Response({"ok": True})
+
+        parts = data.split(":", 1)
+        if len(parts) != 2:
+            _answer_callback_query(callback_id)
+            return Response({"ok": True})
+
+        action, escrow_id = parts[0], parts[1]
+
+        try:
+            escrow = EscrowTransaction.objects.select_related(
+                "buyer", "seller", "listing"
+            ).get(pk=escrow_id)
+        except Exception:
+            _answer_callback_query(callback_id, "Savdo topilmadi.")
+            return Response({"ok": True})
+
+        from apps.accounts.models import User
+        try:
+            tg_user = User.objects.get(telegram_id=telegram_id)
+        except User.DoesNotExist:
+            _answer_callback_query(callback_id, "Foydalanuvchi topilmadi.")
+            return Response({"ok": True})
+
+        from core.exceptions import BusinessLogicError
+
+        if action == "escrow_seller_ok":
+            if tg_user != escrow.seller:
+                _answer_callback_query(callback_id, "Faqat sotuvchi tasdiqlashi mumkin.")
+                return Response({"ok": True})
+            try:
+                EscrowService.seller_confirm_transfer(escrow, tg_user)
+            except BusinessLogicError:
+                pass
+            try:
+                from apps.messaging.services import post_system_message_to_order_chat
+                post_system_message_to_order_chat(escrow,
+                    "Sotuvchi (bot orqali) akkauntni topshirganini tasdiqladi. "
+                    "Haridor endi akkauntni tekshirib, tasdiqlashi kerak.")
+                from .telegram_notify import notify_seller_confirmed
+                notify_seller_confirmed(escrow)
+                notify_both_parties_confirmation(escrow, confirmed_by="seller")
+            except Exception:
+                pass
+            _answer_callback_query(callback_id, "Tasdiqlandi! Haridor tekshirmoqda.")
+
+        elif action == "escrow_buyer_ok":
+            if tg_user != escrow.buyer:
+                _answer_callback_query(callback_id, "Faqat haridor tasdiqlashi mumkin.")
+                return Response({"ok": True})
+            try:
+                EscrowService.confirm_delivery(escrow, tg_user)
+            except BusinessLogicError:
+                pass
+            try:
+                from apps.messaging.services import post_system_message_to_order_chat
+                post_system_message_to_order_chat(escrow,
+                    "Haridor (bot orqali) akkauntni to'liq qabul qilganini tasdiqladi. "
+                    "Mablag' sotuvchiga o'tkazilmoqda. Xarid yakunlandi!")
+                from .telegram_notify import notify_buyer_confirmed
+                notify_buyer_confirmed(escrow)
+                notify_both_parties_confirmation(escrow, confirmed_by="buyer")
+            except Exception:
+                pass
+            _answer_callback_query(callback_id, "Tasdiqlandi! Xarid yakunlandi.")
+
+        elif action == "escrow_buyer_no":
+            if tg_user != escrow.buyer:
+                _answer_callback_query(callback_id, "Faqat haridor shikoyat ochishi mumkin.")
+                return Response({"ok": True})
+            reason = "Haridor bot orqali muammoni bildirdi."
+            try:
+                EscrowService.open_dispute(escrow, tg_user, reason)
+            except BusinessLogicError:
+                pass
+            try:
+                from apps.messaging.services import post_system_message_to_order_chat
+                post_system_message_to_order_chat(escrow,
+                    "Haridor bot orqali muammoni bildirdi. Shikoyat ochildi. "
+                    "Admin ko'rib chiqadi va qaror qabul qiladi.")
+                from .telegram_notify import notify_dispute_opened
+                notify_dispute_opened(escrow, reason)
+            except Exception:
+                pass
+            _answer_callback_query(callback_id, "Shikoyat ochildi. Admin ko'rib chiqadi.")
+
+        else:
+            _answer_callback_query(callback_id)
+
+        return Response({"ok": True})

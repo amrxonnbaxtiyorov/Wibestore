@@ -17,10 +17,12 @@ urlpatterns = [
     path("transactions/", views.TransactionListView.as_view(), name="transaction-list"),
     path("transactions/<uuid:pk>/", views.TransactionDetailView.as_view(), name="transaction-detail"),
     path("escrow/<uuid:pk>/confirm/", views.EscrowConfirmDeliveryView.as_view(), name="escrow-confirm"),
+    path("escrow/<uuid:pk>/seller-confirm/", views.EscrowSellerConfirmView.as_view(), name="escrow-seller-confirm"),
     path("escrow/<uuid:pk>/dispute/", views.EscrowDisputeView.as_view(), name="escrow-dispute"),
     path("webhooks/<str:provider>/", views.WebhookView.as_view(), name="webhook"),
-    # Telegram bot: hisob to'ldirish so'rovini saqlash
+    # Telegram bot endpoints
     path("telegram/deposit-request/", views.TelegramDepositRequestView.as_view(), name="telegram-deposit-request"),
+    path("telegram/callback/", views.TelegramCallbackView.as_view(), name="telegram-callback"),
 ]
 
 # Stripe routes (optional: only if stripe package is installed)

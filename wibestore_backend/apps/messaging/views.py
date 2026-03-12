@@ -2,7 +2,10 @@
 WibeStore Backend - Messaging Views
 """
 
+import logging
+
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
@@ -17,6 +20,7 @@ from .serializers import (
 )
 
 User = get_user_model()
+logger = logging.getLogger("apps.messaging")
 
 
 @extend_schema(tags=["Messaging"])
@@ -80,7 +84,6 @@ class ChatRoomCreateView(APIView):
                 room=room, sender=request.user, content=initial_message
             )
             room.last_message = initial_message
-            from django.utils import timezone
             room.last_message_at = timezone.now()
             room.save(update_fields=["last_message", "last_message_at"])
 
@@ -140,9 +143,11 @@ class SendMessageView(APIView):
         )
 
         room.last_message = (message.content[:197] + "...") if len(message.content) > 200 else message.content
-        from django.utils import timezone
         room.last_message_at = timezone.now()
         room.save(update_fields=["last_message", "last_message_at"])
+
+        # If admin writes first message to an order chat — auto-send credentials
+        _maybe_send_credentials(room, request.user)
 
         return Response(
             {
@@ -170,8 +175,6 @@ class MarkChatReadView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        from django.utils import timezone
-
         updated = (
             Message.objects.filter(room=room, is_read=False)
             .exclude(sender=request.user)
@@ -179,3 +182,38 @@ class MarkChatReadView(APIView):
         )
 
         return Response({"success": True, "data": {"updated": updated}}, status=status.HTTP_200_OK)
+
+
+# ── Helper ─────────────────────────────────────────────────────────────────────
+
+def _maybe_send_credentials(room: ChatRoom, sender_user) -> None:
+    """
+    If an admin (is_staff) just wrote to an order chat (listing + active escrow)
+    and credentials have not been sent yet — send them automatically.
+    Also broadcasts via WebSocket and notifies buyer/seller via Telegram.
+    """
+    if room.credentials_sent:
+        return
+    if not sender_user.is_staff:
+        return
+    if not room.listing_id:
+        return
+
+    from apps.payments.models import EscrowTransaction
+    escrow = EscrowTransaction.objects.filter(
+        listing_id=room.listing_id,
+        status="paid",
+    ).first()
+    if not escrow:
+        return
+
+    from .services import send_credentials_to_chat
+    sent = send_credentials_to_chat(room, escrow, sent_by_user=sender_user)
+
+    if sent:
+        # Notify buyer and seller via Telegram
+        try:
+            from apps.payments.telegram_notify import notify_credentials_sent
+            notify_credentials_sent(escrow)
+        except Exception as tg_err:
+            logger.warning("Telegram credentials notification failed: %s", tg_err)

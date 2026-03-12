@@ -54,6 +54,17 @@ class ChatConsumer(AsyncJsonWebSocketConsumer):
                 },
             )
 
+            # If admin just wrote — check if we should auto-send credentials
+            creds_msg = await self.maybe_send_credentials_ws()
+            if creds_msg:
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "chat_message",
+                        "message": creds_msg,
+                    },
+                )
+
         elif message_type == "chat.typing":
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -112,8 +123,67 @@ class ChatConsumer(AsyncJsonWebSocketConsumer):
                 "display_name": self.user.display_name,
             },
             "content": message.content,
+            "message_type": message.message_type,
             "created_at": message.created_at.isoformat(),
             "is_read": message.is_read,
+        }
+
+    @database_sync_to_async
+    def maybe_send_credentials_ws(self) -> dict | None:
+        """
+        If admin wrote to an order chat with unpaid credentials, auto-send them.
+        Returns serialised message dict if credentials were sent, else None.
+        """
+        if not self.user.is_staff:
+            return None
+
+        from .models import ChatRoom
+        try:
+            room = ChatRoom.objects.get(id=self.room_id)
+        except ChatRoom.DoesNotExist:
+            return None
+
+        if room.credentials_sent or not room.listing_id:
+            return None
+
+        from apps.payments.models import EscrowTransaction
+        escrow = EscrowTransaction.objects.filter(
+            listing_id=room.listing_id,
+            status="paid",
+        ).first()
+        if not escrow:
+            return None
+
+        from .services import send_credentials_to_chat
+        sent = send_credentials_to_chat(room, escrow, sent_by_user=self.user)
+        if not sent:
+            return None
+
+        # Notify via Telegram
+        try:
+            from apps.payments.telegram_notify import notify_credentials_sent
+            notify_credentials_sent(escrow)
+        except Exception as tg_err:
+            logger.warning("Telegram credentials notification failed: %s", tg_err)
+
+        # Return the last system message for broadcast
+        from .models import Message
+        msg = Message.objects.filter(room_id=self.room_id, message_type="system").last()
+        if not msg:
+            return None
+
+        return {
+            "type": "message",
+            "id": str(msg.id),
+            "sender": {
+                "id": str(self.user.id),
+                "username": self.user.username,
+                "display_name": self.user.display_name,
+            },
+            "content": msg.content,
+            "message_type": "system",
+            "created_at": msg.created_at.isoformat(),
+            "is_read": False,
         }
 
     @database_sync_to_async
