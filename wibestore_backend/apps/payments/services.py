@@ -138,6 +138,44 @@ class EscrowService:
             countdown=settings.ESCROW_AUTO_RELEASE_HOURS * 3600,
         )
 
+        # Haridor va sotuvchiga Telegram xabari
+        try:
+            from .telegram_notify import notify_purchase_created
+            notify_purchase_created(escrow)
+        except Exception as tg_err:
+            logger.warning("Telegram purchase notification failed: %s", tg_err)
+
+        return escrow
+
+    @staticmethod
+    @db_transaction.atomic
+    def seller_confirm_transfer(escrow: EscrowTransaction, seller) -> EscrowTransaction:
+        """Sotuvchi akkauntni topshirganini tasdiqlaydi (bot orqali)."""
+        if escrow.seller != seller:
+            raise BusinessLogicError("Faqat sotuvchi akkaunt topshirilganini tasdiqlay oladi.")
+        if escrow.status not in ("paid",):
+            raise BusinessLogicError("Escrow holati to'g'ri emas (paid bo'lishi kerak).")
+
+        # dispute_resolution maydoniga sotuvchi tasdig'ini saqlaymiz
+        import json as _json
+        from django.utils import timezone as _tz
+
+        seller_data = {
+            "seller_confirmed": True,
+            "seller_confirmed_at": _tz.now().isoformat(),
+        }
+        escrow.dispute_resolution = _json.dumps(seller_data)
+        escrow.save(update_fields=["dispute_resolution"])
+
+        logger.info("Escrow seller confirmed transfer: %s", escrow.id)
+
+        # Xaridorga xabar yuborish
+        try:
+            from .telegram_notify import notify_seller_confirmed
+            notify_seller_confirmed(escrow)
+        except Exception as tg_err:
+            logger.warning("Telegram seller-confirm notification failed: %s", tg_err)
+
         return escrow
 
     @staticmethod
@@ -191,6 +229,13 @@ class EscrowService:
         )
 
         logger.info("Escrow payment released: %s, seller earned: %s", escrow.id, escrow.seller_earnings)
+
+        try:
+            from .telegram_notify import notify_escrow_released
+            notify_escrow_released(escrow)
+        except Exception as tg_err:
+            logger.warning("Telegram release notification failed: %s", tg_err)
+
         return escrow
 
     @staticmethod
@@ -207,6 +252,13 @@ class EscrowService:
         escrow.save(update_fields=["status", "dispute_reason"])
 
         logger.info("Escrow dispute opened: %s", escrow.id)
+
+        try:
+            from .telegram_notify import notify_dispute_opened
+            notify_dispute_opened(escrow, reason)
+        except Exception as tg_err:
+            logger.warning("Telegram dispute notification failed: %s", tg_err)
+
         return escrow
 
     @staticmethod

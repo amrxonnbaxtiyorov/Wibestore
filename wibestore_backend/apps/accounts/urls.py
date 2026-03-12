@@ -31,6 +31,7 @@ urlpatterns = [
     path("telegram/premium/purchase/", views.TelegramBotPremiumPurchaseView.as_view(), name="telegram-premium-purchase"),
     path("telegram/plans/", views.TelegramBotPlansView.as_view(), name="telegram-plans"),
     path("register/telegram/", views.TelegramRegisterView.as_view(), name="register-telegram"),
+    path("telegram/escrow/action/", views.TelegramEscrowActionView.as_view(), name="telegram-escrow-action"),
     path("me/", views.MeView.as_view(), name="me"),
     path("account/delete/", views.DeleteAccountView.as_view(), name="account-delete"),
     path("users/<uuid:pk>/", views.PublicUserProfileView.as_view(), name="public-profile"),

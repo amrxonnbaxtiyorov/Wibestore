@@ -824,6 +824,113 @@ class DeleteAccountView(APIView):
         )
 
 
+@extend_schema(tags=["Telegram Bot"])
+class TelegramEscrowActionView(APIView):
+    """
+    Bot uchun: xarid escrow tasdiqlash/rad etish.
+    POST /api/v1/auth/telegram/escrow/action/
+    Body: {
+        "secret_key": "...",
+        "telegram_id": 123456789,
+        "escrow_id": "uuid",
+        "action": "seller_confirm" | "buyer_confirm" | "buyer_dispute",
+        "reason": "..."  (only for buyer_dispute)
+    }
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from django.conf import settings
+        from apps.payments.models import EscrowTransaction
+        from apps.payments.services import EscrowService
+        from core.exceptions import BusinessLogicError
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        provided_key = request.data.get("secret_key", "")
+        if not secret or provided_key != secret:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        telegram_id = request.data.get("telegram_id")
+        escrow_id = request.data.get("escrow_id")
+        action = request.data.get("action")
+        reason = request.data.get("reason", "")
+
+        if not all([telegram_id, escrow_id, action]):
+            return Response(
+                {"success": False, "error": "telegram_id, escrow_id, action majburiy"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(
+            telegram_id=telegram_id, is_active=True, deleted_at__isnull=True
+        ).first()
+        if not user:
+            return Response(
+                {"success": False, "error": "Foydalanuvchi topilmadi"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            escrow = EscrowTransaction.objects.select_related("buyer", "seller", "listing").get(
+                id=escrow_id
+            )
+        except (EscrowTransaction.DoesNotExist, Exception):
+            return Response(
+                {"success": False, "error": "Escrow topilmadi"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            if action == "seller_confirm":
+                EscrowService.seller_confirm_transfer(escrow, user)
+                return Response(
+                    {"success": True, "message": "Sotuvchi akkaunt topshirilganini tasdiqladi."},
+                    status=status.HTTP_200_OK,
+                )
+
+            elif action == "buyer_confirm":
+                EscrowService.confirm_delivery(escrow, user)
+                try:
+                    from apps.payments.telegram_notify import notify_buyer_confirmed
+                    notify_buyer_confirmed(escrow)
+                except Exception:
+                    pass
+                return Response(
+                    {"success": True, "message": "Haridor akkaunt qabul qilganini tasdiqladi."},
+                    status=status.HTTP_200_OK,
+                )
+
+            elif action == "buyer_dispute":
+                dispute_reason = reason or "Haridor shikoyat ochdi (bot orqali)"
+                EscrowService.open_dispute(escrow, user, dispute_reason)
+                return Response(
+                    {"success": True, "message": "Shikoyat qabul qilindi."},
+                    status=status.HTTP_200_OK,
+                )
+
+            else:
+                return Response(
+                    {"success": False, "error": f"Noto'g'ri action: {action}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        except BusinessLogicError as e:
+            return Response(
+                {"success": False, "error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            logger.error("TelegramEscrowActionView xato: %s", e)
+            return Response(
+                {"success": False, "error": "Ichki xato yuz berdi"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
 @extend_schema(tags=["Users"])
 class PublicUserProfileView(generics.RetrieveAPIView):
     """GET /api/v1/auth/users/{id}/ — Public user profile."""

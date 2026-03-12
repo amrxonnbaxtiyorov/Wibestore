@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Coins, Gift, Clock, ShoppingBag, TrendingUp, HelpCircle, ChevronRight, Star, CheckCircle, AlertCircle } from 'lucide-react';
+import { Coins, Gift, Clock, ShoppingBag, TrendingUp, HelpCircle, ChevronRight, CheckCircle, AlertCircle, Send, Wallet, Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCoins } from '../context/CoinContext';
 import { useLanguage } from '../context/LanguageContext';
+
+const TELEGRAM_BOT_URL = import.meta.env.VITE_TELEGRAM_BOT_URL || import.meta.env.VITE_TELEGRAM_URL || 'https://t.me/wibestoreuz_bot';
 
 const CoinsPage = () => {
     const { t } = useLanguage();
@@ -328,6 +330,99 @@ const CoinsPage = () => {
                         </Link>
                     </div>
                 )}
+
+                {/* ── Telegram bot orqali hisob to'ldirish ─────────────────── */}
+                <div style={{
+                    marginTop: '32px',
+                    borderRadius: 'var(--radius-xl)',
+                    border: '1px solid rgba(37,211,102,0.3)',
+                    background: 'linear-gradient(135deg, rgba(37,211,102,0.06) 0%, rgba(37,211,102,0.02) 100%)',
+                    overflow: 'hidden',
+                }}>
+                    {/* Header */}
+                    <div style={{
+                        padding: '20px 24px 16px',
+                        borderBottom: '1px solid rgba(37,211,102,0.15)',
+                        display: 'flex', alignItems: 'center', gap: '14px',
+                    }}>
+                        <div style={{
+                            width: '48px', height: '48px', borderRadius: 'var(--radius-xl)',
+                            background: 'linear-gradient(135deg, #25d366, #128c7e)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        }}>
+                            <Wallet style={{ width: '24px', height: '24px', color: '#fff' }} />
+                        </div>
+                        <div>
+                            <p style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '2px' }}>
+                                Telegram bot orqali hisob to'ldirish
+                            </p>
+                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                                Tez va qulay — to'lov qiling, balans avtomatik qo'shiladi
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Steps */}
+                    <div style={{ padding: '20px 24px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                            {[
+                                { step: '1', text: 'Quyidagi tugmani bosib botga o\'ting', color: 'var(--color-accent-blue)' },
+                                { step: '2', text: '«Xisobni to\'ldirish» tugmasini tanlang', color: 'var(--color-accent-green)' },
+                                { step: '3', text: 'To\'lov miqdorini kiriting va chek yuboring', color: 'var(--color-accent-purple)' },
+                                { step: '4', text: 'Admin tasdiqlashi bilanoq balans hisobingizga qo\'shiladi', color: 'var(--color-accent-orange)' },
+                            ].map(({ step, text, color }) => (
+                                <div key={step} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                    <div style={{
+                                        width: '28px', height: '28px', borderRadius: 'var(--radius-full)',
+                                        backgroundColor: color, color: '#fff',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)',
+                                        flexShrink: 0,
+                                    }}>{step}</div>
+                                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', paddingTop: '4px' }}>{text}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Warning */}
+                        <div style={{
+                            display: 'flex', alignItems: 'flex-start', gap: '10px',
+                            padding: '12px 14px', borderRadius: 'var(--radius-lg)',
+                            backgroundColor: 'var(--color-warning-bg)',
+                            border: '1px solid var(--color-accent-orange)',
+                            marginBottom: '20px',
+                        }}>
+                            <AlertCircle style={{ width: '16px', height: '16px', color: 'var(--color-accent-orange)', flexShrink: 0, marginTop: '2px' }} />
+                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
+                                Faqat rasmiy bot orqali to'lang. Boshqa manzillarga pul o'tkazib bo'lmaydi — bu xavfsizlik talabi.
+                            </p>
+                        </div>
+
+                        {/* CTA Button */}
+                        <a
+                            href={TELEGRAM_BOT_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-lg"
+                            style={{
+                                width: '100%', justifyContent: 'center', textDecoration: 'none',
+                                background: 'linear-gradient(135deg, #25d366, #128c7e)',
+                                color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '10px',
+                            }}
+                        >
+                            <Send style={{ width: '18px', height: '18px' }} />
+                            Telegram bot orqali to'ldirish
+                            <Plus style={{ width: '18px', height: '18px' }} />
+                        </a>
+
+                        <p style={{
+                            marginTop: '10px', fontSize: 'var(--font-size-xs)',
+                            color: 'var(--color-text-muted)', textAlign: 'center',
+                        }}>
+                            To'lov usullari: Humo, Uzcard, Visa, MasterCard
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     );

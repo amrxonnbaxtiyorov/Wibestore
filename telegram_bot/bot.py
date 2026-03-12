@@ -2066,6 +2066,154 @@ async def cmd_notify_now(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     await update.message.reply_text("✅ Xabar yuborildi!")
 
 
+# ===== ESCROW (XARID TASDIQLASH) HANDLERLARI =====
+
+async def _call_escrow_action_api(
+    telegram_id: int, escrow_id: str, action: str, reason: str = ""
+) -> tuple[bool, str]:
+    """Backend API orqali escrow action yuborish."""
+    if not BOT_SECRET_KEY:
+        return False, "BOT_SECRET_KEY o'rnatilmagan"
+
+    url = f"{WEBSITE_URL}/api/v1/auth/telegram/escrow/action/"
+    payload: dict = {
+        "secret_key": BOT_SECRET_KEY,
+        "telegram_id": telegram_id,
+        "escrow_id": escrow_id,
+        "action": action,
+    }
+    if reason:
+        payload["reason"] = reason
+
+    if _AIOHTTP_AVAILABLE:
+        try:
+            async with _aiohttp.ClientSession() as session:
+                async with session.post(
+                    url, json=payload,
+                    timeout=_aiohttp.ClientTimeout(total=15),
+                ) as resp:
+                    try:
+                        data = await resp.json()
+                    except Exception:
+                        data = {}
+                    ok = resp.status == 200 and data.get("success", False)
+                    msg = data.get("message") or data.get("error") or ""
+                    return ok, msg
+        except Exception as e:
+            logger.error("Escrow action API xato: %s", e)
+            return False, f"Ulanish xatosi: {e}"
+    return False, "aiohttp o'rnatilmagan"
+
+
+async def _cb_escrow_seller_ok(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Sotuvchi: Akkauntni topshirdim ✅"""
+    query = update.callback_query
+    await query.answer()
+
+    parts = query.data.split(":", 1)
+    if len(parts) != 2:
+        return
+    escrow_id = parts[1]
+    telegram_id = query.from_user.id
+
+    await query.edit_message_reply_markup(reply_markup=None)
+    wait_msg = await query.message.reply_text("⏳ Tekshirilmoqda...")
+
+    ok, msg = await _call_escrow_action_api(telegram_id, escrow_id, "seller_confirm")
+
+    await wait_msg.delete()
+    if ok:
+        await query.message.reply_text(
+            "✅ <b>Tasdiqlandi!</b>\n\n"
+            "Akkaunt topshirilganligi qayd etildi.\n"
+            "Haridor akkauntni qabul qilishi bilanoq pul hisobingizga o'tkaziladi.\n\n"
+            f"🌐 Saytga kiring: <a href='{SITE_URL}'>{SITE_URL}</a>",
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
+    else:
+        err_text = msg or "Noma'lum xato"
+        await query.message.reply_text(
+            f"❌ <b>Xatolik yuz berdi</b>\n\n{err_text}\n\n"
+            "Qayta urinib ko'ring yoki admin bilan bog'laning.",
+            parse_mode="HTML",
+        )
+
+
+async def _cb_escrow_buyer_ok(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Haridor: Akkauntni to'liq oldim ✅"""
+    query = update.callback_query
+    await query.answer()
+
+    parts = query.data.split(":", 1)
+    if len(parts) != 2:
+        return
+    escrow_id = parts[1]
+    telegram_id = query.from_user.id
+
+    await query.edit_message_reply_markup(reply_markup=None)
+    wait_msg = await query.message.reply_text("⏳ Tekshirilmoqda...")
+
+    ok, msg = await _call_escrow_action_api(telegram_id, escrow_id, "buyer_confirm")
+
+    await wait_msg.delete()
+    if ok:
+        await query.message.reply_text(
+            "✅ <b>Xarid tasdiqlandi!</b>\n\n"
+            "Akkaunt qabul qilinganligingiz qayd etildi.\n"
+            "Pul sotuvchiga o'tkazish jarayoni boshlandi.\n\n"
+            "⭐ Iltimos, sotuvchini baholang:\n"
+            f"🌐 <a href='{SITE_URL}'>Saytga kiring</a>",
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
+    else:
+        err_text = msg or "Noma'lum xato"
+        await query.message.reply_text(
+            f"❌ <b>Xatolik:</b> {err_text}\n\n"
+            "Qayta urinib ko'ring.",
+            parse_mode="HTML",
+        )
+
+
+async def _cb_escrow_buyer_no(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Haridor: Muammo bor ❌ — shikoyat ochish."""
+    query = update.callback_query
+    await query.answer()
+
+    parts = query.data.split(":", 1)
+    if len(parts) != 2:
+        return
+    escrow_id = parts[1]
+    telegram_id = query.from_user.id
+
+    await query.edit_message_reply_markup(reply_markup=None)
+    wait_msg = await query.message.reply_text("⏳ Shikoyat yuborilmoqda...")
+
+    ok, msg = await _call_escrow_action_api(
+        telegram_id, escrow_id, "buyer_dispute",
+        reason="Haridor akkauntni qabul qilishda muammo bo'ldi (bot orqali)"
+    )
+
+    await wait_msg.delete()
+    if ok:
+        await query.message.reply_text(
+            "⚠️ <b>Shikoyat qabul qilindi!</b>\n\n"
+            "Admin jamoamiz holatni tekshirib, tez orada javob beradi.\n"
+            "Saytdagi chat orqali ham muloqot qilishingiz mumkin.\n\n"
+            f"🌐 <a href='{SITE_URL}/chat'>Chatga kirish</a>",
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
+    else:
+        err_text = msg or "Noma'lum xato"
+        await query.message.reply_text(
+            f"❌ <b>Xatolik:</b> {err_text}\n\n"
+            "Sayt orqali murojaat qiling.",
+            parse_mode="HTML",
+        )
+
+
 def main():
     """Botni ishga tushirish"""
     if BOT_TOKEN == 'YOUR_BOT_TOKEN_HERE':
@@ -2185,6 +2333,11 @@ def main():
     # Premium admin: tasdiqlash va rad etish
     app.add_handler(CallbackQueryHandler(_cb_premium_admin_approve, pattern=r'^premium_adm_ok:'))
     app.add_handler(CallbackQueryHandler(_cb_premium_admin_reject, pattern=r'^premium_adm_no:\d+$'))
+
+    # ---- Escrow (xarid tasdiqlash) handlerlari ----
+    app.add_handler(CallbackQueryHandler(_cb_escrow_seller_ok, pattern=r'^escrow_seller_ok:'))
+    app.add_handler(CallbackQueryHandler(_cb_escrow_buyer_ok,  pattern=r'^escrow_buyer_ok:'))
+    app.add_handler(CallbackQueryHandler(_cb_escrow_buyer_no,  pattern=r'^escrow_buyer_no:'))
 
     # Admin buyruqlari (faqat adminlar uchun, lekin global — conversation tashqarida)
     app.add_handler(CommandHandler('admin', cmd_admin_panel))

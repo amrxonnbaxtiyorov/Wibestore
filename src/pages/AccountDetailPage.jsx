@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
     Heart, Share2, Shield, Star, MessageCircle, CheckCircle,
     AlertCircle, ChevronLeft, ChevronRight, Copy, Check,
-    Gamepad2, Trophy, Swords, Layers, ArrowLeft, Send
+    Gamepad2, Trophy, Swords, Layers, ArrowLeft, Send, Wallet, X
 } from 'lucide-react';
 
 import { useListing, useAddToFavorites, useRemoveFromFavorites, useListings, usePurchaseListing } from '../hooks';
@@ -20,7 +20,149 @@ import BuyerRulesQuiz from '../components/BuyerRulesQuiz';
 import ReviewModal from '../components/ReviewModal';
 
 const TELEGRAM_URL = import.meta.env.VITE_TELEGRAM_URL || 'https://t.me/wibestoreuz';
+const TELEGRAM_BOT_URL = import.meta.env.VITE_TELEGRAM_BOT_URL || import.meta.env.VITE_TELEGRAM_URL || 'https://t.me/wibestoreuz_bot';
 const FAV_STORAGE_KEY = 'wibeFavoriteListingIds';
+
+/* ─── Balans yetarli emas modal ───────────────────────────────── */
+const InsufficientFundsModal = ({ onClose, required, balance }) => {
+    const fmtPrice = (v) => v != null ? new Intl.NumberFormat('uz-UZ').format(v) + ' so\'m' : '—';
+    const need = required && balance != null ? Math.max(0, Number(required) - Number(balance)) : null;
+    return (
+        <div
+            style={{
+                position: 'fixed', inset: 0, zIndex: 9999,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+                padding: '16px',
+            }}
+            onClick={e => e.target === e.currentTarget && onClose()}
+        >
+            <div style={{
+                backgroundColor: 'var(--color-bg-primary)',
+                borderRadius: 'var(--radius-2xl)',
+                border: '1px solid var(--color-border-default)',
+                maxWidth: '440px', width: '100%',
+                overflow: 'hidden', boxShadow: '0 24px 48px rgba(0,0,0,0.4)',
+            }}>
+                {/* Top bar */}
+                <div style={{
+                    padding: '20px 20px 16px',
+                    borderBottom: '1px solid var(--color-border-muted)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    background: 'linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.03))',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{
+                            width: '40px', height: '40px', borderRadius: 'var(--radius-lg)',
+                            backgroundColor: 'var(--color-error-bg)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                            <Wallet style={{ width: '20px', height: '20px', color: 'var(--color-error)' }} />
+                        </div>
+                        <div>
+                            <p style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>
+                                Balans yetarli emas
+                            </p>
+                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                Xarid amalga oshmadi
+                            </p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: '4px' }}>
+                        <X style={{ width: '20px', height: '20px' }} />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div style={{ padding: '20px' }}>
+                    {/* Balance info */}
+                    <div style={{
+                        display: 'grid', gridTemplateColumns: '1fr 1fr',
+                        gap: '10px', marginBottom: '16px',
+                    }}>
+                        <div style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-muted)' }}>
+                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Joriy balansingiz</p>
+                            <p style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-accent-green)', fontSize: 'var(--font-size-sm)' }}>
+                                {fmtPrice(balance)}
+                            </p>
+                        </div>
+                        <div style={{ padding: '12px 14px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-muted)' }}>
+                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Kerak bo'lgan summa</p>
+                            <p style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
+                                {fmtPrice(required)}
+                            </p>
+                        </div>
+                    </div>
+
+                    {need != null && (
+                        <div style={{
+                            padding: '10px 14px', borderRadius: 'var(--radius-md)',
+                            backgroundColor: 'var(--color-warning-bg)',
+                            border: '1px solid var(--color-accent-orange)',
+                            marginBottom: '16px', fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)',
+                        }}>
+                            Hisobingizni kamida <strong style={{ color: 'var(--color-accent-orange)' }}>{fmtPrice(need)}</strong> ga to'ldiring.
+                        </div>
+                    )}
+
+                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>
+                        Hamyonni quyidagi usullardan biri orqali to'ldirishingiz mumkin:
+                    </p>
+
+                    {/* Telegram bot option — highlighted */}
+                    <a
+                        href={TELEGRAM_BOT_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '12px',
+                            padding: '14px 16px', borderRadius: 'var(--radius-lg)',
+                            background: 'linear-gradient(135deg, rgba(37,211,102,0.12), rgba(37,211,102,0.06))',
+                            border: '1px solid rgba(37,211,102,0.4)',
+                            textDecoration: 'none', marginBottom: '10px',
+                            transition: 'background 0.15s',
+                        }}
+                    >
+                        <Send style={{ width: '20px', height: '20px', color: '#25d366', flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                            <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '2px' }}>
+                                Telegram bot orqali to'ldirish
+                            </p>
+                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                Humo, Uzcard, Visa, MasterCard — tez va qulay
+                            </p>
+                        </div>
+                        <ChevronRight style={{ width: '16px', height: '16px', color: 'var(--color-text-muted)' }} />
+                    </a>
+
+                    {/* Wallet page option */}
+                    <Link
+                        to="/coins"
+                        onClick={onClose}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '12px',
+                            padding: '14px 16px', borderRadius: 'var(--radius-lg)',
+                            backgroundColor: 'var(--color-bg-secondary)',
+                            border: '1px solid var(--color-border-default)',
+                            textDecoration: 'none',
+                        }}
+                    >
+                        <Wallet style={{ width: '20px', height: '20px', color: 'var(--color-accent-blue)', flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                            <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '2px' }}>
+                                Hamyon sahifasiga o'tish
+                            </p>
+                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                Barcha to'ldirish usullari va coin tarixi
+                            </p>
+                        </div>
+                        <ChevronRight style={{ width: '16px', height: '16px', color: 'var(--color-text-muted)' }} />
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 /* ─── Image Carousel ──────────────────────────────────────────── */
 const ImageCarousel = ({ images, title, noImageText, imageErrorText }) => {
@@ -245,6 +387,7 @@ const AccountDetailPage = () => {
     const purchaseListing = usePurchaseListing();
     const [showReviewAfterPurchase, setShowReviewAfterPurchase] = useState(false);
     const [pendingChatRoomId, setPendingChatRoomId] = useState(null);
+    const [showInsufficientModal, setShowInsufficientModal] = useState(false);
 
     useEffect(() => {
         if (typeof listing?.is_favorited === 'boolean') setIsLiked(listing.is_favorited);
@@ -380,10 +523,9 @@ const AccountDetailPage = () => {
                     setShowBuyerRulesModal(false);
                     const msg = err?.response?.data?.error?.message || err?.message || '';
                     const statusCode = err?.response?.status;
-                    const insufficient = statusCode === 402 || msg.toLowerCase().includes('balance');
+                    const insufficient = statusCode === 402 || msg.toLowerCase().includes('balance') || msg.toLowerCase().includes('insufficient');
                     if (insufficient) {
-                        addToast({ type: 'warning', title: t('detail.insufficient_balance') || 'Balans yetarli emas. Hamyonni to\'ldiring yoki Telegram orqali to\'lang.' });
-                        navigate('/coins');
+                        setShowInsufficientModal(true);
                     } else {
                         addToast({ type: 'error', title: t('detail.purchase_error') || 'Xarid amalga oshmadi.' });
                         fallbackToTelegram();
@@ -467,6 +609,13 @@ const AccountDetailPage = () => {
 
     return (
         <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '80px' }}>
+            {showInsufficientModal && (
+                <InsufficientFundsModal
+                    onClose={() => setShowInsufficientModal(false)}
+                    required={listing?.price}
+                    balance={user?.balance}
+                />
+            )}
             {showBuyerRulesModal && (
                 <BuyerRulesQuiz
                     inModal
@@ -624,10 +773,39 @@ const AccountDetailPage = () => {
                                 </span>
                             </div>
 
+                            {/* Foydalanuvchi balansi ko'rsatiladi (kirgan bo'lsa) */}
+                            {isAuthenticated && user?.balance != null && listing?.price != null && (
+                                (() => {
+                                    const userBal = Number(user.balance);
+                                    const price = Number(listing.price);
+                                    const enough = userBal >= price;
+                                    return (
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                            padding: '10px 14px', borderRadius: 'var(--radius-lg)', marginBottom: '4px',
+                                            backgroundColor: enough ? 'var(--color-success-bg)' : 'var(--color-error-bg)',
+                                            border: `1px solid ${enough ? 'var(--color-accent-green)' : 'var(--color-error)'}`,
+                                        }}>
+                                            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-secondary)' }}>
+                                                {enough ? '✅ Balansingiz yetarli' : '❌ Balansingiz yetarli emas'}
+                                            </span>
+                                            <span style={{
+                                                fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)',
+                                                color: enough ? 'var(--color-accent-green)' : 'var(--color-error)',
+                                            }}>
+                                                {new Intl.NumberFormat('uz-UZ').format(userBal)} so'm
+                                            </span>
+                                        </div>
+                                    );
+                                })()
+                            )}
+
                             {/* CTA buttons */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <button type="button" onClick={handleBuyClick} className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center' }}>
-                                    {t('detail.buy_now') || 'Sotib olish'}
+                                <button type="button" onClick={handleBuyClick} className="btn btn-primary btn-lg" style={{ width: '100%', justifyContent: 'center' }}
+                                    disabled={purchaseListing.isPending}
+                                >
+                                    {purchaseListing.isPending ? '⏳ Jarayonda...' : (t('detail.buy_now') || 'Sotib olish')}
                                 </button>
                                 <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <Send style={{ width: '14px', height: '14px', flexShrink: 0 }} />
