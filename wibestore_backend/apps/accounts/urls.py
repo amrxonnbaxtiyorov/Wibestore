@@ -28,6 +28,7 @@ urlpatterns = [
     path("telegram/profile/", views.TelegramBotProfileView.as_view(), name="telegram-bot-profile"),
     path("telegram/otp/create/", views.BotCreateOTPView.as_view(), name="telegram-otp-create"),
     path("telegram/balance/add/", views.TelegramBotAddBalanceView.as_view(), name="telegram-balance-add"),
+    path("telegram/balance/deduct/", views.TelegramBotDeductBalanceView.as_view(), name="telegram-balance-deduct"),
     path("telegram/premium/purchase/", views.TelegramBotPremiumPurchaseView.as_view(), name="telegram-premium-purchase"),
     path("telegram/plans/", views.TelegramBotPlansView.as_view(), name="telegram-plans"),
     path("register/telegram/", views.TelegramRegisterView.as_view(), name="register-telegram"),

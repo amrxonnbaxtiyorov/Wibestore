@@ -325,6 +325,29 @@ async def _add_user_balance_api(telegram_id: int, amount: int) -> tuple[int, dic
     return 503, {"error": "aiohttp yo'q"}
 
 
+async def _deduct_user_balance_api(telegram_id: int, amount: int) -> tuple[int, dict]:
+    """Backend API orqali foydalanuvchi balansidan summa ayirish (pul yechish)."""
+    if not BOT_SECRET_KEY:
+        return 500, {"error": "BOT_SECRET_KEY yo'q"}
+    url = f"{WEBSITE_URL}/api/v1/auth/telegram/balance/deduct/"
+    payload = {"secret_key": BOT_SECRET_KEY, "telegram_id": telegram_id, "amount": amount}
+    if _AIOHTTP_AVAILABLE:
+        try:
+            async with _aiohttp.ClientSession() as session:
+                async with session.post(
+                    url, json=payload, timeout=_aiohttp.ClientTimeout(total=15)
+                ) as resp:
+                    try:
+                        data = await resp.json()
+                    except Exception:
+                        data = {}
+                    return resp.status, data
+        except Exception as e:
+            logger.error("Balance deduct API xato: %s", e)
+            return 503, {}
+    return 503, {"error": "aiohttp yo'q"}
+
+
 async def _sync_all_admin_msgs(
     bot,
     bot_data: dict,
@@ -1244,9 +1267,19 @@ async def _receive_withdraw_card(update: Update, context: ContextTypes.DEFAULT_T
     result = await get_telegram_profile_via_api(telegram_id)
     username = result.get("data", {}).get("username", "") if result and result.get("has_account") else str(telegram_id)
     balance = result.get("data", {}).get("balance", "0") if result and result.get("has_account") else "0"
+
+    # Bot data da karta va summa saqlab qo'yamiz (callback uchun)
+    context.bot_data[f"withdraw_{telegram_id}"] = {"card": card, "amount": amount}
+
+    keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton("✅ Pul o'tkazildi", callback_data=f"withdraw_paid:{telegram_id}"),
+        InlineKeyboardButton("❌ Rad etish", callback_data=f"withdraw_reject:{telegram_id}"),
+    ]])
+
+    sent_msgs = []
     for target in _notification_targets():
         try:
-            await context.bot.send_message(
+            msg = await context.bot.send_message(
                 target,
                 f"💸 <b>Hisobdan pul yechish so'rovi</b>\n\n"
                 f"👤 Sayt username: <b>{username}</b>\n"
@@ -1255,14 +1288,146 @@ async def _receive_withdraw_card(update: Update, context: ContextTypes.DEFAULT_T
                 f"💰 So'ralgan summa: <b>{amount} UZS</b>\n"
                 f"💳 Karta raqami: <code>{card}</code>",
                 parse_mode="HTML",
+                reply_markup=keyboard,
             )
+            sent_msgs.append((target, msg.message_id))
         except Exception as e:
             logger.warning("Admin %s ga xabar yuborilmadi: %s", target, e)
+
+    # Barcha admin xabarlarini keyinchalik yangilash uchun saqlaymiz
+    if sent_msgs:
+        context.bot_data[f"admin_msgs_withdraw:{telegram_id}"] = sent_msgs
     await update.message.reply_html(
         "✅ So'rovingiz qabul qilindi. Admin tekshiradi va pul o'tkazilgach xabar beramiz.",
         reply_markup=_get_main_keyboard(),
     )
     return WAITING_PHONE
+
+
+async def _cb_withdraw_paid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin: pul o'tkazilganligini tasdiqlash — balans ayiriladi, foydalanuvchiga xabar."""
+    query = update.callback_query
+    if not _is_admin(query.from_user.id):
+        await query.answer("⛔ Ruxsat yo'q.", show_alert=True)
+        return
+    await query.answer()
+
+    telegram_id = int(query.data.replace("withdraw_paid:", "", 1))
+    info = context.bot_data.pop(f"withdraw_{telegram_id}", {})
+    card = info.get("card", "—")
+    amount_str = info.get("amount", "?")
+    admin_tag = f"@{query.from_user.username}" if query.from_user.username else str(query.from_user.id)
+
+    # Admin xabarini yangilash
+    orig_text = query.message.text or ""
+    new_text = (
+        orig_text
+        + f"\n\n━━━━━━━━━━━━━━━━━━━━\n"
+        f"✅ <b>PUL O'TKAZILDI</b> ({admin_tag})\n"
+        f"💳 Karta: <code>{card}</code> ga <b>{amount_str} UZS</b> o'tkazildi."
+    )
+    try:
+        await query.edit_message_text(new_text, parse_mode="HTML", reply_markup=None)
+    except Exception:
+        pass
+
+    # Boshqa adminlarga yuborilgan xabarlarni ham yangilash
+    sent_msgs: list = context.bot_data.pop(f"admin_msgs_withdraw:{telegram_id}", [])
+    for chat_id, msg_id in sent_msgs:
+        if chat_id == query.message.chat_id and msg_id == query.message.message_id:
+            continue
+        try:
+            await context.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=msg_id,
+                text=new_text,
+                parse_mode="HTML",
+                reply_markup=None,
+            )
+        except Exception:
+            pass
+
+    # Balansdan ayirish
+    try:
+        amount_int = int(float(amount_str.replace(" ", "").replace(",", "")))
+    except (ValueError, AttributeError):
+        amount_int = 0
+
+    if amount_int > 0:
+        status_code, data = await _deduct_user_balance_api(telegram_id, amount_int)
+        new_balance = data.get("new_balance", "?") if status_code == 200 else None
+    else:
+        new_balance = None
+
+    # Foydalanuvchiga xabar
+    balance_line = f"📊 Yangi balans: <b>{new_balance} UZS</b>\n" if new_balance else ""
+    try:
+        await context.bot.send_message(
+            telegram_id,
+            f"✅ <b>Pul muvaffaqiyatli o'tkazildi!</b>\n\n"
+            f"💰 Summa: <b>{amount_str} UZS</b>\n"
+            f"💳 Karta: <code>{card}</code>\n"
+            f"{balance_line}\n"
+            f"Agar pul tushmagan bo'lsa, admin bilan bog'laning.",
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.warning("Foydalanuvchi %s ga xabar yuborilmadi: %s", telegram_id, e)
+
+
+async def _cb_withdraw_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin: pul yechish so'rovini rad etish va foydalanuvchiga xabar."""
+    query = update.callback_query
+    if not _is_admin(query.from_user.id):
+        await query.answer("⛔ Ruxsat yo'q.", show_alert=True)
+        return
+    await query.answer("❌ Rad etildi.")
+
+    telegram_id = int(query.data.replace("withdraw_reject:", "", 1))
+    info = context.bot_data.pop(f"withdraw_{telegram_id}", {})
+    card = info.get("card", "—")
+    amount_str = info.get("amount", "?")
+    admin_tag = f"@{query.from_user.username}" if query.from_user.username else str(query.from_user.id)
+
+    orig_text = query.message.text or ""
+    new_text = (
+        orig_text
+        + f"\n\n━━━━━━━━━━━━━━━━━━━━\n"
+        f"❌ <b>RAD ETILDI</b> ({admin_tag})"
+    )
+    try:
+        await query.edit_message_text(new_text, parse_mode="HTML", reply_markup=None)
+    except Exception:
+        pass
+
+    # Boshqa adminlarga
+    sent_msgs: list = context.bot_data.pop(f"admin_msgs_withdraw:{telegram_id}", [])
+    for chat_id, msg_id in sent_msgs:
+        if chat_id == query.message.chat_id and msg_id == query.message.message_id:
+            continue
+        try:
+            await context.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=msg_id,
+                text=new_text,
+                parse_mode="HTML",
+                reply_markup=None,
+            )
+        except Exception:
+            pass
+
+    # Foydalanuvchiga xabar
+    try:
+        await context.bot.send_message(
+            telegram_id,
+            f"❌ <b>Pul yechish so'rovi rad etildi.</b>\n\n"
+            f"💰 Summa: <b>{amount_str} UZS</b>\n"
+            f"💳 Karta: <code>{card}</code>\n\n"
+            f"Batafsil ma'lumot uchun admin bilan bog'laning.",
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        logger.warning("Foydalanuvchi %s ga xabar yuborilmadi: %s", telegram_id, e)
 
 
 async def _cancel_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -2826,6 +2991,10 @@ def main():
 
     # Screenshot topup: rad etish
     app.add_handler(CallbackQueryHandler(_cb_topup_reject, pattern=r'^topup_reject:\d+$'))
+
+    # Pul yechish: tasdiqlash va rad etish
+    app.add_handler(CallbackQueryHandler(_cb_withdraw_paid, pattern=r'^withdraw_paid:\d+$'))
+    app.add_handler(CallbackQueryHandler(_cb_withdraw_reject, pattern=r'^withdraw_reject:\d+$'))
 
     # Premium admin: tasdiqlash va rad etish
     app.add_handler(CallbackQueryHandler(_cb_premium_admin_approve, pattern=r'^premium_adm_ok:'))
