@@ -111,7 +111,7 @@ const InsufficientFundsModal = ({ onClose, required, balance }) => {
 
                     {/* Telegram bot option — highlighted */}
                     <a
-                        href={TELEGRAM_BOT_URL}
+                        href={`${TELEGRAM_BOT_URL}?start=topup`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{

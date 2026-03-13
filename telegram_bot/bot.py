@@ -529,11 +529,16 @@ def _get_main_keyboard():
 # ===== HANDLERS =====
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Bot: /start — asosiy menyu (akkaunt, Premium, to'ldirish, chiqarish, telefon, to'lov paneli)"""
+    """Bot: /start — asosiy menyu. /start topup parametri bilan hisobni to'ldirish oqimini boshlaydi."""
     user = update.effective_user
     _save_user(user.id)
-    reply_markup = _get_main_keyboard()
 
+    # /start topup — to'g'ridan to'g'ri hisobni to'ldirish oqimiga o'tish
+    args = context.args
+    if args and args[0] == "topup":
+        return await _cmd_topup(update, context)
+
+    reply_markup = _get_main_keyboard()
     payment_line = "\n💰 <b>To'lov paneli</b> — hisobni to'ldirish\n" if PAYMENT_ENABLED else ""
 
     welcome_text = (
@@ -1573,16 +1578,7 @@ async def _hourly_notify_job(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def _post_init(application) -> None:
-    """Fon vazifalarini ishga tushirish: payment Redis listener + soatlik xabar."""
-    # Soatlik foydalanuvchi xabari (har 3600 soniyada)
-    application.job_queue.run_repeating(
-        _hourly_notify_job,
-        interval=3600,
-        first=3600,
-        name="hourly_notify",
-    )
-    logger.info("Soatlik xabar job ishga tushdi (har 1 soatda).")
-
+    """Fon vazifalarini ishga tushirish: payment Redis listener."""
     if PAYMENT_ENABLED and _REDIS_AVAILABLE:
         application.bot_data["payment_listener"] = asyncio.create_task(
             _payment_listener_loop(application.bot)
@@ -2850,7 +2846,6 @@ def main():
     app.add_handler(CommandHandler('stats', cmd_stats))
     app.add_handler(CommandHandler('balance', cmd_balance))
     app.add_handler(CommandHandler('broadcast', cmd_broadcast))
-    app.add_handler(CommandHandler('notify', cmd_notify_now))
 
     # ---- Umumiy buyruqlar ----
     app.add_handler(CommandHandler('help', help_command))
