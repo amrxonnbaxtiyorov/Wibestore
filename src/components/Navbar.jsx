@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Sun, Moon, User, LogOut, Settings, ShoppingBag, Crown, ChevronDown, TrendingUp, BarChart3, Zap, Coins } from 'lucide-react';
+import { Search, Menu, X, Sun, Moon, User, LogOut, Settings, ShoppingBag, ChevronDown, TrendingUp, BarChart3, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useCoins } from '../context/CoinContext';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
 import { getDisplayInitial, capitalizeFirst, resolveImageUrl } from '../lib/displayUtils';
 import NotificationWidget from './NotificationWidget';
@@ -12,7 +11,6 @@ import Logo from './Logo';
 const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const { toggleTheme, isDark } = useTheme();
-    const { coins } = useCoins();
     const { t, language, setLanguage } = useLanguage();
     const location = useLocation();
     const navigate = useNavigate();
@@ -99,7 +97,6 @@ const Navbar = () => {
         { to: '/products', label: t('nav.products') || 'Boshqa mahsulotlar', icon: ShoppingBag },
         { to: '/top', label: t('nav.top') || 'Top akkauntlar', icon: TrendingUp },
         { to: '/statistics', label: t('nav.statistics') || 'Statistika', icon: BarChart3 },
-        { to: '/coins', label: t('nav.coins') || 'Coinlar', icon: Coins },
         { to: '/premium', label: t('nav.premium') || 'Site Premium', icon: Zap, badge: 'NEW' },
     ];
 
@@ -474,14 +471,6 @@ const Navbar = () => {
                                                             ? String(user.email).replace(/^tg_(\d+).*$/, '$1')
                                                             : (user?.telegram || user?.email || '')}
                                                 </div>
-                                                {coins > 0 && (
-                                                    <div className="flex items-center gap-1 mt-2 mb-1">
-                                                        <Crown className="w-3 h-3" style={{ color: '#e3b341' }} />
-                                                        <span className="text-[12px] font-semibold" style={{ color: '#e3b341' }}>
-                                                            {coins} coins
-                                                        </span>
-                                                    </div>
-                                                )}
                                             </div>
 
                                             {/* Menu Items */}
