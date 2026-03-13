@@ -397,6 +397,142 @@ def notify_escrow_released(escrow) -> None:
         ))
 
 
+def notify_verification_request(escrow, verification) -> None:
+    """Sotuvchiga shaxsini tasdiqlash so'rovi yuborish (akkaunt topshirilgandan so'ng)."""
+    seller = escrow.seller
+    listing = escrow.listing
+    price_str = _fmt_price(escrow.amount)
+    verification_id = str(verification.id)
+
+    if not seller.telegram_id:
+        return
+
+    seller_name = seller.display_name or seller.email or "Sotuvchi"
+
+    text = (
+        f"🔐 <b>SHAXSINGIZNI TASDIQLANG</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"✅ <b>{listing.title}</b> akkauntingiz sotildi!\n"
+        f"💰 Savdo narxi: <b>{price_str}</b>\n\n"
+        f"Pulni olish uchun quyidagi hujjatlarni taqdim eting:\n\n"
+        f"1️⃣ <b>Pasport/ID karta OLDI tomoni rasmi</b>\n"
+        f"   ↳ Rasm tagiga to'liq ismingizni (F.I.SH) yozing\n\n"
+        f"2️⃣ <b>Pasport/ID karta ORQA tomoni rasmi</b>\n\n"
+        f"3️⃣ <b>Doira video (video xabar)</b>\n"
+        f"   ↳ Quyidagini aytib, doira video yuboring:\n"
+        f"   <i>«Men {seller_name} {listing.title} akkauntimni "
+        f"Wibe Store saytida {price_str} ga sotdim. "
+        f"Agar akkaunt bilan muammo bo'lsa, men tashlagan "
+        f"hujjatlarim orqali qonuniy chora ko'rilishi mumkin»</i>\n\n"
+        f"4️⃣ <b>Joriy joylashuv</b> (live location)\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"🔒 <b>Maxfiylik kafolati:</b>\n"
+        f"Bu ma'lumotlar faqat akkaunt bilan muammo "
+        f"bo'lganda ishlatiladi va umuman hech kimga "
+        f"berilmaydi. Sayt tomonidan maxfiy saqlanadi.\n\n"
+        f"⬇️ Boshlash uchun quyidagi tugmani bosing:"
+    )
+    keyboard = {
+        "inline_keyboard": [[
+            {
+                "text": "▶️ Hujjat taqdim etishni boshlash",
+                "callback_data": f"start_verification:{verification_id}",
+            }
+        ]]
+    }
+    _send_message(seller.telegram_id, text, reply_markup=keyboard)
+
+
+def notify_verification_submitted(escrow, verification, admin_tg_ids: list) -> None:
+    """Admin(lar)ga sotuvchi hujjatlari yuborilganligi haqida xabar."""
+    seller = escrow.seller
+    listing = escrow.listing
+    price_str = _fmt_price(escrow.amount)
+    verification_id = str(verification.id)
+    seller_name = seller.display_name or seller.email or "Sotuvchi"
+    lat = verification.location_latitude
+    lng = verification.location_longitude
+    location_str = f"{lat:.5f}, {lng:.5f}" if lat and lng else "—"
+    maps_link = (
+        f"https://maps.google.com/?q={lat},{lng}"
+        if lat and lng else ""
+    )
+
+    caption = (
+        f"🔐 <b>Sotuvchi hujjatlari — tasdiqlash kerak</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 Sotuvchi: <b>{seller_name}</b>\n"
+        f"📝 To'liq ism (F.I.SH): <b>{verification.full_name or '—'}</b>\n"
+        f"📦 Akkaunt: <b>{listing.title}</b>\n"
+        f"💰 Narx: <b>{price_str}</b>\n"
+        f"🆔 Telegram ID: <code>{seller.telegram_id}</code>\n"
+        f"📍 Joylashuv: {location_str}"
+    )
+    if maps_link:
+        caption += f"\n🗺️ <a href='{maps_link}'>Xaritada ko'rish</a>"
+
+    caption += (
+        f"\n\n━━━━━━━━━━━━━━━━━━━━\n"
+        f"Tasdiqlash uchun hujjatlarni tekshiring va qaror qabul qiling:"
+    )
+
+    keyboard = {
+        "inline_keyboard": [[
+            {"text": "✅ Tasdiqlash", "callback_data": f"verify_approve:{verification_id}"},
+            {"text": "❌ Rad etish", "callback_data": f"verify_reject:{verification_id}"},
+        ]]
+    }
+
+    for admin_id in admin_tg_ids:
+        _send_message(admin_id, caption, reply_markup=keyboard)
+
+
+def notify_verification_approved(escrow, verification) -> None:
+    """Sotuvchiga hujjatlari tasdiqlanganligi va pul hisobiga o'tkazilganligi haqida xabar."""
+    seller = escrow.seller
+    listing = escrow.listing
+    earnings_str = _fmt_price(escrow.seller_earnings)
+
+    if not seller.telegram_id:
+        return
+
+    text = (
+        f"✅ <b>Hujjatlaringiz tasdiqlandi!</b>\n\n"
+        f"📦 Akkaunt: <b>{listing.title}</b>\n"
+        f"💰 Summa: <b>{earnings_str}</b> hisobingizga o'tkazildi!\n\n"
+        f"🎉 Savdo muvaffaqiyatli yakunlandi!\n"
+        f"🌐 <a href='{SITE_URL}'>Saytga kiring</a>"
+    )
+    _send_message(seller.telegram_id, text)
+
+
+def notify_verification_rejected(verification) -> None:
+    """Sotuvchiga hujjatlari rad etilganligi va qayta yuborish kerakligi haqida xabar."""
+    from apps.payments.models import SellerVerification  # avoid circular
+    seller = verification.seller
+    note = verification.admin_note
+
+    if not seller.telegram_id:
+        return
+
+    text = (
+        f"❌ <b>Hujjatlaringiz rad etildi</b>\n\n"
+        f"📝 Sabab: {note or 'Ko'rsatilmagan'}\n\n"
+        f"Hujjatlaringiz soxta yoki noto'g'ri topildi.\n"
+        f"Iltimos, haqiqiy hujjatlar bilan qayta yuboring.\n\n"
+        f"⬇️ Qayta yuborish uchun quyidagi tugmani bosing:"
+    )
+    keyboard = {
+        "inline_keyboard": [[
+            {
+                "text": "🔄 Qayta hujjat yuborish",
+                "callback_data": f"start_verification:{verification.id}",
+            }
+        ]]
+    }
+    _send_message(seller.telegram_id, text, reply_markup=keyboard)
+
+
 def notify_deposit_approved(deposit_request, new_balance) -> None:
     """Admin hisob to'ldirishni tasdiqlaganda foydalanuvchiga Telegram xabar."""
     telegram_id = deposit_request.telegram_id

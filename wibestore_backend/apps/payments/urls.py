@@ -23,6 +23,8 @@ urlpatterns = [
     # Telegram bot endpoints
     path("telegram/deposit-request/", views.TelegramDepositRequestView.as_view(), name="telegram-deposit-request"),
     path("telegram/callback/", views.TelegramCallbackView.as_view(), name="telegram-callback"),
+    # Seller verification
+    path("telegram/seller-verification/submit/", views.SellerVerificationSubmitView.as_view(), name="seller-verification-submit"),
 ]
 
 # Stripe routes (optional: only if stripe package is installed)

@@ -45,17 +45,86 @@ def process_withdrawal(transaction_id: str) -> None:
 
 @shared_task(name="apps.payments.tasks.release_escrow_payment")
 def release_escrow_payment(escrow_id: str) -> None:
-    """Automatically release escrow payment after 24 hours if no disputes."""
-    from .models import EscrowTransaction
+    """Automatically release escrow payment after 24 hours if no disputes.
+
+    If seller verification is not yet approved, reschedules itself every hour
+    until approved (max 7 days), then cancels.
+    """
+    from django.conf import settings as _settings
+    from .models import EscrowTransaction, SellerVerification
     from .services import EscrowService
+    from core.exceptions import BusinessLogicError
 
     try:
         escrow = EscrowTransaction.objects.get(id=escrow_id)
-        if escrow.status in ("paid", "delivered"):
+    except EscrowTransaction.DoesNotExist:
+        logger.warning("Escrow not found for auto-release: %s", escrow_id)
+        return
+
+    if escrow.status not in ("paid", "delivered"):
+        logger.info("Escrow %s not releasable (status=%s), skipping.", escrow_id, escrow.status)
+        return
+
+    # Sotuvchi tekshiruvini tekshirish
+    verification = (
+        SellerVerification.objects.filter(escrow=escrow)
+        .order_by("-created_at")
+        .first()
+    )
+
+    if verification and verification.status == SellerVerification.STATUS_APPROVED:
+        # Tasdiqlangan — to'lovni chiqar
+        try:
             EscrowService.release_payment(escrow)
-            logger.info("Escrow auto-released: %s", escrow_id)
-    except Exception as e:
-        logger.error("Failed to release escrow %s: %s", escrow_id, e)
+            logger.info("Escrow auto-released after verification approval: %s", escrow_id)
+        except BusinessLogicError as e:
+            logger.warning("Could not auto-release escrow %s: %s", escrow_id, e)
+        except Exception as e:
+            logger.error("Failed to release escrow %s: %s", escrow_id, e)
+        return
+
+    # Tekshiruv hali tasdiqlanmagan — 1 soatdan keyin qayta urinish
+    # Max 7 kun (168 soat) kutish
+    from django.utils import timezone as _tz
+    created = escrow.created_at
+    elapsed_hours = ((_tz.now() - created).total_seconds()) / 3600
+
+    max_hold_hours = getattr(_settings, "VERIFICATION_MAX_HOLD_HOURS", 168)  # 7 kun
+
+    if elapsed_hours >= max_hold_hours:
+        logger.warning(
+            "Escrow %s: verification not approved after %d hours. "
+            "Manual admin action required.",
+            escrow_id, int(elapsed_hours),
+        )
+        # Adminlarga ogohlantirish
+        try:
+            from .telegram_notify import _get_admin_telegram_ids, _send_message
+            msg = (
+                f"⚠️ <b>Escrow to'lov muddati o'tdi!</b>\n\n"
+                f"Sotuvchi {max_hold_hours} soat ichida hujjat taqdim etmadi.\n"
+                f"Escrow ID: <code>{escrow_id}</code>\n"
+                f"Admin tomonidan qo'lda hal etilishi kerak."
+            )
+            for tid in _get_admin_telegram_ids():
+                _send_message(tid, msg)
+        except Exception:
+            pass
+        return
+
+    # 1 soatdan keyin qayta urinish
+    try:
+        release_escrow_payment.apply_async(
+            args=[escrow_id],
+            countdown=3600,
+        )
+        logger.info(
+            "Escrow %s: verification pending, rescheduled auto-release in 1 hour "
+            "(elapsed %.1fh / max %dh).",
+            escrow_id, elapsed_hours, max_hold_hours,
+        )
+    except Exception as retry_err:
+        logger.warning("Could not reschedule auto-release for escrow %s: %s", escrow_id, retry_err)
 
 
 def _transaction_status_display(status: str) -> tuple[str, str]:

@@ -13,7 +13,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import DepositRequest, EscrowTransaction, Transaction
+from .models import DepositRequest, EscrowTransaction, SellerVerification, Transaction
 from .serializers import (
     DepositSerializer,
     EscrowTransactionSerializer,
@@ -532,7 +532,163 @@ class TelegramCallbackView(APIView):
                 pass
             _answer_callback_query(callback_id, "Shikoyat ochildi. Admin ko'rib chiqadi.")
 
+        elif action == "verify_approve":
+            # Admin verification_id bo'yicha tasdiqlaydi
+            verification_id = escrow_id  # reuse variable (actually verification_id)
+            try:
+                verification = SellerVerification.objects.select_related(
+                    "escrow", "seller"
+                ).get(pk=verification_id)
+            except SellerVerification.DoesNotExist:
+                _answer_callback_query(callback_id, "Tekshiruv topilmadi.")
+                return Response({"ok": True})
+
+            # Admin tekshiruvi — staff bo'lishi kerak
+            if not tg_user.is_staff:
+                _answer_callback_query(callback_id, "Faqat admin tasdiqlashi mumkin.")
+                return Response({"ok": True})
+
+            try:
+                escrow_for_verify = EscrowService.approve_seller_verification(verification, tg_user)
+            except BusinessLogicError as be:
+                _answer_callback_query(callback_id, str(be)[:200])
+                return Response({"ok": True})
+            except Exception:
+                _answer_callback_query(callback_id, "Xatolik yuz berdi.")
+                return Response({"ok": True})
+
+            try:
+                from .telegram_notify import notify_verification_approved
+                notify_verification_approved(verification.escrow, verification)
+            except Exception:
+                pass
+
+            _answer_callback_query(callback_id, "✅ Tasdiqlandi! To'lov sotuvchiga o'tkazildi.")
+
+        elif action == "verify_reject":
+            verification_id = escrow_id
+            try:
+                verification = SellerVerification.objects.select_related(
+                    "escrow", "seller"
+                ).get(pk=verification_id)
+            except SellerVerification.DoesNotExist:
+                _answer_callback_query(callback_id, "Tekshiruv topilmadi.")
+                return Response({"ok": True})
+
+            if not tg_user.is_staff:
+                _answer_callback_query(callback_id, "Faqat admin rad etishi mumkin.")
+                return Response({"ok": True})
+
+            try:
+                EscrowService.reject_seller_verification(verification, tg_user)
+            except BusinessLogicError as be:
+                _answer_callback_query(callback_id, str(be)[:200])
+                return Response({"ok": True})
+
+            _answer_callback_query(callback_id, "❌ Rad etildi. Sotuvchiga xabar yuborildi.")
+
         else:
             _answer_callback_query(callback_id)
 
         return Response({"ok": True})
+
+
+@extend_schema(tags=["Payments"])
+class SellerVerificationSubmitView(APIView):
+    """
+    POST /api/v1/payments/telegram/seller-verification/submit/
+    Telegram bot sotuvchining hujjat qadamlarini yuboradi.
+
+    Steps: passport_front | passport_back | video | location
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or request.data.get("secret_key") != secret:
+            return Response({"success": False, "error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+        verification_id = request.data.get("verification_id")
+        step = request.data.get("step")
+
+        if not verification_id or not step:
+            return Response(
+                {"success": False, "error": "verification_id va step majburiy"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            verification = SellerVerification.objects.select_related(
+                "escrow", "escrow__listing", "seller"
+            ).get(pk=verification_id)
+        except SellerVerification.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Tekshiruv topilmadi"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Agar rad etilgan bo'lsa — qayta yuborish uchun sıfırla
+        if verification.status == SellerVerification.STATUS_REJECTED:
+            verification.reset_for_resubmission()
+
+        update_fields = []
+
+        if step == "passport_front":
+            file_id = request.data.get("file_id", "").strip()
+            full_name = request.data.get("full_name", "").strip()
+            if not file_id:
+                return Response({"success": False, "error": "file_id majburiy"}, status=status.HTTP_400_BAD_REQUEST)
+            if not full_name:
+                return Response({"success": False, "error": "full_name (F.I.SH) majburiy"}, status=status.HTTP_400_BAD_REQUEST)
+            verification.passport_front_file_id = file_id
+            verification.full_name = full_name
+            verification.status = SellerVerification.STATUS_PASSPORT_FRONT
+            update_fields = ["passport_front_file_id", "full_name", "status"]
+
+        elif step == "passport_back":
+            file_id = request.data.get("file_id", "").strip()
+            if not file_id:
+                return Response({"success": False, "error": "file_id majburiy"}, status=status.HTTP_400_BAD_REQUEST)
+            verification.passport_back_file_id = file_id
+            verification.status = SellerVerification.STATUS_PASSPORT_BACK
+            update_fields = ["passport_back_file_id", "status"]
+
+        elif step == "video":
+            file_id = request.data.get("file_id", "").strip()
+            if not file_id:
+                return Response({"success": False, "error": "file_id majburiy"}, status=status.HTTP_400_BAD_REQUEST)
+            verification.circle_video_file_id = file_id
+            verification.status = SellerVerification.STATUS_VIDEO
+            update_fields = ["circle_video_file_id", "status"]
+
+        elif step == "location":
+            try:
+                lat = float(request.data.get("latitude"))
+                lng = float(request.data.get("longitude"))
+            except (TypeError, ValueError):
+                return Response({"success": False, "error": "latitude va longitude majburiy"}, status=status.HTTP_400_BAD_REQUEST)
+            verification.location_latitude = lat
+            verification.location_longitude = lng
+            verification.status = SellerVerification.STATUS_SUBMITTED
+            verification.submitted_at = timezone.now()
+            update_fields = ["location_latitude", "location_longitude", "status", "submitted_at"]
+
+            # Adminlarga xabar yuborish
+            try:
+                from .telegram_notify import notify_verification_submitted, _get_admin_telegram_ids
+                admin_ids = _get_admin_telegram_ids()
+                notify_verification_submitted(verification.escrow, verification, admin_ids)
+            except Exception as tg_err:
+                logger.warning("Verification submitted notify failed: %s", tg_err)
+
+        else:
+            return Response({"success": False, "error": f"Noma'lum qadam: {step}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        verification.save(update_fields=update_fields)
+
+        return Response({
+            "success": True,
+            "status": verification.status,
+            "verification_id": str(verification.id),
+        })

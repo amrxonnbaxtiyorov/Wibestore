@@ -12,7 +12,7 @@ from django.utils import timezone
 from core.exceptions import BusinessLogicError, InsufficientFundsError
 from core.utils import calculate_commission, calculate_seller_earnings
 
-from .models import EscrowTransaction, PaymentMethod, Transaction
+from .models import EscrowTransaction, PaymentMethod, SellerVerification, Transaction
 
 logger = logging.getLogger("apps.payments")
 
@@ -178,12 +178,25 @@ class EscrowService:
 
         logger.info("Escrow seller confirmed transfer: %s", escrow.id)
 
-        # Xaridorga xabar yuborish
+        # Sotuvchi shaxsini tasdiqlash yozuvini yaratish yoki qayta boshlash
+        verification = SellerVerification.objects.filter(escrow=escrow).order_by("-created_at").first()
+        if verification and verification.status == SellerVerification.STATUS_REJECTED:
+            # Avvalgi rad etilgani bor — qayta yuborish uchun sıfırla
+            verification.reset_for_resubmission()
+        elif not verification:
+            verification = SellerVerification.objects.create(
+                escrow=escrow,
+                seller=seller,
+                status=SellerVerification.STATUS_PENDING,
+            )
+
+        # Sotuvchiga shaxs tasdiqlash so'rovi yuborish
         try:
-            from .telegram_notify import notify_seller_confirmed
+            from .telegram_notify import notify_verification_request, notify_seller_confirmed
+            notify_verification_request(escrow, verification)
             notify_seller_confirmed(escrow)
         except Exception as tg_err:
-            logger.warning("Telegram seller-confirm notification failed: %s", tg_err)
+            logger.warning("Telegram seller-confirm/verification notification failed: %s", tg_err)
 
         return escrow
 
@@ -210,9 +223,22 @@ class EscrowService:
 
         Note: seller.total_sales is incremented solely via
         ListingService.mark_as_sold() to avoid double-counting.
+        Seller verification must be approved before payment is released.
         """
         if escrow.status not in ("paid", "delivered"):
             raise BusinessLogicError("Escrow cannot be released.")
+
+        # Sotuvchi shaxsini tasdiqlash tekshiruvi
+        verification = (
+            SellerVerification.objects.filter(escrow=escrow)
+            .order_by("-created_at")
+            .first()
+        )
+        if not verification or verification.status != SellerVerification.STATUS_APPROVED:
+            raise BusinessLogicError(
+                "Sotuvchi hujjatlari tasdiqlanmagan. "
+                "To'lov ushlab turilgan. Telegram botda hujjatlarni taqdim eting."
+            )
 
         # Transfer earnings to seller
         seller = escrow.seller
@@ -246,6 +272,61 @@ class EscrowService:
             logger.warning("Telegram release notification failed: %s", tg_err)
 
         return escrow
+
+    @staticmethod
+    @db_transaction.atomic
+    def approve_seller_verification(verification: SellerVerification, admin_user=None) -> EscrowTransaction:
+        """Admin sotuvchi hujjatlarini tasdiqlaydi va to'lovni chiqaradi."""
+        from django.utils import timezone as _tz
+
+        if verification.status not in (
+            SellerVerification.STATUS_SUBMITTED,
+            SellerVerification.STATUS_PENDING,
+            SellerVerification.STATUS_VIDEO,
+            SellerVerification.STATUS_PASSPORT_BACK,
+        ):
+            raise BusinessLogicError("Tekshiruv holati tasdiqlash uchun mos emas.")
+
+        verification.status = SellerVerification.STATUS_APPROVED
+        verification.reviewed_at = _tz.now()
+        if admin_user:
+            verification.reviewed_by = admin_user
+        verification.save(update_fields=["status", "reviewed_at", "reviewed_by"])
+
+        logger.info("SellerVerification approved: %s", verification.id)
+
+        # To'lovni chiqarish
+        escrow = verification.escrow
+        if escrow.status in ("paid", "delivered"):
+            return EscrowService.release_payment(escrow)
+        return escrow
+
+    @staticmethod
+    @db_transaction.atomic
+    def reject_seller_verification(
+        verification: SellerVerification, admin_user=None, note: str = ""
+    ) -> SellerVerification:
+        """Admin sotuvchi hujjatlarini rad etadi."""
+        from django.utils import timezone as _tz
+
+        verification.status = SellerVerification.STATUS_REJECTED
+        verification.reviewed_at = _tz.now()
+        if admin_user:
+            verification.reviewed_by = admin_user
+        if note:
+            verification.admin_note = note
+        verification.save(update_fields=["status", "reviewed_at", "reviewed_by", "admin_note"])
+
+        logger.info("SellerVerification rejected: %s", verification.id)
+
+        # Sotuvchiga qayta yuborish so'rovi
+        try:
+            from .telegram_notify import notify_verification_rejected
+            notify_verification_rejected(verification)
+        except Exception as tg_err:
+            logger.warning("Telegram verification reject notification failed: %s", tg_err)
+
+        return verification
 
     @staticmethod
     @db_transaction.atomic

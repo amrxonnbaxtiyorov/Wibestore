@@ -126,6 +126,89 @@ class EscrowTransaction(BaseModel):
         return f"Escrow: {self.listing.title} ({self.status})"
 
 
+class SellerVerification(BaseModel):
+    """Sotuvchi shaxsini tasdiqlash jarayoni — har bir escrow savdosi uchun."""
+
+    STATUS_PENDING = "pending"
+    STATUS_PASSPORT_FRONT = "passport_front_received"
+    STATUS_PASSPORT_BACK = "passport_back_received"
+    STATUS_VIDEO = "video_received"
+    STATUS_SUBMITTED = "submitted"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Kutilmoqda"),
+        (STATUS_PASSPORT_FRONT, "Pasport old qismi qabul qilindi"),
+        (STATUS_PASSPORT_BACK, "Pasport orqa qismi qabul qilindi"),
+        (STATUS_VIDEO, "Doira video qabul qilindi"),
+        (STATUS_SUBMITTED, "Hujjatlar yuborildi — admin tekshiruvi kutilmoqda"),
+        (STATUS_APPROVED, "Tasdiqlandi"),
+        (STATUS_REJECTED, "Rad etildi"),
+    ]
+
+    escrow = models.ForeignKey(
+        "EscrowTransaction",
+        on_delete=models.CASCADE,
+        related_name="seller_verifications",
+    )
+    seller = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="seller_verifications",
+    )
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        db_index=True,
+    )
+    # F.I.SH — pasport old qismining caption sifatida yoziladi
+    full_name = models.CharField(max_length=255, blank=True, default="")
+    # Telegram file_id lari (fayl Telegramda saqlanadi)
+    passport_front_file_id = models.CharField(max_length=500, blank=True, default="")
+    passport_back_file_id = models.CharField(max_length=500, blank=True, default="")
+    circle_video_file_id = models.CharField(max_length=500, blank=True, default="")
+    # Joylashuv
+    location_latitude = models.FloatField(null=True, blank=True)
+    location_longitude = models.FloatField(null=True, blank=True)
+    # Admin
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_seller_verifications",
+    )
+    admin_note = models.TextField(blank=True, default="")
+
+    class Meta:
+        db_table = "seller_verifications"
+        ordering = ["-created_at"]
+        verbose_name = "Sotuvchi tekshiruvi"
+        verbose_name_plural = "Sotuvchi tekshiruvlari"
+
+    def __str__(self) -> str:
+        return f"SellerVerification: {self.seller} — {self.get_status_display()}"
+
+    def reset_for_resubmission(self):
+        """Rad etilgandan so'ng qayta yuborish uchun sıfırlash."""
+        self.status = self.STATUS_PENDING
+        self.full_name = ""
+        self.passport_front_file_id = ""
+        self.passport_back_file_id = ""
+        self.circle_video_file_id = ""
+        self.location_latitude = None
+        self.location_longitude = None
+        self.submitted_at = None
+        self.reviewed_at = None
+        self.reviewed_by = None
+        self.admin_note = ""
+        self.save()
+
+
 class DepositRequest(BaseModel):
     """Telegram bot orqali yuborilgan hisob to'ldirish so'rovi (screenshot bilan)."""
 

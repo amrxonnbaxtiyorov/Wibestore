@@ -111,6 +111,14 @@ WAITING_PHONE, CONFIRMING = range(2)
     WAITING_TOPUP_AMOUNT,
 ) = range(2, 9)
 
+# Sotuvchi shaxs tasdiqlash bosqichlari
+(
+    VERIFY_PASSPORT_FRONT,
+    VERIFY_PASSPORT_BACK,
+    VERIFY_VIDEO,
+    VERIFY_LOCATION,
+) = range(30, 34)
+
 # Yangi keyboard tugmalar matni
 BTN_MY_ACCOUNT = "Mening saytdagi akkauntim"
 BTN_PREMIUM = "Premium olish"
@@ -2293,6 +2301,384 @@ async def _cb_escrow_buyer_no(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
 
 
+# ============================================================
+# ===== SOTUVCHI SHAXS TASDIQLASH OQIMI =======================
+# ============================================================
+
+async def _verification_submit_api(verification_id: str, step: str, **kwargs) -> tuple[bool, str]:
+    """Backend API ga tasdiqlash qadamini yuborish."""
+    if not BOT_SECRET_KEY or not _AIOHTTP_AVAILABLE:
+        return False, "Konfiguratsiya xatosi"
+    url = f"{WEBSITE_URL}/api/v1/payments/telegram/seller-verification/submit/"
+    payload = {"secret_key": BOT_SECRET_KEY, "verification_id": verification_id, "step": step}
+    payload.update(kwargs)
+    try:
+        async with _aiohttp.ClientSession() as session:
+            async with session.post(
+                url, json=payload, timeout=_aiohttp.ClientTimeout(total=15)
+            ) as resp:
+                try:
+                    data = await resp.json()
+                except Exception:
+                    data = {}
+                ok = resp.status in (200, 201) and data.get("success", False)
+                err = data.get("error", "") if not ok else ""
+                return ok, err
+    except Exception as e:
+        logger.error("Verification submit API xato: %s", e)
+        return False, str(e)[:200]
+
+
+async def _cb_start_verification(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Sotuvchi 'Hujjat taqdim etishni boshlash' tugmasini bosdi."""
+    query = update.callback_query
+    await query.answer()
+
+    parts = query.data.split(":", 1)
+    if len(parts) != 2:
+        await query.message.reply_text("❌ Xatolik: noto'g'ri havola.")
+        return ConversationHandler.END
+
+    verification_id = parts[1]
+    context.user_data["verification_id"] = verification_id
+    context.user_data["verify_passport_front_file_id"] = ""
+    context.user_data["verify_passport_back_file_id"] = ""
+    context.user_data["verify_video_file_id"] = ""
+
+    await query.message.reply_html(
+        "📋 <b>1-QADAM: Pasport / ID karta OLDI tomoni</b>\n\n"
+        "Pasportingiz yoki ID kartangizning <b>OLD tomonini</b> rasmi sifatida yuboring.\n\n"
+        "⚠️ <b>Muhim:</b> Rasm tagiga (caption) <b>to'liq ismingizni</b> (F.I.SH) yozing.\n"
+        "Misol: <i>Toshmatov Sardor Alijonovich</i>\n\n"
+        "Rasm orginal bo'lishi shart. Skrinshot yoki nusxa qabul qilinmaydi.\n\n"
+        "/cancel — bekor qilish"
+    )
+    return VERIFY_PASSPORT_FRONT
+
+
+async def _verify_receive_passport_front(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Pasport OLD tomoni rasmini qabul qilish."""
+    if not update.message.photo:
+        await update.message.reply_html(
+            "📸 Iltimos, pasportingiz yoki ID kartangizning <b>OLD tomonini rasm</b> sifatida yuboring.\n"
+            "Rasm tagiga (caption) to'liq ismingizni yozing."
+        )
+        return VERIFY_PASSPORT_FRONT
+
+    caption = (update.message.caption or "").strip()
+    if len(caption) < 5:
+        await update.message.reply_html(
+            "⚠️ Rasm tagiga (caption) <b>to'liq ismingizni (F.I.SH)</b> yozing!\n\n"
+            "Misol: <i>Toshmatov Sardor Alijonovich</i>\n\n"
+            "Iltimos, yana bir bor to'liq ism bilan yuboring."
+        )
+        return VERIFY_PASSPORT_FRONT
+
+    file_id = update.message.photo[-1].file_id
+    verification_id = context.user_data.get("verification_id")
+
+    ok, err = await _verification_submit_api(
+        verification_id, "passport_front", file_id=file_id, full_name=caption
+    )
+    if not ok:
+        await update.message.reply_html(
+            f"❌ Xatolik yuz berdi: {err}\n\nQayta urinib ko'ring."
+        )
+        return VERIFY_PASSPORT_FRONT
+
+    context.user_data["verify_passport_front_file_id"] = file_id
+    context.user_data["verify_full_name"] = caption
+
+    await update.message.reply_html(
+        "✅ Pasport old qismi qabul qilindi!\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "📋 <b>2-QADAM: Pasport / ID karta ORQA tomoni</b>\n\n"
+        "Pasportingiz yoki ID kartangizning <b>ORQA tomonini</b> rasm sifatida yuboring.\n\n"
+        "⚠️ Rasm orginal bo'lishi shart.\n\n"
+        "/cancel — bekor qilish"
+    )
+    return VERIFY_PASSPORT_BACK
+
+
+async def _verify_receive_passport_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Pasport ORQA tomoni rasmini qabul qilish."""
+    if not update.message.photo:
+        await update.message.reply_html(
+            "📸 Iltimos, pasportingiz yoki ID kartangizning <b>ORQA tomonini rasm</b> sifatida yuboring."
+        )
+        return VERIFY_PASSPORT_BACK
+
+    file_id = update.message.photo[-1].file_id
+    verification_id = context.user_data.get("verification_id")
+
+    ok, err = await _verification_submit_api(verification_id, "passport_back", file_id=file_id)
+    if not ok:
+        await update.message.reply_html(f"❌ Xatolik: {err}\n\nQayta urinib ko'ring.")
+        return VERIFY_PASSPORT_BACK
+
+    context.user_data["verify_passport_back_file_id"] = file_id
+    full_name = context.user_data.get("verify_full_name", "")
+
+    await update.message.reply_html(
+        "✅ Pasport orqa qismi qabul qilindi!\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "🎥 <b>3-QADAM: Doira video (video xabar)</b>\n\n"
+        "Telegram'da <b>doira video</b> (video note/message) yuboring.\n\n"
+        "Videoda quyidagilarni aytib yuboring:\n\n"
+        f"<i>«Men <b>{full_name}</b> akkauntimni Wibe Store web saytida sotdim. "
+        "Akkauntni sotganimdan so'ng muammo bo'lsa yoki akkauntni qaytib olsam, "
+        "(o'yin yordamiga yozib) agar shunday muammolar bo'lsa, "
+        "men tashlagan hujjat va ma'lumotlarim orqali qonuniy chora ko'rishlari mumkin.»</i>\n\n"
+        "⚠️ <b>Eslatma:</b>\n"
+        "• Doira video (Telegram'ning yumaloq video xabari) bo'lishi shart\n"
+        "• Video ravshan, yuz ko'rinadigan bo'lsin\n"
+        "• Matn aniq va to'liq aytilsin\n\n"
+        "/cancel — bekor qilish"
+    )
+    return VERIFY_VIDEO
+
+
+async def _verify_receive_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Doira video (video_note) qabul qilish."""
+    if not update.message.video_note:
+        await update.message.reply_html(
+            "🎥 Iltimos, <b>doira video</b> (video xabar) yuboring.\n\n"
+            "Telegramda mikrofon yonidagi kamera tugmasini bosib yumaloq video yuboring.\n"
+            "Oddiy video yoki matn qabul qilinmaydi."
+        )
+        return VERIFY_VIDEO
+
+    file_id = update.message.video_note.file_id
+    verification_id = context.user_data.get("verification_id")
+
+    ok, err = await _verification_submit_api(verification_id, "video", file_id=file_id)
+    if not ok:
+        await update.message.reply_html(f"❌ Xatolik: {err}\n\nQayta urinib ko'ring.")
+        return VERIFY_VIDEO
+
+    context.user_data["verify_video_file_id"] = file_id
+
+    await update.message.reply_html(
+        "✅ Doira video qabul qilindi!\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "📍 <b>4-QADAM: Joriy joylashuvingiz</b>\n\n"
+        "Joriy joylashuvingizni <b>live location</b> sifatida yuboring.\n\n"
+        "Qanday yuborish:\n"
+        "1. 📎 (qo'shimcha) tugmasini bosing\n"
+        "2. <b>Location / Joylashuv</b> ni tanlang\n"
+        "3. <b>Share My Live Location</b> ni bosing\n\n"
+        "⚠️ Faqat live location (jonli joylashuv) qabul qilinadi.\n\n"
+        "/cancel — bekor qilish"
+    )
+    return VERIFY_LOCATION
+
+
+async def _verify_receive_location(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Joylashuvni qabul qilish va hujjatlarni adminlarga yuborish."""
+    if not update.message.location:
+        await update.message.reply_html(
+            "📍 Iltimos, <b>joylashuvingizni</b> yuboring.\n\n"
+            "📎 → Location → Share My Live Location\n\n"
+            "Matn yoki boshqa fayl qabul qilinmaydi."
+        )
+        return VERIFY_LOCATION
+
+    location = update.message.location
+    lat = location.latitude
+    lng = location.longitude
+    verification_id = context.user_data.get("verification_id")
+
+    ok, err = await _verification_submit_api(
+        verification_id, "location", latitude=lat, longitude=lng
+    )
+    if not ok:
+        await update.message.reply_html(f"❌ Xatolik: {err}\n\nQayta urinib ko'ring.")
+        return VERIFY_LOCATION
+
+    full_name = context.user_data.get("verify_full_name", "—")
+    passport_front_id = context.user_data.get("verify_passport_front_file_id", "")
+    passport_back_id = context.user_data.get("verify_passport_back_file_id", "")
+    video_id = context.user_data.get("verify_video_file_id", "")
+    telegram_id = update.effective_user.id
+
+    # Adminlarga hujjatlarni yuborish
+    maps_link = f"https://maps.google.com/?q={lat},{lng}"
+    admin_caption = (
+        f"🔐 <b>Sotuvchi hujjatlari</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 F.I.SH: <b>{full_name}</b>\n"
+        f"🆔 Telegram ID: <code>{telegram_id}</code>\n"
+        f"📍 Joylashuv: <a href='{maps_link}'>{lat:.4f}, {lng:.4f}</a>\n"
+        f"🔑 Verification ID: <code>{verification_id}</code>\n\n"
+        f"Pasport old/orqa va doira video alohida yuboriladi.\n"
+        f"Tasdiqlash uchun quyidagi tugmalardan foydalaning:"
+    )
+    approve_reject_keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"verify_approve:{verification_id}"),
+        InlineKeyboardButton("❌ Rad etish", callback_data=f"verify_reject:{verification_id}"),
+    ]])
+
+    for target in _notification_targets():
+        try:
+            # Pasport old tomoni
+            if passport_front_id:
+                await context.bot.send_photo(
+                    target, photo=passport_front_id,
+                    caption=f"📄 Pasport OLDI tomoni\n👤 F.I.SH: {full_name}\n🆔 TG: {telegram_id}",
+                    parse_mode="HTML",
+                )
+            # Pasport orqa tomoni
+            if passport_back_id:
+                await context.bot.send_photo(
+                    target, photo=passport_back_id,
+                    caption=f"📄 Pasport ORQA tomoni\n👤 F.I.SH: {full_name}\n🆔 TG: {telegram_id}",
+                    parse_mode="HTML",
+                )
+            # Doira video
+            if video_id:
+                await context.bot.send_video_note(target, video_note=video_id)
+            # Joylashuv
+            await context.bot.send_location(target, latitude=lat, longitude=lng)
+            # Tasdiq/rad tugmalari bilan xabar
+            await context.bot.send_message(
+                target, admin_caption,
+                parse_mode="HTML",
+                reply_markup=approve_reject_keyboard,
+                disable_web_page_preview=True,
+            )
+        except Exception as e:
+            logger.warning("Admin %s ga hujjatlar yuborilmadi: %s", target, e)
+
+    # Sotuvchiga tasdiqlash xabari
+    await update.message.reply_html(
+        "✅ <b>Barcha hujjatlar muvaffaqiyatli yuborildi!</b>\n\n"
+        "📋 Yuborilgan hujjatlar:\n"
+        "✔️ Pasport old tomoni\n"
+        "✔️ Pasport orqa tomoni\n"
+        "✔️ Doira video\n"
+        "✔️ Joylashuv\n\n"
+        "⏳ Admin hujjatlaringizni tekshirmoqda.\n"
+        "Tasdiqlangach, savdo summasi hisobingizga o'tkaziladi.\n\n"
+        "🔒 Barcha ma'lumotlar maxfiy saqlanadi va faqat "
+        "akkaunt bilan muammo bo'lganda ishlatiladi.",
+        reply_markup=_get_main_keyboard(),
+    )
+
+    # user_data ni tozalash
+    for key in ["verification_id", "verify_passport_front_file_id",
+                "verify_passport_back_file_id", "verify_video_file_id", "verify_full_name"]:
+        context.user_data.pop(key, None)
+
+    return ConversationHandler.END
+
+
+async def _verify_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Tasdiqlash jarayonini bekor qilish."""
+    for key in ["verification_id", "verify_passport_front_file_id",
+                "verify_passport_back_file_id", "verify_video_file_id", "verify_full_name"]:
+        context.user_data.pop(key, None)
+    await update.message.reply_html(
+        "❌ Hujjat taqdim etish bekor qilindi.\n\n"
+        "⚠️ Eslatma: Pul hujjatlar tasdiqlanguncha ushlab turiladi.\n"
+        "Qayta boshlash uchun avvalgi xabardagi tugmani bosing.",
+        reply_markup=_get_main_keyboard(),
+    )
+    return ConversationHandler.END
+
+
+# ---- Admin: verify approve/reject callback ----
+
+async def _cb_verify_approve(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin: sotuvchi hujjatlarini tasdiqlash va to'lovni chiqarish."""
+    query = update.callback_query
+    if not _is_admin(query.from_user.id):
+        await query.answer("⛔ Ruxsat yo'q.", show_alert=True)
+        return
+    await query.answer("⏳ Tasdiqlanmoqda...")
+
+    verification_id = query.data.replace("verify_approve:", "", 1)
+
+    # Backend API orqali tasdiqlash
+    url = f"{WEBSITE_URL}/api/v1/payments/telegram/callback/"
+    payload = {
+        "callback_query": {
+            "id": "bot_internal",
+            "data": f"verify_approve:{verification_id}",
+            "from": {"id": query.from_user.id},
+        }
+    }
+    status_code = 500
+    if _AIOHTTP_AVAILABLE:
+        try:
+            async with _aiohttp.ClientSession() as session:
+                async with session.post(
+                    url, json=payload, timeout=_aiohttp.ClientTimeout(total=15)
+                ) as resp:
+                    status_code = resp.status
+        except Exception as e:
+            logger.error("Verify approve API xato: %s", e)
+
+    admin_tag = f"@{query.from_user.username}" if query.from_user.username else str(query.from_user.id)
+
+    if status_code == 200:
+        suffix = f"\n\n━━━━━━━━━━━━━━━━━━━━\n✅ <b>TASDIQLANDI</b> ({admin_tag})\nTo'lov sotuvchiga o'tkazildi."
+    else:
+        suffix = f"\n\n━━━━━━━━━━━━━━━━━━━━\n⚠️ Xatolik: {status_code}. Manual tekshiring."
+
+    orig = query.message.text or query.message.caption or ""
+    try:
+        if query.message.caption is not None:
+            await query.message.edit_caption(caption=orig + suffix, parse_mode="HTML")
+        else:
+            await query.message.edit_text(text=orig + suffix, parse_mode="HTML", disable_web_page_preview=True)
+    except Exception:
+        try:
+            await query.message.edit_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+
+
+async def _cb_verify_reject(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin: sotuvchi hujjatlarini rad etish."""
+    query = update.callback_query
+    if not _is_admin(query.from_user.id):
+        await query.answer("⛔ Ruxsat yo'q.", show_alert=True)
+        return
+    await query.answer("❌ Rad etildi.")
+
+    verification_id = query.data.replace("verify_reject:", "", 1)
+
+    url = f"{WEBSITE_URL}/api/v1/payments/telegram/callback/"
+    payload = {
+        "callback_query": {
+            "id": "bot_internal",
+            "data": f"verify_reject:{verification_id}",
+            "from": {"id": query.from_user.id},
+        }
+    }
+    if _AIOHTTP_AVAILABLE:
+        try:
+            async with _aiohttp.ClientSession() as session:
+                await session.post(url, json=payload, timeout=_aiohttp.ClientTimeout(total=15))
+        except Exception as e:
+            logger.error("Verify reject API xato: %s", e)
+
+    admin_tag = f"@{query.from_user.username}" if query.from_user.username else str(query.from_user.id)
+    suffix = f"\n\n━━━━━━━━━━━━━━━━━━━━\n❌ <b>RAD ETILDI</b> ({admin_tag})\nSotuvchiga qayta yuborish so'rovi yuborildi."
+
+    orig = query.message.text or query.message.caption or ""
+    try:
+        if query.message.caption is not None:
+            await query.message.edit_caption(caption=orig + suffix, parse_mode="HTML")
+        else:
+            await query.message.edit_text(text=orig + suffix, parse_mode="HTML", disable_web_page_preview=True)
+    except Exception:
+        try:
+            await query.message.edit_reply_markup(reply_markup=None)
+        except Exception:
+            pass
+
+
 def main():
     """Botni ishga tushirish"""
     if BOT_TOKEN == 'YOUR_BOT_TOKEN_HERE':
@@ -2404,6 +2790,37 @@ def main():
     )
     app.add_handler(admin_topup_conv)
 
+    # ---- Sotuvchi shaxs tasdiqlash ConversationHandler ----
+    verification_conv = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(_cb_start_verification, pattern=r"^start_verification:"),
+        ],
+        states={
+            VERIFY_PASSPORT_FRONT: [
+                MessageHandler(filters.PHOTO, _verify_receive_passport_front),
+                CommandHandler("cancel", _verify_cancel),
+            ],
+            VERIFY_PASSPORT_BACK: [
+                MessageHandler(filters.PHOTO, _verify_receive_passport_back),
+                CommandHandler("cancel", _verify_cancel),
+            ],
+            VERIFY_VIDEO: [
+                MessageHandler(filters.VIDEO_NOTE, _verify_receive_video),
+                CommandHandler("cancel", _verify_cancel),
+            ],
+            VERIFY_LOCATION: [
+                MessageHandler(filters.LOCATION, _verify_receive_location),
+                CommandHandler("cancel", _verify_cancel),
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", _verify_cancel)],
+        per_message=False,
+        per_user=True,
+        per_chat=True,
+        allow_reentry=True,
+    )
+    app.add_handler(verification_conv)
+
     app.add_handler(conv_handler)
 
     # ---- To'lov tizimi handlerlari ----
@@ -2422,6 +2839,10 @@ def main():
     app.add_handler(CallbackQueryHandler(_cb_escrow_seller_ok, pattern=r'^escrow_seller_ok:'))
     app.add_handler(CallbackQueryHandler(_cb_escrow_buyer_ok,  pattern=r'^escrow_buyer_ok:'))
     app.add_handler(CallbackQueryHandler(_cb_escrow_buyer_no,  pattern=r'^escrow_buyer_no:'))
+
+    # ---- Sotuvchi shaxs tasdiqlash: admin approve/reject ----
+    app.add_handler(CallbackQueryHandler(_cb_verify_approve, pattern=r'^verify_approve:'))
+    app.add_handler(CallbackQueryHandler(_cb_verify_reject,  pattern=r'^verify_reject:'))
 
     # Admin buyruqlari (faqat adminlar uchun, lekin global — conversation tashqarida)
     app.add_handler(CommandHandler('admin', cmd_admin_panel))
