@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCoins } from '../context/CoinContext';
 import { useLanguage } from '../context/LanguageContext';
 
-const TELEGRAM_BOT_URL = import.meta.env.VITE_TELEGRAM_BOT_URL || import.meta.env.VITE_TELEGRAM_URL || 'https://t.me/wibestoreuz_bot';
+const TELEGRAM_BOT_URL = import.meta.env.VITE_TELEGRAM_BOT_URL || `https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'wibestorebot'}`;
 
 const CoinsPage = () => {
     const { t } = useLanguage();
