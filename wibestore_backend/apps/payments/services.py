@@ -376,6 +376,100 @@ class EscrowService:
         return escrow
 
     @staticmethod
+    @db_transaction.atomic
+    def process_trade_confirmation(escrow: "EscrowTransaction", side: str) -> tuple:
+        """
+        Sotuvchi yoki haridor savdoni tasdiqlaydi.
+        side = 'seller' | 'buyer'
+        Ikkala tomon tasdiqlaganda to'lovni avtomatik sotuvchiga o'tkazadi.
+        Returns (escrow, both_confirmed: bool)
+        """
+        import json as _json
+        from django.utils import timezone as _tz
+
+        if escrow.status not in ("paid", "delivered"):
+            raise BusinessLogicError("Savdo allaqachon yakunlangan yoki bekor qilingan.")
+
+        try:
+            resolution = _json.loads(escrow.dispute_resolution) if escrow.dispute_resolution else {}
+        except Exception:
+            resolution = {}
+
+        now = _tz.now().isoformat()
+        if side == "seller":
+            resolution["trade_seller_confirmed"] = True
+            resolution["trade_seller_confirmed_at"] = now
+        elif side == "buyer":
+            resolution["trade_buyer_confirmed"] = True
+            resolution["trade_buyer_confirmed_at"] = now
+
+        escrow.dispute_resolution = _json.dumps(resolution)
+
+        both_confirmed = bool(
+            resolution.get("trade_seller_confirmed") and resolution.get("trade_buyer_confirmed")
+        )
+
+        if both_confirmed:
+            escrow.status = "confirmed"
+            escrow.buyer_confirmed_at = _tz.now()
+            escrow.seller_paid_at = _tz.now()
+            escrow.save(update_fields=[
+                "status", "buyer_confirmed_at", "seller_paid_at", "dispute_resolution"
+            ])
+
+            seller = escrow.seller
+            seller.balance += escrow.seller_earnings
+            seller.save(update_fields=["balance"])
+
+            from apps.marketplace.services import ListingService
+            ListingService.mark_as_sold(escrow.listing)
+
+            Transaction.objects.create(
+                user=seller,
+                amount=escrow.commission_amount,
+                type="commission",
+                status="completed",
+                description=f"Commission for listing {escrow.listing.title}",
+                processed_at=_tz.now(),
+            )
+            logger.info("Trade confirmed by both parties: escrow %s", escrow.id)
+        else:
+            escrow.save(update_fields=["dispute_resolution"])
+            logger.info("Trade confirmation by %s: escrow %s (waiting for other party)", side, escrow.id)
+
+        return escrow, both_confirmed
+
+    @staticmethod
+    @db_transaction.atomic
+    def cancel_trade_by_party(escrow: "EscrowTransaction", side: str) -> "EscrowTransaction":
+        """
+        Sotuvchi yoki haridor savdoni bekor qiladi.
+        Haridor pulini qaytarib oladi, listing qayta aktiv bo'ladi.
+        """
+        from django.utils import timezone as _tz
+
+        if escrow.status not in ("paid", "delivered"):
+            raise BusinessLogicError("Savdoni bekor qilish mumkin emas.")
+
+        buyer = escrow.buyer
+        buyer.balance += escrow.amount
+        buyer.save(update_fields=["balance"])
+
+        who = "Sotuvchi" if side == "seller" else "Haridor"
+        escrow.status = "refunded"
+        escrow.dispute_reason = f"{who} savdoni bekor qildi."
+        escrow.admin_released_at = _tz.now()
+        escrow.save(update_fields=["status", "dispute_reason", "admin_released_at"])
+
+        listing = escrow.listing
+        listing.status = "active"
+        listing.sold_at = None
+        listing.save(update_fields=["status", "sold_at"])
+
+        logger.info("Trade cancelled by %s: escrow %s, refunded %s to buyer", side, escrow.id, escrow.amount)
+        return escrow
+
+    @staticmethod
     def _get_seller_plan(seller) -> str:
         """Get seller's subscription plan type."""
         from apps.subscriptions.models import UserSubscription

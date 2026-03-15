@@ -164,6 +164,28 @@ class PurchaseListingView(APIView):
         except Exception as tg_err:
             logger.warning("Telegram purchase notification failed: %s", tg_err)
 
+        # Sotuvchiga web (in-app) notification
+        try:
+            from apps.notifications.services import NotificationService
+            chat_link = f"/chat/{chat_room_id}" if chat_room_id else "/chat"
+            NotificationService.create_notification(
+                user=escrow.seller,
+                title="Akkauntingiz sotildi! 🎉",
+                message=f"'{escrow.listing.title}' akkauntingiz sotib olindi. Saytga kiring va chatni tekshiring.",
+                type_code="sale",
+                data={"escrow_id": str(escrow.id), "listing_id": str(escrow.listing.id)},
+                link=chat_link,
+            )
+        except Exception as notif_err:
+            logger.warning("In-app notification for seller failed: %s", notif_err)
+
+        # Sotuvchi va haridorga tasdiqlash so'rovi (ikkala tomonga tugmalar bilan)
+        try:
+            from .telegram_notify import notify_trade_confirmation_request
+            notify_trade_confirmation_request(escrow, chat_link=chat_room_id or "")
+        except Exception as tg_err2:
+            logger.warning("Telegram trade confirmation request failed: %s", tg_err2)
+
         escrow_data = EscrowTransactionSerializer(escrow).data
         if chat_room_id:
             escrow_data["chat_room_id"] = chat_room_id
@@ -538,6 +560,81 @@ class TelegramCallbackView(APIView):
             except Exception:
                 pass
             _answer_callback_query(callback_id, "Shikoyat ochildi. Admin ko'rib chiqadi.")
+
+        elif action == "trade_seller_ok":
+            if tg_user != escrow.seller:
+                _answer_callback_query(callback_id, "Faqat sotuvchi tasdiqlashi mumkin.")
+                return Response({"ok": True})
+            try:
+                escrow, both_confirmed = EscrowService.process_trade_confirmation(escrow, "seller")
+            except BusinessLogicError as e:
+                _answer_callback_query(callback_id, str(e)[:200])
+                return Response({"ok": True})
+            try:
+                from apps.messaging.services import post_system_message_to_order_chat
+                if both_confirmed:
+                    post_system_message_to_order_chat(escrow,
+                        "✅ Ikkala tomon ham tasdiqlaganidan so'ng savdo muvaffaqiyatli yakunlandi! "
+                        "To'lov sotuvchiga o'tkazildi.")
+                    from .telegram_notify import notify_trade_both_confirmed
+                    notify_trade_both_confirmed(escrow)
+                else:
+                    post_system_message_to_order_chat(escrow,
+                        "Sotuvchi akkauntni topshirganini tasdiqladi. Haridor tasdiqlashi kutilmoqda.")
+            except Exception:
+                pass
+            if both_confirmed:
+                _answer_callback_query(callback_id, "✅ Ikkala tomon tasdiqladi! Savdo yakunlandi.")
+            else:
+                _answer_callback_query(callback_id, "✅ Tasdiqlandi! Haridor tasdiqlashi kutilmoqda.")
+
+        elif action == "trade_buyer_ok":
+            if tg_user != escrow.buyer:
+                _answer_callback_query(callback_id, "Faqat haridor tasdiqlashi mumkin.")
+                return Response({"ok": True})
+            try:
+                escrow, both_confirmed = EscrowService.process_trade_confirmation(escrow, "buyer")
+            except BusinessLogicError as e:
+                _answer_callback_query(callback_id, str(e)[:200])
+                return Response({"ok": True})
+            try:
+                from apps.messaging.services import post_system_message_to_order_chat
+                if both_confirmed:
+                    post_system_message_to_order_chat(escrow,
+                        "✅ Ikkala tomon ham tasdiqlaganidan so'ng savdo muvaffaqiyatli yakunlandi! "
+                        "To'lov sotuvchiga o'tkazildi.")
+                    from .telegram_notify import notify_trade_both_confirmed
+                    notify_trade_both_confirmed(escrow)
+                else:
+                    post_system_message_to_order_chat(escrow,
+                        "Haridor akkauntni qabul qilganini tasdiqladi. Sotuvchi tasdiqlashi kutilmoqda.")
+            except Exception:
+                pass
+            if both_confirmed:
+                _answer_callback_query(callback_id, "✅ Ikkala tomon tasdiqladi! Savdo yakunlandi.")
+            else:
+                _answer_callback_query(callback_id, "✅ Tasdiqlandi! Sotuvchi tasdiqlashi kutilmoqda.")
+
+        elif action == "trade_cancel":
+            if tg_user not in (escrow.seller, escrow.buyer):
+                _answer_callback_query(callback_id, "Faqat savdo ishtirokchilari bekor qila oladi.")
+                return Response({"ok": True})
+            side = "seller" if tg_user == escrow.seller else "buyer"
+            try:
+                EscrowService.cancel_trade_by_party(escrow, side)
+            except BusinessLogicError as e:
+                _answer_callback_query(callback_id, str(e)[:200])
+                return Response({"ok": True})
+            try:
+                from apps.messaging.services import post_system_message_to_order_chat
+                who = "Sotuvchi" if side == "seller" else "Haridor"
+                post_system_message_to_order_chat(escrow,
+                    f"{who} savdoni bekor qildi. Haridor puli qaytarildi. Savdo yakunlandi.")
+                from .telegram_notify import notify_trade_cancelled
+                notify_trade_cancelled(escrow, cancelled_by=side)
+            except Exception:
+                pass
+            _answer_callback_query(callback_id, "Savdo bekor qilindi. Haridor puli qaytarildi.")
 
         elif action == "verify_approve":
             # Admin verification_id bo'yicha tasdiqlaydi

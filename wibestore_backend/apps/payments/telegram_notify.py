@@ -617,6 +617,131 @@ def notify_trade_completed(escrow) -> None:
         ))
 
 
+def notify_trade_confirmation_request(escrow, chat_link: str = "") -> None:
+    """
+    Xarid amalga oshirilgandan so'ng sotuvchi VA haridorga tasdiqlash tugmalari bilan xabar yuborish.
+    chat_link: chat_room_id yoki to'liq URL
+    """
+    listing = escrow.listing
+    buyer = escrow.buyer
+    seller = escrow.seller
+    escrow_id = str(escrow.id)
+    price_str = _fmt_price(escrow.amount)
+    if chat_link:
+        chat_url = (
+            chat_link if chat_link.startswith("http")
+            else f"{SITE_URL}/chat/{chat_link}"
+        )
+    else:
+        chat_url = _get_chat_link(escrow)
+
+    # ── Sotuvchiga ───────────────────────────────────────────────────────
+    if seller.telegram_id:
+        seller_text = (
+            f"🎉 <b>Akkauntingiz sotildi!</b>\n\n"
+            f"📦 Akkaunt: <b>{listing.title}</b>\n"
+            f"💰 Summa: <b>{price_str}</b>\n\n"
+            f"Admin chatga kirganidan so'ng akkaunt ma'lumotlarini topshiring.\n"
+            f"Haridor qabul qilgach — quyida <b>Tasdiqlash</b> tugmasini bosing.\n\n"
+            f"🌐 <a href='{chat_url}'>Chatga o'tish →</a>"
+        )
+        seller_keyboard = {
+            "inline_keyboard": [[
+                {"text": "✅ Tasdiqlash", "callback_data": f"trade_seller_ok:{escrow_id}"},
+                {"text": "❌ Savdoni bekor qilish", "callback_data": f"trade_cancel:{escrow_id}"},
+            ]]
+        }
+        _send_message(seller.telegram_id, seller_text, reply_markup=seller_keyboard)
+
+    # ── Haridorga ────────────────────────────────────────────────────────
+    if buyer.telegram_id:
+        buyer_text = (
+            f"🛒 <b>Xarid muvaffaqiyatli amalga oshirildi!</b>\n\n"
+            f"📦 Akkaunt: <b>{listing.title}</b>\n"
+            f"💰 To'langan summa: <b>{price_str}</b>\n\n"
+            f"Admin chatga kirganidan so'ng akkaunt ma'lumotlarini tekshiring.\n"
+            f"Hammasi yaxshi bo'lsa — <b>Tasdiqlash</b> tugmasini bosing.\n\n"
+            f"🌐 <a href='{chat_url}'>Chatga o'tish →</a>"
+        )
+        buyer_keyboard = {
+            "inline_keyboard": [[
+                {"text": "✅ Tasdiqlash", "callback_data": f"trade_buyer_ok:{escrow_id}"},
+                {"text": "❌ Savdoni bekor qilish", "callback_data": f"trade_cancel:{escrow_id}"},
+            ]]
+        }
+        _send_message(buyer.telegram_id, buyer_text, reply_markup=buyer_keyboard)
+
+
+def notify_trade_both_confirmed(escrow) -> None:
+    """Ikkala tomon tasdiqlaganda — savdo yakunlandi xabari."""
+    listing = escrow.listing
+    seller = escrow.seller
+    buyer = escrow.buyer
+    earnings_str = _fmt_price(escrow.seller_earnings)
+
+    if seller.telegram_id:
+        _send_message(seller.telegram_id, (
+            f"✅ <b>Savdo muvaffaqiyatli yakunlandi!</b>\n\n"
+            f"📦 Akkaunt: <b>{listing.title}</b>\n"
+            f"💵 Sizga: <b>{earnings_str}</b> o'tkazildi!\n\n"
+            f"🎉 Rahmat! Baxtli savdolar!\n"
+            f"🌐 <a href='{SITE_URL}'>Saytga kiring</a>"
+        ))
+
+    if buyer.telegram_id:
+        _send_message(buyer.telegram_id, (
+            f"✅ <b>Savdo muvaffaqiyatli yakunlandi!</b>\n\n"
+            f"📦 Akkaunt: <b>{listing.title}</b>\n\n"
+            f"Ikkala tomon ham tasdiqlaganidan so'ng savdo yakunlandi. 🎉\n"
+            f"🌐 <a href='{SITE_URL}'>Saytga kiring</a>"
+        ))
+
+    for admin_tg_id in _get_admin_telegram_ids():
+        if admin_tg_id in (buyer.telegram_id, seller.telegram_id):
+            continue
+        _send_message(admin_tg_id, (
+            f"✅ <b>Savdo yakunlandi (ikkala tomon tasdiqladi)</b>\n\n"
+            f"📦 {listing.title}\n"
+            f"💵 Sotuvchiga: {earnings_str}"
+        ))
+
+
+def notify_trade_cancelled(escrow, cancelled_by: str) -> None:
+    """Savdo bekor qilinganda ikkala tomonga xabar."""
+    listing = escrow.listing
+    seller = escrow.seller
+    buyer = escrow.buyer
+    who = "Sotuvchi" if cancelled_by == "seller" else "Haridor"
+
+    msg_seller = (
+        f"❌ <b>Savdo bekor qilindi</b>\n\n"
+        f"📦 Akkaunt: <b>{listing.title}</b>\n"
+        f"{who} tomonidan savdo bekor qilindi.\n\n"
+        f"{'Haridor puli qaytarildi.' if cancelled_by == 'seller' else 'Pulingiz hisobingizga qaytarildi.'}\n"
+        f"🌐 <a href='{SITE_URL}'>Saytga kiring</a>"
+    )
+    msg_buyer = (
+        f"❌ <b>Savdo bekor qilindi</b>\n\n"
+        f"📦 Akkaunt: <b>{listing.title}</b>\n"
+        f"{who} tomonidan savdo bekor qilindi.\n\n"
+        f"{'Pulingiz hisobingizga qaytarildi.' if cancelled_by == 'buyer' else 'Haridor puli qaytarildi.'}\n"
+        f"🌐 <a href='{SITE_URL}'>Saytga kiring</a>"
+    )
+
+    if seller.telegram_id:
+        _send_message(seller.telegram_id, msg_seller)
+    if buyer.telegram_id:
+        _send_message(buyer.telegram_id, msg_buyer)
+    for admin_tg_id in _get_admin_telegram_ids():
+        if admin_tg_id in (buyer.telegram_id, seller.telegram_id):
+            continue
+        _send_message(admin_tg_id, (
+            f"❌ <b>Savdo bekor qilindi</b>\n\n"
+            f"📦 {listing.title}\n"
+            f"Kim bekor qildi: {who}"
+        ))
+
+
 def notify_deposit_approved(deposit_request, new_balance) -> None:
     """Admin hisob to'ldirishni tasdiqlaganda foydalanuvchiga Telegram xabar."""
     telegram_id = deposit_request.telegram_id
