@@ -128,6 +128,7 @@ BTN_MY_ACCOUNT = "Mening saytdagi akkauntim"
 BTN_PREMIUM = "Premium olish"
 BTN_TOPUP = "Xisobni to'ldirish"
 BTN_WITHDRAW = "Xisobdan pul yechish"
+BTN_SUPPORT = "📩 Admin bilan bog'lanish"
 
 # Premium / to'ldirish / chiqarish uchun sozlamalar
 ADMIN_CARD_NUMBER = os.getenv("ADMIN_CARD_NUMBER", "").strip()
@@ -139,6 +140,10 @@ COUNTDOWN_INTERVAL = 1
 
 # Admin topup summa kutish holati (ConversationHandler uchun alohida)
 ADMIN_TOPUP_AMOUNT = 10
+
+# Support holatlari
+WAITING_SUPPORT_MSG = 11
+SUPPORT_CONFIRM = 12
 
 # Foydalanuvchilar ID larini saqlash fayli (broadcast uchun)
 USERS_FILE = Path(__file__).resolve().parent / "users.json"
@@ -542,10 +547,11 @@ def _schedule_countdown(context: ContextTypes.DEFAULT_TYPE, chat_id: int, messag
 
 
 def _get_main_keyboard():
-    """Asosiy menyu: 4 ta yangi tugma + telefon + to'lov paneli."""
+    """Asosiy menyu: 4 ta tugma + admin + telefon + to'lov paneli."""
     keyboard = [
         [KeyboardButton(BTN_MY_ACCOUNT), KeyboardButton(BTN_PREMIUM)],
         [KeyboardButton(BTN_TOPUP), KeyboardButton(BTN_WITHDRAW)],
+        [KeyboardButton(BTN_SUPPORT)],
         [KeyboardButton("📱 Telefon raqamimni yuborish", request_contact=True)],
     ]
     if PAYMENT_ENABLED:
@@ -573,6 +579,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
             [
                 [KeyboardButton(BTN_MY_ACCOUNT), KeyboardButton(BTN_PREMIUM)],
                 [KeyboardButton(BTN_TOPUP), KeyboardButton(BTN_WITHDRAW)],
+                [KeyboardButton(BTN_SUPPORT)],
                 [KeyboardButton("📱 Telefon raqamimni yuborish", request_contact=True)],
             ],
             resize_keyboard=True,
@@ -602,6 +609,8 @@ async def _handle_menu_button(update: Update, context: ContextTypes.DEFAULT_TYPE
         return await _cmd_topup(update, context)
     if text == BTN_WITHDRAW:
         return await _cmd_withdraw_start(update, context)
+    if text == BTN_SUPPORT:
+        return await support_start(update, context)
     return None
 
 
@@ -976,7 +985,7 @@ async def receive_phone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     else:
         text = (update.message.text or "").strip()
         # Avval menyu tugmalarini tekshirish
-        if text in (BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW):
+        if text in (BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW, BTN_SUPPORT):
             state = await _handle_menu_button(update, context, text)
             return state if state is not None else WAITING_PHONE
         phone = text
@@ -1456,10 +1465,11 @@ async def _cancel_to_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 async def _fallback_menu_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Har qanday holatda menyu tugmalarini ushlash (fallback)."""
     text = (update.message.text or "").strip()
-    if text in (BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW):
-        # Oldingi oqimni tozalash
+    if text in (BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW, BTN_SUPPORT):
         context.user_data.pop("premium_plan", None)
         context.user_data.pop("withdraw_amount", None)
+        context.user_data.pop("support_chat_id", None)
+        context.user_data.pop("support_msg_id", None)
         state = await _handle_menu_button(update, context, text)
         return state if state is not None else WAITING_PHONE
     return WAITING_PHONE
@@ -2792,6 +2802,153 @@ async def _cb_verify_reject(update: Update, _context: ContextTypes.DEFAULT_TYPE)
             pass
 
 
+# ============================================================
+# ===== SUPPORT (FOYDALANUVCHI → ADMIN XABAR) =================
+# ============================================================
+
+async def support_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Foydalanuvchi 'Admin bilan bog'lanish' tugmasini bosdi."""
+    if _is_admin(update.effective_user.id):
+        await update.message.reply_html(
+            "ℹ️ Siz adminsiz. Foydalanuvchiga javob: "
+            "<code>/user_support &lt;telegram_id&gt; &lt;xabar&gt;</code>"
+        )
+        return WAITING_PHONE
+    await update.message.reply_html(
+        "📩 <b>Adminga xabar yuborish</b>\n\n"
+        "Xabaringizni yuboring:\n"
+        "📝 Matn, 🖼 Rasm, 🎬 Video yoki 🎤 Ovozli xabar\n\n"
+        "❌ Bekor qilish: /cancel",
+        reply_markup=ReplyKeyboardRemove(),
+    )
+    return WAITING_SUPPORT_MSG
+
+
+async def support_receive(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Foydalanuvchi xabarini saqlash va tasdiqlash tugmalarini ko'rsatish."""
+    context.user_data["support_chat_id"] = update.message.chat_id
+    context.user_data["support_msg_id"] = update.message.message_id
+    keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton("✅ Jo'natish", callback_data="support_send"),
+        InlineKeyboardButton("❌ Bekor qilish", callback_data="support_cancel"),
+    ]])
+    await update.message.reply_html(
+        "Yuqoridagi xabar adminga yuborilsinmi?\n\n"
+        "✅ <b>Jo'natish</b> — adminga yuborish\n"
+        "❌ <b>Bekor qilish</b> — bekor qilish",
+        reply_markup=keyboard,
+    )
+    return SUPPORT_CONFIRM
+
+
+async def support_send_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Foydalanuvchi 'Jo'natish' bosdi — adminga yuborish."""
+    query = update.callback_query
+    await query.answer("✅ Yuborilmoqda...")
+
+    user = query.from_user
+    tg_id = user.id
+    username = f"@{user.username}" if user.username else "—"
+    full_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or "—"
+    phone = context.user_data.get("phone", "—")
+
+    site_info = "🌐 Sayt akkaunti: <i>topilmadi</i>"
+    try:
+        result = await get_telegram_profile_via_api(tg_id)
+        if result and result.get("has_account"):
+            d = result.get("data", {})
+            site_username = d.get("username") or "—"
+            balance = d.get("balance", "0")
+            site_info = f"🌐 Sayt akkaunti: <b>{site_username}</b> | 💰 Balans: <b>{balance} UZS</b>"
+    except Exception:
+        pass
+
+    header = (
+        f"📩 <b>Yangi foydalanuvchi xabari</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 Ism: <b>{full_name}</b>\n"
+        f"🔗 Username: {username}\n"
+        f"🆔 Telegram ID: <code>{tg_id}</code>\n"
+        f"📱 Telefon: <b>{phone}</b>\n"
+        f"{site_info}\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"💬 <b>Xabar quyida:</b>\n\n"
+        f"↩️ Javob: /user_support {tg_id} &lt;xabar matni&gt;"
+    )
+
+    chat_id = context.user_data.pop("support_chat_id", None)
+    msg_id = context.user_data.pop("support_msg_id", None)
+
+    for target in _notification_targets():
+        try:
+            await context.bot.send_message(target, header, parse_mode="HTML")
+            if chat_id and msg_id:
+                await context.bot.forward_message(
+                    chat_id=target,
+                    from_chat_id=chat_id,
+                    message_id=msg_id,
+                )
+        except Exception as e:
+            logger.warning("Admin %s ga support xabari yuborib bo'lmadi: %s", target, e)
+
+    try:
+        await query.edit_message_text("✅ <b>Xabaringiz adminga yuborildi!</b>", parse_mode="HTML")
+    except Exception:
+        pass
+
+    await context.bot.send_message(
+        query.message.chat_id,
+        "✅ <b>Xabaringiz adminga yuborildi!</b>\n\nTez orada javob berishadi.",
+        parse_mode="HTML",
+        reply_markup=_get_main_keyboard(),
+    )
+    return WAITING_PHONE
+
+
+async def support_cancel_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Foydalanuvchi 'Bekor qilish' bosdi."""
+    query = update.callback_query
+    await query.answer("❌ Bekor qilindi.")
+    context.user_data.pop("support_chat_id", None)
+    context.user_data.pop("support_msg_id", None)
+    try:
+        await query.edit_message_text("❌ Xabar bekor qilindi.")
+    except Exception:
+        pass
+    await context.bot.send_message(
+        query.message.chat_id,
+        "❌ Xabar bekor qilindi.",
+        reply_markup=_get_main_keyboard(),
+    )
+    return WAITING_PHONE
+
+
+async def cmd_user_support(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """/user_support <telegram_id> <xabar> — admin foydalanuvchiga javob beradi."""
+    if not _is_admin(update.effective_user.id):
+        return
+    parts = (update.message.text or "").strip().split(maxsplit=2)
+    if len(parts) < 3 or not parts[1].strip().lstrip("-").isdigit():
+        await update.message.reply_html(
+            "📤 Ishlatish:\n"
+            "<code>/user_support &lt;telegram_id&gt; &lt;xabar&gt;</code>\n\n"
+            "Misol:\n"
+            "<code>/user_support 123456789 Xatolikni bartaraf qilamiz!</code>"
+        )
+        return
+    user_id = int(parts[1].strip())
+    text = parts[2].strip()
+    try:
+        await context.bot.send_message(
+            user_id,
+            f"📬 <b>Admin javobi</b>\n━━━━━━━━━━━━━━━━━━━━\n\n{text}",
+            parse_mode="HTML",
+        )
+        await update.message.reply_html(f"✅ Xabar <code>{user_id}</code> ga yuborildi.")
+    except Exception as e:
+        await update.message.reply_html(f"❌ Yuborib bo'lmadi: <code>{e}</code>")
+
+
 def main():
     """Botni ishga tushirish"""
     if BOT_TOKEN == 'YOUR_BOT_TOKEN_HERE':
@@ -2836,7 +2993,7 @@ def main():
     )
 
     # Menyu tugmalari uchun filter
-    _menu_buttons_filter = filters.Text([BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW])
+    _menu_buttons_filter = filters.Text([BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW, BTN_SUPPORT])
 
     # ---- OTP + menyu (akkaunt, Premium, to'ldirish, chiqarish) ----
     conv_handler = ConversationHandler(
@@ -2883,6 +3040,22 @@ def main():
             ],
             WAITING_PREMIUM_PAY_METHOD: [
                 CallbackQueryHandler(_cb_premium_payment_method, pattern="^premium_pay:"),
+                MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
+            WAITING_SUPPORT_MSG: [
+                MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
+                MessageHandler(filters.PHOTO, support_receive),
+                MessageHandler(filters.VIDEO, support_receive),
+                MessageHandler(filters.VOICE, support_receive),
+                MessageHandler(filters.AUDIO, support_receive),
+                MessageHandler(filters.Document.ALL, support_receive),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, support_receive),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
+            SUPPORT_CONFIRM: [
+                CallbackQueryHandler(support_send_cb, pattern="^support_send$"),
+                CallbackQueryHandler(support_cancel_cb, pattern="^support_cancel$"),
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
                 CommandHandler('cancel', _cancel_to_menu),
             ],
@@ -2979,6 +3152,7 @@ def main():
     app.add_handler(CommandHandler('stats', cmd_stats))
     app.add_handler(CommandHandler('balance', cmd_balance))
     app.add_handler(CommandHandler('broadcast', cmd_broadcast))
+    app.add_handler(CommandHandler('user_support', cmd_user_support))
 
     # ---- Umumiy buyruqlar ----
     app.add_handler(CommandHandler('help', help_command))
