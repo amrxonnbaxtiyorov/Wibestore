@@ -1479,7 +1479,7 @@ async def _confirming_text_fallback(update: Update, context: ContextTypes.DEFAUL
     """CONFIRMING holatida foydalanuvchi matn yozsa — eslatma berish."""
     text = (update.message.text or "").strip()
     # Menyu tugmalarini ushlash
-    if text in (BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW):
+    if text in (BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW, BTN_SUPPORT):
         context.user_data.pop("premium_plan", None)
         context.user_data.pop("withdraw_amount", None)
         state = await _handle_menu_button(update, context, text)
