@@ -34,7 +34,7 @@ class ChatRoomListView(generics.ListAPIView):
     def get_queryset(self):
         return ChatRoom.objects.filter(
             participants=self.request.user, is_active=True
-        ).prefetch_related("participants")
+        ).select_related("listing", "listing__game").prefetch_related("participants", "listing__images")
 
 
 @extend_schema(tags=["Messaging"])

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Send, MessageCircle, AlertTriangle, X, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useChatMessages, useMarkChatRead, useSendMessage, useChatSoundEnabled } from '../hooks/useChat.js';
+import { useChats, useChatMessages, useMarkChatRead, useSendMessage, useChatSoundEnabled } from '../hooks/useChat.js';
 import { useLanguage } from '../context/LanguageContext';
 import { resolveImageUrl, getDisplayInitial } from '../lib/displayUtils';
 import { ensureSoundUnlocked, playChatNotificationSound } from '../lib/notificationSound';
@@ -19,6 +19,13 @@ export default function ChatRoomPage() {
     const { t } = useLanguage();
     const [text, setText] = useState('');
     const [soundEnabled, toggleSound] = useChatSoundEnabled();
+
+    const { data: chatsData } = useChats();
+    const activeRoom = useMemo(() => {
+        const list = chatsData?.results ?? chatsData ?? [];
+        if (!Array.isArray(list)) return null;
+        return list.find((r) => String(r?.id) === String(roomId)) ?? null;
+    }, [chatsData, roomId]);
 
     const {
         data: messagesData,
@@ -135,11 +142,26 @@ export default function ChatRoomPage() {
                     >
                         <X style={{ width: '20px', height: '20px' }} />
                     </Link>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
-                        <MessageCircle style={{ width: '22px', height: '22px', color: 'var(--color-accent-blue)', flexShrink: 0 }} />
-                        <h1 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-semibold)', margin: 0 }}>
-                            {t('detail.order_chat') || 'Buyurtma chat'}
-                        </h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                        {resolveImageUrl(activeRoom?.listing?.primary_image) ? (
+                            <img
+                                src={resolveImageUrl(activeRoom.listing.primary_image)}
+                                alt=""
+                                style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', objectFit: 'cover', flexShrink: 0 }}
+                            />
+                        ) : (
+                            <MessageCircle style={{ width: '22px', height: '22px', color: 'var(--color-accent-blue)', flexShrink: 0 }} />
+                        )}
+                        <div className="min-w-0">
+                            <h1 className="truncate" style={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', margin: 0, color: 'var(--color-text-primary)' }}>
+                                {activeRoom?.listing?.title || t('detail.order_chat') || 'Buyurtma chat'}
+                            </h1>
+                            {activeRoom?.listing?.game_name && (
+                                <p className="truncate" style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                    {activeRoom.listing.game_name}
+                                </p>
+                            )}
+                        </div>
                     </div>
                     <button
                         type="button"

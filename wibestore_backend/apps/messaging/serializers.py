@@ -28,6 +28,31 @@ class MessageSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "sender", "is_read", "read_at", "created_at"]
 
 
+class ListingMinimalSerializer(serializers.Serializer):
+    """Minimal listing info for chat room display."""
+    id = serializers.UUIDField()
+    title = serializers.CharField()
+    primary_image = serializers.SerializerMethodField()
+    game_name = serializers.SerializerMethodField()
+
+    def get_primary_image(self, obj):
+        request = self.context.get("request")
+        image = None
+        first_img = obj.images.first() if hasattr(obj, 'images') else None
+        if first_img:
+            image = first_img.image
+        elif obj.primary_image:
+            image = obj.primary_image
+        if image and request:
+            return request.build_absolute_uri(image.url) if hasattr(image, 'url') else str(image)
+        return str(image) if image else None
+
+    def get_game_name(self, obj):
+        if obj.game:
+            return obj.game.name
+        return None
+
+
 class ChatRoomSerializer(serializers.ModelSerializer):
     participants = UserPublicSerializer(many=True, read_only=True)
     last_message_preview = serializers.CharField(source="last_message", read_only=True)
@@ -36,6 +61,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
     escrow_status = serializers.SerializerMethodField()
     buyer_id = serializers.SerializerMethodField()
     seller_id = serializers.SerializerMethodField()
+    listing = serializers.SerializerMethodField()
 
     class Meta:
         model = ChatRoom
@@ -53,6 +79,11 @@ class ChatRoomSerializer(serializers.ModelSerializer):
             "buyer_id",
             "seller_id",
         ]
+
+    def get_listing(self, obj):
+        if not obj.listing_id or not obj.listing:
+            return None
+        return ListingMinimalSerializer(obj.listing, context=self.context).data
 
     def _get_escrow(self, obj):
         if not obj.listing_id:

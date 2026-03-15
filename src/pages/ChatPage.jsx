@@ -222,14 +222,16 @@ export default function ChatPage() {
                                 chats.map((room) => {
                                     const participants = room?.participants ?? [];
                                     const other = participants.find((p) => p?.id && p.id !== user.id) ?? participants[0] ?? null;
-                                    const title = other?.display_name || other?.name || t('detail.seller') || 'Sotuvchi';
+                                    const sellerName = other?.display_name || other?.name || t('detail.seller') || 'Sotuvchi';
                                     const listingTitle = room?.listing?.title || '';
-                                    const listingImage = room?.listing?.primary_image || room?.listing?.image || null;
+                                    const listingGameName = room?.listing?.game_name || '';
+                                    const listingImage = room?.listing?.primary_image || null;
                                     const otherAvatar = other?.avatar || other?.profile_image || other?.image || null;
-                                    const avatarUrl = resolveImageUrl(otherAvatar);
                                     const listingUrl = resolveImageUrl(listingImage);
+                                    const avatarUrl = resolveImageUrl(otherAvatar);
                                     const unread = Number(room?.unread_count ?? 0) || 0;
                                     const isActive = String(room?.id) === String(activeRoomId);
+                                    const primaryTitle = listingTitle || sellerName;
 
                                     return (
                                         <button
@@ -249,27 +251,27 @@ export default function ChatPage() {
                                                 marginBottom: '6px',
                                             }}
                                         >
-                                            {avatarUrl ? (
-                                                <img
-                                                    src={avatarUrl}
-                                                    alt=""
-                                                    style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
-                                                />
-                                            ) : listingUrl ? (
+                                            {listingUrl ? (
                                                 <img
                                                     src={listingUrl}
                                                     alt=""
                                                     style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-lg)', objectFit: 'cover', flexShrink: 0 }}
                                                 />
+                                            ) : avatarUrl ? (
+                                                <img
+                                                    src={avatarUrl}
+                                                    alt=""
+                                                    style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
+                                                />
                                             ) : (
-                                                <div style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-muted)', flexShrink: 0 }}>
-                                                    {getDisplayInitial(title)}
+                                                <div style={{ width: '44px', height: '44px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-muted)', flexShrink: 0 }}>
+                                                    {getDisplayInitial(primaryTitle)}
                                                 </div>
                                             )}
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center justify-between gap-3">
                                                     <p className="truncate" style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', margin: 0 }}>
-                                                        {title}
+                                                        {primaryTitle}
                                                     </p>
                                                     {unread > 0 && (
                                                         <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: '999px', backgroundColor: 'var(--color-accent-blue)', color: '#fff', flexShrink: 0 }}>
@@ -277,11 +279,9 @@ export default function ChatPage() {
                                                         </span>
                                                     )}
                                                 </div>
-                                                {!!listingTitle && (
-                                                    <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
-                                                        {listingTitle}
-                                                    </p>
-                                                )}
+                                                <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
+                                                    {listingGameName ? `${listingGameName} · ${sellerName}` : sellerName}
+                                                </p>
                                                 {!!room?.last_message_preview && (
                                                     <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
                                                         {room.last_message_preview}
@@ -299,20 +299,14 @@ export default function ChatPage() {
                     <div className="chat-page-messages-panel" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, position: 'relative' }}>
                         <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {activeRoom && activeRoomOther ? (
-                                <Link
-                                    to={`/seller/${activeRoomOther.id}`}
-                                    state={{ seller: { id: activeRoomOther.id, display_name: activeRoomOther.display_name, name: activeRoomOther.display_name, avatar: activeRoomOther.avatar } }}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '10px',
-                                        textDecoration: 'none',
-                                        color: 'inherit',
-                                        flex: 1,
-                                        minWidth: 0,
-                                    }}
-                                >
-                                    {resolveImageUrl(activeRoomOther.avatar) ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                                    {resolveImageUrl(activeRoom?.listing?.primary_image) ? (
+                                        <img
+                                            src={resolveImageUrl(activeRoom.listing.primary_image)}
+                                            alt=""
+                                            style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', objectFit: 'cover', flexShrink: 0 }}
+                                        />
+                                    ) : resolveImageUrl(activeRoomOther.avatar) ? (
                                         <img
                                             src={resolveImageUrl(activeRoomOther.avatar)}
                                             alt=""
@@ -323,7 +317,7 @@ export default function ChatPage() {
                                             style={{
                                                 width: '36px',
                                                 height: '36px',
-                                                borderRadius: 'var(--radius-full)',
+                                                borderRadius: 'var(--radius-md)',
                                                 backgroundColor: 'var(--color-bg-tertiary)',
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -334,13 +328,26 @@ export default function ChatPage() {
                                                 flexShrink: 0,
                                             }}
                                         >
-                                            {getDisplayInitial(activeRoomOther.display_name)}
+                                            {getDisplayInitial(activeRoom?.listing?.title || activeRoomOther.display_name)}
                                         </div>
                                     )}
-                                    <p className="truncate" style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
-                                        {activeRoomOther.display_name}
-                                    </p>
-                                </Link>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="truncate" style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
+                                            {activeRoom?.listing?.title || activeRoomOther.display_name}
+                                        </p>
+                                        {activeRoom?.listing?.title && (
+                                            <Link
+                                                to={`/seller/${activeRoomOther.id}`}
+                                                state={{ seller: { id: activeRoomOther.id, display_name: activeRoomOther.display_name, name: activeRoomOther.display_name, avatar: activeRoomOther.avatar } }}
+                                                style={{ textDecoration: 'none' }}
+                                            >
+                                                <p className="truncate" style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                                    {activeRoom?.listing?.game_name ? `${activeRoom.listing.game_name} · ` : ''}{activeRoomOther.display_name}
+                                                </p>
+                                            </Link>
+                                        )}
+                                    </div>
+                                </div>
                             ) : (
                                 <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
                                     {t('chat.choose')}
