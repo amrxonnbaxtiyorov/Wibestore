@@ -134,7 +134,7 @@ const ProfilePage = () => {
                         backgroundColor: 'var(--color-bg-secondary)',
                         border: `2px solid ${user.plan === 'pro' ? 'var(--color-pro-purple)' : user.plan === 'premium' || user.is_premium ? 'var(--color-premium-gold-light)' : 'var(--color-border-default)'}`,
                         borderRadius: 'var(--radius-xl)',
-                        padding: '24px',
+                        padding: 'clamp(14px, 4vw, 24px)',
                         marginTop: '16px',
                         marginBottom: '24px',
                         position: 'relative',
@@ -153,107 +153,92 @@ const ProfilePage = () => {
                             background: user.plan === 'pro' ? 'var(--color-pro-gradient)' : 'var(--color-premium-gradient)',
                         }} />
                     )}
-                    <div className="flex items-center gap-5" style={{ flexWrap: 'wrap' }}>
-                        {/* Avatar — yuklangan rasm bor bo'lsa rasm, yo'q bo'lsa ismning birinchi harfi */}
-                        <div className="relative" style={{ flexShrink: 0 }}>
-                            <div
-                                className="avatar"
-                                style={{
-                                    width: '80px', height: '80px',
-                                    background: user.avatar ? 'transparent' : (user.plan === 'pro' ? 'var(--color-pro-gradient)' : user.plan === 'premium' || user.is_premium ? 'var(--color-premium-gradient)' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))'),
-                                    fontSize: '32px', fontWeight: 'var(--font-weight-bold)',
-                                    color: '#ffffff',
-                                    borderRadius: 'var(--radius-full)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    overflow: 'hidden',
-                                    boxShadow: user.plan === 'pro'
-                                        ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-pro-purple)'
-                                        : (user.plan === 'premium' || user.is_premium)
-                                            ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-premium-gold-light)'
-                                            : 'none',
-                                }}
-                            >
-                                {user.avatar ? (
-                                    <img src={user.avatar} alt={user.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                    getDisplayInitial(user.name ?? user.display_name ?? user.full_name ?? (user.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')
-                                )}
+                    {/* Mobile: column layout. Desktop (sm+): row layout */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {/* Top row: Avatar + Info + (desktop only) Actions */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            {/* Avatar */}
+                            <div className="relative" style={{ flexShrink: 0 }}>
+                                <div
+                                    className="avatar"
+                                    style={{
+                                        width: '72px', height: '72px',
+                                        background: user.avatar ? 'transparent' : (user.plan === 'pro' ? 'var(--color-pro-gradient)' : user.plan === 'premium' || user.is_premium ? 'var(--color-premium-gradient)' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))'),
+                                        fontSize: '28px', fontWeight: 'var(--font-weight-bold)',
+                                        color: '#ffffff',
+                                        borderRadius: 'var(--radius-full)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        overflow: 'hidden',
+                                        boxShadow: user.plan === 'pro'
+                                            ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-pro-purple)'
+                                            : (user.plan === 'premium' || user.is_premium)
+                                                ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-premium-gold-light)'
+                                                : 'none',
+                                    }}
+                                >
+                                    {user.avatar ? (
+                                        <img src={user.avatar} alt={user.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        getDisplayInitial(user.name ?? user.display_name ?? user.full_name ?? (user.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => setShowAvatarModal(true)}
+                                    style={{
+                                        position: 'absolute', bottom: 0, right: 0,
+                                        width: '26px', height: '26px',
+                                        backgroundColor: 'var(--color-accent-blue)',
+                                        borderRadius: 'var(--radius-full)',
+                                        border: '2px solid var(--color-bg-secondary)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        cursor: 'pointer', color: '#fff',
+                                    }}
+                                >
+                                    <Edit2 className="w-3 h-3" />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => setShowAvatarModal(true)}
-                                style={{
-                                    position: 'absolute', bottom: 0, right: 0,
-                                    width: '28px', height: '28px',
-                                    backgroundColor: 'var(--color-accent-blue)',
-                                    borderRadius: 'var(--radius-full)',
-                                    border: '2px solid var(--color-bg-secondary)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    cursor: 'pointer', color: '#fff',
-                                }}
-                            >
-                                <Edit2 className="w-3 h-3" />
-                            </button>
-                        </div>
-                        {/* Info — ism avatar yonida, Telegram ID pastda */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                <h1 style={{ fontSize: 'var(--font-size-xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '0' }}>
-                                    {capitalizeFirst(user.name ?? user.display_name ?? user.full_name ?? user.email) || '—'}
-                                </h1>
-                                {user.plan === 'pro' && (
-                                    <span className="badge badge-pro" style={{ fontSize: '11px', padding: '3px 10px', gap: '4px' }}>
-                                        <Gem className="w-3 h-3" /> Pro
-                                    </span>
-                                )}
-                                {(user.plan === 'premium' || (user.is_premium && user.plan !== 'pro')) && (
-                                    <span className="badge badge-premium" style={{ fontSize: '11px', padding: '3px 10px', gap: '4px' }}>
-                                        <Crown className="w-3 h-3" /> Premium
-                                    </span>
-                                )}
-                            </div>
-                            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginTop: '4px' }}>
-                                {user.telegram_id || user.telegram_username || user.email || ''}
-                            </p>
-                        </div>
 
-                        {/* Balance Card */}
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-end',
-                            gap: '8px',
-                            marginLeft: 'auto',
-                        }}>
-                            <div style={{
-                                backgroundColor: 'var(--color-bg-primary)',
-                                border: '1px solid var(--color-border-default)',
-                                borderRadius: 'var(--radius-lg)',
-                                padding: '12px 20px',
-                                minWidth: '160px',
-                                textAlign: 'center',
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '4px' }}>
-                                    <Wallet style={{ width: '14px', height: '14px', color: 'var(--color-accent-blue)' }} />
-                                    <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        {t('profile.balance') || 'Mablag\''}
-                                    </span>
+                            {/* Info: name + badge + telegram/email */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    <h1 style={{
+                                        fontSize: 'clamp(15px, 4vw, 20px)',
+                                        fontWeight: 'var(--font-weight-bold)',
+                                        color: 'var(--color-text-primary)',
+                                        margin: 0,
+                                        wordBreak: 'break-word',
+                                    }}>
+                                        {capitalizeFirst(user.name ?? user.display_name ?? user.full_name ?? user.email) || '—'}
+                                    </h1>
+                                    {user.plan === 'pro' && (
+                                        <span className="badge badge-pro" style={{ fontSize: '11px', padding: '3px 8px', gap: '3px', flexShrink: 0 }}>
+                                            <Gem className="w-3 h-3" /> Pro
+                                        </span>
+                                    )}
+                                    {(user.plan === 'premium' || (user.is_premium && user.plan !== 'pro')) && (
+                                        <span className="badge badge-premium" style={{ fontSize: '11px', padding: '3px 8px', gap: '3px', flexShrink: 0 }}>
+                                            <Crown className="w-3 h-3" /> Premium
+                                        </span>
+                                    )}
                                 </div>
-                                <div style={{
-                                    fontSize: '22px',
-                                    fontWeight: '700',
-                                    color: 'var(--color-text-primary)',
-                                    lineHeight: 1.2,
+                                <p style={{
+                                    color: 'var(--color-text-muted)',
+                                    fontSize: 'var(--font-size-sm)',
+                                    marginTop: '4px',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
                                 }}>
-                                    {Number(user.balance ?? 0).toLocaleString('uz-UZ')}
-                                </div>
-                                <div style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginTop: '2px' }}>UZS</div>
+                                    {user.telegram_id || user.telegram_username || user.email || ''}
+                                </p>
                             </div>
-                            {/* Actions */}
-                            <div className="flex items-center gap-2">
-                                <Link to="/settings" className="btn btn-secondary btn-md" style={{ textDecoration: 'none' }}>
+
+                            {/* Actions — visible always, right side */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                                <Link to="/settings" className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
                                     <Settings className="w-4 h-4" />
                                 </Link>
-                                <button onClick={handleLogout} className="btn btn-md" style={{
+                                <button onClick={handleLogout} className="btn btn-sm" style={{
                                     backgroundColor: 'var(--color-error-bg)',
                                     color: 'var(--color-error)',
                                     border: '1px solid transparent',
@@ -263,16 +248,52 @@ const ProfilePage = () => {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Balance Card — always full width row below */}
+                        <div style={{
+                            backgroundColor: 'var(--color-bg-primary)',
+                            border: '1px solid var(--color-border-default)',
+                            borderRadius: 'var(--radius-lg)',
+                            padding: '12px 16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '12px',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Wallet style={{ width: '16px', height: '16px', color: 'var(--color-accent-blue)', flexShrink: 0 }} />
+                                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    {t('profile.balance') || 'Mablag\''}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                                <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--color-text-primary)', lineHeight: 1 }}>
+                                    {Number(user.balance ?? 0).toLocaleString('uz-UZ')}
+                                </span>
+                                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', fontWeight: 500 }}>UZS</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Tabs */}
-                <div className="tabs" style={{ marginBottom: '0' }}>
+                {/* Tabs — horizontally scrollable on mobile */}
+                <div
+                    className="tabs"
+                    style={{
+                        marginBottom: '0',
+                        overflowX: 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
+                        flexWrap: 'nowrap',
+                    }}
+                >
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             className={`tab ${activeTab === tab.id ? 'tab-active' : ''}`}
                             onClick={() => setActiveTab(tab.id)}
+                            style={{ flexShrink: 0 }}
                         >
                             <tab.icon className="w-4 h-4" />
                             <span className="hidden sm:inline">{tab.label}</span>
@@ -290,7 +311,7 @@ const ProfilePage = () => {
                         border: '1px solid var(--color-border-default)',
                         borderTop: 'none',
                         borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
-                        padding: '24px',
+                        padding: 'clamp(12px, 4vw, 24px)',
                         minHeight: '400px',
                     }}
                 >
