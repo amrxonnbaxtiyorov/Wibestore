@@ -1499,8 +1499,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "1. /start yozing\n"
         "2. Telefon raqamingizni yuboring\n"
         "3. Bir martalik tasdiqlash kodi olasiz\n"
-        f"4. <a href='{REGISTER_URL}'>Saytda</a> telefon + kodni kiriting\n\n"
-        "🆕 <b>Soatlik yangilanish:</b> Har soatda yangi akkauntlar haqida xabar olasiz!"
+        f"4. <a href='{REGISTER_URL}'>Saytda</a> telefon + kodni kiriting"
     )
 
 
@@ -1686,60 +1685,6 @@ async def _payment_listener_loop(bot) -> None:
             except Exception:
                 pass
 
-
-async def _hourly_notify_job(context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Har 1 soatda barcha foydalanuvchilarga yangi akkaunt haqida xabar yuborish."""
-    users = _load_users()
-    if not users:
-        logger.info("Soatlik xabar: foydalanuvchilar yo'q.")
-        return
-
-    # Saytdagi eng so'nggi akkauntlar sonini olishga harakat qilamiz
-    new_count = None
-    if BOT_SECRET_KEY and "localhost" not in WEBSITE_URL:
-        try:
-            url = f"{WEBSITE_URL}/api/v1/auth/telegram/stats/"
-            payload = {"secret_key": BOT_SECRET_KEY}
-            if _AIOHTTP_AVAILABLE:
-                async with _aiohttp.ClientSession() as session:
-                    async with session.post(
-                        url, json=payload, timeout=_aiohttp.ClientTimeout(total=8)
-                    ) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            new_count = data.get("new_accounts_last_hour")
-        except Exception:
-            pass
-
-    if new_count is not None and new_count == 0:
-        logger.info("Soatlik xabar: oxirgi soatda yangi akkaunt yo'q, xabar yuborilmaydi.")
-        return
-
-    count_text = f" (+<b>{new_count}</b> ta)" if new_count else ""
-    text = (
-        f"🆕 <b>Yangi akkauntlar saytga joylandi!</b>{count_text}\n\n"
-        f"🌐 WibeStore'da yangi sotilayotgan akkauntlar mavjud.\n"
-        f"Hoziroq ko'rish uchun saytga kiring:\n"
-        f"🔗 <a href='{SITE_URL}'>{SITE_URL}</a>"
-    )
-    sent = 0
-    failed = 0
-    for uid in list(users):
-        try:
-            await context.bot.send_message(
-                uid, text, parse_mode="HTML",
-                disable_web_page_preview=True,
-            )
-            sent += 1
-            # Rate limiting: Telegram — 30 msg/s, biz sekin yuboramiz
-            await asyncio.sleep(0.05)
-        except Exception as e:
-            err_str = str(e).lower()
-            if "blocked" in err_str or "deactivated" in err_str or "not found" in err_str:
-                failed += 1
-            else:
-                logger.debug("Soatlik xabar yuborilmadi %s: %s", uid, e)
-    logger.info("Soatlik xabar: %d yuborildi, %d muvaffaqiyatsiz.", sent, failed)
 
 
 async def _post_init(application) -> None:
@@ -2304,14 +2249,6 @@ async def cmd_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         f"✅ Yuborildi: <b>{sent}</b>\n❌ Yuborilmadi: <b>{failed}</b>"
     )
 
-
-async def cmd_notify_now(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """/notify — admin: soatlik xabarni hoziroq yuborish."""
-    if not _is_admin(update.effective_user.id):
-        return
-    await update.message.reply_text("📤 Soatlik xabar yuborilmoqda...")
-    await _hourly_notify_job(context)
-    await update.message.reply_text("✅ Xabar yuborildi!")
 
 
 # ===== ESCROW (XARID TASDIQLASH) HANDLERLARI =====
