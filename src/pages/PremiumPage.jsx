@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Check, Crown, Star, Zap, Shield, TrendingUp, X, Send, Info } from 'lucide-react';
+import { Check, Crown, Star, Zap, Shield, TrendingUp, X, Send } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useSubscriptionPlans } from '../hooks/useSubscriptions';
@@ -76,7 +76,6 @@ const PremiumPage = () => {
             id: 'premium',
             name: 'Premium',
             priceUZS: premiumPriceUZS,
-            discountPriceUZS: Math.round(premiumPriceUZS * 0.5),
             icon: '⭐',
             description: t('premium.premium_desc') || 'More visibility',
             features: features.premium,
@@ -85,7 +84,6 @@ const PremiumPage = () => {
             id: 'pro',
             name: 'Pro',
             priceUZS: proPriceUZS,
-            discountPriceUZS: Math.round(proPriceUZS * 0.5),
             icon: '💎',
             description: t('premium.pro_desc') || 'Maximum benefits',
             features: features.pro,
@@ -194,28 +192,6 @@ const PremiumPage = () => {
                         {t('premium.subtitle') || 'Get more visibility and sell faster with Premium'}
                     </p>
 
-                    {/* Premium sotib olish — faqat chegirma va vaucherlar */}
-                    <div
-                        style={{
-                            marginTop: '24px',
-                            padding: '16px 20px',
-                            borderRadius: 'var(--radius-lg)',
-                            backgroundColor: 'var(--color-info-bg, rgba(59, 130, 246, 0.1))',
-                            border: '1px solid var(--color-accent-blue)',
-                            maxWidth: '560px',
-                            marginLeft: 'auto',
-                            marginRight: 'auto',
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: '12px',
-                            textAlign: 'left',
-                        }}
-                    >
-                        <Info className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-accent-blue)', marginTop: '2px' }} />
-                        <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-primary)', lineHeight: 1.5 }}>
-                            {t('premium.purchase_info') || "Premium obunalarni faqat 50% chegirma va vaucherlar orqali sotib olish mumkin. Coinlarni yig'ib Premium ni 100 coin evaziga bepul oling yoki Telegram orqali to'lang."}
-                        </p>
-                    </div>
                 </div>
 
                 {/* Pricing Cards */}
@@ -298,32 +274,14 @@ const PremiumPage = () => {
                             <div className="text-center" style={{ marginBottom: '24px' }}>
                                 {plan.priceUZS > 0 ? (
                                     <>
-                                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '10px' }}>
-                                            {plan.discountPriceUZS != null && (
-                                                <span style={{
-                                                    fontSize: 'var(--font-size-xl)',
-                                                    fontWeight: 'var(--font-weight-semibold)',
-                                                    color: 'var(--color-text-muted)',
-                                                    textDecoration: 'line-through'
-                                                }}>
-                                                    {formatUZS(plan.priceUZS)}
-                                                </span>
-                                            )}
-                                            <span style={{
-                                                fontSize: 'var(--font-size-3xl)',
-                                                fontWeight: 'var(--font-weight-bold)',
-                                                color: 'var(--color-text-primary)',
-                                            }}>
-                                                {formatUZS(plan.discountPriceUZS ?? plan.priceUZS)}
-                                            </span>
-                                        </div>
-                                        <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>UZS / oy</span>
-                                        <p style={{ marginTop: '6px', fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-green)', fontWeight: 600 }}>
-                                            {t('premium.first_month_discount') || '50% off first month'}
-                                        </p>
-                                        <p style={{ marginTop: '4px', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-                                            {(t('premium.from_next_month') || 'From next month: {price} UZS/oy').replace('{price}', formatUZS(plan.priceUZS))}
-                                        </p>
+                                        <span style={{
+                                            fontSize: 'var(--font-size-3xl)',
+                                            fontWeight: 'var(--font-weight-bold)',
+                                            color: 'var(--color-text-primary)',
+                                        }}>
+                                            {formatUZS(plan.priceUZS)}
+                                        </span>
+                                        <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginLeft: '4px' }}>UZS / oy</span>
                                     </>
                                 ) : (
                                     <span style={{
@@ -369,7 +327,7 @@ const PremiumPage = () => {
                             </ul>
 
                             {/* Button */}
-                            {plan.priceUSD > 0 ? (
+                            {plan.priceUZS > 0 ? (
                                 <button
                                     onClick={() => handleSubscribe(plan.id)}
                                     className={`btn btn-lg w-full ${plan.popular ? 'btn-premium' : 'btn-primary'}`}
