@@ -3067,9 +3067,10 @@ def main():
                 CommandHandler('cancel', _cancel_to_menu),
             ],
             WAITING_SUPPORT_MSG: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, support_receive),
-                MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.Document.ALL | filters.AUDIO, support_receive),
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
+                MessageHandler(filters.PHOTO | filters.VIDEO | filters.VOICE | filters.AUDIO, support_receive),
+                MessageHandler(filters.Document.ALL, support_receive),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, support_receive),
                 CommandHandler('cancel', _cancel_to_menu),
             ],
             SUPPORT_CONFIRM: [
