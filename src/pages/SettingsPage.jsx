@@ -487,7 +487,7 @@ const SettingsPage = () => {
                                             <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '200px', height: '200px', background: '#fff', borderRadius: '50%', filter: 'blur(60px)' }} />
                                         </div>
                                         <p style={{ fontSize: 'var(--font-size-sm)', color: 'rgba(255,255,255,0.7)', marginBottom: '4px' }}>{t('settings.balance')}</p>
-                                        <p style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 'var(--font-weight-bold)', color: '#ffffff' }}>{t('settings.balance_amount')}</p>
+                                        <p style={{ fontSize: 'var(--font-size-3xl)', fontWeight: 'var(--font-weight-bold)', color: '#ffffff' }}>{Number(user?.balance ?? 0).toLocaleString('uz-UZ')} UZS</p>
                                     </div>
 
                                     {/* Actions */}
