@@ -424,7 +424,8 @@ const PremiumPage = () => {
                         {t('premium.payment_methods') || 'Payment Methods'}
                     </h3>
                     <div className="flex items-center justify-center gap-3 flex-wrap" style={{ marginBottom: '16px' }}>
-                        <div
+                        <button
+                            onClick={() => window.open(`https://t.me/${TELEGRAM_BOT_USERNAME}?start=topup`, '_blank')}
                             style={{
                                 padding: '12px 24px',
                                 borderRadius: 'var(--radius-lg)',
@@ -436,11 +437,12 @@ const PremiumPage = () => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '8px',
+                                cursor: 'pointer',
                             }}
                         >
                             <Send className="w-4 h-4" style={{ color: '#2AABEE' }} />
                             Telegram
-                        </div>
+                        </button>
                     </div>
                     <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
                         {t('premium.secure_payment_telegram') || 'Secure payment via Telegram @wibestorebot'}
