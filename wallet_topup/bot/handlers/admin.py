@@ -91,7 +91,7 @@ async def cmd_pending(message: Message) -> None:
         username = tx.get("username") or tx.get("telegram_id", "?")
         lines.append(
             f"• <code>{uid[:12]}…</code>\n"
-            f"  👤 {username} | 💰 {amount:,.2f} {currency} | 💳 {method}"
+            f"  👤 {username} | 💰 {float(amount or 0):,.2f} {currency} | 💳 {method}"
         )
 
     await message.answer("\n".join(lines), parse_mode="HTML")

@@ -51,6 +51,9 @@ async def _get_user_site_info(telegram_id: int) -> str:
 @router.message(F.text == "📩 Adminga xabar")
 async def support_start(message: Message, state: FSMContext) -> None:
     """User pressed 'Message Admin' button."""
+    if _is_admin(message.from_user.id):
+        await message.answer("ℹ️ Siz adminsiz. Foydalanuvchiga javob berish uchun /message_user dan foydalaning.")
+        return
     await state.set_state(SupportState.waiting_for_message)
     await message.answer(
         "✍️ <b>Adminga xabar yuborish</b>\n\n"
@@ -134,7 +137,6 @@ async def cmd_message_user(message: Message, bot: Bot) -> None:
 
     user_id = int(parts[1].strip())
     text = parts[2].strip()
-    admin_name = f"@{message.from_user.username}" if message.from_user.username else "Admin"
 
     try:
         await bot.send_message(

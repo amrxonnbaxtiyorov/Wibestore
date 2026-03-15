@@ -79,7 +79,7 @@ async def _notify_admins(bot, transaction_uid: str, data: dict) -> None:
         f"━━━━━━━━━━━━━━━━━━━━\n\n"
         f"🆔 ID: <code>{transaction_uid}</code>\n"
         f"👤 User: {user_display}\n"
-        f"💰 Amount: <b>{amount:,.2f} {currency}</b>\n"
+        f"💰 Amount: <b>{float(amount or 0):,.2f} {currency}</b>\n"
         f"💳 Method: {payment_method}\n"
         f"⏰ Status: <b>PENDING</b>\n"
     )
