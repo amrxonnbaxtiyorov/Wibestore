@@ -2828,10 +2828,10 @@ async def support_receive(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     """Foydalanuvchi xabarini saqlash va tasdiqlash tugmalarini ko'rsatish."""
     context.user_data["support_chat_id"] = update.message.chat_id
     context.user_data["support_msg_id"] = update.message.message_id
-    keyboard = InlineKeyboardMarkup([[
-        InlineKeyboardButton("✅ Jo'natish", callback_data="support_send"),
-        InlineKeyboardButton("❌ Bekor qilish", callback_data="support_cancel"),
-    ]])
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🟢 Jo'natish", callback_data="support_send")],
+        [InlineKeyboardButton("🔴 Bekor qilish", callback_data="support_cancel")],
+    ])
     await update.message.reply_html(
         "Yuqoridagi xabar adminga yuborilsinmi?\n\n"
         "✅ <b>Jo'natish</b> — adminga yuborish\n"
