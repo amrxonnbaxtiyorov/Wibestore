@@ -66,9 +66,12 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-# Conflict (409) va httpx logini kamaytirish — faqat bizning WARNING chiqadi
+# Conflict (409), httpx va APScheduler INFO spamini kamaytirish
 logging.getLogger("telegram.ext.Updater").setLevel(logging.CRITICAL)
 logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("apscheduler.executors.default").setLevel(logging.WARNING)
+logging.getLogger("apscheduler.scheduler").setLevel(logging.WARNING)
+logging.getLogger("apscheduler.jobstores.default").setLevel(logging.WARNING)
 
 # ===== KONFIGURATSIYA =====
 BOT_TOKEN = os.getenv('BOT_TOKEN', 'YOUR_BOT_TOKEN_HERE')
@@ -2970,15 +2973,15 @@ def main():
     app.add_handler(CommandHandler('help', help_command))
     app.add_handler(MessageHandler(filters.COMMAND, unknown))
 
-    async def error_handler(update, context):
+    async def error_handler(_update, context):
         if isinstance(context.error, TelegramConflict):
-            now = _time.time()
-            last_log = getattr(error_handler, '_last_conflict_log', 0.0)
-            if now - last_log >= 300:  # 5 daqiqa
-                error_handler._last_conflict_log = now
-                logger.warning(
-                    "Conflict: Bot boshqa joyda ham ishlayapti. Faqat bitta instance (Railway yoki kompyuter)."
-                )
+            logger.critical(
+                "Conflict (409): Bot boshqa joyda ham ishlayapti! "
+                "Railway va lokal kompyuterda bir vaqtda ishlamang. "
+                "Ushbu instance to'xtatilmoqda..."
+            )
+            # Applicationni async ravishda to'xtatish — run_polling chiqadi
+            asyncio.create_task(context.application.stop())
             return
         logger.exception("Kutilmagan xato: %s", context.error)
 
@@ -2986,13 +2989,19 @@ def main():
 
     logger.info("Bot ishga tushdi...")
     try:
-        app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
-    except TelegramConflict:
-        logger.warning(
-            "Bot Conflict: Faqat BITTA bot instance ishlashi kerak. "
-            "Boshqa joyda (kompyuter yoki ikkinchi Railway replica) botni to'xtating."
+        app.run_polling(
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True,
+            stop_signals=None,
         )
-        raise
+    except TelegramConflict:
+        logger.critical(
+            "Conflict (409): Faqat BITTA bot instance ishlashi kerak. "
+            "Boshqa joyda (kompyuter yoki ikkinchi Railway replica) botni to'xtating. "
+            "Ushbu instance to'xtatilmoqda."
+        )
+        import sys
+        sys.exit(1)
 
 
 if __name__ == '__main__':
