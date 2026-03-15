@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Gamepad2, Mail, Phone, MapPin, Send, Instagram, Facebook, Youtube, Twitter } from 'lucide-react';
+import { Gamepad2, Send, Instagram, Facebook, Youtube, Twitter } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 /* ── Custom brand SVG icons (lucide-da mavjud emas) ─────────────────────── */
@@ -81,22 +81,14 @@ const Footer = () => {
                                 lineHeight: '20px',
                             }}
                         >
-                            {t('footer.description') || 'Самая надёжная платформа торговли игровыми аккаунтами в Узбекистане'}
+                            Dunyodagi eng ishonchli akkunt savdo platformasi
                         </p>
 
                         <div className="space-y-2">
-                            <a href="mailto:support@wibestore.uz" className="flex items-center gap-2 text-sm link-hover-accent">
-                                <Mail className="w-4 h-4" />
-                                support@wibestore.uz
+                            <a href="https://t.me/wibestore_admin_bot" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm link-hover-accent">
+                                <Send className="w-4 h-4" style={{ color: '#2AABEE' }} />
+                                @wibestore_admin_bot
                             </a>
-                            <a href="tel:+998901234567" className="flex items-center gap-2 text-sm link-hover-accent">
-                                <Phone className="w-4 h-4" />
-                                +998 90 123 45 67
-                            </a>
-                            <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                                <MapPin className="w-4 h-4" />
-                                Toshkent, O'zbekiston
-                            </div>
                         </div>
                     </div>
 
