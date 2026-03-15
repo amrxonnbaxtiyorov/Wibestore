@@ -53,6 +53,7 @@ const AdminPremium = lazyWithRetry(() => import('./pages/admin/AdminPremium'));
 const AdminReports = lazyWithRetry(() => import('./pages/admin/AdminReports'));
 const AdminFinance = lazyWithRetry(() => import('./pages/admin/AdminFinance'));
 const AdminSettings = lazyWithRetry(() => import('./pages/admin/AdminSettings'));
+const AdminTradeChats = lazyWithRetry(() => import('./pages/admin/AdminTradeChats'));
 
 // Page loading fallback with skeleton shimmer
 const PageLoader = () => (
@@ -203,6 +204,11 @@ function App() {
                         <Route path="/admin/settings" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminSettings /></AdminLayout></AdminGuard>
+                          </Suspense>
+                        } />
+                        <Route path="/admin/trade-chats" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <AdminGuard><AdminLayout><AdminTradeChats /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
 

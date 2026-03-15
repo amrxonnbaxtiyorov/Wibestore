@@ -19,7 +19,6 @@ import { useCreateChat } from '../hooks/useChat';
 import BuyerRulesQuiz from '../components/BuyerRulesQuiz';
 import ReviewModal from '../components/ReviewModal';
 
-const TELEGRAM_URL = import.meta.env.VITE_TELEGRAM_URL || 'https://t.me/wibestoreuz';
 const FAV_STORAGE_KEY = 'wibeFavoriteListingIds';
 
 /* ─── Balans yetarli emas modal ───────────────────────────────── */
@@ -530,7 +529,9 @@ const AccountDetailPage = () => {
                         setShowReviewAfterPurchase(true);
                         addToast({ type: 'success', title: t('detail.purchase_success_chat') || 'Xarid tasdiqlandi. Endi sotuvchini baholang.' });
                     } else {
-                        fallbackToTelegram();
+                        // Chat xonasi ID qaytmadi — chatlar sahifasiga yo'naltiramiz
+                        addToast({ type: 'success', title: 'Xarid muvaffaqiyatli amalga oshirildi! Chat sahifasini oching.', duration: 5000 });
+                        navigate('/chat');
                     }
                 },
                 onError: (err) => {
@@ -542,20 +543,10 @@ const AccountDetailPage = () => {
                         setShowInsufficientModal(true);
                     } else {
                         addToast({ type: 'error', title: t('detail.purchase_error') || 'Xarid amalga oshmadi.' });
-                        fallbackToTelegram();
                     }
                 },
             }
         );
-    };
-
-    const fallbackToTelegram = () => {
-        const title = listing?.title || '';
-        const price = listing?.price != null ? new Intl.NumberFormat('uz-UZ').format(listing.price) + ' so\'m' : '';
-        const text = [title && `"${title}"`, 'akkauntini sotib olmoqchiman.', price && `Narx: ${price}`].filter(Boolean).join(' ');
-        const url = text ? `${TELEGRAM_URL}?text=${encodeURIComponent(text)}` : TELEGRAM_URL;
-        window.open(url, '_blank', 'noopener,noreferrer');
-        addToast({ type: 'info', title: t('detail.buy_telegram_redirect'), duration: 6000 });
     };
 
     const handleContactSeller = () => {

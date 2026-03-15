@@ -89,6 +89,49 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         return str(escrow.seller_id) if escrow else None
 
 
+class AdminOrderChatSerializer(ChatRoomSerializer):
+    """Extended serializer for admin trade chat panel — includes listing title and game."""
+
+    listing_title = serializers.SerializerMethodField()
+    listing_game = serializers.SerializerMethodField()
+    buyer_name = serializers.SerializerMethodField()
+    seller_name = serializers.SerializerMethodField()
+    escrow_amount = serializers.SerializerMethodField()
+
+    class Meta(ChatRoomSerializer.Meta):
+        fields = ChatRoomSerializer.Meta.fields + [
+            "listing_title",
+            "listing_game",
+            "buyer_name",
+            "seller_name",
+            "escrow_amount",
+        ]
+
+    def get_listing_title(self, obj):
+        return obj.listing.title if obj.listing else None
+
+    def get_listing_game(self, obj):
+        if obj.listing and obj.listing.game:
+            return obj.listing.game.name
+        return None
+
+    def get_buyer_name(self, obj):
+        escrow = self._get_escrow(obj)
+        if escrow and escrow.buyer:
+            return escrow.buyer.display_name or escrow.buyer.email
+        return None
+
+    def get_seller_name(self, obj):
+        escrow = self._get_escrow(obj)
+        if escrow and escrow.seller:
+            return escrow.seller.display_name or escrow.seller.email
+        return None
+
+    def get_escrow_amount(self, obj):
+        escrow = self._get_escrow(obj)
+        return str(escrow.amount) if escrow else None
+
+
 class CreateChatRoomSerializer(serializers.Serializer):
     participant_id = serializers.UUIDField()
     listing_id = serializers.UUIDField(required=False)

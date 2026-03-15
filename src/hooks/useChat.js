@@ -210,6 +210,22 @@ export const useSendMessage = (chatId) => {
     });
 };
 
+/**
+ * Admin: barcha savdo (order) chatlari — faqat staff uchun
+ */
+export const useAdminOrderChats = (escrowStatus = '') => {
+    return useQuery({
+        queryKey: ['admin-order-chats', escrowStatus],
+        queryFn: async () => {
+            const params = escrowStatus ? `?escrow_status=${escrowStatus}` : '';
+            const { data } = await apiClient.get(`/chats/admin/order-chats/${params}`);
+            return data;
+        },
+        staleTime: 15 * 1000,
+        refetchInterval: 15 * 1000,
+    });
+};
+
 export default {
     useChats,
     useChat,
@@ -218,4 +234,5 @@ export default {
     useSendMessage,
     useMarkChatRead,
     useChatSoundEnabled,
+    useAdminOrderChats,
 };

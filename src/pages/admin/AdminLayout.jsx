@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, Package, AlertTriangle, Star,
-    DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft
+    DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft, MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { useLanguage } from '../../context/LanguageContext';
@@ -34,6 +34,7 @@ const AdminLayout = ({ children }) => {
         { icon: AlertTriangle, label: t('admin.menu_reports'), to: '/admin/reports' },
         { icon: Star, label: t('admin.menu_premium'), to: '/admin/premium' },
         { icon: DollarSign, label: t('admin.menu_finance'), to: '/admin/finance' },
+        { icon: MessageSquare, label: 'Savdo chatlari', to: '/admin/trade-chats' },
         { icon: Settings, label: t('admin.menu_settings'), to: '/admin/settings' },
     ];
 

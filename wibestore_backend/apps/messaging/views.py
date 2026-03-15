@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 
 from .models import ChatRoom, Message
 from .serializers import (
+    AdminOrderChatSerializer,
     ChatRoomSerializer,
     CreateChatRoomSerializer,
     MessageSerializer,
@@ -182,6 +183,31 @@ class MarkChatReadView(APIView):
         )
 
         return Response({"success": True, "data": {"updated": updated}}, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["Messaging"])
+class AdminOrderChatsView(generics.ListAPIView):
+    """GET /api/v1/chat/admin/order-chats/ — All trade/order chats (staff only)."""
+
+    serializer_class = AdminOrderChatSerializer
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+    def get_queryset(self):
+        qs = (
+            ChatRoom.objects.filter(listing__isnull=False, is_active=True)
+            .prefetch_related("participants")
+            .select_related("listing", "listing__game")
+            .order_by("-last_message_at")
+        )
+        # Optional filter by escrow status
+        escrow_status = self.request.query_params.get("escrow_status")
+        if escrow_status:
+            from apps.payments.models import EscrowTransaction
+            listing_ids = EscrowTransaction.objects.filter(
+                status=escrow_status
+            ).values_list("listing_id", flat=True)
+            qs = qs.filter(listing_id__in=listing_ids)
+        return qs
 
 
 # ── Helper ─────────────────────────────────────────────────────────────────────
