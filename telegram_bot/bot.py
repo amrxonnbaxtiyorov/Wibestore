@@ -2986,33 +2986,22 @@ def main():
 
     async def error_handler(_update, context):
         if isinstance(context.error, TelegramConflict):
-            logger.critical(
-                "Conflict (409): Bot boshqa joyda ham ishlayapti! "
-                "Railway va lokal kompyuterda bir vaqtda ishlamang. "
-                "Ushbu instance to'xtatilmoqda..."
+            logger.warning(
+                "Conflict (409): Boshqa instance mavjud. "
+                "Railway rolling deployment — 15s kutib qayta ulaniladi..."
             )
-            # Applicationni async ravishda to'xtatish — run_polling chiqadi
-            asyncio.create_task(context.application.stop())
+            await asyncio.sleep(15)
             return
         logger.exception("Kutilmagan xato: %s", context.error)
 
     app.add_error_handler(error_handler)
 
     logger.info("Bot ishga tushdi...")
-    try:
-        app.run_polling(
-            allowed_updates=Update.ALL_TYPES,
-            drop_pending_updates=True,
-            stop_signals=None,
-        )
-    except TelegramConflict:
-        logger.critical(
-            "Conflict (409): Faqat BITTA bot instance ishlashi kerak. "
-            "Boshqa joyda (kompyuter yoki ikkinchi Railway replica) botni to'xtating. "
-            "Ushbu instance to'xtatilmoqda."
-        )
-        import sys
-        sys.exit(1)
+    app.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,
+        stop_signals=None,
+    )
 
 
 if __name__ == '__main__':
