@@ -99,7 +99,7 @@ PAYMENT_REDIS_CHANNEL = 'wallet_topup:new_pending'
 # To'lov tizimi yoqilganmi? WEB_APP_URL to'g'ri sozlangan bo'lsa
 PAYMENT_ENABLED = bool(
     WEB_APP_URL
-    and WEB_APP_URL.startswith('http')
+    and WEB_APP_URL.startswith('https://')
     and 'your-domain' not in WEB_APP_URL
 )
 
@@ -565,7 +565,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if args and args[0] == "topup":
         return await _cmd_topup(update, context)
 
-    reply_markup = _get_main_keyboard()
+    try:
+        reply_markup = _get_main_keyboard()
+    except Exception as e:
+        logger.error("Keyboard yaratishda xato: %s", e)
+        reply_markup = ReplyKeyboardMarkup(
+            [
+                [KeyboardButton(BTN_MY_ACCOUNT), KeyboardButton(BTN_PREMIUM)],
+                [KeyboardButton(BTN_TOPUP), KeyboardButton(BTN_WITHDRAW)],
+                [KeyboardButton("📱 Telefon raqamimni yuborish", request_contact=True)],
+            ],
+            resize_keyboard=True,
+        )
     payment_line = "\n💰 <b>To'lov paneli</b> — hisobni to'ldirish\n" if PAYMENT_ENABLED else ""
 
     welcome_text = (
