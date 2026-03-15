@@ -17,7 +17,6 @@ import { useToast } from '../components/ToastProvider';
 import { useAuth } from '../context/AuthContext';
 import { useCreateChat } from '../hooks/useChat';
 import BuyerRulesQuiz from '../components/BuyerRulesQuiz';
-import ReviewModal from '../components/ReviewModal';
 
 const FAV_STORAGE_KEY = 'wibeFavoriteListingIds';
 
@@ -383,8 +382,6 @@ const AccountDetailPage = () => {
     const [activeTab, setActiveTab] = useState('description');
     const [showBuyerRulesModal, setShowBuyerRulesModal] = useState(false);
     const purchaseListing = usePurchaseListing();
-    const [showReviewAfterPurchase, setShowReviewAfterPurchase] = useState(false);
-    const [pendingChatRoomId, setPendingChatRoomId] = useState(null);
     const [showInsufficientModal, setShowInsufficientModal] = useState(false);
 
     useEffect(() => {
@@ -513,7 +510,7 @@ const AccountDetailPage = () => {
         setShowBuyerRulesModal(true);
     };
 
-    /** Qoidalar o'tkazilgach: balance orqali xarid, muvaffaqiyatda majburiy baholash oynasi ochiladi, keyin chat. */
+    /** Qoidalar o'tkazilgach: balance orqali xarid, muvaffaqiyatda chat ochiladi. */
     const handleBuyPassRedirectToTelegram = () => {
         if (!listing?.id) return;
         purchaseListing.mutate(
@@ -521,16 +518,16 @@ const AccountDetailPage = () => {
             {
                 onSuccess: (data) => {
                     setShowBuyerRulesModal(false);
-                    // Balansni yangilash — xarid keyinoq yangi qiymat ko'rinsin
                     refreshUser();
                     const chatRoomId = data?.data?.chat_room_id;
+                    addToast({
+                        type: 'success',
+                        title: 'Xarid tasdiqlandi. Sotuvchi va admin bilan chat ochildi.',
+                        duration: 5000,
+                    });
                     if (chatRoomId) {
-                        setPendingChatRoomId(chatRoomId);
-                        setShowReviewAfterPurchase(true);
-                        addToast({ type: 'success', title: t('detail.purchase_success_chat') || 'Xarid tasdiqlandi. Endi sotuvchini baholang.' });
+                        navigate(`/chat/${chatRoomId}`);
                     } else {
-                        // Chat xonasi ID qaytmadi — chatlar sahifasiga yo'naltiramiz
-                        addToast({ type: 'success', title: 'Xarid muvaffaqiyatli amalga oshirildi! Chat sahifasini oching.', duration: 5000 });
                         navigate('/chat');
                     }
                 },
@@ -626,23 +623,6 @@ const AccountDetailPage = () => {
                     inModal
                     onPass={handleBuyPassRedirectToTelegram}
                     onClose={() => setShowBuyerRulesModal(false)}
-                />
-            )}
-            {showReviewAfterPurchase && listing?.seller?.id && (
-                <ReviewModal
-                    isOpen={showReviewAfterPurchase}
-                    seller={listing.seller}
-                    account={{ id: listing.id, title: listing.title }}
-                    onClose={() => {
-                        setShowReviewAfterPurchase(false);
-                        if (pendingChatRoomId) navigate(`/chat/${pendingChatRoomId}`);
-                        setPendingChatRoomId(null);
-                    }}
-                    onSubmit={() => {
-                        setShowReviewAfterPurchase(false);
-                        if (pendingChatRoomId) navigate(`/chat/${pendingChatRoomId}`);
-                        setPendingChatRoomId(null);
-                    }}
                 />
             )}
             <div className="gh-container">

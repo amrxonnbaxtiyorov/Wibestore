@@ -147,13 +147,6 @@ class EscrowService:
         except Exception as celery_err:
             logger.warning("Could not schedule auto-release for escrow %s: %s", escrow.id, celery_err)
 
-        # Haridor va sotuvchiga Telegram xabari
-        try:
-            from .telegram_notify import notify_purchase_created
-            notify_purchase_created(escrow)
-        except Exception as tg_err:
-            logger.warning("Telegram purchase notification failed: %s", tg_err)
-
         return escrow
 
     @staticmethod
@@ -266,10 +259,10 @@ class EscrowService:
         logger.info("Escrow payment released: %s, seller earned: %s", escrow.id, escrow.seller_earnings)
 
         try:
-            from .telegram_notify import notify_escrow_released
-            notify_escrow_released(escrow)
+            from .telegram_notify import notify_trade_completed
+            notify_trade_completed(escrow)
         except Exception as tg_err:
-            logger.warning("Telegram release notification failed: %s", tg_err)
+            logger.warning("Telegram trade-completed notification failed: %s", tg_err)
 
         return escrow
 

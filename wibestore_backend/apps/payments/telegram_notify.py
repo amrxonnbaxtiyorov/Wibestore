@@ -58,10 +58,10 @@ def _send_message(chat_id: int, text: str, reply_markup: dict = None) -> bool:
     return False
 
 
-def notify_purchase_created(escrow) -> None:
+def notify_purchase_created(escrow, chat_room_id: str = None) -> None:
     """
     Xarid amalga oshirilganda haridor, sotuvchi va adminlarga xabar yuborish.
-    escrow: EscrowTransaction instance
+    chat_room_id: to'g'ridan-to'g'ri chat xonasiga havola uchun ID (ixtiyoriy)
     """
     listing = escrow.listing
     buyer = escrow.buyer
@@ -69,7 +69,10 @@ def notify_purchase_created(escrow) -> None:
     price_str = _fmt_price(escrow.amount)
     earnings_str = _fmt_price(escrow.seller_earnings)
     escrow_id = str(escrow.id)
-    chat_link = _get_chat_link(escrow)
+    if chat_room_id:
+        chat_link = f"{SITE_URL}/chat/{chat_room_id}"
+    else:
+        chat_link = _get_chat_link(escrow)
 
     # ── Xaridorga xabar ──────────────────────────────────────────────────
     if buyer.telegram_id:
@@ -99,13 +102,14 @@ def notify_purchase_created(escrow) -> None:
             f"💰 Xarid summasi: <b>{price_str}</b>\n"
             f"💵 Sizga tushadigan summa: <b>{earnings_str}</b>\n\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"👥 <b>Haridor va admin saytdagi chatda sizni kutmoqda!</b>\n\n"
             f"📋 <b>SAVDO TARTIBI:</b>\n"
-            f"1️⃣ Admin chatga kirganidan so'ng akkaunt ma'lumotlari avtomatik yuboriladi\n"
-            f"2️⃣ Haridor tasdiqlagan so'ng mablag' hisobingizga o'tkaziladi\n"
-            f"3️⃣ Agar haridor 24 soat ichida tasdiqlamasa — avtomatik chiqariladi\n\n"
+            f"1️⃣ Quyidagi tugma orqali chatga kiring\n"
+            f"2️⃣ Admin chatga kirganidan so'ng akkaunt ma'lumotlari avtomatik yuboriladi\n"
+            f"3️⃣ Haridor tasdiqlagan so'ng mablag' hisobingizga o'tkaziladi\n\n"
             f"⚠️ Login/parolni faqat sayt chat orqali yuboring!\n"
             f"━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"🌐 <a href='{chat_link}'>Chatni ochish</a>"
+            f"🌐 <a href='{chat_link}'>Chatga o'tish →</a>"
         )
         seller_keyboard = {
             "inline_keyboard": [[
@@ -531,6 +535,86 @@ def notify_verification_rejected(verification) -> None:
         ]]
     }
     _send_message(seller.telegram_id, text, reply_markup=keyboard)
+
+
+def notify_trade_completed(escrow) -> None:
+    """
+    Savdo to'liq yakunlanganda (status=confirmed) barcha tomonlarga xabar yuborish.
+    Adminga batafsil: haridor va sotuvchi ma'lumotlari, narx, va akkauntga havolalar.
+    """
+    listing = escrow.listing
+    buyer = escrow.buyer
+    seller = escrow.seller
+    price_str = _fmt_price(escrow.amount)
+    earnings_str = _fmt_price(escrow.seller_earnings)
+    commission_str = _fmt_price(escrow.commission_amount)
+
+    def _user_info(u) -> str:
+        lines = [f"<b>{u.display_name}</b>"]
+        if u.email:
+            lines.append(f"📧 {u.email}")
+        if u.phone_number:
+            lines.append(f"📞 {u.phone_number}")
+        if u.telegram_id:
+            lines.append(f"🆔 Telegram ID: <code>{u.telegram_id}</code>")
+        if u.username:
+            lines.append(f"👤 @{u.username}")
+        return "\n".join(lines)
+
+    # ── Adminga batafsil xabar ────────────────────────────────────────────
+    listing_url = f"{SITE_URL}/account/{listing.id}"
+    buyer_url = f"{SITE_URL}/seller/{buyer.id}"
+    seller_url = f"{SITE_URL}/seller/{seller.id}"
+    game_name = listing.game.name if listing.game else "—"
+
+    admin_text = (
+        f"🎉 <b>SAVDO MUVAFFAQIYATLI YAKUNLANDI!</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"📦 <b>Akkaunt:</b> {listing.title}\n"
+        f"🎮 O'yin: {game_name}\n"
+        f"💰 Xarid narxi: <b>{price_str}</b>\n"
+        f"💵 Sotuvchiga o'tkazildi: <b>{earnings_str}</b>\n"
+        f"📊 Komissiya: <b>{commission_str}</b>\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"🛒 <b>HARIDOR:</b>\n{_user_info(buyer)}\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"💼 <b>SOTUVCHI:</b>\n{_user_info(seller)}\n"
+        f"━━━━━━━━━━━━━━━━━━━━"
+    )
+    admin_keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "📦 Akkauntni ko'rish", "url": listing_url},
+            ],
+            [
+                {"text": "👤 Haridorni ko'rish", "url": buyer_url},
+                {"text": "🏪 Sotuvchini ko'rish", "url": seller_url},
+            ],
+        ]
+    }
+    for admin_tg_id in _get_admin_telegram_ids():
+        if admin_tg_id in (buyer.telegram_id, seller.telegram_id):
+            continue
+        _send_message(admin_tg_id, admin_text, reply_markup=admin_keyboard)
+
+    # ── Sotuvchiga xabar ─────────────────────────────────────────────────
+    if seller.telegram_id:
+        _send_message(seller.telegram_id, (
+            f"💰 <b>To'lov hisobingizga o'tkazildi!</b>\n\n"
+            f"📦 Akkaunt: <b>{listing.title}</b>\n"
+            f"💵 Summa: <b>{earnings_str}</b> hisobingizda.\n\n"
+            f"🎉 Savdo muvaffaqiyatli yakunlandi!\n"
+            f"🌐 <a href='{SITE_URL}'>Saytga kiring</a>"
+        ))
+
+    # ── Xaridorga xabar ───────────────────────────────────────────────────
+    if buyer.telegram_id:
+        _send_message(buyer.telegram_id, (
+            f"✅ <b>Xarid to'liq yakunlandi!</b>\n\n"
+            f"📦 Akkaunt: <b>{listing.title}</b>\n\n"
+            f"Mablag' sotuvchiga o'tkazildi. Savdo muvaffaqiyatli! 🎉\n"
+            f"🌐 <a href='{listing_url}'>Akkauntni ko'rish</a>"
+        ))
 
 
 def notify_deposit_approved(deposit_request, new_balance) -> None:
