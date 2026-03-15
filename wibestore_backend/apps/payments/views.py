@@ -157,6 +157,13 @@ class PurchaseListingView(APIView):
         except Exception as chat_err:
             logger.warning("Could not create order chat for escrow %s: %s", escrow.id, chat_err)
 
+        # Notify buyer, seller and admins via Telegram (after chat room is known — link is correct)
+        try:
+            from .telegram_notify import notify_purchase_created
+            notify_purchase_created(escrow, chat_room_id=chat_room_id)
+        except Exception as tg_err:
+            logger.warning("Telegram purchase notification failed: %s", tg_err)
+
         escrow_data = EscrowTransactionSerializer(escrow).data
         if chat_room_id:
             escrow_data["chat_room_id"] = chat_room_id

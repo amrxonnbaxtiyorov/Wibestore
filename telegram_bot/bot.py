@@ -50,6 +50,7 @@ except ImportError:
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton, WebAppInfo
 from telegram.error import Conflict as TelegramConflict, BadRequest
+from telegram.request import HTTPXRequest
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -2800,9 +2801,21 @@ def main():
             "Screenshot va pul yechish so'rovlari hech kimga yetmaydi."
         )
 
+    # Railway yoki boshqa muhitlarda proxy talab qilinishi mumkin
+    _proxy_url = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy") or None
+    _request = HTTPXRequest(
+        connection_pool_size=8,
+        connect_timeout=30.0,
+        read_timeout=30.0,
+        write_timeout=30.0,
+        pool_timeout=30.0,
+        proxy_url=_proxy_url,
+    )
+
     app = (
         Application.builder()
         .token(BOT_TOKEN)
+        .request(_request)
         .post_init(_post_init)
         .post_stop(_post_stop)
         .build()
