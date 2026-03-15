@@ -14,7 +14,10 @@ def get_main_keyboard() -> ReplyKeyboardMarkup:
                     text="💰 Open Payment Panel",
                     web_app=WebAppInfo(url=config.web_app_url),
                 )
-            ]
+            ],
+            [
+                KeyboardButton(text="📩 Adminga xabar"),
+            ],
         ],
         resize_keyboard=True,
     )

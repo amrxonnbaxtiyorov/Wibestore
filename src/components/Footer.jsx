@@ -79,6 +79,7 @@ const Footer = () => {
                                 color: 'var(--color-text-secondary)',
                                 maxWidth: '360px',
                                 lineHeight: '20px',
+                                marginTop: '10px',
                             }}
                         >
                             Dunyodagi eng ishonchli akkunt savdo platformasi

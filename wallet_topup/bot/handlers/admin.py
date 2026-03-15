@@ -60,7 +60,8 @@ async def cmd_admin(message: Message) -> None:
         "<b>Commands:</b>\n"
         "/pending — list pending transactions\n"
         "/stats — transaction statistics\n"
-        "/balance &lt;telegram_id&gt; — check user balance",
+        "/balance &lt;telegram_id&gt; — check user balance\n"
+        "/message_user &lt;telegram_id&gt; &lt;text&gt; — reply to user",
         parse_mode="HTML",
     )
 

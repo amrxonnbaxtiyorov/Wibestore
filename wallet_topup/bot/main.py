@@ -7,6 +7,7 @@ import sys
 
 from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from wallet_topup.bot.config import config
 from wallet_topup.bot.handlers import setup_routers
@@ -32,7 +33,7 @@ async def main() -> None:
         logger.warning("WEB_APP_URL not properly configured: %s", config.web_app_url)
 
     bot = Bot(token=config.token, parse_mode=ParseMode.HTML)
-    dp = Dispatcher()
+    dp = Dispatcher(storage=MemoryStorage())
     setup_routers(dp.router)
 
     # Start Redis listener for pending transaction notifications
