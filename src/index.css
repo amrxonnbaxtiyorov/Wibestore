@@ -47,6 +47,15 @@
   --color-pro-gradient: linear-gradient(135deg, #6f42c1, #0969da);
   --color-premium-gradient: linear-gradient(135deg, #9a6700, #d4a72c);
 
+  /* Telegram brand colors */
+  --color-telegram-green: #25d366;
+  --color-telegram-dark: #128c7e;
+  --color-telegram-gradient: linear-gradient(135deg, #25d366, #128c7e);
+  --color-telegram-border: rgba(37, 211, 102, 0.3);
+  --color-telegram-bg: rgba(37, 211, 102, 0.06);
+  --color-telegram-bg-subtle: rgba(37, 211, 102, 0.02);
+  --color-telegram-divider: rgba(37, 211, 102, 0.15);
+
   /* States */
   --color-success: #1a7f37;
   --color-success-bg: rgba(26, 127, 55, 0.1);
@@ -117,6 +126,15 @@
   --color-pro-bg: rgba(163, 113, 247, 0.12);
   --color-pro-gradient: linear-gradient(135deg, #a371f7, #58a6ff);
   --color-premium-gradient: linear-gradient(135deg, #d29922, #f0b724);
+
+  /* Telegram brand colors */
+  --color-telegram-green: #25d366;
+  --color-telegram-dark: #128c7e;
+  --color-telegram-gradient: linear-gradient(135deg, #25d366, #128c7e);
+  --color-telegram-border: rgba(37, 211, 102, 0.3);
+  --color-telegram-bg: rgba(37, 211, 102, 0.06);
+  --color-telegram-bg-subtle: rgba(37, 211, 102, 0.02);
+  --color-telegram-divider: rgba(37, 211, 102, 0.15);
 
   /* States */
   --color-success: #238636;

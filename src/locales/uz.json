@@ -472,7 +472,17 @@
         "coin_history": "Coin tarixi",
         "congrats_title": "Tabriklaymiz!",
         "congrats_text": "Sizda {n} coin bor — 50% Premium yoki 20% Pro vaucherdan birini olishingiz mumkin!",
-        "get_premium_btn": "Voucher olish"
+        "get_premium_btn": "Voucher olish",
+        "discount_label": "{n}% chegirma",
+        "telegram_topup_title": "Telegram bot orqali hisob to'ldirish",
+        "telegram_topup_desc": "Tez va qulay — to'lov qiling, balans avtomatik qo'shiladi",
+        "telegram_step_1": "Quyidagi tugmani bosib botga o'ting",
+        "telegram_step_2": "«Hisobni to'ldirish» tugmasini tanlang",
+        "telegram_step_3": "To'lov miqdorini kiriting va chek yuboring",
+        "telegram_step_4": "Admin tasdiqlashi bilanoq balans hisobingizga qo'shiladi",
+        "telegram_warning": "Faqat rasmiy bot orqali to'lang. Boshqa manzillarga pul o'tkazib bo'lmaydi — bu xavfsizlik talabi.",
+        "telegram_button": "Telegram bot orqali to'ldirish",
+        "payment_methods_list": "To'lov usullari: Humo, Uzcard, Visa, MasterCard"
     },
     "sell": {
         "escrow_notice": "Bu ma'lumotlar faqat xarid tasdiqlangandan keyin xaridorga ko'rsatiladi. Bizning Escrow tizimimiz sizni himoya qiladi.",

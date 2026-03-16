@@ -247,7 +247,7 @@ const CoinsPage = () => {
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2">
-                                                    <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>{voucher.discount}% chegirma</p>
+                                                    <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>{t('coins.discount_label').replace('{n}', voucher.discount)}</p>
                                                     <span className={`badge ${voucher.type === 'premium' ? 'badge-purple' : 'badge-blue'}`}>
                                                         {voucher.type === 'premium' ? 'Premium' : 'Pro'}
                                                     </span>
@@ -335,29 +335,29 @@ const CoinsPage = () => {
                 <div style={{
                     marginTop: '32px',
                     borderRadius: 'var(--radius-xl)',
-                    border: '1px solid rgba(37,211,102,0.3)',
-                    background: 'linear-gradient(135deg, rgba(37,211,102,0.06) 0%, rgba(37,211,102,0.02) 100%)',
+                    border: '1px solid var(--color-telegram-border)',
+                    background: 'linear-gradient(135deg, var(--color-telegram-bg) 0%, var(--color-telegram-bg-subtle) 100%)',
                     overflow: 'hidden',
                 }}>
                     {/* Header */}
                     <div style={{
                         padding: '20px 24px 16px',
-                        borderBottom: '1px solid rgba(37,211,102,0.15)',
+                        borderBottom: '1px solid var(--color-telegram-divider)',
                         display: 'flex', alignItems: 'center', gap: '14px',
                     }}>
                         <div style={{
                             width: '48px', height: '48px', borderRadius: 'var(--radius-xl)',
-                            background: 'linear-gradient(135deg, #25d366, #128c7e)',
+                            background: 'var(--color-telegram-gradient)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         }}>
                             <Wallet style={{ width: '24px', height: '24px', color: '#fff' }} />
                         </div>
                         <div>
                             <p style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '2px' }}>
-                                Telegram bot orqali hisob to'ldirish
+                                {t('coins.telegram_topup_title')}
                             </p>
                             <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                                Tez va qulay — to'lov qiling, balans avtomatik qo'shiladi
+                                {t('coins.telegram_topup_desc')}
                             </p>
                         </div>
                     </div>
@@ -366,10 +366,10 @@ const CoinsPage = () => {
                     <div style={{ padding: '20px 24px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
                             {[
-                                { step: '1', text: 'Quyidagi tugmani bosib botga o\'ting', color: 'var(--color-accent-blue)' },
-                                { step: '2', text: '«Xisobni to\'ldirish» tugmasini tanlang', color: 'var(--color-accent-green)' },
-                                { step: '3', text: 'To\'lov miqdorini kiriting va chek yuboring', color: 'var(--color-accent-purple)' },
-                                { step: '4', text: 'Admin tasdiqlashi bilanoq balans hisobingizga qo\'shiladi', color: 'var(--color-accent-orange)' },
+                                { step: '1', text: t('coins.telegram_step_1'), color: 'var(--color-accent-blue)' },
+                                { step: '2', text: t('coins.telegram_step_2'), color: 'var(--color-accent-green)' },
+                                { step: '3', text: t('coins.telegram_step_3'), color: 'var(--color-accent-purple)' },
+                                { step: '4', text: t('coins.telegram_step_4'), color: 'var(--color-accent-orange)' },
                             ].map(({ step, text, color }) => (
                                 <div key={step} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                                     <div style={{
@@ -394,7 +394,7 @@ const CoinsPage = () => {
                         }}>
                             <AlertCircle style={{ width: '16px', height: '16px', color: 'var(--color-accent-orange)', flexShrink: 0, marginTop: '2px' }} />
                             <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-                                Faqat rasmiy bot orqali to'lang. Boshqa manzillarga pul o'tkazib bo'lmaydi — bu xavfsizlik talabi.
+                                {t('coins.telegram_warning')}
                             </p>
                         </div>
 
@@ -406,12 +406,12 @@ const CoinsPage = () => {
                             className="btn btn-lg"
                             style={{
                                 width: '100%', justifyContent: 'center', textDecoration: 'none',
-                                background: 'linear-gradient(135deg, #25d366, #128c7e)',
+                                background: 'var(--color-telegram-gradient)',
                                 color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: '10px',
                             }}
                         >
                             <Send style={{ width: '18px', height: '18px' }} />
-                            Telegram bot orqali to'ldirish
+                            {t('coins.telegram_button')}
                             <Plus style={{ width: '18px', height: '18px' }} />
                         </a>
 
@@ -419,7 +419,7 @@ const CoinsPage = () => {
                             marginTop: '10px', fontSize: 'var(--font-size-xs)',
                             color: 'var(--color-text-muted)', textAlign: 'center',
                         }}>
-                            To'lov usullari: Humo, Uzcard, Visa, MasterCard
+                            {t('coins.payment_methods_list')}
                         </p>
                     </div>
                 </div>

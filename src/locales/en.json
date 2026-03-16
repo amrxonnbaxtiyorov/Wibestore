@@ -472,7 +472,17 @@
         "coin_history": "Coin history",
         "congrats_title": "Congratulations!",
         "congrats_text": "You have {n} coins — get one voucher: 50% Premium or 20% Pro discount!",
-        "get_premium_btn": "Get voucher"
+        "get_premium_btn": "Get voucher",
+        "discount_label": "{n}% discount",
+        "telegram_topup_title": "Top up balance via Telegram bot",
+        "telegram_topup_desc": "Fast and easy — pay now, your balance updates automatically",
+        "telegram_step_1": "Click the button below and open the bot",
+        "telegram_step_2": "Select «Top up balance»",
+        "telegram_step_3": "Enter the amount and send the receipt",
+        "telegram_step_4": "Once confirmed by admin, your balance will be updated",
+        "telegram_warning": "Only pay through the official bot. Sending money to other addresses is not allowed — this is a security requirement.",
+        "telegram_button": "Top up via Telegram bot",
+        "payment_methods_list": "Payment methods: Humo, Uzcard, Visa, MasterCard"
     },
     "sell": {
         "escrow_notice": "This info is shown to the buyer only after payment is confirmed. Our Escrow protects you.",
