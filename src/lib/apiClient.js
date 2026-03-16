@@ -19,6 +19,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const ALLOWED_API_DOMAINS = [
   'localhost',
   '127.0.0.1',
+  'wibestore.net',
+  'api.wibestore.net',
   'wibestore.uz',
   'api.wibestore.uz',
   'railway.app',  // Railway backend

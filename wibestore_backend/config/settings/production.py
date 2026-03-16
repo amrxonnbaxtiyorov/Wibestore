@@ -66,6 +66,9 @@ X_FRAME_OPTIONS = "DENY"
 # CSRF (Railway va custom domenlar)
 # ============================================================
 _default_csrf = [
+    "https://wibestore.net",
+    "https://www.wibestore.net",
+    "https://api.wibestore.net",
     "https://wibestore.uz",
     "https://api.wibestore.uz",
     "https://exemplary-fascination-production-9514.up.railway.app",
@@ -74,6 +77,22 @@ _default_csrf = [
 CSRF_TRUSTED_ORIGINS = env.list(  # noqa: F405
     "CSRF_TRUSTED_ORIGINS",
     default=_default_csrf,
+)
+
+# wibestore.net custom domain support
+if ".wibestore.net" not in str(ALLOWED_HOSTS):  # noqa: F405
+    ALLOWED_HOSTS = list(ALLOWED_HOSTS) + [".wibestore.net"]  # noqa: F405
+
+# CORS — wibestore.net domenini ruxsatlarga qo'shish
+_default_cors = [
+    "https://wibestore.net",
+    "https://www.wibestore.net",
+    "https://wibestore.uz",
+    "https://frontend-production-76e67.up.railway.app",
+]
+CORS_ALLOWED_ORIGINS = env.list(  # noqa: F405
+    "CORS_ALLOWED_ORIGINS",
+    default=_default_cors,
 )
 
 # ============================================================
