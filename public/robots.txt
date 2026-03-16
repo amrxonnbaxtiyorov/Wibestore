@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /admin/
+Disallow: /profile
+Disallow: /settings
+Disallow: /chat
+Disallow: /chat/
+Disallow: /coins
+
+Sitemap: https://wibestore.net/sitemap.xml

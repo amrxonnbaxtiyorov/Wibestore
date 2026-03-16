@@ -28,7 +28,9 @@
       "Bash(node -e \"const p=JSON.parse\\(require\\(''fs''\\).readFileSync\\(''package.json'',''utf8''\\)\\); console.log\\(''deps:'', ''@tanstack/react-query-devtools'' in \\(p.dependencies||{}\\)\\); console.log\\(''devDeps:'', ''@tanstack/react-query-devtools'' in \\(p.devDependencies||{}\\)\\); console.log\\(''sharp in optional:'', ''sharp'' in \\(p.optionalDependencies||{}\\)\\); console.log\\(''sharp in devDeps:'', ''sharp'' in \\(p.devDependencies||{}\\)\\);\")",
       "Bash(ls -1 *.*)",
       "Bash(node -e \"const l = require\\(''c:/WibeStore/Wibestore/node_modules/lucide-react''\\); const icons = Object.keys\\(l\\); [''Youtube'', ''Twitter'', ''X'', ''Vk'', ''Tiktok'', ''Send'', ''Instagram'', ''Facebook''].forEach\\(n => console.log\\(n + '':'', !!l[n]\\)\\);\")",
-      "Bash(npx vite build --mode development)"
+      "Bash(npx vite build --mode development)",
+      "Bash(python -m py_compile telegram_bot/bot.py)",
+      "Bash(python3 -m py_compile telegram_bot/bot.py)"
     ]
   }
 }
