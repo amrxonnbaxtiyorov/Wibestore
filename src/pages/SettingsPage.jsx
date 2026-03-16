@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Settings, User, Lock, Bell, Globe, CreditCard, Shield, Trash2, Camera, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { Settings, User, Lock, Bell, Globe, CreditCard, ArrowDownCircle, ArrowUpCircle, Trash2, Camera, Save, AlertCircle, CheckCircle, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getDisplayInitial } from '../lib/displayUtils';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
@@ -494,7 +494,7 @@ const SettingsPage = () => {
                                     <div className="grid grid-cols-2" style={{ gap: '12px', marginBottom: '24px' }}>
                                         <button
                                             className="text-center"
-                                            onClick={() => alert(t('settings.add_money_coming_soon'))}
+                                            onClick={() => window.open(`https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'wibestorebot'}?start=topup`, '_blank')}
                                             style={{
                                                 padding: '16px',
                                                 borderRadius: 'var(--radius-lg)',
@@ -504,12 +504,15 @@ const SettingsPage = () => {
                                                 transition: 'all 0.15s ease',
                                             }}
                                         >
-                                            <CreditCard className="mx-auto" style={{ width: '24px', height: '24px', color: 'var(--color-accent-green)', marginBottom: '8px' }} />
-                                            <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{t('settings.add_money')}</p>
+                                            <ArrowDownCircle className="mx-auto" style={{ width: '24px', height: '24px', color: 'var(--color-accent-green)', marginBottom: '8px' }} />
+                                            <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{t('settings.topup_balance') || 'Hisobni to\'ldirish'}</p>
+                                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                <Send style={{ width: '10px', height: '10px', color: '#2AABEE' }} /> Telegram bot
+                                            </p>
                                         </button>
                                         <button
                                             className="text-center"
-                                            onClick={() => alert(t('settings.withdraw_coming_soon'))}
+                                            onClick={() => window.open(`https://t.me/${import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'wibestorebot'}?start=withdraw`, '_blank')}
                                             style={{
                                                 padding: '16px',
                                                 borderRadius: 'var(--radius-lg)',
@@ -519,25 +522,32 @@ const SettingsPage = () => {
                                                 transition: 'all 0.15s ease',
                                             }}
                                         >
-                                            <Shield className="mx-auto" style={{ width: '24px', height: '24px', color: 'var(--color-accent-blue)', marginBottom: '8px' }} />
-                                            <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{t('settings.withdraw')}</p>
+                                            <ArrowUpCircle className="mx-auto" style={{ width: '24px', height: '24px', color: 'var(--color-accent-blue)', marginBottom: '8px' }} />
+                                            <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{t('settings.withdraw_balance') || 'Pul yechish'}</p>
+                                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                <Send style={{ width: '10px', height: '10px', color: '#2AABEE' }} /> Telegram bot
+                                            </p>
                                         </button>
                                     </div>
 
-                                    {/* Cards */}
-                                    <div>
-                                        <h3 style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', marginBottom: '12px' }}>{t('settings.linked_cards')}</h3>
-                                        <div className="text-center" style={{
-                                            padding: '32px 16px',
-                                            borderRadius: 'var(--radius-lg)',
-                                            backgroundColor: 'var(--color-bg-secondary)',
-                                            border: '1px solid var(--color-border-default)',
-                                        }}>
-                                            <CreditCard className="mx-auto" style={{ width: '40px', height: '40px', color: 'var(--color-text-muted)', marginBottom: '12px' }} />
-                                            <p style={{ color: 'var(--color-text-secondary)' }}>{t('settings.no_cards')}</p>
-                                            <button onClick={() => alert(t('settings.add_card_coming_soon'))} style={{ marginTop: '12px', color: 'var(--color-text-accent)', fontSize: 'var(--font-size-sm)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                                {t('settings.add_card')}
-                                            </button>
+                                    {/* Info */}
+                                    <div style={{
+                                        padding: '14px 16px',
+                                        borderRadius: 'var(--radius-lg)',
+                                        backgroundColor: 'var(--color-info-bg)',
+                                        border: '1px solid var(--color-accent-blue)',
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: '10px',
+                                    }}>
+                                        <Send style={{ width: '16px', height: '16px', color: '#2AABEE', flexShrink: 0, marginTop: '2px' }} />
+                                        <div>
+                                            <p style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
+                                                {t('settings.wallet_via_telegram') || 'Hisob to\'ldirish va pul yechish Telegram bot orqali amalga oshiriladi'}
+                                            </p>
+                                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                                                @{import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'wibestorebot'}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
