@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Send, MessageCircle, AlertTriangle, X, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useChats, useChatMessages, useMarkChatRead, useSendMessage, useChatSoundEnabled } from '../hooks/useChat.js';
+import { useChats, useChatMessages, useMarkChatRead, useSendMessage, useChatSoundEnabled } from '../hooks/useChat';
 import { useLanguage } from '../context/LanguageContext';
 import { resolveImageUrl, getDisplayInitial } from '../lib/displayUtils';
 import { ensureSoundUnlocked, playChatNotificationSound } from '../lib/notificationSound';

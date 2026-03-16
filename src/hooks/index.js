@@ -38,6 +38,7 @@ export {
     useSendMessage,
     useMarkChatRead,
     useChatSoundEnabled,
+    useAdminOrderChats,
 } from './useChat';
 export {
     useNotifications,

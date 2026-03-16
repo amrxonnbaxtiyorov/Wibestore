@@ -4,7 +4,7 @@ import { ArrowRight, Shield, Zap, Users, TrendingUp, Star, Crown, ChevronRight, 
 import { useGames, useListings } from '../hooks';
 import GameCard from '../components/GameCard';
 import AccountCard from '../components/AccountCard';
-import { SkeletonGrid, SkeletonCard } from '../components/SkeletonLoader';
+import { SkeletonCard } from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
 import { resolveImageUrl } from '../lib/displayUtils';
 
@@ -78,7 +78,7 @@ const HomePage = () => {
         image: account?.images?.[0]?.image ?? account?.primary_image ?? account?.image ?? '',
         isLiked: account?.is_favorited ?? account?.isLiked ?? false,
         isPremium: account?.is_premium ?? account?.isPremium ?? account?.seller?.is_premium ?? false,
-        is_pro: account?.seller?.is_pro ?? account?.seller?.plan === 'pro' ?? false,
+        is_pro: account?.seller?.is_pro ?? (account?.seller?.plan === 'pro') ?? false,
     });
 
     // Top accounts - sorted by premium status and rating
