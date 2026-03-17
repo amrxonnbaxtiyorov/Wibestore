@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-email = os.environ.get('ADMIN_EMAIL', 'admin@wibestore.uz')
+email = os.environ.get('ADMIN_EMAIL', 'admin@wibestore.net')
 username = os.environ.get('ADMIN_USERNAME', 'wibeadmin')
 password = os.environ.get('ADMIN_PASSWORD', 'WibeStore2026!')
 

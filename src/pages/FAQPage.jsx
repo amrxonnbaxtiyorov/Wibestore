@@ -204,7 +204,7 @@ const FAQPage = () => {
                                 💬 Telegram
                             </a>
                             <a
-                                href="mailto:support@wibestore.uz"
+                                href="mailto:support@wibestore.net"
                                 className="btn btn-lg"
                                 style={{
                                     backgroundColor: 'transparent',

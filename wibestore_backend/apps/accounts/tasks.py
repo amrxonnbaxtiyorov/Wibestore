@@ -25,7 +25,7 @@ def send_welcome_email(user_id: str) -> None:
         user = User.objects.get(id=user_id)
         html_message = render_to_string(
             "emails/welcome.html",
-            {"user": user, "frontend_url": getattr(settings, "FRONTEND_URL", "https://wibestore.uz")},
+            {"user": user, "frontend_url": getattr(settings, "FRONTEND_URL", "https://wibestore.net")},
         )
 
         send_mail(
@@ -108,7 +108,7 @@ def send_notification_email(user_id: str, subject: str, message: str) -> None:
                 "user": user,
                 "subject": subject,
                 "message": message,
-                "frontend_url": getattr(settings, "FRONTEND_URL", "https://wibestore.uz"),
+                "frontend_url": getattr(settings, "FRONTEND_URL", "https://wibestore.net"),
             },
         )
 

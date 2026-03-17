@@ -69,7 +69,7 @@ const Footer = () => {
                                 <Gamepad2 className="w-5 h-5" style={{ color: '#ffffff' }} />
                             </div>
                             <span className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                                wibestore.uz
+                                wibestore.net
                             </span>
                         </Link>
 
@@ -82,7 +82,7 @@ const Footer = () => {
                                 marginTop: '10px',
                             }}
                         >
-                            Dunyodagi eng ishonchli akkunt savdo platformasi
+                            {t('footer.description')}
                         </p>
 
                         <div className="space-y-2">
@@ -184,7 +184,7 @@ const Footer = () => {
                             }}
                         >
                             <Send className="w-3.5 h-3.5" style={{ color: '#2AABEE' }} />
-                            Telegram orqali
+                            {t('footer.via_telegram')}
                         </div>
                     </div>
                 </div>

@@ -130,11 +130,11 @@ def release_escrow_payment(escrow_id: str) -> None:
 def _transaction_status_display(status: str) -> tuple[str, str]:
     """Return (status_class, status_text) for receipt template."""
     mapping = {
-        "completed": ("success", "Завершена"),
-        "pending": ("pending", "В ожидании"),
-        "processing": ("pending", "В обработке"),
-        "failed": ("failed", "Ошибка"),
-        "cancelled": ("failed", "Отменена"),
+        "completed": ("success", "Completed"),
+        "pending": ("pending", "Pending"),
+        "processing": ("pending", "Processing"),
+        "failed": ("failed", "Failed"),
+        "cancelled": ("failed", "Cancelled"),
     }
     return mapping.get(status, ("pending", status))
 
@@ -147,13 +147,13 @@ def send_transaction_email(transaction_id: str, template: str = "default") -> No
     try:
         txn = Transaction.objects.select_related("user", "payment_method").get(id=transaction_id)
         user = txn.user
-        frontend_url = getattr(settings, "FRONTEND_URL", "https://wibestore.uz").rstrip("/")
+        frontend_url = getattr(settings, "FRONTEND_URL", "https://wibestore.net").rstrip("/")
         transactions_url = f"{frontend_url}/profile/transactions"
 
         if template in ("transaction_receipt", "emails/transaction_receipt.html"):
             status_class, status_text = _transaction_status_display(txn.status)
             ctx = {
-                "user_name": getattr(user, "display_name", None) or user.email or "Пользователь",
+                "user_name": getattr(user, "display_name", None) or user.email or "User",
                 "status_class": status_class,
                 "status_text": status_text,
                 "transaction_type": txn.get_type_display() if hasattr(txn, "get_type_display") else txn.type,
@@ -164,8 +164,8 @@ def send_transaction_email(transaction_id: str, template: str = "default") -> No
                 "transactions_url": transactions_url,
             }
             html_message = render_to_string("emails/transaction_receipt.html", ctx)
-            subject = f"Чек транзакции — WibeStore ({txn.type})"
-            plain = f"Транзакция {txn.type}: {txn.amount} {txn.currency}, статус: {status_text}."
+            subject = f"Transaction Receipt — WibeStore ({txn.type})"
+            plain = f"Transaction {txn.type}: {txn.amount} {txn.currency}, status: {status_text}."
             send_mail(
                 subject=subject,
                 message=plain,

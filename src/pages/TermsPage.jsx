@@ -59,21 +59,19 @@ const TermsPage = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
                     {/* 1. General */}
                     <Section icon={FileText} iconColor="var(--color-accent-blue)" title={t('terms.s1_title') || '1. General Rules'}>
-                        <p style={{ marginBottom: '12px' }}>
-                            WibeStore.com — bu o'yin akkauntlari va raqamli mahsulotlarni xavfsiz sotib olish va sotish platformasi. Saytdan foydalanish orqali siz quyidagi shartlarga rozilik bildirasiz.
-                        </p>
-                        <p>Bizning maqsadimiz — xaridorlar va sotuvchilar o'rtasida xavfsiz, ishonchli va shaffof savdo muhitini yaratish.</p>
+                        <p style={{ marginBottom: '12px' }}>{t('terms.s1_p1')}</p>
+                        <p>{t('terms.s1_p2')}</p>
                     </Section>
 
                     {/* 2. User Requirements */}
                     <Section icon={Users} iconColor="var(--color-accent-blue)" title={t('terms.s2_title') || '2. User Requirements'}>
-                        <p style={{ marginBottom: '16px' }}>Platformadan foydalanish uchun:</p>
+                        <p style={{ marginBottom: '16px' }}>{t('terms.s2_intro')}</p>
                         <div className="flex justify-center">
                             <ul style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">Kamida 16 yoshda bo'lishingiz kerak</ListItem>
-                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">Haqiqiy va to'g'ri ma'lumotlar bilan ro'yxatdan o'tishingiz kerak</ListItem>
-                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">Bitta shaxsga bitta hisob — ko'p hisoblar taqiqlanadi</ListItem>
-                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">O'zbekiston Respublikasi qonunlariga rioya qilishingiz kerak</ListItem>
+                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">{t('terms.s2_req1')}</ListItem>
+                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">{t('terms.s2_req2')}</ListItem>
+                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">{t('terms.s2_req3')}</ListItem>
+                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">{t('terms.s2_req4')}</ListItem>
                             </ul>
                         </div>
                     </Section>
@@ -84,64 +82,64 @@ const TermsPage = () => {
                             <table className="gh-table">
                                 <thead>
                                     <tr>
-                                        <th style={{ textAlign: 'center' }}>Reja</th>
-                                        <th style={{ textAlign: 'center' }}>Komissiya</th>
-                                        <th style={{ textAlign: 'center' }}>Izoh</th>
+                                        <th style={{ textAlign: 'center' }}>{t('terms.s3_col_plan')}</th>
+                                        <th style={{ textAlign: 'center' }}>{t('terms.s3_col_commission')}</th>
+                                        <th style={{ textAlign: 'center' }}>{t('terms.s3_col_note')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
                                         <td style={{ textAlign: 'center' }}>Free</td>
                                         <td style={{ textAlign: 'center', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-accent-orange)' }}>10%</td>
-                                        <td style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Har bir sotuvdan</td>
+                                        <td style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>{t('terms.s3_free_note')}</td>
                                     </tr>
                                     <tr>
                                         <td style={{ textAlign: 'center' }}>Premium</td>
                                         <td style={{ textAlign: 'center', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-accent-orange)' }}>8%</td>
-                                        <td style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Obuna bilan, yuqori ko'rinish</td>
+                                        <td style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>{t('terms.s3_premium_note')}</td>
                                     </tr>
                                     <tr>
                                         <td style={{ textAlign: 'center' }}>Pro</td>
                                         <td style={{ textAlign: 'center', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-accent-green)' }}>5%</td>
-                                        <td style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>Eng past stavka</td>
+                                        <td style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>{t('terms.s3_pro_note')}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                         <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
-                            * Komissiya faqat muvaffaqiyatli sotuvlardan olinadi. Bekor qilingan yoki qaytarilgan sotuvlardan komissiya olinmaydi.
+                            {t('terms.s3_footer')}
                         </p>
                     </Section>
 
                     {/* 4. Anti-Scam */}
                     <Section icon={AlertTriangle} iconColor="var(--color-error)" title={t('terms.s4_title') || '4. Anti-Fraud Rules'} highlight>
-                        <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-error)', marginBottom: '16px' }}>Quyidagi harakatlar qat'iyan taqiqlanadi:</p>
+                        <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-error)', marginBottom: '16px' }}>{t('terms.s4_intro')}</p>
                         <div className="flex justify-center">
                             <ul style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-                                <ListItem icon={XCircle} color="var(--color-error)"><strong>Soxta akkauntlar sotish</strong> — mavjud bo'lmagan yoki o'g'irlangan akkauntlarni sotish</ListItem>
-                                <ListItem icon={XCircle} color="var(--color-error)"><strong>Noto'g'ri ma'lumotlar</strong> — akkaunt haqida yolg'on ma'lumot berish</ListItem>
-                                <ListItem icon={XCircle} color="var(--color-error)"><strong>Platformadan tashqari savdo</strong> — to'lovlarni saytdan tashqarida amalga oshirish</ListItem>
-                                <ListItem icon={XCircle} color="var(--color-error)"><strong>Akkauntni qaytarib olish</strong> — sotilgan akkauntni qaytarib olish urinishi</ListItem>
-                                <ListItem icon={XCircle} color="var(--color-error)"><strong>Ko'p hisoblar</strong> — bir nechta hisoblar yaratish va ulardan foydalanish</ListItem>
+                                <ListItem icon={XCircle} color="var(--color-error)">{t('terms.s4_item1')}</ListItem>
+                                <ListItem icon={XCircle} color="var(--color-error)">{t('terms.s4_item2')}</ListItem>
+                                <ListItem icon={XCircle} color="var(--color-error)">{t('terms.s4_item3')}</ListItem>
+                                <ListItem icon={XCircle} color="var(--color-error)">{t('terms.s4_item4')}</ListItem>
+                                <ListItem icon={XCircle} color="var(--color-error)">{t('terms.s4_item5')}</ListItem>
                             </ul>
                         </div>
                         <div style={{ marginTop: '24px', padding: '16px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-error-bg)', border: '1px solid var(--color-error)' }}>
-                            <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-error)' }}>⚠️ Ogohlantirish:</p>
+                            <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-error)' }}>{t('terms.s4_warning_title')}</p>
                             <p style={{ marginTop: '8px', color: 'var(--color-text-secondary)' }}>
-                                Firibgarlik aniqlansa, foydalanuvchi hisobi darhol bloklanadi, barcha mablag'lar muzlatiladi va tegishli huquqiy choralar ko'riladi.
+                                {t('terms.s4_warning_text')}
                             </p>
                         </div>
                     </Section>
 
                     {/* 5. Security */}
                     <Section icon={Shield} iconColor="var(--color-accent-green)" title={t('terms.s5_title') || '5. Security Guarantee'}>
-                        <p style={{ marginBottom: '16px' }}>WibeStore xaridorlar va sotuvchilarni himoya qilish uchun quyidagi choralarni ko'radi:</p>
+                        <p style={{ marginBottom: '16px' }}>{t('terms.s5_intro')}</p>
                         <div className="flex justify-center">
                             <ul style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
                                 <ListItem icon={CheckCircle} color="var(--color-accent-green)">{t('terms.escrow_item')}</ListItem>
-                                <ListItem icon={CheckCircle} color="var(--color-accent-green)"><strong>Akkaunt tekshiruvi</strong> — sotuvchilar akkauntlarni tasdiqlashdan o'tkazishi kerak</ListItem>
-                                <ListItem icon={CheckCircle} color="var(--color-accent-green)"><strong>48 soatlik kafolat</strong> — xarid qilingan akkaunt 48 soat ichida tekshiriladi</ListItem>
-                                <ListItem icon={CheckCircle} color="var(--color-accent-green)"><strong>To'liq qaytarish</strong> — muammo bo'lsa, pul to'liq qaytariladi</ListItem>
+                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">{t('terms.s5_item2')}</ListItem>
+                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">{t('terms.s5_item3')}</ListItem>
+                                <ListItem icon={CheckCircle} color="var(--color-accent-green)">{t('terms.s5_item4')}</ListItem>
                             </ul>
                         </div>
                     </Section>
@@ -150,21 +148,21 @@ const TermsPage = () => {
                     <Section icon={CreditCard} iconColor="var(--color-accent-blue)" title={t('terms.s6_title') || '6. Transaction Process'}>
                         <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: '12px' }}>
                             <div style={{ padding: '20px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-muted)' }}>
-                                <h3 style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '12px' }}>Xaridor uchun:</h3>
+                                <h3 style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '12px' }}>{t('terms.s6_buyer_title')}</h3>
                                 <ol style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: 'var(--font-size-sm)', textAlign: 'left' }}>
-                                    <li>1. Akkauntni tanlang va to'lang</li>
-                                    <li>2. Akkaunt ma'lumotlarini oling</li>
-                                    <li>3. 48 soat ichida tekshiring</li>
-                                    <li>4. Tasdiqlang yoki muammo bildiring</li>
+                                    <li>1. {t('terms.s6_buyer_1')}</li>
+                                    <li>2. {t('terms.s6_buyer_2')}</li>
+                                    <li>3. {t('terms.s6_buyer_3')}</li>
+                                    <li>4. {t('terms.s6_buyer_4')}</li>
                                 </ol>
                             </div>
                             <div style={{ padding: '20px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border-muted)' }}>
-                                <h3 style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '12px' }}>Sotuvchi uchun:</h3>
+                                <h3 style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '12px' }}>{t('terms.s6_seller_title')}</h3>
                                 <ol style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: 'var(--font-size-sm)', textAlign: 'left' }}>
-                                    <li>1. Akkauntni e'lon qiling</li>
-                                    <li>2. Xaridor topilganda ma'lumot bering</li>
-                                    <li>3. Xaridor tasdiqlaguncha kuting</li>
-                                    <li>4. Pulni oling (1-3 ish kuni)</li>
+                                    <li>1. {t('terms.s6_seller_1')}</li>
+                                    <li>2. {t('terms.s6_seller_2')}</li>
+                                    <li>3. {t('terms.s6_seller_3')}</li>
+                                    <li>4. {t('terms.s6_seller_4')}</li>
                                 </ol>
                             </div>
                         </div>
@@ -172,23 +170,23 @@ const TermsPage = () => {
 
                     {/* 7. Privacy */}
                     <Section icon={Lock} iconColor="var(--color-accent-orange)" title={t('terms.s7_title') || '7. Privacy Policy'}>
-                        <p style={{ marginBottom: '16px' }}>Biz quyidagi ma'lumotlarni yig'amiz va xavfsiz saqlaymiz:</p>
+                        <p style={{ marginBottom: '16px' }}>{t('terms.s7_intro')}</p>
                         <div className="flex justify-center" style={{ marginBottom: '16px' }}>
                             <ul style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-                                <li>• Ism, email, telefon raqami</li>
-                                <li>• IP manzil va qurilma ma'lumotlari</li>
-                                <li>• To'lov tarixi va savdo ma'lumotlari</li>
+                                <li>• {t('terms.s7_item1')}</li>
+                                <li>• {t('terms.s7_item2')}</li>
+                                <li>• {t('terms.s7_item3')}</li>
                             </ul>
                         </div>
-                        <p>Sizning ma'lumotlaringiz uchinchi shaxslarga sotilmaydi yoki almashtirilmaydi. Faqat qonun talabiga binoan huquq-tartibot organlariga berilishi mumkin.</p>
+                        <p>{t('terms.s7_footer')}</p>
                     </Section>
 
                     {/* 8. Disputes */}
                     <Section icon={MessageCircle} iconColor="var(--color-accent-blue)" title={t('terms.s8_title') || '8. Dispute Resolution'}>
-                        <p style={{ marginBottom: '16px' }}>Muammo yuz berganda:</p>
+                        <p style={{ marginBottom: '16px' }}>{t('terms.s8_intro')}</p>
                         <div className="flex justify-center">
                             <ol style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-                                {['Avval sotuvchi/xaridor bilan muloqot qiling', 'Hal bo\'lmasa, "Shikoyat qilish" tugmasini bosing', 'Bizning moderatorlar 24 soat ichida tekshiradi', 'Adolatli qaror qabul qilinadi'].map((step, i) => (
+                                {[t('terms.s8_step1'), t('terms.s8_step2'), t('terms.s8_step3'), t('terms.s8_step4')].map((step, i) => (
                                     <li key={i} className="flex items-start gap-3">
                                         <span style={{
                                             width: '24px', height: '24px', borderRadius: 'var(--radius-full)',
@@ -206,7 +204,7 @@ const TermsPage = () => {
 
                     {/* 9. Changes */}
                     <Section icon={FileText} iconColor="var(--color-accent-blue)" title={t('terms.s9_title') || '9. Changes to Terms'}>
-                        <p>WibeStore ushbu shartlarni istalgan vaqtda o'zgartirishga haqli. O'zgarishlar haqida email orqali xabar beriladi. O'zgarishlardan keyin saytdan foydalanishni davom ettirsangiz, yangi shartlarga rozilik bildirgan hisoblanasiz.</p>
+                        <p>{t('terms.s9_text')}</p>
                     </Section>
 
                     {/* Contact CTA */}
@@ -219,11 +217,11 @@ const TermsPage = () => {
                             border: '1px solid var(--color-accent-blue)',
                         }}
                     >
-                        <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '16px' }}>Aloqa</h2>
-                        <p style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}>Savollar yoki takliflar uchun biz bilan bog'laning:</p>
+                        <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '16px' }}>{t('terms.contact_title')}</h2>
+                        <p style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}>{t('terms.contact_text')}</p>
                         <div className="flex flex-wrap justify-center gap-3">
-                            <a href="mailto:support@wibestore.uz" className="btn btn-secondary btn-md" style={{ textDecoration: 'none' }}>
-                                📧 support@wibestore.uz
+                            <a href="mailto:support@wibestore.net" className="btn btn-secondary btn-md" style={{ textDecoration: 'none' }}>
+                                📧 support@wibestore.net
                             </a>
                             <a href="https://t.me/wibestoreuz" className="btn btn-secondary btn-md" style={{ textDecoration: 'none' }}>
                                 💬 Telegram: @wibestoreuz
@@ -235,7 +233,7 @@ const TermsPage = () => {
                 {/* Accept */}
                 <div className="text-center" style={{ padding: '32px 16px' }}>
                     <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
-                        WibeStore platformasidan foydalanish orqali siz yuqoridagi barcha shartlarga rozilik bildirasiz.
+                        {t('terms.accept_text')}
                     </p>
                     <Link to="/" className="btn btn-primary btn-lg" style={{ textDecoration: 'none' }}>
                         {t('terms.back_home') || 'Go to Homepage'}
