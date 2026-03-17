@@ -31,7 +31,10 @@
       "Bash(npx vite build --mode development)",
       "Bash(python -m py_compile telegram_bot/bot.py)",
       "Bash(python3 -m py_compile telegram_bot/bot.py)",
-      "Bash(grep -r \"useEffect.*title\\\\|document\\\\.title\\\\|useHead\\\\|setTitle\" /s/Desktop/WibeStore/Wibestore/src --include=*.jsx --include=*.js)"
+      "Bash(grep -r \"useEffect.*title\\\\|document\\\\.title\\\\|useHead\\\\|setTitle\" /s/Desktop/WibeStore/Wibestore/src --include=*.jsx --include=*.js)",
+      "Bash(xargs grep:*)",
+      "Bash(ls src/*.css)",
+      "Bash(find src:*)"
     ]
   }
 }
