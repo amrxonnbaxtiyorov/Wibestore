@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Upload, X, Plus, DollarSign, Image, FileText, Tag, Shield, AlertCircle, CheckCircle, Search } from 'lucide-react';
+import { Upload, X, Plus, DollarSign, Image, FileText, Tag, Shield, AlertCircle, CheckCircle, Search, ArrowLeft, Send, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
@@ -713,12 +713,21 @@ title: t('common.error') || 'Xatolik',
                         {/* Navigation Buttons */}
                         <div className="flex items-center justify-between" style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--color-border-muted)' }}>
                             {step > 1 ? (
-                                <button onClick={prevStep} className="btn btn-ghost btn-md">{t('sell.back_btn')}</button>
+                                <button onClick={prevStep} className="btn btn-ghost btn-md flex items-center gap-2">
+                                    <span className="btn-icon-square"><ArrowLeft className="w-4 h-4" /></span>
+                                    {t('sell.back_btn')}
+                                </button>
                             ) : <div />}
                             {step < 3 ? (
-                                <button onClick={nextStep} className="btn btn-primary btn-lg">{t('sell.next_btn')}</button>
+                                <button onClick={nextStep} className="btn btn-primary btn-lg flex items-center gap-2">
+                                    {t('sell.next_btn')}
+                                    <span className="btn-icon-square"><ArrowLeft className="w-4 h-4" style={{ transform: 'rotate(180deg)' }} /></span>
+                                </button>
                             ) : (
-                                <button onClick={handleSubmit} disabled={isSubmitting} className="btn btn-success btn-lg">
+                                <button onClick={handleSubmit} disabled={isSubmitting} className="btn btn-success btn-lg flex items-center gap-2">
+                                    <span className="btn-icon-square">
+                                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                    </span>
                                     {isSubmitting ? t('sell.submitting') : t('sell.submit_btn')}
                                 </button>
                             )}

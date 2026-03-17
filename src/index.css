@@ -499,6 +499,22 @@ p {
   border-color: var(--color-border-default);
 }
 
+/* Icon square inside button */
+.btn-icon-square {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.btn-ghost .btn-icon-square {
+  background: var(--color-bg-tertiary);
+}
+
 /* Ghost */
 .btn-ghost {
   background-color: transparent;
