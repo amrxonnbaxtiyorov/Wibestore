@@ -62,7 +62,7 @@ const HomePage = () => {
         id: g.id,
         slug: g.slug,
         name: g.name,
-        image: resolveImageUrl(g.image || g.banner) || null,
+        image: resolveImageUrl(g.image || g.logo || g.banner) || null,
         active_listings_count: g.active_listings_count,
     }));
 
@@ -75,8 +75,8 @@ const HomePage = () => {
     // Listing → AccountCard format (API va mock ikkalasini qo'llab-quvvatlash)
     const toAccountCard = (account) => ({
         id: account?.id,
-        gameId: account?.game?.slug ?? account?.game?.id ?? account?.gameId,
-        gameName: account?.game?.name ?? account?.gameName,
+        gameId: account?.game?.slug ?? account?.game_slug ?? account?.game?.id ?? account?.gameId,
+        gameName: account?.game?.name ?? account?.game_name ?? account?.gameName,
         title: account?.title,
         price: typeof account?.price === 'number' ? account.price : parseFloat(account?.price) || 0,
         description: account?.description ?? '',

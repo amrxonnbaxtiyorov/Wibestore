@@ -166,8 +166,10 @@ class ListingListSerializer(serializers.ModelSerializer):
 
     seller = UserPublicSerializer(read_only=True)
     game_name = serializers.CharField(source="game.name", read_only=True)
+    game_slug = serializers.CharField(source="game.slug", read_only=True)
     game_icon = serializers.CharField(source="game.icon", read_only=True)
     primary_image = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -177,9 +179,11 @@ class ListingListSerializer(serializers.ModelSerializer):
             "price",
             "original_price",
             "game_name",
+            "game_slug",
             "game_icon",
             "seller",
             "is_premium",
+            "is_favorited",
             "views_count",
             "favorites_count",
             "warranty_days",
@@ -189,6 +193,12 @@ class ListingListSerializer(serializers.ModelSerializer):
             "primary_image",
             "created_at",
         ]
+
+    def get_is_favorited(self, obj) -> bool:
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return Favorite.objects.filter(user=request.user, listing=obj).exists()
+        return False
 
     def get_primary_image(self, obj) -> str | None:
         primary = obj.images.filter(is_primary=True).first()

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const GameCard = ({ game }) => {
+    const { t } = useLanguage();
     const gameId = game.slug || game.id;
     const gameName = game.name;
     const gameIcon = game.icon;
@@ -87,7 +89,7 @@ const GameCard = ({ game }) => {
                             fontSize: 'var(--font-size-sm)',
                             color: 'var(--color-text-muted)',
                         }}>
-                            {accountCount} accounts
+                            {accountCount} {t('common.accounts') || 'akkaunt'}
                         </p>
                     )}
                 </div>

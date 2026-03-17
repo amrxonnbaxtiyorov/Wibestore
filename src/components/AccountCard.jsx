@@ -33,7 +33,7 @@ const AccountCard = ({ account, featured = false }) => {
     const accountId = account.id || crypto.randomUUID();
     const accountTitle = account.title || t('common.untitled_account');
     const accountPrice = account.price || 0;
-    const accountGameName = account.gameName || account.game?.name || t('common.unknown_game');
+    const accountGameName = account.gameName || account.game?.name || account.game_name || t('common.unknown_game');
     const accountDescription = account.description || '';
     // List API (favorites, products) primary_image qaytaradi; detail API image/images qaytaradi
     const accountImage = resolveImageUrl(
