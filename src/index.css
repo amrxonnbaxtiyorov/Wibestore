@@ -512,7 +512,7 @@ p {
 }
 
 .btn-ghost .btn-icon-square {
-  background: var(--color-bg-tertiary);
+  background: transparent;
 }
 
 /* Ghost */
@@ -523,7 +523,7 @@ p {
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background-color: var(--color-bg-secondary);
+  background-color: transparent;
 }
 
 /* Danger */
