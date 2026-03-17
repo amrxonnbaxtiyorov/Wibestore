@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Shield, Zap, Users, TrendingUp, Star, Crown, ChevronRight, Trophy } from 'lucide-react';
-import { useGames, useListings } from '../hooks';
+import { useGames, useListings, useSEO } from '../hooks';
 import GameCard from '../components/GameCard';
 import AccountCard from '../components/AccountCard';
 import { SkeletonCard } from '../components/SkeletonLoader';
@@ -44,6 +44,12 @@ function useCounter(target, duration = 2000) {
 
 const HomePage = () => {
     const { t } = useLanguage();
+
+    useSEO({
+        title: "WibeStore — O'yin Akkaunt Sotish va Sotib Olish | #1 O'zbekiston",
+        description: "O'yin akkaunt sotish va sotib olish uchun O'zbekistondagi #1 marketplace. PUBG Mobile, Steam, Free Fire, Roblox, Mobile Legends akkauntlarini xavfsiz va tezkor soting yoki sotib oling.",
+        canonical: 'https://wibestore.net/',
+    });
 
     // API hooks
     const { data: gamesData, isLoading: gamesLoading } = useGames();

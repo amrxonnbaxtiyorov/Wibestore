@@ -4,7 +4,7 @@ import { Upload, X, Plus, DollarSign, Image, FileText, Tag, Shield, AlertCircle,
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
-import { useCreateListing, useGames } from '../hooks';
+import { useCreateListing, useGames, useSEO } from '../hooks';
 import apiClient from '../lib/apiClient';
 import { resolveImageUrl } from '../lib/displayUtils';
 import { CS2_WEAPON_TYPES, isCs2Game } from '../data/cs2WeaponTypes';
@@ -28,6 +28,12 @@ function getTopGamesForSell(apiGames) {
 const SellPage = () => {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
+
+    useSEO({
+        title: "O'yin Akkaunt Sotish — WibeStore | Tez va Xavfsiz",
+        description: "O'yin akkauntingizni WibeStore da tez va xavfsiz soting. PUBG Mobile, Steam, Free Fire, Roblox, Mobile Legends va boshqa o'yin akkauntlarini yuqori narxda soting.",
+        canonical: 'https://wibestore.net/sell',
+    });
     const { t } = useLanguage();
     const { addToast } = useToast();
     const [rulesPassed, setRulesPassed] = useState(false);

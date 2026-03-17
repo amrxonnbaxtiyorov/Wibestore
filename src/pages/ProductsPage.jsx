@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Grid, List, X } from 'lucide-react';
-import { useListings, useGames } from '../hooks';
+import { useListings, useGames, useSEO } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { PageHeader } from '../components/ui';
@@ -9,6 +9,13 @@ import { useLanguage } from '../context/LanguageContext';
 
 const ProductsPage = () => {
     const { t } = useLanguage();
+
+    useSEO({
+        title: "O'yin Akkauntlari — Sotib Olish | WibeStore",
+        description: "PUBG Mobile, Steam, Free Fire, Roblox, Mobile Legends va boshqa o'yin akkauntlarini sotib oling. WibeStore da eng ko'p o'yin akkauntlari.",
+        canonical: 'https://wibestore.net/products',
+    });
+
     const [searchParams, setSearchParams] = useSearchParams();
     const urlSearch = searchParams.get('search') ?? '';
     const [searchQuery, setSearchQuery] = useState(urlSearch);

@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { Search, Package, Shield, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
-import { useGame, useGameListings } from '../hooks';
+import { useGame, useGameListings, useSEO } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { useLanguage } from '../context/LanguageContext';
@@ -37,6 +37,13 @@ const GamePage = () => {
     const premiumListings = sortedListings.filter(l => l?.is_premium || l?.isPremium);
     const regularListings = sortedListings.filter(l => !(l?.is_premium || l?.isPremium));
     const finalAccounts = [...premiumListings, ...regularListings];
+
+    const gameName = displayGame?.name ?? gameId;
+    useSEO({
+        title: gameName ? `${gameName} Akkaunt Sotish va Sotib Olish — WibeStore` : "O'yin Akkaunt Sotish — WibeStore",
+        description: gameName ? `${gameName} akkauntlarini WibeStore da xavfsiz sotib oling yoki soting. O'zbekistondagi eng ko'p ${gameName} akkauntlari.` : "O'yin akkauntlarini WibeStore da xavfsiz sotib oling yoki soting.",
+        canonical: `https://wibestore.net/games/${gameId}`,
+    });
 
     const displayGame = apiGame || null;
 
