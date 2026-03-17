@@ -70,7 +70,7 @@ const SignupPage = () => {
                         }}
                     >
                         <div
-                            className="flex items-center justify-center flex-shrink-0"
+                            className="flex items-center justify-center shrink-0"
                             style={{
                                 width: '40px',
                                 height: '40px',
@@ -98,11 +98,11 @@ const SignupPage = () => {
                     }}
                 >
                     <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
-                        <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-accent-green)' }} />
+                        <CheckCircle className="w-4 h-4 shrink-0" style={{ color: 'var(--color-accent-green)' }} />
                         <span>{t('signup.feature1')} <span style={{ color: 'var(--color-text-accent)', fontWeight: 500 }}>{t('signup.feature1_and')}</span> {t('signup.feature1_end')}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
-                        <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-accent-green)' }} />
+                        <CheckCircle className="w-4 h-4 shrink-0" style={{ color: 'var(--color-accent-green)' }} />
                         <span>{t('signup.feature2')}</span>
                     </div>
                     <div style={{ borderTop: '1px solid var(--color-border-muted)', paddingTop: '12px', marginTop: '4px' }}>
@@ -142,7 +142,7 @@ const SignupPage = () => {
                                 marginBottom: '16px',
                             }}
                         >
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <AlertCircle className="w-4 h-4 shrink-0" />
                             <span>{error}</span>
                         </div>
                     )}
