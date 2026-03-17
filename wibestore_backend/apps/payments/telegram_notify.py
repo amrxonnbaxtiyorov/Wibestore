@@ -843,6 +843,38 @@ def notify_new_chat_message_sync(message_id: str) -> None:
         logger.error("Failed to send chat notification: %s", e)
 
 
+def notify_listing_approved(listing) -> None:
+    """Admin akkauntni tasdiqlaganda sotuvchiga Telegram xabar yuborish."""
+    seller = listing.seller
+    if not getattr(seller, "telegram_id", None):
+        return
+    listing_url = f"{SITE_URL}/account/{listing.id}"
+    text = (
+        f"✅ <b>Akkauntingiz tasdiqlandi!</b>\n\n"
+        f"📦 Akkaunt: <b>{listing.title}</b>\n"
+        f"💰 Narx: <b>{_fmt_price(listing.price)}</b>\n\n"
+        f"Akkauntingiz hozir sotuvda va xaridorlar ko'ra oladi.\n\n"
+        f"🌐 <a href='{listing_url}'>Akkauntni ko'rish →</a>"
+    )
+    _send_message(seller.telegram_id, text)
+
+
+def notify_listing_rejected(listing, reason: str = "") -> None:
+    """Admin akkauntni rad etganda sotuvchiga Telegram xabar yuborish."""
+    seller = listing.seller
+    if not getattr(seller, "telegram_id", None):
+        return
+    reason_text = reason if reason else "Ko'rsatilmagan"
+    text = (
+        f"❌ <b>Akkauntingiz rad etildi</b>\n\n"
+        f"📦 Akkaunt: <b>{listing.title}</b>\n"
+        f"📝 Sabab: {reason_text}\n\n"
+        f"Muammoni bartaraf etib, akkauntni qayta yuborishingiz mumkin.\n\n"
+        f"🌐 <a href='{SITE_URL}/sell'>Qayta yuborish →</a>"
+    )
+    _send_message(seller.telegram_id, text)
+
+
 try:
     from celery import shared_task
 

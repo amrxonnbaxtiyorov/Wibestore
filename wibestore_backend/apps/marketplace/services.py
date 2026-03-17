@@ -69,6 +69,13 @@ class ListingService:
         except Exception as e:
             logger.warning("Failed to send listing_approved notification: %s", e)
 
+        # Telegram orqali ham xabar yuborish
+        try:
+            from apps.payments.telegram_notify import notify_listing_approved
+            notify_listing_approved(listing)
+        except Exception as e:
+            logger.warning("Failed to send Telegram listing_approved notification: %s", e)
+
         logger.info("Listing approved: %s by admin %s", listing.id, admin_user.email)
         return listing
 
@@ -89,6 +96,25 @@ class ListingService:
                 "status", "moderated_by", "moderated_at", "rejected_at", "rejection_reason"
             ]
         )
+
+        # Sotuvchiga in-app va Telegram bildirishnoma
+        try:
+            from apps.notifications.services import NotificationService
+            NotificationService.create_notification(
+                user=listing.seller,
+                title="Akkaunt rad etildi",
+                message=f"Akkauntingiz rad etildi. Sabab: {reason}",
+                type_code="listing_rejected",
+                data={"listing_id": str(listing.id), "listing_title": listing.title, "reason": reason},
+            )
+        except Exception as e:
+            logger.warning("Failed to send listing_rejected notification: %s", e)
+
+        try:
+            from apps.payments.telegram_notify import notify_listing_rejected
+            notify_listing_rejected(listing, reason)
+        except Exception as e:
+            logger.warning("Failed to send Telegram listing_rejected notification: %s", e)
 
         logger.info("Listing rejected: %s by admin %s", listing.id, admin_user.email)
         return listing
