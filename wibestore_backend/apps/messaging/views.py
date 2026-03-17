@@ -78,6 +78,28 @@ class ChatRoomCreateView(APIView):
             room = ChatRoom.objects.create(listing_id=listing_id)
             room.participants.add(request.user, other_user)
 
+            # Auto-add all active admins to trade chats (listing_id is set)
+            if listing_id:
+                admins = User.objects.filter(is_staff=True, is_active=True)
+                for admin in admins:
+                    room.participants.add(admin)
+                # Send system intro message from first admin (if any)
+                first_admin = admins.first()
+                if first_admin:
+                    intro_msg = Message.objects.create(
+                        room=room,
+                        sender=first_admin,
+                        content=(
+                            "🛡️ Moderator sifatida chat ga kirdim.\n"
+                            "Bu yerda xaridor va sotuvchi o'rtasidagi savdoni kuzataman.\n"
+                            "Muammo bo'lsa — murojaat qiling."
+                        ),
+                        message_type="system",
+                    )
+                    room.last_message = intro_msg.content[:197]
+                    room.last_message_at = timezone.now()
+                    room.save(update_fields=["last_message", "last_message_at"])
+
         # Send initial message if provided
         initial_message = serializer.validated_data.get("initial_message", "")
         if initial_message:
@@ -149,6 +171,13 @@ class SendMessageView(APIView):
 
         # If admin writes first message to an order chat — auto-send credentials
         _maybe_send_credentials(room, request.user)
+
+        # Notify recipient(s) via Telegram for incoming messages
+        try:
+            from apps.payments.telegram_notify import notify_new_chat_message
+            notify_new_chat_message.delay(str(message.id))
+        except Exception as _tg_err:
+            logger.debug("notify_new_chat_message skipped: %s", _tg_err)
 
         return Response(
             {

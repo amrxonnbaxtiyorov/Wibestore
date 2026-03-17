@@ -271,7 +271,7 @@ export default function ChatRoomPage() {
                             padding: '16px',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '12px',
+                            gap: '10px',
                             scrollbarGutter: 'stable',
                             scrollbarWidth: 'thin',
                         }}
@@ -299,13 +299,51 @@ export default function ChatRoomPage() {
                                     </div>
                                 )}
 
-                                {messages.map((msg) => {
+                                {messages.map((msg, idx) => {
                                 const isMe = msg.sender?.id === user.id;
                                 const senderAvatar = msg.sender?.avatar || msg.sender?.profile_image || msg.sender?.image || null;
                                 const senderName = msg.sender?.display_name || msg.sender?.name || '';
+                                // Date separator
+                                const msgDate = msg.created_at ? new Date(msg.created_at) : null;
+                                const prevMsg = idx > 0 ? messages[idx - 1] : null;
+                                const prevDate = prevMsg?.created_at ? new Date(prevMsg.created_at) : null;
+                                const showDateSep = msgDate && (!prevDate || msgDate.toDateString() !== prevDate.toDateString());
+                                const today = new Date();
+                                const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+                                const dateSepLabel = msgDate
+                                    ? (msgDate.toDateString() === today.toDateString() ? 'Bugun'
+                                      : msgDate.toDateString() === yesterday.toDateString() ? 'Kecha'
+                                      : msgDate.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }))
+                                    : '';
+                                // System message
+                                if (msg.message_type === 'system') {
+                                    return (
+                                        <div key={msg.id}>
+                                            {showDateSep && (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0', padding: '0 4px' }}>
+                                                    <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
+                                                    <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', flexShrink: 0, padding: '2px 8px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '999px', border: '1px solid var(--color-border-muted)' }}>{dateSepLabel}</span>
+                                                    <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
+                                                </div>
+                                            )}
+                                            <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                                                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-secondary)', padding: '4px 12px', borderRadius: 'var(--radius-full)', border: '1px solid var(--color-border-muted)' }}>
+                                                    🛡️ {msg.content}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                }
                                 return (
+                                    <div key={msg.id}>
+                                        {showDateSep && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0', padding: '0 4px' }}>
+                                                <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
+                                                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', flexShrink: 0, padding: '2px 8px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '999px', border: '1px solid var(--color-border-muted)' }}>{dateSepLabel}</span>
+                                                <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
+                                            </div>
+                                        )}
                                     <div
-                                        key={msg.id}
                                         style={{
                                             display: 'flex',
                                             alignItems: 'flex-end',
@@ -318,7 +356,7 @@ export default function ChatRoomPage() {
                                                 <img
                                                     src={resolveImageUrl(senderAvatar)}
                                                     alt=""
-                                                    style={{ width: '28px', height: '28px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
+                                                    style={{ width: '28px', height: '28px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0, alignSelf: 'flex-end' }}
                                                 />
                                             ) : (
                                                 <div
@@ -334,49 +372,50 @@ export default function ChatRoomPage() {
                                                         fontWeight: 'var(--font-weight-semibold)',
                                                         color: 'var(--color-text-muted)',
                                                         flexShrink: 0,
+                                                        alignSelf: 'flex-end',
                                                     }}
                                                 >
                                                     {getDisplayInitial(senderName)}
                                                 </div>
                                             ))}
+                                        <div style={{ maxWidth: '72%', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                                            {!isMe && senderName && (
+                                                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '3px', paddingLeft: '4px', fontWeight: 600 }}>{senderName}</span>
+                                            )}
                                         <div
                                             style={{
-                                                maxWidth: '80%',
-                                                minWidth: 0,
                                                 padding: '10px 14px',
-                                                borderRadius: 'var(--radius-2xl)',
                                                 overflowWrap: 'break-word',
                                                 wordBreak: 'break-word',
+                                                boxShadow: '0 1px 2px rgba(0,0,0,0.10)',
                                                 ...(isMe
                                                     ? {
-                                                        backgroundColor: 'var(--color-accent-blue)',
-                                                        color: 'var(--color-text-on-accent)',
-                                                        borderBottomRightRadius: 'var(--radius-sm)',
+                                                        background: 'linear-gradient(135deg, #2563EB, #1d4ed8)',
+                                                        color: '#ffffff',
+                                                        borderRadius: '18px 18px 4px 18px',
                                                     }
                                                     : {
-                                                        backgroundColor: 'var(--color-bg-tertiary)',
+                                                        backgroundColor: 'var(--color-bg-secondary)',
                                                         color: 'var(--color-text-primary)',
-                                                        borderBottomLeftRadius: 'var(--radius-sm)',
+                                                        border: '1px solid var(--color-border-muted)',
+                                                        borderRadius: '18px 18px 18px 4px',
                                                     }),
                                             }}
                                         >
-                                            {!isMe && msg.sender?.display_name && (
-                                                <p style={{ fontSize: 'var(--font-size-xs)', opacity: 0.8, marginBottom: '4px' }}>
-                                                    {msg.sender.display_name}
-                                                </p>
-                                            )}
-                                            <p style={{ fontSize: 'var(--font-size-sm)', margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'break-word' }}>{msg.content}</p>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', marginTop: '4px' }}>
-                                                <span style={{ fontSize: 'var(--font-size-xs)', opacity: 0.85 }}>
-                                                    {msg.created_at ? new Date(msg.created_at).toLocaleString('uz-UZ') : ''}
+                                            <p style={{ fontSize: '14px', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'break-word', fontWeight: 400 }}>{msg.content}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginTop: '4px' }}>
+                                                <span style={{ fontSize: '11px', opacity: isMe ? 0.75 : 0.7, color: isMe ? '#fff' : 'var(--color-text-muted)' }}>
+                                                    {msg.created_at ? new Date(msg.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : ''}
                                                 </span>
                                                 {isMe && (
-                                                    <span style={{ fontSize: '12px', opacity: 0.9, lineHeight: 1 }}>
+                                                    <span style={{ fontSize: '12px', lineHeight: 1, color: msg.is_read ? '#93c5fd' : 'rgba(255,255,255,0.6)' }}>
                                                         {msg.is_read ? '✓✓' : '✓'}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
+                                        </div>
+                                    </div>
                                     </div>
                                 );
                                 })}
@@ -389,29 +428,64 @@ export default function ChatRoomPage() {
                         onSubmit={handleSend}
                         className="chat-room-form"
                         style={{
-                            padding: '16px',
+                            padding: '10px 12px',
                             borderTop: '1px solid var(--color-border-muted)',
-                            display: 'flex',
-                            gap: '8px',
+                            backgroundColor: 'var(--color-bg-primary)',
+                            flexShrink: 0,
                         }}
                     >
-                        <input
-                            type="text"
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                        <textarea
                             value={text}
-                            onChange={(e) => setText(e.target.value)}
+                            onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
                             placeholder={t('detail.write_message') || 'Xabar yozing...'}
-                            className="input input-md"
-                            style={{ flex: 1 }}
                             disabled={sendMessageMutation.isPending}
+                            rows={1}
+                            style={{
+                                flex: 1,
+                                resize: 'none',
+                                minHeight: '44px',
+                                maxHeight: '120px',
+                                overflowY: 'auto',
+                                padding: '10px 16px',
+                                borderRadius: '22px',
+                                border: '1.5px solid var(--color-border-default)',
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                color: 'var(--color-text-primary)',
+                                fontSize: '14px',
+                                lineHeight: '1.5',
+                                outline: 'none',
+                                transition: 'border-color 0.15s',
+                                fontFamily: 'inherit',
+                            }}
+                            onFocus={(e) => { e.target.style.borderColor = '#2563EB'; }}
+                            onBlur={(e) => { e.target.style.borderColor = 'var(--color-border-default)'; }}
                         />
                         <button
                             type="submit"
                             disabled={!text.trim() || sendMessageMutation.isPending}
-                            className="btn btn-primary btn-md"
-                            style={{ padding: '10px 16px' }}
+                            style={{
+                                width: '44px',
+                                height: '44px',
+                                borderRadius: '50%',
+                                border: 'none',
+                                cursor: text.trim() ? 'pointer' : 'default',
+                                background: text.trim() ? 'linear-gradient(135deg, #2563EB, #1d4ed8)' : 'var(--color-bg-tertiary)',
+                                color: text.trim() ? '#ffffff' : 'var(--color-text-muted)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                transition: 'transform 0.15s, background 0.2s',
+                                boxShadow: text.trim() ? '0 2px 8px rgba(37,99,235,0.35)' : 'none',
+                            }}
+                            onMouseEnter={(e) => { if (text.trim()) e.currentTarget.style.transform = 'scale(1.05)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                         >
                             <Send style={{ width: '18px', height: '18px' }} />
                         </button>
+                        </div>
                     </form>
                 </div>
             </div>

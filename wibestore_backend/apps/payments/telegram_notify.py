@@ -771,3 +771,86 @@ def notify_deposit_rejected(deposit_request) -> None:
         f"🌐 <a href='{SITE_URL}'>{SITE_URL}</a>"
     )
     _send_message(telegram_id, text)
+
+
+def notify_balance_topup(user, amount) -> None:
+    """Balans to'ldirilganda foydalanuvchiga Telegram xabar."""
+    if not getattr(user, "telegram_id", None):
+        return
+    from decimal import Decimal
+    text = (
+        f"✅ <b>Balans to'ldirildi!</b>\n\n"
+        f"💰 Miqdor: <b>{_fmt_price(amount)}</b>\n"
+        f"👤 Hisob: {getattr(user, 'display_name', None) or getattr(user, 'email', '') or 'Foydalanuvchi'}"
+    )
+    _send_message(user.telegram_id, text)
+
+
+def notify_withdrawal_processed(user, amount, status: str) -> None:
+    """Pul yechish so'rovi yakunlanganda foydalanuvchiga Telegram xabar."""
+    if not getattr(user, "telegram_id", None):
+        return
+    icon = "✅" if status == "completed" else "❌"
+    status_text = "muvaffaqiyatli" if status == "completed" else "rad etildi"
+    text = (
+        f"{icon} <b>Pul yechish {status_text}!</b>\n\n"
+        f"💸 Miqdor: <b>{_fmt_price(amount)}</b>"
+    )
+    _send_message(user.telegram_id, text)
+
+
+def notify_new_chat_message_sync(message_id: str) -> None:
+    """
+    Yangi chat xabarida qabul qiluvchiga Telegram xabarnoma yuborish (sinxron, Celery task dan chaqiriladi).
+    Faqat birinchi o'qilmagan xabar uchun (antispam).
+    """
+    try:
+        from apps.messaging.models import Message
+        from django.conf import settings as _settings
+
+        msg = Message.objects.select_related("sender", "room").get(id=message_id)
+        room = msg.room
+        sender = msg.sender
+
+        recipients = room.participants.exclude(id=sender.id)
+        frontend_url = getattr(_settings, "FRONTEND_URL", SITE_URL).rstrip("/")
+
+        for recipient in recipients:
+            if not getattr(recipient, "telegram_id", None):
+                continue
+
+            # Antispam: faqat birinchi o'qilmagan xabar uchun yuborish
+            unread_count = Message.objects.filter(
+                room=room,
+                sender=sender,
+                is_read=False,
+            ).count()
+            if unread_count > 1:
+                continue
+
+            sender_name = getattr(sender, "display_name", None) or getattr(sender, "username", None) or "Foydalanuvchi"
+            preview = msg.content[:80] + ("..." if len(msg.content) > 80 else "")
+            chat_url = f"{frontend_url}/chat/{room.id}"
+
+            text = (
+                f"💬 <b>Yangi xabar!</b>\n\n"
+                f"👤 <b>{sender_name}</b> sizga xabar yozdi:\n"
+                f"<i>{preview}</i>\n\n"
+                f"<a href='{chat_url}'>💬 Xabarni ko'rish →</a>"
+            )
+            _send_message(recipient.telegram_id, text)
+    except Exception as e:
+        logger.error("Failed to send chat notification: %s", e)
+
+
+try:
+    from celery import shared_task
+
+    @shared_task(name="apps.payments.telegram_notify.notify_new_chat_message")
+    def notify_new_chat_message(message_id: str) -> None:
+        """Celery task: yangi chat xabarida qabul qiluvchiga Telegram xabarnoma."""
+        notify_new_chat_message_sync(message_id)
+
+except ImportError:
+    def notify_new_chat_message(message_id: str) -> None:  # type: ignore[misc]
+        notify_new_chat_message_sync(message_id)

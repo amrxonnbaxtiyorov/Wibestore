@@ -144,6 +144,7 @@ ADMIN_TOPUP_AMOUNT = 10
 # Support holatlari
 WAITING_SUPPORT_MSG = 11
 SUPPORT_CONFIRM = 12
+WAITING_ADMIN_REPLY = 20
 
 # Foydalanuvchilar ID larini saqlash fayli (broadcast uchun)
 USERS_FILE = Path(__file__).resolve().parent / "users.json"
@@ -634,11 +635,17 @@ async def _cmd_my_account(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     username = d.get("username", "—")
     balance = d.get("balance", "0")
     sold_count = d.get("sold_count", 0)
+    frontend_url = os.getenv("FRONTEND_URL", SITE_URL).rstrip("/")
+    profile_url = f"{frontend_url}/profile"
+    reply_markup = InlineKeyboardMarkup([[
+        InlineKeyboardButton("🌐 Saytda profilimni ko'rish →", url=profile_url)
+    ]])
     await update.message.reply_html(
         f"👤 <b>Saytdagi akkauntingiz</b>\n\n"
         f"🆔 Username: <b>{username}</b>\n"
         f"💰 Balans: <b>{balance} UZS</b>\n"
-        f"📦 Sotilgan akkauntlar: <b>{sold_count}</b> ta"
+        f"📦 Sotilgan akkauntlar: <b>{sold_count}</b> ta",
+        reply_markup=reply_markup,
     )
     return WAITING_PHONE
 
@@ -2562,16 +2569,24 @@ async def _verify_receive_passport_back(update: Update, context: ContextTypes.DE
 
 
 async def _verify_receive_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Doira video (video_note) qabul qilish."""
-    if not update.message.video_note:
-        await update.message.reply_html(
-            "🎥 Iltimos, <b>doira video</b> (video xabar) yuboring.\n\n"
-            "Telegramda mikrofon yonidagi kamera tugmasini bosib yumaloq video yuboring.\n"
-            "Oddiy video yoki matn qabul qilinmaydi."
+    """Doira video (video_note) yoki oddiy video qabul qilish."""
+    msg = update.message
+    if msg.video_note:
+        file_id = msg.video_note.file_id
+    elif msg.video:
+        file_id = msg.video.file_id
+    elif msg.document and msg.document.mime_type and msg.document.mime_type.startswith("video/"):
+        file_id = msg.document.file_id
+    else:
+        await msg.reply_html(
+            "🎥 Iltimos, <b>video</b> yuboring.\n\n"
+            "Doira video (video_note) yoki oddiy video qabul qilinadi.\n"
+            "Matn yoki rasm qabul qilinmaydi.\n\n"
+            "/cancel — bekor qilish"
         )
         return VERIFY_VIDEO
 
-    file_id = update.message.video_note.file_id
+    file_id = file_id
     verification_id = context.user_data.get("verification_id")
 
     ok, err = await _verification_submit_api(verification_id, "video", file_id=file_id)
@@ -2879,6 +2894,9 @@ async def support_send_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     chat_id = context.user_data.pop("support_chat_id", None)
     msg_id = context.user_data.pop("support_msg_id", None)
 
+    reply_btn = InlineKeyboardMarkup([[
+        InlineKeyboardButton("↩️ Javob yozish", callback_data=f"support_reply:{tg_id}")
+    ]])
     for target in _notification_targets():
         try:
             await context.bot.send_message(target, header, parse_mode="HTML")
@@ -2888,6 +2906,13 @@ async def support_send_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                     from_chat_id=chat_id,
                     message_id=msg_id,
                 )
+            # "Javob yozish" inline tugmasini alohida yuborish
+            await context.bot.send_message(
+                target,
+                f"👤 Foydalanuvchi ID: <code>{tg_id}</code>",
+                parse_mode="HTML",
+                reply_markup=reply_btn,
+            )
         except Exception as e:
             logger.warning("Admin %s ga support xabari yuborib bo'lmadi: %s", target, e)
 
@@ -2923,6 +2948,53 @@ async def support_cancel_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     return WAITING_PHONE
 
 
+async def support_reply_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin 'Javob yozish' tugmasini bosdi — javob kiritish rejimiga o'tish."""
+    query = update.callback_query
+    await query.answer()
+
+    if not _is_admin(query.from_user.id):
+        return ConversationHandler.END
+
+    _, user_tg_id = query.data.split(":", 1)
+    context.user_data["reply_to_user"] = int(user_tg_id)
+
+    await query.message.reply_text(
+        "✏️ <b>Javobingizni yozing:</b>\n"
+        "<i>Xabaringiz foydalanuvchiga «Admin javobi» sifatida yuboriladi.</i>\n\n"
+        "/cancel — bekor qilish",
+        parse_mode="HTML",
+    )
+    return WAITING_ADMIN_REPLY
+
+
+async def admin_reply_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin javobini foydalanuvchiga yuborish."""
+    reply_text = update.message.text
+    target_user_id = context.user_data.get("reply_to_user")
+
+    if not target_user_id:
+        await update.message.reply_text("❌ Xatolik: foydalanuvchi topilmadi.")
+        return ConversationHandler.END
+
+    try:
+        await context.bot.send_message(
+            chat_id=target_user_id,
+            text=(
+                f"📬 <b>Admin javobi:</b>\n\n"
+                f"{reply_text}\n\n"
+                f"<i>— WibeStore qo'llab-quvvatlash jamoasi</i>"
+            ),
+            parse_mode="HTML",
+        )
+        await update.message.reply_text("✅ Javob muvaffaqiyatli yuborildi!")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Yuborishda xatolik: {e}")
+
+    context.user_data.pop("reply_to_user", None)
+    return ConversationHandler.END
+
+
 async def cmd_user_support(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """/user_support <telegram_id> <xabar> — admin foydalanuvchiga javob beradi."""
     if not _is_admin(update.effective_user.id):
@@ -2947,6 +3019,47 @@ async def cmd_user_support(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await update.message.reply_html(f"✅ Xabar <code>{user_id}</code> ga yuborildi.")
     except Exception as e:
         await update.message.reply_html(f"❌ Yuborib bo'lmadi: <code>{e}</code>")
+
+
+async def trade_confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Savdo tasdiqlash: trade_seller_ok / trade_buyer_ok / trade_cancel."""
+    query = update.callback_query
+    await query.answer()
+
+    try:
+        action, escrow_id = query.data.split(":", 1)
+    except ValueError:
+        return
+
+    api_url = f"{WEBSITE_URL}/api/v1/escrow/{escrow_id}/"
+    headers = {"Authorization": f"Bot {BOT_SECRET_KEY}"}
+
+    if action == "trade_seller_ok":
+        try:
+            if _AIOHTTP_AVAILABLE:
+                async with _aiohttp.ClientSession() as session:
+                    await session.patch(api_url, json={"seller_confirmed": True}, headers=headers)
+        except Exception as e:
+            logger.warning("trade_seller_ok API: %s", e)
+        await query.message.edit_text("✅ Siz tasdiqladingiz. Xaridor tasdiqini kutmoqda...")
+
+    elif action == "trade_buyer_ok":
+        try:
+            if _AIOHTTP_AVAILABLE:
+                async with _aiohttp.ClientSession() as session:
+                    await session.patch(api_url, json={"buyer_confirmed": True}, headers=headers)
+        except Exception as e:
+            logger.warning("trade_buyer_ok API: %s", e)
+        await query.message.edit_text("✅ Siz tasdiqladingiz. To'lov chiqarilmoqda...")
+
+    elif action == "trade_cancel":
+        try:
+            if _AIOHTTP_AVAILABLE:
+                async with _aiohttp.ClientSession() as session:
+                    await session.post(f"{WEBSITE_URL}/api/v1/escrow/{escrow_id}/dispute/", headers=headers)
+        except Exception as e:
+            logger.warning("trade_cancel API: %s", e)
+        await query.message.edit_text("⚠️ Nizo ochildi. Moderator tez orada hal qiladi.")
 
 
 def main():
@@ -3059,6 +3172,10 @@ def main():
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
                 CommandHandler('cancel', _cancel_to_menu),
             ],
+            WAITING_ADMIN_REPLY: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_reply_message_handler),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
         },
         fallbacks=[
             CommandHandler('start', start),
@@ -3103,7 +3220,7 @@ def main():
                 CommandHandler("cancel", _verify_cancel),
             ],
             VERIFY_VIDEO: [
-                MessageHandler(filters.VIDEO_NOTE, _verify_receive_video),
+                MessageHandler(filters.VIDEO_NOTE | filters.VIDEO | filters.Document.VIDEO, _verify_receive_video),
                 CommandHandler("cancel", _verify_cancel),
             ],
             VERIFY_LOCATION: [
@@ -3123,6 +3240,7 @@ def main():
 
     # ---- To'lov tizimi handlerlari ----
     # Wallet TopUp: Approve/Reject callback — barcha foydalanuvchilar uchun (admin tekshiruvi ichida)
+    app.add_handler(CallbackQueryHandler(support_reply_callback, pattern=r'^support_reply:'))
     app.add_handler(CallbackQueryHandler(cb_approve, pattern=r'^approve:'))
     app.add_handler(CallbackQueryHandler(cb_reject, pattern=r'^reject:'))
 
@@ -3141,6 +3259,8 @@ def main():
     app.add_handler(CallbackQueryHandler(_cb_escrow_seller_ok, pattern=r'^escrow_seller_ok:'))
     app.add_handler(CallbackQueryHandler(_cb_escrow_buyer_ok,  pattern=r'^escrow_buyer_ok:'))
     app.add_handler(CallbackQueryHandler(_cb_escrow_buyer_no,  pattern=r'^escrow_buyer_no:'))
+    # Trade confirm (savdo tasdiqlash)
+    app.add_handler(CallbackQueryHandler(trade_confirm_callback, pattern=r'^trade_(seller_ok|buyer_ok|cancel):'))
 
     # ---- Sotuvchi shaxs tasdiqlash: admin approve/reject ----
     app.add_handler(CallbackQueryHandler(_cb_verify_approve, pattern=r'^verify_approve:'))
