@@ -527,6 +527,17 @@ p {
 }
 
 /* Danger */
+.btn-success {
+  background-color: #16a34a;
+  color: #ffffff;
+  border-color: #16a34a;
+}
+
+.btn-success:hover:not(:disabled) {
+  background-color: #15803d;
+  border-color: #15803d;
+}
+
 .btn-danger {
   background-color: var(--color-accent-red);
   color: var(--color-text-on-accent);
