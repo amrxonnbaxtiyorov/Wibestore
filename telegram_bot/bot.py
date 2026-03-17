@@ -2995,6 +2995,13 @@ async def admin_reply_message_handler(update: Update, context: ContextTypes.DEFA
     return ConversationHandler.END
 
 
+async def _admin_reply_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Admin reply jarayonini bekor qilish."""
+    context.user_data.pop("reply_to_user", None)
+    await update.message.reply_text("❌ Javob bekor qilindi.", reply_markup=_get_main_keyboard())
+    return ConversationHandler.END
+
+
 async def cmd_user_support(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """/user_support <telegram_id> <xabar> — admin foydalanuvchiga javob beradi."""
     if not _is_admin(update.effective_user.id):
@@ -3172,10 +3179,6 @@ def main():
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
                 CommandHandler('cancel', _cancel_to_menu),
             ],
-            WAITING_ADMIN_REPLY: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_reply_message_handler),
-                CommandHandler('cancel', _cancel_to_menu),
-            ],
         },
         fallbacks=[
             CommandHandler('start', start),
@@ -3240,7 +3243,26 @@ def main():
 
     # ---- To'lov tizimi handlerlari ----
     # Wallet TopUp: Approve/Reject callback — barcha foydalanuvchilar uchun (admin tekshiruvi ichida)
-    app.add_handler(CallbackQueryHandler(support_reply_callback, pattern=r'^support_reply:'))
+    # ---- Admin support reply ConversationHandler ----
+    # Bu BARCHA holatlardan ishlaydi chunki alohida ConversationHandler
+    admin_reply_conv = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(support_reply_callback, pattern=r'^support_reply:'),
+        ],
+        states={
+            WAITING_ADMIN_REPLY: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, admin_reply_message_handler),
+                CommandHandler('cancel', _admin_reply_cancel),
+            ],
+        },
+        fallbacks=[CommandHandler('cancel', _admin_reply_cancel)],
+        per_message=False,
+        per_user=True,
+        per_chat=True,
+        allow_reentry=True,
+    )
+    app.add_handler(admin_reply_conv)
+
     app.add_handler(CallbackQueryHandler(cb_approve, pattern=r'^approve:'))
     app.add_handler(CallbackQueryHandler(cb_reject, pattern=r'^reject:'))
 
