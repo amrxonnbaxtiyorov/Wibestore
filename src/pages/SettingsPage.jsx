@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Settings, User, Lock, Bell, Globe, CreditCard, ArrowDownCircle, ArrowUpCircle, Trash2, Camera, Save, AlertCircle, CheckCircle, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getDisplayInitial } from '../lib/displayUtils';
+import UserAvatar from '../components/UserAvatar';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
 
 const SettingsPage = () => {
@@ -240,23 +241,15 @@ const SettingsPage = () => {
                                         {t('settings.profile_info')}
                                     </h2>
 
-                                    {/* Avatar — yuklangan rasm bor bo'lsa rasm, yo'q bo'lsa ismning birinchi harfi */}
+                                    {/* Avatar — yuklangan rasm bor bo'lsa rasm, yo'q bo'lsa standart icon */}
                                     <div className="flex items-center gap-4" style={{ marginBottom: '24px' }}>
                                         <div className="relative">
-                                            <div style={{
-                                                width: '64px', height: '64px',
-                                                background: user?.avatar ? 'transparent' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
-                                                borderRadius: 'var(--radius-xl)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '24px', fontWeight: 'var(--font-weight-bold)', color: '#fff',
-                                                overflow: 'hidden',
-                                            }}>
-                                                {user?.avatar ? (
-                                                    <img src={user.avatar} alt={user?.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                ) : (
-                                                    getDisplayInitial(user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')
-                                                )}
-                                            </div>
+                                            <UserAvatar
+                                                src={user?.avatar}
+                                                size={64}
+                                                name={user?.name || 'User'}
+                                                style={{ borderRadius: 'var(--radius-xl)' }}
+                                            />
                                             <label style={{
                                                 position: 'absolute', bottom: '-4px', right: '-4px',
                                                 width: '24px', height: '24px',

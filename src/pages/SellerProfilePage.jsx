@@ -3,6 +3,7 @@ import { Star, Shield, ArrowLeft, Package, MessageSquare, Crown, Gem } from 'luc
 import { useListings } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import ReviewList from '../components/ReviewList';
+import UserAvatar from '../components/UserAvatar';
 import { useLanguage } from '../context/LanguageContext';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { resolveImageUrl } from '../lib/displayUtils';
@@ -73,34 +74,19 @@ const SellerProfilePage = () => {
                         }} />
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                        {sellerAvatar ? (
-                            <img
-                                src={sellerAvatar}
-                                alt=""
-                                style={{
-                                    width: '72px', height: '72px',
-                                    borderRadius: 'var(--radius-full)',
-                                    objectFit: 'cover',
-                                    flexShrink: 0,
-                                }}
-                            />
-                        ) : (
-                            <div style={{
-                                width: '72px', height: '72px',
-                                borderRadius: 'var(--radius-full)',
-                                background: seller?.plan === 'pro' ? 'var(--color-pro-gradient)' : (seller?.plan === 'premium' || seller?.is_premium) ? 'var(--color-premium-gradient)' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: '#fff', fontWeight: 'var(--font-weight-bold)',
-                                fontSize: 'var(--font-size-2xl)', flexShrink: 0,
+                        <UserAvatar
+                            src={sellerAvatar}
+                            size={72}
+                            name={displayName}
+                            style={{
+                                background: sellerAvatar ? 'transparent' : (seller?.plan === 'pro' ? 'var(--color-pro-gradient)' : (seller?.plan === 'premium' || seller?.is_premium) ? 'var(--color-premium-gradient)' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))'),
                                 boxShadow: seller?.plan === 'pro'
                                     ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-pro-purple)'
                                     : (seller?.plan === 'premium' || seller?.is_premium)
                                         ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-premium-gold-light)'
                                         : 'none',
-                            }}>
-                                {displayName?.charAt(0)?.toUpperCase() || 'S'}
-                            </div>
-                        )}
+                            }}
+                        />
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <h1 style={{
                                 fontSize: 'var(--font-size-2xl)',

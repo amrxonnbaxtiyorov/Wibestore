@@ -7,6 +7,7 @@ import { useLanguage, languages as langList } from '../context/LanguageContext';
 import { getDisplayInitial, capitalizeFirst, resolveImageUrl } from '../lib/displayUtils';
 import NotificationWidget from './NotificationWidget';
 import Logo from './Logo';
+import UserAvatar from './UserAvatar';
 
 const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
@@ -412,22 +413,12 @@ const Navbar = () => {
                                         }}
                                     >
                                         <div className="relative shrink-0">
-                                            <div
-                                                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold overflow-hidden"
-                                                style={{
-                                                    background: user?.avatar ? 'transparent' : 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
-                                                    color: '#fff',
-                                                }}
-                                            >
-                                                {user?.avatar ? (
-                                                    <img src={resolveImageUrl(user.avatar) || user.avatar} alt={user?.name || 'User'} className="w-full h-full" style={{ objectFit: 'cover' }} />
-                                                ) : (
-                                                    getDisplayInitial(
-                                                        user?.name ?? user?.display_name ?? user?.full_name ?? (user?.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''),
-                                                        'U'
-                                                    )
-                                                )}
-                                            </div>
+                                            <UserAvatar
+                                                src={user?.avatar}
+                                                size={28}
+                                                name={user?.name || 'User'}
+                                                style={{ borderRadius: '50%' }}
+                                            />
                                             <div
                                                 className="absolute -bottom-px -right-px w-2 h-2 rounded-full"
                                                 style={{

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing, useSellerDashboard, useGames } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import AvatarEditModal from '../components/AvatarEditModal';
+import UserAvatar from '../components/UserAvatar';
 import ReviewList from '../components/ReviewList';
 import { formatPrice } from '../data/mockData';
 import { getDisplayInitial, capitalizeFirst, resolveImageUrl } from '../lib/displayUtils';
@@ -159,29 +160,19 @@ const ProfilePage = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                             {/* Avatar */}
                             <div className="relative" style={{ flexShrink: 0 }}>
-                                <div
-                                    className="avatar"
+                                <UserAvatar
+                                    src={user.avatar}
+                                    size={72}
+                                    name={user.name || 'User'}
                                     style={{
-                                        width: '72px', height: '72px',
                                         background: user.avatar ? 'transparent' : (user.plan === 'pro' ? 'var(--color-pro-gradient)' : user.plan === 'premium' || user.is_premium ? 'var(--color-premium-gradient)' : 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))'),
-                                        fontSize: '28px', fontWeight: 'var(--font-weight-bold)',
-                                        color: '#ffffff',
-                                        borderRadius: 'var(--radius-full)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        overflow: 'hidden',
                                         boxShadow: user.plan === 'pro'
                                             ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-pro-purple)'
                                             : (user.plan === 'premium' || user.is_premium)
                                                 ? '0 0 0 3px var(--color-bg-secondary), 0 0 0 5px var(--color-premium-gold-light)'
                                                 : 'none',
                                     }}
-                                >
-                                    {user.avatar ? (
-                                        <img src={user.avatar} alt={user.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                        getDisplayInitial(user.name ?? user.display_name ?? user.full_name ?? (user.email && !String(user.email).startsWith('tg_') ? user.email.split('@')[0] : ''), 'U')
-                                    )}
-                                </div>
+                                />
                                 <button
                                     onClick={() => setShowAvatarModal(true)}
                                     style={{
