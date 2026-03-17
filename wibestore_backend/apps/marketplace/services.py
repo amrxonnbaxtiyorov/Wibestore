@@ -36,9 +36,28 @@ class ListingService:
         )
         logger.info("New listing created: %s by %s", listing.id, seller.email)
 
-        # Notify admins
-        from apps.marketplace.tasks import notify_admins_new_listing
-        notify_admins_new_listing.delay(str(listing.id))
+        # Notify admins (sync, no Celery dependency)
+        try:
+            from apps.marketplace.models import Listing as _L
+            from apps.notifications.services import NotificationService
+            from apps.payments.telegram_notify import _send_message, _get_admin_telegram_ids
+            NotificationService.notify_admins(
+                title="Yangi akkaunt moderatsiya kutmoqda",
+                message=f"{seller.display_name} '{listing.title}' ({listing.game.name}) akkauntini yubordi",
+                data={"listing_id": str(listing.id)},
+            )
+            admin_text = (
+                f"🆕 <b>Yangi akkaunt moderatsiya kutmoqda!</b>\n\n"
+                f"📦 {listing.title}\n"
+                f"🎮 O'yin: {listing.game.name}\n"
+                f"💰 Narx: {int(listing.price):,} so'm\n"
+                f"👤 Sotuvchi: {seller.display_name or seller.email}\n\n"
+                f"🌐 <a href='https://wibestore.net/admin'>Admin panelga o'tish →</a>"
+            )
+            for admin_tg_id in _get_admin_telegram_ids():
+                _send_message(admin_tg_id, admin_text)
+        except Exception as e:
+            logger.warning("Failed to notify admins about new listing: %s", e)
 
         return listing
 
