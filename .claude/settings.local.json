@@ -34,7 +34,8 @@
       "Bash(grep -r \"useEffect.*title\\\\|document\\\\.title\\\\|useHead\\\\|setTitle\" /s/Desktop/WibeStore/Wibestore/src --include=*.jsx --include=*.js)",
       "Bash(xargs grep:*)",
       "Bash(ls src/*.css)",
-      "Bash(find src:*)"
+      "Bash(find src:*)",
+      "Bash(find s:/Desktop/WibeStore/Wibestore -name .env* -type f)"
     ]
   }
 }

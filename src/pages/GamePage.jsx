@@ -38,14 +38,13 @@ const GamePage = () => {
     const regularListings = sortedListings.filter(l => !(l?.is_premium || l?.isPremium));
     const finalAccounts = [...premiumListings, ...regularListings];
 
+    const displayGame = apiGame || null;
     const gameName = displayGame?.name ?? gameId;
     useSEO({
         title: gameName ? `${gameName} Akkaunt Sotish va Sotib Olish — WibeStore` : "O'yin Akkaunt Sotish — WibeStore",
         description: gameName ? `${gameName} akkauntlarini WibeStore da xavfsiz sotib oling yoki soting. O'zbekistondagi eng ko'p ${gameName} akkauntlari.` : "O'yin akkauntlarini WibeStore da xavfsiz sotib oling yoki soting.",
         canonical: `https://wibestore.net/games/${gameId}`,
     });
-
-    const displayGame = apiGame || null;
 
     if (gameLoading && !displayGame) {
         return (

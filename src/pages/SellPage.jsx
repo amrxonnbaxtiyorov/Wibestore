@@ -719,7 +719,7 @@ title: t('common.error') || 'Xatolik',
                         {/* Navigation Buttons */}
                         <div className="flex items-center justify-between" style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--color-border-muted)' }}>
                             {step > 1 ? (
-                                <button onClick={prevStep} className="btn btn-ghost btn-md flex items-center gap-2">
+                                <button onClick={prevStep} className="btn btn-danger btn-md flex items-center gap-2">
                                     <span className="btn-icon-square"><ArrowLeft className="w-4 h-4" /></span>
                                     {t('sell.back_btn')}
                                 </button>
