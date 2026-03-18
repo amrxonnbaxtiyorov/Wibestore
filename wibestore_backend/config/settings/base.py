@@ -503,7 +503,6 @@ COMMISSION_RATES = {
 # ============================================================
 # ESCROW SETTINGS
 # ============================================================
-ESCROW_AUTO_RELEASE_HOURS = 24
 ESCROW_DISPUTE_WINDOW_HOURS = 48
 
 # ============================================================
@@ -516,3 +515,11 @@ SUBSCRIPTION_EXPIRY_WARNING_DAYS = 3
 # ============================================================
 TELEGRAM_OTP_CODE_LENGTH = env.int("TELEGRAM_OTP_CODE_LENGTH", default=6)
 TELEGRAM_OTP_EXPIRE_MINUTES = env.int("TELEGRAM_OTP_EXPIRE_MINUTES", default=1)
+
+# ============================================================
+# TELEGRAM ADMIN SETTINGS
+# ============================================================
+ADMIN_TELEGRAM_IDS = [int(x) for x in os.getenv("ADMIN_TELEGRAM_IDS", "").split(",") if x.strip()]
+CHAT_NOTIFICATION_DELAY_SECONDS = int(os.getenv("CHAT_NOTIFICATION_DELAY_SECONDS", "10"))
+ESCROW_AUTO_RELEASE_HOURS = int(os.getenv("ESCROW_AUTO_RELEASE_HOURS", "48"))
+DELIVERY_REMINDER_HOURS = int(os.getenv("DELIVERY_REMINDER_HOURS", "2"))

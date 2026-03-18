@@ -127,6 +127,81 @@ def release_escrow_payment(escrow_id: str) -> None:
         logger.warning("Could not reschedule auto-release for escrow %s: %s", escrow_id, retry_err)
 
 
+@shared_task
+def remind_pending_deliveries():
+    """
+    Every hour: find escrows in 'paid' status older than DELIVERY_REMINDER_HOURS.
+    Send reminder to seller via Telegram.
+    If older than 12 hours — notify admin.
+    """
+    from django.conf import settings as _settings
+    from django.utils import timezone
+    from datetime import timedelta
+    from apps.payments.models import EscrowTransaction
+
+    reminder_hours = getattr(_settings, "DELIVERY_REMINDER_HOURS", 2)
+    threshold = timezone.now() - timedelta(hours=reminder_hours)
+    admin_threshold = timezone.now() - timedelta(hours=12)
+
+    pending = EscrowTransaction.objects.filter(
+        status="paid",
+        created_at__lte=threshold,
+    ).select_related("seller", "buyer", "listing")
+
+    for escrow in pending:
+        try:
+            from apps.payments.telegram_notify import notify_seller_deliver_account
+            notify_seller_deliver_account(escrow)
+        except Exception as e:
+            logger.warning("remind_pending_deliveries: %s", e)
+
+        if escrow.created_at <= admin_threshold:
+            try:
+                from apps.payments.telegram_notify import _send_message, _get_admin_telegram_ids
+                msg = (
+                    f"⚠️ Сделка #{str(escrow.id)[:8]} уже 12+ часов без передачи!\n"
+                    f"Продавец: {escrow.seller.email}\n"
+                    f"Аккаунт: {escrow.listing.title if escrow.listing else '—'}"
+                )
+                for admin_id in _get_admin_telegram_ids():
+                    _send_message(admin_id, msg)
+            except Exception as e:
+                logger.warning("Admin notify for stale escrow: %s", e)
+
+    logger.info("remind_pending_deliveries: processed %d escrows", pending.count())
+
+
+@shared_task
+def auto_release_escrow_after_timeout():
+    """
+    Every hour: if buyer hasn't confirmed within ESCROW_AUTO_RELEASE_HOURS
+    after transition to 'delivered' — auto-complete the trade.
+    """
+    from django.conf import settings as _settings
+    from django.utils import timezone
+    from datetime import timedelta
+    from apps.payments.models import EscrowTransaction
+
+    auto_hours = getattr(_settings, "ESCROW_AUTO_RELEASE_HOURS", 48)
+    threshold = timezone.now() - timedelta(hours=auto_hours)
+
+    stale = EscrowTransaction.objects.filter(
+        status="delivered",
+        updated_at__lte=threshold,
+    ).select_related("buyer", "seller", "listing")
+
+    count = 0
+    for escrow in stale:
+        try:
+            from apps.payments.services import EscrowService
+            EscrowService.release_payment(str(escrow.id))
+            count += 1
+        except Exception as e:
+            logger.warning("auto_release_escrow: escrow %s: %s", escrow.id, e)
+
+    logger.info("auto_release_escrow_after_timeout: released %d escrows", count)
+
+
 def _transaction_status_display(status: str) -> tuple[str, str]:
     """Return (status_class, status_text) for receipt template."""
     mapping = {

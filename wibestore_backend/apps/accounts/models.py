@@ -5,11 +5,13 @@ Custom User model with UUID, phone, balance, rating, and soft delete.
 
 import uuid
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
 
 from core.constants import LANGUAGE_CHOICES
+from core.models import BaseModel
 from core.validators import validate_uzbek_phone_number
 
 
@@ -216,3 +218,36 @@ class TelegramRegistrationCode(models.Model):
     @property
     def is_valid(self) -> bool:
         return not self.is_used and timezone.now() < self.expires_at
+
+
+class TelegramBotStat(BaseModel):
+    """Статистика взаимодействия пользователей с Telegram ботом."""
+    telegram_id = models.BigIntegerField(db_index=True, unique=True)
+    telegram_username = models.CharField(max_length=100, blank=True, default="")
+    telegram_first_name = models.CharField(max_length=100, blank=True, default="")
+    telegram_last_name = models.CharField(max_length=100, blank=True, default="")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="telegram_bot_stats"
+    )
+    first_interaction_at = models.DateTimeField(auto_now_add=True)
+    last_interaction_at = models.DateTimeField(auto_now=True)
+    is_blocked = models.BooleanField(default=False)
+    blocked_at = models.DateTimeField(null=True, blank=True)
+    unblocked_at = models.DateTimeField(null=True, blank=True)
+    registration_completed = models.BooleanField(default=False)
+    registration_date = models.DateTimeField(null=True, blank=True)
+    registration_otp_code = models.CharField(max_length=10, blank=True, default="")
+    referral_code_used = models.CharField(max_length=20, blank=True, default="")
+    total_commands_sent = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "telegram_bot_stats"
+        ordering = ["-last_interaction_at"]
+        verbose_name = "Статистика Telegram бота"
+        verbose_name_plural = "Статистика Telegram бота"
+
+    def __str__(self) -> str:
+        return f"TelegramBotStat({self.telegram_id}, @{self.telegram_username})"

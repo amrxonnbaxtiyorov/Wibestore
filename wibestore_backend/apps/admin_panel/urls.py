@@ -24,4 +24,25 @@ urlpatterns = [
     path("users/<uuid:pk>/ban/", views.AdminUserBanView.as_view(), name="user-ban"),
     path("users/<uuid:pk>/subscription/", views.AdminGrantSubscriptionView.as_view(), name="user-subscription"),
     path("transactions/", views.AdminTransactionsView.as_view(), name="transactions"),
+    # Telegram analytics
+    path("telegram/stats/", views.AdminTelegramStatsView.as_view(), name="admin-telegram-stats"),
+    path("telegram/users/", views.AdminTelegramUsersView.as_view(), name="admin-telegram-users"),
+    path("telegram/users/<int:telegram_id>/", views.AdminTelegramUserDetailView.as_view(), name="admin-telegram-user-detail"),
+    path("telegram/registrations/by-date/", views.AdminTelegramRegistrationsByDateView.as_view(), name="admin-telegram-registrations-by-date"),
+    # Deposits
+    path("deposits/", views.AdminDepositsView.as_view(), name="admin-deposits"),
+    path("deposits/stats/", views.AdminDepositStatsView.as_view(), name="admin-deposit-stats"),
+    path("deposits/<uuid:pk>/", views.AdminDepositDetailView.as_view(), name="admin-deposit-detail"),
+    # Seller verifications
+    path("seller-verifications/", views.AdminSellerVerificationsView.as_view(), name="admin-seller-verifications"),
+    path("seller-verifications/<uuid:pk>/", views.AdminSellerVerificationDetailView.as_view(), name="admin-seller-verification-detail"),
+    path("seller-verifications/<uuid:pk>/approve/", views.AdminApproveSellerVerificationView.as_view(), name="admin-approve-verification"),
+    path("seller-verifications/<uuid:pk>/reject/", views.AdminRejectSellerVerificationView.as_view(), name="admin-reject-verification"),
+    # Trades
+    path("trades/", views.AdminTradesView.as_view(), name="admin-trades"),
+    path("trades/stats/", views.AdminTradeStatsView.as_view(), name="admin-trade-stats"),
+    path("trades/<uuid:pk>/", views.AdminTradeDetailView.as_view(), name="admin-trade-detail"),
+    path("trades/<uuid:pk>/complete/", views.AdminTradeCompleteView.as_view(), name="admin-trade-complete"),
+    path("trades/<uuid:pk>/refund/", views.AdminTradeRefundView.as_view(), name="admin-trade-refund"),
+    path("trades/<uuid:pk>/resolve-dispute/", views.AdminTradeResolveDisputeView.as_view(), name="admin-trade-resolve-dispute"),
 ]

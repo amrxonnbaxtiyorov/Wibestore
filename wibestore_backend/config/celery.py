@@ -47,4 +47,12 @@ app.conf.beat_schedule = {
         "task": "apps.admin_panel.tasks.calculate_daily_statistics",
         "schedule": crontab(hour=0, minute=0),
     },
+    "remind-pending-deliveries": {
+        "task": "apps.payments.tasks.remind_pending_deliveries",
+        "schedule": crontab(minute=0),
+    },
+    "auto-release-escrow": {
+        "task": "apps.payments.tasks.auto_release_escrow_after_timeout",
+        "schedule": crontab(minute=30),
+    },
 }
