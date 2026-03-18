@@ -46,18 +46,53 @@ const SettingsPage = () => {
         if (!isAuthenticated) navigate('/login');
     }, [isAuthenticated, navigate]);
 
+    const compressImage = (file, maxSizeMB = 2, maxDim = 1024) =>
+        new Promise((resolve, reject) => {
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                let { width, height } = img;
+                if (width > maxDim || height > maxDim) {
+                    const ratio = Math.min(maxDim / width, maxDim / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                let quality = 0.85;
+                const tryBlob = () => {
+                    canvas.toBlob((blob) => {
+                        if (!blob) { reject(new Error('Compress failed')); return; }
+                        if (blob.size <= maxSizeMB * 1024 * 1024 || quality < 0.3) {
+                            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+                        } else {
+                            quality -= 0.1;
+                            tryBlob();
+                        }
+                    }, 'image/jpeg', quality);
+                };
+                tryBlob();
+            };
+            img.onerror = reject;
+            img.src = url;
+        });
+
     const handleAvatarChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file || !file.type.startsWith('image/')) return;
-        if (file.size > 5 * 1024 * 1024) {
-            setMessage({ type: 'error', text: t('settings.avatar_too_large') || 'Rasm 5MB dan oshmasin' });
+        if (file.size > 20 * 1024 * 1024) {
+            setMessage({ type: 'error', text: t('settings.avatar_too_large') || 'Rasm 20MB dan oshmasin' });
             return;
         }
         setAvatarUploading(true);
         setMessage({ type: '', text: '' });
         try {
+            const compressed = file.size > 2 * 1024 * 1024 ? await compressImage(file) : file;
             const form = new FormData();
-            form.append('avatar', file);
+            form.append('avatar', compressed);
             await updateProfile(form);
             setMessage({ type: 'success', text: t('settings.profile_updated') || 'Profil yangilandi' });
         } catch (err) {

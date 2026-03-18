@@ -42,11 +42,11 @@ def validate_password_strength(value: str) -> None:
 
 
 def validate_image_file_size(value) -> None:
-    """Validate image file size (max 5MB)."""
-    max_size = 5 * 1024 * 1024  # 5MB
+    """Validate image file size (max 10MB)."""
+    max_size = 10 * 1024 * 1024  # 10MB
     if value.size > max_size:
         raise ValidationError(
-            _("Image file size must not exceed 5MB."),
+            _("Image file size must not exceed 10MB."),
             code="file_too_large",
         )
 
