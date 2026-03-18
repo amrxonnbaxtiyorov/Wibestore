@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '../lib/apiClient'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../context/AuthContext'
 
 const STATUS_STEPS = ['paid', 'delivered', 'confirmed']
 const STATUS_LABELS = {
