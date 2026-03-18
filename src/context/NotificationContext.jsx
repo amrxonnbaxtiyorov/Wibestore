@@ -52,7 +52,7 @@ export const NotificationProvider = ({ children }) => {
 
     const addNotification = (notification) => {
         const newNotification = {
-            id: crypto.randomUUID(),
+            id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
             ...notification,
             time: new Date().toISOString(),
             read: false

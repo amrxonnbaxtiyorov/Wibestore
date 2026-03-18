@@ -3,7 +3,7 @@ Games App - Services
 """
 
 import logging
-from django.db.models import Count, Avg
+from django.db.models import Count, Q
 from apps.games.models import Game, Category
 from apps.marketplace.models import Listing
 
@@ -33,7 +33,7 @@ class GameService:
     def get_all_games_with_counts():
         """Get all games with their listing counts."""
         games = Game.objects.filter(is_active=True).annotate(
-            listing_count=Count('listing', filter=lambda q: q(listing__status='active'))
+            listing_count=Count('listing', filter=Q(listing__status='active'))
         ).order_by('sort_order')
         
         return games

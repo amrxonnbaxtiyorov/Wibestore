@@ -61,26 +61,26 @@ export default function TradePage() {
 
   const { data: escrow, isLoading, error } = useQuery({
     queryKey: ['trade', escrowId],
-    queryFn: () => apiClient.get(`/api/v1/payments/escrow/${escrowId}/`).then(r => r.data?.data || r.data),
+    queryFn: () => apiClient.get(`/payments/escrow/${escrowId}/`).then(r => r.data?.data || r.data),
     refetchInterval: 30000,
   })
 
   const confirmReceived = useMutation({
-    mutationFn: () => apiClient.post(`/api/v1/payments/escrow/${escrowId}/confirm/`).then(r => r.data),
-    onSuccess: () => queryClient.invalidateQueries(['trade', escrowId]),
+    mutationFn: () => apiClient.post(`/payments/escrow/${escrowId}/confirm/`).then(r => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trade', escrowId] }),
   })
 
   const openDispute = useMutation({
-    mutationFn: (reason) => apiClient.post(`/api/v1/payments/escrow/${escrowId}/dispute/`, { reason }).then(r => r.data),
+    mutationFn: (reason) => apiClient.post(`/payments/escrow/${escrowId}/dispute/`, { reason }).then(r => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['trade', escrowId])
+      queryClient.invalidateQueries({ queryKey: ['trade', escrowId] })
       setShowDisputeForm(false)
     },
   })
 
   const deliverAccount = useMutation({
-    mutationFn: () => apiClient.post(`/api/v1/payments/escrow/${escrowId}/deliver/`).then(r => r.data),
-    onSuccess: () => queryClient.invalidateQueries(['trade', escrowId]),
+    mutationFn: () => apiClient.post(`/payments/escrow/${escrowId}/deliver/`).then(r => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['trade', escrowId] }),
   })
 
   if (isLoading) return (

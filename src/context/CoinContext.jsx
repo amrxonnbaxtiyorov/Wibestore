@@ -49,7 +49,7 @@ export const CoinProvider = ({ children }) => {
                 return prev; // Max 5 transactions per month
             }
             const newHistory = [...prev.history, {
-                id: crypto.randomUUID(),
+                id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
                 amount,
                 reason,
                 date: new Date().toISOString(),
@@ -78,7 +78,7 @@ export const CoinProvider = ({ children }) => {
                     ...prev,
                     balance: prev.balance - amount,
                     history: [...prev.history, {
-                        id: crypto.randomUUID(),
+                        id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
                         amount: -amount,
                         reason,
                         date: new Date().toISOString(),

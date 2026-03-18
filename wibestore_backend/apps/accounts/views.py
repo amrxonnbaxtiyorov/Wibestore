@@ -984,8 +984,8 @@ class TelegramEscrowActionView(APIView):
                 try:
                     from apps.payments.telegram_notify import notify_buyer_confirmed
                     notify_buyer_confirmed(escrow)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Telegram notify_buyer_confirmed failed: %s", e)
                 return Response(
                     {"success": True, "message": "Haridor akkaunt qabul qilganini tasdiqladi."},
                     status=status.HTTP_200_OK,

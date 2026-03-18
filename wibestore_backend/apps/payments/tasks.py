@@ -108,8 +108,8 @@ def release_escrow_payment(escrow_id: str) -> None:
             )
             for tid in _get_admin_telegram_ids():
                 _send_message(tid, msg)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Admin Telegram notification (escrow timeout) failed: %s", e)
         return
 
     # 1 soatdan keyin qayta urinish

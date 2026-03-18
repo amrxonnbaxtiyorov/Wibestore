@@ -300,8 +300,8 @@ class EscrowService:
         try:
             from apps.notifications.services import NotificationService
             NotificationService.notify_trade_status_change(escrow, "confirmed")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("In-app notification (trade confirmed) failed: %s", e)
 
         return escrow
 
@@ -385,8 +385,8 @@ class EscrowService:
         try:
             from apps.notifications.services import NotificationService
             NotificationService.notify_trade_status_change(escrow, "disputed")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("In-app notification (dispute opened) failed: %s", e)
 
         return escrow
 
@@ -431,8 +431,8 @@ class EscrowService:
         try:
             from apps.notifications.services import NotificationService
             NotificationService.notify_trade_status_change(escrow, "refunded")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("In-app notification (escrow refunded) failed: %s", e)
 
         return escrow
 

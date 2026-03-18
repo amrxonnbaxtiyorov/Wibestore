@@ -244,8 +244,8 @@ class EscrowConfirmDeliveryView(APIView):
                 "✅ Haridor akkauntni to'liq qabul qilganini tasdiqladi.\n"
                 "💰 Mablag' sotuvchiga o'tkazilmoqda. Xarid yakunlandi!"
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Chat system message (buyer confirm) failed: %s", e)
 
         # Notify all parties via Telegram
         try:
@@ -434,8 +434,8 @@ class EscrowSellerConfirmView(APIView):
                 "Sotuvchi akkauntni topshirganini tasdiqladi. "
                 "Haridor endi akkauntni tekshirib, tasdiqlashi kerak."
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Chat system message (seller confirm) failed: %s", e)
 
         try:
             from .telegram_notify import notify_seller_confirmed, notify_both_parties_confirmation
@@ -517,8 +517,8 @@ class TelegramCallbackView(APIView):
                 from .telegram_notify import notify_seller_confirmed
                 notify_seller_confirmed(escrow)
                 notify_both_parties_confirmation(escrow, confirmed_by="seller")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Telegram notify (escrow_seller_ok) failed: %s", e)
             _answer_callback_query(callback_id, "Tasdiqlandi! Haridor tekshirmoqda.")
 
         elif action == "escrow_buyer_ok":
@@ -537,8 +537,8 @@ class TelegramCallbackView(APIView):
                 from .telegram_notify import notify_buyer_confirmed
                 notify_buyer_confirmed(escrow)
                 notify_both_parties_confirmation(escrow, confirmed_by="buyer")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Telegram notify (escrow_buyer_ok) failed: %s", e)
             _answer_callback_query(callback_id, "Tasdiqlandi! Xarid yakunlandi.")
 
         elif action == "escrow_buyer_no":
@@ -557,8 +557,8 @@ class TelegramCallbackView(APIView):
                     "Admin ko'rib chiqadi va qaror qabul qiladi.")
                 from .telegram_notify import notify_dispute_opened
                 notify_dispute_opened(escrow, reason)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Telegram notify (dispute opened via bot) failed: %s", e)
             _answer_callback_query(callback_id, "Shikoyat ochildi. Admin ko'rib chiqadi.")
 
         elif action == "trade_seller_ok":
@@ -581,8 +581,8 @@ class TelegramCallbackView(APIView):
                 else:
                     post_system_message_to_order_chat(escrow,
                         "Sotuvchi akkauntni topshirganini tasdiqladi. Haridor tasdiqlashi kutilmoqda.")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Chat/Telegram notify (trade_seller_ok) failed: %s", e)
             if both_confirmed:
                 _answer_callback_query(callback_id, "✅ Ikkala tomon tasdiqladi! Savdo yakunlandi.")
             else:
@@ -608,8 +608,8 @@ class TelegramCallbackView(APIView):
                 else:
                     post_system_message_to_order_chat(escrow,
                         "Haridor akkauntni qabul qilganini tasdiqladi. Sotuvchi tasdiqlashi kutilmoqda.")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Chat/Telegram notify (trade_buyer_ok) failed: %s", e)
             if both_confirmed:
                 _answer_callback_query(callback_id, "✅ Ikkala tomon tasdiqladi! Savdo yakunlandi.")
             else:
@@ -632,8 +632,8 @@ class TelegramCallbackView(APIView):
                     f"{who} savdoni bekor qildi. Haridor puli qaytarildi. Savdo yakunlandi.")
                 from .telegram_notify import notify_trade_cancelled
                 notify_trade_cancelled(escrow, cancelled_by=side)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Chat/Telegram notify (trade_cancel) failed: %s", e)
             _answer_callback_query(callback_id, "Savdo bekor qilindi. Haridor puli qaytarildi.")
 
         elif action == "verify_approve":
@@ -664,8 +664,8 @@ class TelegramCallbackView(APIView):
             try:
                 from .telegram_notify import notify_verification_approved
                 notify_verification_approved(verification.escrow, verification)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Telegram notify_verification_approved failed: %s", e)
 
             _answer_callback_query(callback_id, "✅ Tasdiqlandi! To'lov sotuvchiga o'tkazildi.")
 

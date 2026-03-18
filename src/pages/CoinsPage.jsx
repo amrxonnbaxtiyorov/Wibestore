@@ -12,14 +12,8 @@ const CoinsPage = () => {
     const { isAuthenticated } = useAuth();
     const { balance, monthlyEarned, monthlyTransactions, history, COINS_PER_TRANSACTION, MAX_MONTHLY_TRANSACTIONS, PREMIUM_COST_IN_COINS } = useCoins();
     const [activeTab, setActiveTab] = useState('about');
-    const [vouchers] = useState(() => {
-        const now = Date.now();
-        const day = 24 * 60 * 60 * 1000;
-        return [
-            { id: 1, type: 'premium', discount: 50, expiresAt: new Date(now + 90 * day).toISOString(), status: 'active' },
-            { id: 2, type: 'pro', discount: 20, expiresAt: new Date(now + 60 * day).toISOString(), status: 'active' },
-        ];
-    });
+    // Vouchers are managed via the backend; empty until API integration
+    const vouchers = [];
 
     const formatDate = (dateString) => {
         return new Date(dateString).toLocaleDateString('uz-UZ', { year: 'numeric', month: 'long', day: 'numeric' });
