@@ -137,6 +137,28 @@ class EscrowService:
             escrow.id, buyer.email, listing.seller.email, listing.price,
         )
 
+        # BLOCK 2.2: Telegram notifications for new purchase
+        try:
+            from apps.messaging.services import create_order_chat_for_escrow
+            chat_room = create_order_chat_for_escrow(escrow)
+            chat_room_id = str(chat_room.id) if chat_room else None
+        except Exception as chat_err:
+            logger.warning("Could not create order chat: %s", chat_err)
+            chat_room_id = None
+
+        try:
+            from .telegram_notify import notify_purchase_created
+            notify_purchase_created(escrow, chat_room_id=chat_room_id)
+        except Exception as tg_err:
+            logger.warning("Telegram purchase notification failed: %s", tg_err)
+
+        # BLOCK 7.2: In-app notification
+        try:
+            from apps.notifications.services import NotificationService
+            NotificationService.notify_trade_status_change(escrow, "paid")
+        except Exception as notif_err:
+            logger.warning("In-app trade notification failed: %s", notif_err)
+
         # Schedule auto-release (optional — fails silently if Celery/Redis unavailable)
         try:
             from .tasks import release_escrow_payment
@@ -264,6 +286,13 @@ class EscrowService:
         except Exception as tg_err:
             logger.warning("Telegram trade-completed notification failed: %s", tg_err)
 
+        # BLOCK 7.2: In-app notification for trade confirmed
+        try:
+            from apps.notifications.services import NotificationService
+            NotificationService.notify_trade_status_change(escrow, "confirmed")
+        except Exception:
+            pass
+
         return escrow
 
     @staticmethod
@@ -342,6 +371,13 @@ class EscrowService:
         except Exception as tg_err:
             logger.warning("Telegram dispute notification failed: %s", tg_err)
 
+        # BLOCK 7.2: In-app notification for dispute
+        try:
+            from apps.notifications.services import NotificationService
+            NotificationService.notify_trade_status_change(escrow, "disputed")
+        except Exception:
+            pass
+
         return escrow
 
     @staticmethod
@@ -373,6 +409,14 @@ class EscrowService:
         listing.save(update_fields=["status", "sold_at"])
 
         logger.info("Escrow refunded: %s by admin %s", escrow.id, admin_user.email)
+
+        # BLOCK 7.2: In-app notification for refund
+        try:
+            from apps.notifications.services import NotificationService
+            NotificationService.notify_trade_status_change(escrow, "refunded")
+        except Exception:
+            pass
+
         return escrow
 
     @staticmethod

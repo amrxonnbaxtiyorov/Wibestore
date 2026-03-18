@@ -836,5 +836,56 @@
         "details_label": "Details (for developers)",
         "retry": "Reload page",
         "home": "Go to home"
+    },
+    "admin_telegram": {
+        "title": "Telegram Bot",
+        "tabs": {
+            "overview": "Overview",
+            "users": "Bot Users",
+            "deposits": "Deposits",
+            "analytics": "Analytics"
+        },
+        "stats": {
+            "total_users": "Total Users",
+            "active_today": "Active Today",
+            "registered": "Registered",
+            "blocked": "Blocked Bot"
+        }
+    },
+    "admin_trades": {
+        "title": "Trade Deals",
+        "tabs": {
+            "trades": "All Trades",
+            "verifications": "Verifications"
+        },
+        "stats": {
+            "active": "Active",
+            "pending_delivery": "Pending Delivery",
+            "disputed": "Disputed",
+            "completed_today": "Completed Today"
+        },
+        "actions": {
+            "complete": "Complete Trade",
+            "refund": "Refund",
+            "resolve_dispute": "Resolve Dispute",
+            "approve": "Approve",
+            "reject": "Reject"
+        }
+    },
+    "trade": {
+        "title": "Trade",
+        "status": {
+            "paid": "Paid",
+            "delivered": "Delivered",
+            "confirmed": "Confirmed",
+            "disputed": "Disputed",
+            "refunded": "Refunded"
+        },
+        "actions": {
+            "deliver": "I delivered the account",
+            "confirm": "Account received, all good",
+            "dispute": "There is a problem",
+            "open_chat": "Open chat"
+        }
     }
 }

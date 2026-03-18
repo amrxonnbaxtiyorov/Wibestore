@@ -412,6 +412,20 @@ const Navbar = () => {
                                             }
                                         }}
                                     >
+                                        {user?.balance !== undefined && (
+                                          <span style={{
+                                            fontSize: 13,
+                                            fontWeight: 600,
+                                            color: 'var(--color-success-text)',
+                                            background: 'rgba(34, 197, 94, 0.1)',
+                                            border: '1px solid rgba(34, 197, 94, 0.2)',
+                                            borderRadius: 20,
+                                            padding: '4px 10px',
+                                            marginRight: 8,
+                                          }}>
+                                            💰 {Number(user.balance || 0).toLocaleString()} UZS
+                                          </span>
+                                        )}
                                         <div className="relative shrink-0">
                                             <UserAvatar
                                                 src={user?.avatar}

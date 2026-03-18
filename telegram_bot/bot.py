@@ -3069,6 +3069,277 @@ async def trade_confirm_callback(update: Update, context: ContextTypes.DEFAULT_T
         await query.message.edit_text("⚠️ Nizo ochildi. Moderator tez orada hal qiladi.")
 
 
+# =================== BLOCK 2.3: Trade callback handlers ===================
+
+async def seller_confirm_transfer_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """callback_data: seller_confirm_transfer_{escrow_id}"""
+    query = update.callback_query
+    await query.answer()
+
+    callback_data = query.data
+    escrow_id = callback_data.replace("seller_confirm_transfer_", "")
+
+    try:
+        import django
+        import os
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
+
+        from apps.payments.models import EscrowTransaction
+        from apps.payments.services import EscrowService
+
+        escrow = EscrowTransaction.objects.select_related("buyer", "seller", "listing").filter(
+            id=escrow_id, status="paid"
+        ).first()
+
+        if not escrow:
+            await query.edit_message_text("❌ Savdo topilmadi yoki holati o'zgardi.")
+            return
+
+        # Check sender is seller
+        telegram_id = query.from_user.id
+        if escrow.seller.telegram_id != telegram_id:
+            await query.edit_message_text("❌ Siz bu savdoning sotuvchisi emassiz.")
+            return
+
+        # Update escrow to delivered
+        EscrowService.deliver_account(str(escrow.id))
+
+        # Notify buyer
+        try:
+            from apps.payments.telegram_notify import notify_buyer_confirm_received
+            notify_buyer_confirm_received(escrow)
+        except Exception as e:
+            logger.warning("notify_buyer_confirm_received in callback: %s", e)
+
+        await query.edit_message_text(
+            "✅ Ajoyib! Харidor akkauntni tekshirmoqda.\n"
+            "Tasdiqlangandan so'ng mablag' hisobingizga o'tkaziladi."
+        )
+    except Exception as e:
+        logger.error("seller_confirm_transfer_callback error: %s", e)
+        await query.edit_message_text("❌ Xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.")
+
+
+async def seller_cancel_trade_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """callback_data: seller_cancel_trade_{escrow_id}"""
+    query = update.callback_query
+    await query.answer()
+
+    callback_data = query.data
+    escrow_id = callback_data.replace("seller_cancel_trade_", "")
+
+    try:
+        from apps.payments.models import EscrowTransaction
+        from apps.payments.services import EscrowService
+
+        escrow = EscrowTransaction.objects.filter(id=escrow_id, status__in=["paid", "delivered"]).first()
+        if not escrow:
+            await query.edit_message_text("❌ Savdo topilmadi yoki holati o'zgardi.")
+            return
+
+        telegram_id = query.from_user.id
+        if escrow.seller.telegram_id != telegram_id:
+            await query.edit_message_text("❌ Siz bu savdoning sotuvchisi emassiz.")
+            return
+
+        EscrowService.refund_escrow(str(escrow.id))
+
+        await query.edit_message_text(
+            "Savdo bekor qilindi. Харidor pulini qaytarib oldi.\n"
+            "Akkauntingiz yana saytda faol bo'ldi."
+        )
+    except Exception as e:
+        logger.error("seller_cancel_trade_callback error: %s", e)
+        await query.edit_message_text("❌ Xatolik yuz berdi.")
+
+
+async def buyer_confirm_received_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """callback_data: buyer_confirm_received_{escrow_id}"""
+    query = update.callback_query
+    await query.answer()
+
+    callback_data = query.data
+    escrow_id = callback_data.replace("buyer_confirm_received_", "")
+
+    try:
+        from apps.payments.models import EscrowTransaction
+        from apps.payments.services import EscrowService
+
+        escrow = EscrowTransaction.objects.filter(id=escrow_id, status="delivered").first()
+        if not escrow:
+            await query.edit_message_text("❌ Savdo topilmadi yoki holati o'zgardi.")
+            return
+
+        telegram_id = query.from_user.id
+        if escrow.buyer.telegram_id != telegram_id:
+            await query.edit_message_text("❌ Siz bu savdoning харidori emassiz.")
+            return
+
+        EscrowService.release_payment(str(escrow.id))
+
+        await query.edit_message_text(
+            "✅ Savdo muvaffaqiyatli yakunlandi!\n\n"
+            "Akkaunt sizniki. Xaridingizdan rohat qiling! 🎮"
+        )
+    except Exception as e:
+        logger.error("buyer_confirm_received_callback error: %s", e)
+        await query.edit_message_text("❌ Xatolik yuz berdi.")
+
+
+async def buyer_open_dispute_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """callback_data: buyer_open_dispute_{escrow_id}"""
+    query = update.callback_query
+    await query.answer()
+
+    callback_data = query.data
+    escrow_id = callback_data.replace("buyer_open_dispute_", "")
+
+    # Store escrow_id in context for next message
+    context.user_data["dispute_escrow_id"] = escrow_id
+
+    await query.edit_message_text(
+        "⚠️ Nizo sababi nima?\n\n"
+        "Muammoni qisqacha tushuntiring (keyingi xabaringizda):"
+    )
+
+
+async def buyer_cancel_trade_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """callback_data: buyer_cancel_trade_{escrow_id}"""
+    query = update.callback_query
+    await query.answer()
+
+    callback_data = query.data
+    escrow_id = callback_data.replace("buyer_cancel_trade_", "")
+
+    try:
+        from apps.payments.models import EscrowTransaction
+        from apps.payments.services import EscrowService
+
+        escrow = EscrowTransaction.objects.filter(id=escrow_id, status__in=["paid", "delivered"]).first()
+        if not escrow:
+            await query.edit_message_text("❌ Savdo topilmadi yoki holati o'zgardi.")
+            return
+
+        telegram_id = query.from_user.id
+        if escrow.buyer.telegram_id != telegram_id:
+            await query.edit_message_text("❌ Siz bu savdoning харidori emassiz.")
+            return
+
+        EscrowService.refund_escrow(str(escrow.id))
+
+        await query.edit_message_text(
+            "Savdo bekor qilindi. Pulingiz hisobingizga qaytarildi."
+        )
+    except Exception as e:
+        logger.error("buyer_cancel_trade_callback error: %s", e)
+        await query.edit_message_text("❌ Xatolik yuz berdi.")
+
+
+# =================== BLOCK 5.4: Admin callback handlers ===================
+
+async def admin_complete_trade_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """callback_data: admin_complete_trade_{escrow_id}"""
+    query = update.callback_query
+    await query.answer()
+
+    callback_data = query.data
+    escrow_id = callback_data.replace("admin_complete_trade_", "")
+
+    try:
+        from apps.payments.services import EscrowService
+        EscrowService.release_payment(escrow_id)
+        await query.edit_message_text(f"✅ Savdo #{escrow_id[:8]} yakunlandi. Pul sotuvchiga o'tkazildi.")
+    except Exception as e:
+        logger.error("admin_complete_trade_callback error: %s", e)
+        await query.edit_message_text(f"❌ Xatolik: {str(e)[:200]}")
+
+
+async def admin_refund_trade_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """callback_data: admin_refund_trade_{escrow_id}"""
+    query = update.callback_query
+    await query.answer()
+
+    callback_data = query.data
+    escrow_id = callback_data.replace("admin_refund_trade_", "")
+
+    try:
+        from apps.payments.services import EscrowService
+        EscrowService.refund_escrow(escrow_id)
+        await query.edit_message_text(f"↩️ Savdo #{escrow_id[:8]} bekor qilindi. Pul харidorga qaytarildi.")
+    except Exception as e:
+        logger.error("admin_refund_trade_callback error: %s", e)
+        await query.edit_message_text(f"❌ Xatolik: {str(e)[:200]}")
+
+
+async def admin_approve_verification_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """callback_data: admin_approve_verification_{verification_id}"""
+    query = update.callback_query
+    await query.answer()
+
+    callback_data = query.data
+    verification_id = callback_data.replace("admin_approve_verification_", "")
+
+    try:
+        from apps.payments.models import SellerVerification, EscrowTransaction
+        from apps.payments.models import Transaction
+        from django.utils import timezone
+
+        verification = SellerVerification.objects.select_related("seller", "escrow").filter(
+            id=verification_id, status="submitted"
+        ).first()
+
+        if not verification:
+            await query.edit_message_text("❌ Tasdiqlash topilmadi yoki allaqachon ko'rib chiqilgan.")
+            return
+
+        verification.status = "approved"
+        verification.save()
+
+        escrow = verification.escrow
+        if escrow and escrow.seller_earnings:
+            seller = escrow.seller
+            seller.balance = (seller.balance or 0) + escrow.seller_earnings
+            seller.save(update_fields=["balance"])
+
+            try:
+                Transaction.objects.create(
+                    user=seller,
+                    type="purchase",
+                    status="completed",
+                    amount=escrow.seller_earnings,
+                    description=f"Savdo #{str(escrow.id)[:8]} uchun to'lov",
+                )
+            except Exception:
+                pass
+
+        try:
+            from apps.payments.telegram_notify import notify_verification_approved
+            notify_verification_approved(escrow, verification)
+        except Exception as e:
+            logger.warning("notify_verification_approved in callback: %s", e)
+
+        await query.edit_message_text(f"✅ Tasdiqlash #{verification_id[:8]} tasdiqlandi. Pul sotuvchiga o'tkazildi.")
+    except Exception as e:
+        logger.error("admin_approve_verification_callback error: %s", e)
+        await query.edit_message_text(f"❌ Xatolik: {str(e)[:200]}")
+
+
+async def admin_reject_verification_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """callback_data: admin_reject_verification_{verification_id}"""
+    query = update.callback_query
+    await query.answer()
+
+    callback_data = query.data
+    verification_id = callback_data.replace("admin_reject_verification_", "")
+
+    context.user_data["reject_verification_id"] = verification_id
+
+    await query.edit_message_text(
+        f"❌ Tasdiqlash #{verification_id[:8]} rad etildi.\n\n"
+        "Rad etish sababini kiriting (keyingi xabaringizda):"
+    )
+
+
 def main():
     """Botni ishga tushirish"""
     if BOT_TOKEN == 'YOUR_BOT_TOKEN_HERE':
@@ -3287,6 +3558,19 @@ def main():
     # ---- Sotuvchi shaxs tasdiqlash: admin approve/reject ----
     app.add_handler(CallbackQueryHandler(_cb_verify_approve, pattern=r'^verify_approve:'))
     app.add_handler(CallbackQueryHandler(_cb_verify_reject,  pattern=r'^verify_reject:'))
+
+    # ---- Block 2.3: Trade callback handlers ----
+    app.add_handler(CallbackQueryHandler(seller_confirm_transfer_callback, pattern=r"^seller_confirm_transfer_"))
+    app.add_handler(CallbackQueryHandler(seller_cancel_trade_callback, pattern=r"^seller_cancel_trade_"))
+    app.add_handler(CallbackQueryHandler(buyer_confirm_received_callback, pattern=r"^buyer_confirm_received_"))
+    app.add_handler(CallbackQueryHandler(buyer_open_dispute_callback, pattern=r"^buyer_open_dispute_"))
+    app.add_handler(CallbackQueryHandler(buyer_cancel_trade_callback, pattern=r"^buyer_cancel_trade_"))
+
+    # ---- Block 5.4: Admin callback handlers ----
+    app.add_handler(CallbackQueryHandler(admin_complete_trade_callback, pattern=r"^admin_complete_trade_"))
+    app.add_handler(CallbackQueryHandler(admin_refund_trade_callback, pattern=r"^admin_refund_trade_"))
+    app.add_handler(CallbackQueryHandler(admin_approve_verification_callback, pattern=r"^admin_approve_verification_"))
+    app.add_handler(CallbackQueryHandler(admin_reject_verification_callback, pattern=r"^admin_reject_verification_"))
 
     # Admin buyruqlari (faqat adminlar uchun, lekin global — conversation tashqarida)
     app.add_handler(CommandHandler('admin', cmd_admin_panel))

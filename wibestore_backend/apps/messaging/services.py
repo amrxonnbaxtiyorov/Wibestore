@@ -81,6 +81,12 @@ def create_order_chat_for_escrow(escrow):
             room.id, escrow.id, buyer.email, seller.email,
         )
 
+        # BLOCK 6: Notify admins about new trade chat
+        try:
+            notify_admin_new_trade_chat(room, escrow)
+        except Exception as e:
+            logger.warning("notify_admin_new_trade_chat call failed: %s", e)
+
     return room
 
 
@@ -145,6 +151,42 @@ def send_credentials_to_chat(room, escrow, sent_by_user=None):
 
     logger.info("Credentials sent to chat room %s for listing %s", room.id, listing.id)
     return True
+
+
+def notify_admin_new_trade_chat(chat_room, escrow) -> None:
+    """
+    BLOCK 6: Notify all admins with telegram_id when a new trade chat is opened.
+    """
+    try:
+        from apps.payments.telegram_notify import _send_message, _get_admin_telegram_ids, SITE_URL
+        buyer = escrow.buyer
+        seller = escrow.seller
+        listing = escrow.listing
+        escrow_id = str(escrow.id)
+        chat_link = f"{SITE_URL}/admin/trade-chats"
+
+        text = (
+            f"💬 <b>Yangi savdo chati ochildi!</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"📦 Akkaunt: <b>{listing.title}</b>\n"
+            f"🎮 O'yin: {listing.game.name if listing.game else '—'}\n\n"
+            f"🛒 Haridor: @{getattr(buyer, 'username', '') or buyer.display_name}\n"
+            f"   📞 {buyer.phone_number or '—'}\n\n"
+            f"💼 Sotuvchi: @{getattr(seller, 'username', '') or seller.display_name}\n"
+            f"   📞 {seller.phone_number or '—'}\n\n"
+            f"🔑 Savdo: #{escrow_id[:8]}"
+        )
+        keyboard = {
+            "inline_keyboard": [[
+                {"text": "📋 Chatni panelda ochish", "url": chat_link},
+            ]]
+        }
+        for admin_id in _get_admin_telegram_ids():
+            if admin_id in (getattr(buyer, "telegram_id", None), getattr(seller, "telegram_id", None)):
+                continue
+            _send_message(admin_id, text, reply_markup=keyboard)
+    except Exception as e:
+        logger.warning("notify_admin_new_trade_chat failed: %s", e)
 
 
 def post_system_message_to_order_chat(escrow, content: str):

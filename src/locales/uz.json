@@ -836,5 +836,56 @@
         "details_label": "Tafsilotlar (ishlab chiquvchilar uchun)",
         "retry": "Sahifani yangilash",
         "home": "Bosh sahifaga"
+    },
+    "admin_telegram": {
+        "title": "Telegram Bot",
+        "tabs": {
+            "overview": "Umumiy ko'rinish",
+            "users": "Bot foydalanuvchilari",
+            "deposits": "To'ldirish",
+            "analytics": "Tahlil"
+        },
+        "stats": {
+            "total_users": "Jami foydalanuvchilar",
+            "active_today": "Bugun faol",
+            "registered": "Ro'yxatdan o'tdilar",
+            "blocked": "Botni blokladilar"
+        }
+    },
+    "admin_trades": {
+        "title": "Savdo bitishuvi",
+        "tabs": {
+            "trades": "Barcha bitishuvlar",
+            "verifications": "Tasdiqlar"
+        },
+        "stats": {
+            "active": "Faol",
+            "pending_delivery": "Topshirishni kutmoqda",
+            "disputed": "Nizolar",
+            "completed_today": "Bugun yakunlandi"
+        },
+        "actions": {
+            "complete": "Bitishuvni yakunlash",
+            "refund": "Pulni qaytarish",
+            "resolve_dispute": "Nizoni hal qilish",
+            "approve": "Tasdiqlash",
+            "reject": "Rad etish"
+        }
+    },
+    "trade": {
+        "title": "Bitishuv",
+        "status": {
+            "paid": "To'landi",
+            "delivered": "Topshirildi",
+            "confirmed": "Yakunlandi",
+            "disputed": "Nizo",
+            "refunded": "Qaytarildi"
+        },
+        "actions": {
+            "deliver": "Akkauntni topshirdim",
+            "confirm": "Akkaunt olindi, hammasi yaxshi",
+            "dispute": "Muammo bor",
+            "open_chat": "Chatni ochish"
+        }
     }
 }

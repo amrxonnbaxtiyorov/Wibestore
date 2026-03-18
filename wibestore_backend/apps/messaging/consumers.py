@@ -54,6 +54,9 @@ class ChatConsumer(AsyncJsonWebSocketConsumer):
                 },
             )
 
+            # Send Telegram notification to recipients (BLOCK 3)
+            await self.notify_recipient_telegram(message_data)
+
             # If admin just wrote — check if we should auto-send credentials
             creds_msg = await self.maybe_send_credentials_ws()
             if creds_msg:
@@ -185,6 +188,26 @@ class ChatConsumer(AsyncJsonWebSocketConsumer):
             "created_at": msg.created_at.isoformat(),
             "is_read": False,
         }
+
+    async def notify_recipient_telegram(self, message_data: dict) -> None:
+        """Send Telegram notification to offline recipients (BLOCK 3)."""
+        try:
+            from django.conf import settings as _settings
+            message_id = message_data.get("id")
+            if not message_id:
+                return
+            delay = getattr(_settings, "CHAT_NOTIFICATION_DELAY_SECONDS", 10)
+            try:
+                from apps.payments.telegram_notify import notify_new_chat_message
+                notify_new_chat_message.apply_async(args=[message_id], countdown=delay)
+            except Exception:
+                # Celery unavailable — send synchronously
+                from apps.payments.telegram_notify import notify_new_chat_message_sync
+                import asyncio
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(None, notify_new_chat_message_sync, message_id)
+        except Exception as e:
+            logger.warning("Could not schedule chat Telegram notification: %s", e)
 
     @database_sync_to_async
     def mark_message_read(self, message_id: str) -> None:

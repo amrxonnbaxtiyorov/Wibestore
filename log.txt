@@ -1,77 +1,128 @@
-2026-03-05T09:10:05.496980904Z [inf]  
-2026-03-05T09:10:08.010493346Z [inf]  [35m[Region: ][0m
-2026-03-05T09:10:08.013073589Z [inf]  [35m=========================
-2026-03-05T09:10:08.013099911Z [inf]  Using Detected Dockerfile
-2026-03-05T09:10:08.013105136Z [inf]  =========================
-2026-03-05T09:10:08.013109624Z [inf]  [0m
-2026-03-05T09:10:08.013122402Z [inf]  context: m7zz-W51N
-2026-03-05T09:10:08.092905760Z [inf]  [internal] booting buildkit
-2026-03-05T09:10:09.355210399Z [inf]  [internal] booting buildkit
-2026-03-05T09:10:09.408742697Z [inf]  [internal] load build definition from Dockerfile
-2026-03-05T09:10:09.408797062Z [inf]  [internal] load build definition from Dockerfile
-2026-03-05T09:10:09.408818788Z [inf]  [internal] load build definition from Dockerfile
-2026-03-05T09:10:09.420302278Z [inf]  [internal] load build definition from Dockerfile
-2026-03-05T09:10:09.422076381Z [inf]  [internal] load metadata for docker.io/library/nginx:alpine
-2026-03-05T09:10:09.422115679Z [inf]  [internal] load metadata for docker.io/library/node:20-alpine
-2026-03-05T09:10:09.436764469Z [inf]  [auth] library/node:pull token for registry-1.docker.io
-2026-03-05T09:10:09.436806640Z [inf]  [auth] library/node:pull token for registry-1.docker.io
-2026-03-05T09:10:09.486878905Z [inf]  [auth] library/nginx:pull token for registry-1.docker.io
-2026-03-05T09:10:09.486924275Z [inf]  [auth] library/nginx:pull token for registry-1.docker.io
-2026-03-05T09:10:09.752814792Z [inf]  [internal] load metadata for docker.io/library/nginx:alpine
-2026-03-05T09:10:09.773213603Z [inf]  [internal] load metadata for docker.io/library/node:20-alpine
-2026-03-05T09:10:09.773432470Z [inf]  [internal] load .dockerignore
-2026-03-05T09:10:09.773466324Z [inf]  [internal] load .dockerignore
-2026-03-05T09:10:09.773795895Z [inf]  [internal] load .dockerignore
-2026-03-05T09:10:09.784612357Z [inf]  [internal] load .dockerignore
-2026-03-05T09:10:09.792807782Z [inf]  [stage-1 5/8] COPY nginx.proxy.template /etc/nginx/conf.d/default.proxy.template
-2026-03-05T09:10:09.792864097Z [inf]  [stage-1 4/8] COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
-2026-03-05T09:10:09.792902724Z [inf]  [stage-1 3/8] COPY --from=builder /app/dist /usr/share/nginx/html
-2026-03-05T09:10:09.792920450Z [inf]  [builder 6/6] RUN npm run build
-2026-03-05T09:10:09.792941876Z [inf]  [builder 5/6] COPY . .
-2026-03-05T09:10:09.792955935Z [inf]  [stage-1 1/8] FROM docker.io/library/nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba
-2026-03-05T09:10:09.792968992Z [inf]  [builder 3/6] COPY package.json package-lock.json* ./
-2026-03-05T09:10:09.792989364Z [inf]  [internal] load build context
-2026-03-05T09:10:09.793021284Z [inf]  [builder 2/6] WORKDIR /app
-2026-03-05T09:10:09.793035074Z [inf]  [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8
-2026-03-05T09:10:09.793045664Z [inf]  [stage-1 2/8] RUN apk add --no-cache gettext
-2026-03-05T09:10:09.793053841Z [inf]  [stage-1 6/8] RUN rm -f /etc/nginx/conf.d/default.conf
-2026-03-05T09:10:09.793060805Z [inf]  [builder 4/6] RUN npm ci
-2026-03-05T09:10:09.793103098Z [inf]  [stage-1 8/8] RUN chmod +x /entrypoint.sh
-2026-03-05T09:10:09.793114380Z [inf]  [stage-1 7/8] COPY entrypoint.sh /entrypoint.sh
-2026-03-05T09:10:09.793128492Z [inf]  [internal] load build context
-2026-03-05T09:10:09.793144956Z [inf]  [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8
-2026-03-05T09:10:09.793156182Z [inf]  [stage-1 1/8] FROM docker.io/library/nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba
-2026-03-05T09:10:09.806641378Z [inf]  [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8
-2026-03-05T09:10:09.806805372Z [inf]  [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8
-2026-03-05T09:10:09.806842389Z [inf]  [internal] load build context
-2026-03-05T09:10:09.808636207Z [inf]  [stage-1 1/8] FROM docker.io/library/nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba
-2026-03-05T09:10:09.808717251Z [inf]  [stage-1 1/8] FROM docker.io/library/nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba
-2026-03-05T09:10:09.808746408Z [inf]  [stage-1 1/8] FROM docker.io/library/nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba
-2026-03-05T09:10:09.808960497Z [inf]  [stage-1 1/8] FROM docker.io/library/nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba
-2026-03-05T09:10:09.877395309Z [inf]  [internal] load build context
-2026-03-05T09:10:09.880292740Z [inf]  [stage-1 1/8] FROM docker.io/library/nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba
-2026-03-05T09:10:09.880379293Z [inf]  [stage-1 2/8] RUN apk add --no-cache gettext
-2026-03-05T09:10:09.880403395Z [inf]  [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8
-2026-03-05T09:10:09.880417914Z [inf]  [builder 2/6] WORKDIR /app
-2026-03-05T09:10:09.880430396Z [inf]  [builder 3/6] COPY package.json package-lock.json* ./
-2026-03-05T09:10:09.880441322Z [inf]  [builder 4/6] RUN npm ci
-2026-03-05T09:10:09.880452990Z [inf]  [builder 5/6] COPY . .
-2026-03-05T09:10:09.880502853Z [inf]  [builder 6/6] RUN npm run build
-2026-03-05T09:10:09.880519095Z [inf]  [stage-1 3/8] COPY --from=builder /app/dist /usr/share/nginx/html
-2026-03-05T09:10:09.880530063Z [inf]  [stage-1 4/8] COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
-2026-03-05T09:10:09.880572752Z [err]  [stage-1 5/8] COPY nginx.proxy.template /etc/nginx/conf.d/default.proxy.template
-2026-03-05T09:10:09.880637192Z [err]  [builder 3/6] COPY package.json package-lock.json* ./
-2026-03-05T09:10:09.880682735Z [inf]  [stage-1 6/8] RUN rm -f /etc/nginx/conf.d/default.conf
-2026-03-05T09:10:09.880705262Z [err]  [stage-1 7/8] COPY entrypoint.sh /entrypoint.sh
-2026-03-05T09:10:09.880727917Z [inf]  [builder 1/6] FROM docker.io/library/node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8
-2026-03-05T09:10:09.880768510Z [err]  [stage-1 4/8] COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
-2026-03-05T09:10:09.912037603Z [inf]  [stage-1 1/8] FROM docker.io/library/nginx:alpine@sha256:1d13701a5f9f3fb01aaa88cef2344d65b6b5bf6b7d9fa4cf0dca557a8d7702ba
-2026-03-05T09:10:09.944671461Z [err]  Dockerfile:35
-2026-03-05T09:10:09.944725171Z [err]  -------------------
-2026-03-05T09:10:09.944735993Z [err]  33 |     RUN rm -f /etc/nginx/conf.d/default.conf
-2026-03-05T09:10:09.944743334Z [err]  34 |
-2026-03-05T09:10:09.944753869Z [err]  35 | >>> COPY entrypoint.sh /entrypoint.sh
-2026-03-05T09:10:09.944761660Z [err]  36 |     RUN chmod +x /entrypoint.sh
-2026-03-05T09:10:09.944768510Z [err]  37 |
-2026-03-05T09:10:09.944775039Z [err]  -------------------
-2026-03-05T09:10:09.944783499Z [err]  ERROR: failed to build: failed to solve: failed to compute cache key: failed to calculate checksum of ref lgyukw28gznlvjydre33au55g::ao8t9zqv2rzgyjkywwjqgo4o6: "/entrypoint.sh": not found
+2026-03-15T07:07:37.562984103Z [inf]  Starting Container
+2026-03-15T07:07:38.045535009Z [err]  2026-03-15 07:07:37,728 - __main__ - INFO - Bot ishga tushdi...
+2026-03-15T07:07:38.189541336Z [err]  2026-03-15 07:07:38,186 - apscheduler.scheduler - INFO - Scheduler started
+2026-03-15T07:07:38.189546285Z [err]  2026-03-15 07:07:38,186 - telegram.ext.Application - INFO - Application started
+2026-03-15T07:07:42.544536740Z [err]  2026-03-15 07:07:42,542 - __main__ - WARNING - Conflict: Bot boshqa joyda ham ishlayapti. Faqat bitta instance (Railway yoki kompyuter).
+2026-03-15T07:08:32.561797370Z [err]  2026-03-15 07:08:29,201 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:30 UTC)" executed successfully
+2026-03-15T07:08:32.561834449Z [err]  2026-03-15 07:08:26,203 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:27 UTC)" executed successfully
+2026-03-15T07:08:32.561847369Z [err]  2026-03-15 07:08:27,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:28 UTC)" (scheduled at 2026-03-15 07:08:27.085414+00:00)
+2026-03-15T07:08:32.561853139Z [err]  2026-03-15 07:08:27,204 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:28 UTC)" executed successfully
+2026-03-15T07:08:32.561859669Z [err]  2026-03-15 07:08:28,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:29 UTC)" (scheduled at 2026-03-15 07:08:28.085414+00:00)
+2026-03-15T07:08:32.561861899Z [err]  2026-03-15 07:08:25,086 - apscheduler.scheduler - INFO - Added job "countdown_6295164527" to job store "default"
+2026-03-15T07:08:32.561867258Z [err]  2026-03-15 07:08:28,198 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:29 UTC)" executed successfully
+2026-03-15T07:08:32.561870588Z [err]  2026-03-15 07:08:26,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:27 UTC)" (scheduled at 2026-03-15 07:08:26.085414+00:00)
+2026-03-15T07:08:32.561873988Z [err]  2026-03-15 07:08:29,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:30 UTC)" (scheduled at 2026-03-15 07:08:29.085414+00:00)
+2026-03-15T07:08:32.563479420Z [err]  2026-03-15 07:08:30,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:31 UTC)" (scheduled at 2026-03-15 07:08:30.085414+00:00)
+2026-03-15T07:08:32.563482950Z [err]  2026-03-15 07:08:30,211 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:31 UTC)" executed successfully
+2026-03-15T07:08:32.563485880Z [err]  2026-03-15 07:08:31,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:32 UTC)" (scheduled at 2026-03-15 07:08:31.085414+00:00)
+2026-03-15T07:08:32.563489090Z [err]  2026-03-15 07:08:31,324 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:32 UTC)" executed successfully
+2026-03-15T07:08:32.563492969Z [err]  2026-03-15 07:08:32,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:33 UTC)" (scheduled at 2026-03-15 07:08:32.085414+00:00)
+2026-03-15T07:08:32.563495599Z [err]  2026-03-15 07:08:32,202 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:33 UTC)" executed successfully
+2026-03-15T07:08:33.093828033Z [err]  2026-03-15 07:08:33,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:34 UTC)" (scheduled at 2026-03-15 07:08:33.085414+00:00)
+2026-03-15T07:08:33.210907430Z [err]  2026-03-15 07:08:33,202 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:34 UTC)" executed successfully
+2026-03-15T07:08:34.088695743Z [err]  2026-03-15 07:08:34,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:35 UTC)" (scheduled at 2026-03-15 07:08:34.085414+00:00)
+2026-03-15T07:08:34.200387134Z [err]  2026-03-15 07:08:34,199 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:35 UTC)" executed successfully
+2026-03-15T07:08:35.089761733Z [err]  2026-03-15 07:08:35,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:36 UTC)" (scheduled at 2026-03-15 07:08:35.085414+00:00)
+2026-03-15T07:08:35.205618413Z [err]  2026-03-15 07:08:35,203 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:36 UTC)" executed successfully
+2026-03-15T07:08:36.093519737Z [err]  2026-03-15 07:08:36,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:37 UTC)" (scheduled at 2026-03-15 07:08:36.085414+00:00)
+2026-03-15T07:08:36.208475371Z [err]  2026-03-15 07:08:36,206 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:37 UTC)" executed successfully
+2026-03-15T07:08:37.094260364Z [err]  2026-03-15 07:08:37,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:38 UTC)" (scheduled at 2026-03-15 07:08:37.085414+00:00)
+2026-03-15T07:08:37.209557532Z [err]  2026-03-15 07:08:37,197 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:38 UTC)" executed successfully
+2026-03-15T07:08:38.096176949Z [err]  2026-03-15 07:08:38,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:39 UTC)" (scheduled at 2026-03-15 07:08:38.085414+00:00)
+2026-03-15T07:08:38.203240083Z [err]  2026-03-15 07:08:38,197 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:39 UTC)" executed successfully
+2026-03-15T07:08:39.089929369Z [err]  2026-03-15 07:08:39,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:40 UTC)" (scheduled at 2026-03-15 07:08:39.085414+00:00)
+2026-03-15T07:08:39.210812279Z [err]  2026-03-15 07:08:39,208 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:40 UTC)" executed successfully
+2026-03-15T07:08:40.098656425Z [err]  2026-03-15 07:08:40,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:41 UTC)" (scheduled at 2026-03-15 07:08:40.085414+00:00)
+2026-03-15T07:08:40.200322812Z [err]  2026-03-15 07:08:40,195 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:41 UTC)" executed successfully
+2026-03-15T07:08:41.090755003Z [err]  2026-03-15 07:08:41,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:42 UTC)" (scheduled at 2026-03-15 07:08:41.085414+00:00)
+2026-03-15T07:08:41.244711093Z [err]  2026-03-15 07:08:41,240 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:42 UTC)" executed successfully
+2026-03-15T07:08:42.089507094Z [err]  2026-03-15 07:08:42,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:43 UTC)" (scheduled at 2026-03-15 07:08:42.085414+00:00)
+2026-03-15T07:08:42.205216335Z [err]  2026-03-15 07:08:42,199 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:43 UTC)" executed successfully
+2026-03-15T07:08:43.087784744Z [err]  2026-03-15 07:08:43,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:44 UTC)" (scheduled at 2026-03-15 07:08:43.085414+00:00)
+2026-03-15T07:08:43.204224872Z [err]  2026-03-15 07:08:43,202 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:44 UTC)" executed successfully
+2026-03-15T07:08:44.090510815Z [err]  2026-03-15 07:08:44,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:45 UTC)" (scheduled at 2026-03-15 07:08:44.085414+00:00)
+2026-03-15T07:08:44.238239685Z [err]  2026-03-15 07:08:44,236 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:45 UTC)" executed successfully
+2026-03-15T07:08:45.096854042Z [err]  2026-03-15 07:08:45,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:46 UTC)" (scheduled at 2026-03-15 07:08:45.085414+00:00)
+2026-03-15T07:08:45.525744614Z [err]  2026-03-15 07:08:45,254 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:46 UTC)" executed successfully
+2026-03-15T07:08:46.093801286Z [err]  2026-03-15 07:08:46,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:47 UTC)" (scheduled at 2026-03-15 07:08:46.085414+00:00)
+2026-03-15T07:08:46.227008090Z [err]  2026-03-15 07:08:46,222 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:47 UTC)" executed successfully
+2026-03-15T07:08:47.091447535Z [err]  2026-03-15 07:08:47,090 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:48 UTC)" (scheduled at 2026-03-15 07:08:47.085414+00:00)
+2026-03-15T07:08:47.222967830Z [err]  2026-03-15 07:08:47,222 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:48 UTC)" executed successfully
+2026-03-15T07:08:48.087923707Z [err]  2026-03-15 07:08:48,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:49 UTC)" (scheduled at 2026-03-15 07:08:48.085414+00:00)
+2026-03-15T07:08:48.231817564Z [err]  2026-03-15 07:08:48,199 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:49 UTC)" executed successfully
+2026-03-15T07:08:49.103422513Z [err]  2026-03-15 07:08:49,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:50 UTC)" (scheduled at 2026-03-15 07:08:49.085414+00:00)
+2026-03-15T07:08:49.210499056Z [err]  2026-03-15 07:08:49,204 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:50 UTC)" executed successfully
+2026-03-15T07:08:50.092787089Z [err]  2026-03-15 07:08:50,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:51 UTC)" (scheduled at 2026-03-15 07:08:50.085414+00:00)
+2026-03-15T07:08:50.204585049Z [err]  2026-03-15 07:08:50,198 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:51 UTC)" executed successfully
+2026-03-15T07:08:51.088562342Z [err]  2026-03-15 07:08:51,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:52 UTC)" (scheduled at 2026-03-15 07:08:51.085414+00:00)
+2026-03-15T07:08:51.218010303Z [err]  2026-03-15 07:08:51,217 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:52 UTC)" executed successfully
+2026-03-15T07:08:52.091561389Z [err]  2026-03-15 07:08:52,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:53 UTC)" (scheduled at 2026-03-15 07:08:52.085414+00:00)
+2026-03-15T07:08:52.216455349Z [err]  2026-03-15 07:08:52,200 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:53 UTC)" executed successfully
+2026-03-15T07:08:53.090467346Z [err]  2026-03-15 07:08:53,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:54 UTC)" (scheduled at 2026-03-15 07:08:53.085414+00:00)
+2026-03-15T07:08:53.201397072Z [err]  2026-03-15 07:08:53,198 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:54 UTC)" executed successfully
+2026-03-15T07:08:54.096534609Z [err]  2026-03-15 07:08:54,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:55 UTC)" (scheduled at 2026-03-15 07:08:54.085414+00:00)
+2026-03-15T07:08:54.200957729Z [err]  2026-03-15 07:08:54,199 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:55 UTC)" executed successfully
+2026-03-15T07:08:55.090471314Z [err]  2026-03-15 07:08:55,088 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:56 UTC)" (scheduled at 2026-03-15 07:08:55.085414+00:00)
+2026-03-15T07:08:55.203850826Z [err]  2026-03-15 07:08:55,198 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:56 UTC)" executed successfully
+2026-03-15T07:08:56.098668490Z [err]  2026-03-15 07:08:56,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:57 UTC)" (scheduled at 2026-03-15 07:08:56.085414+00:00)
+2026-03-15T07:08:56.282860180Z [err]  2026-03-15 07:08:56,281 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:57 UTC)" executed successfully
+2026-03-15T07:08:57.090181517Z [err]  2026-03-15 07:08:57,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:58 UTC)" (scheduled at 2026-03-15 07:08:57.085414+00:00)
+2026-03-15T07:08:57.200961304Z [err]  2026-03-15 07:08:57,197 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:58 UTC)" executed successfully
+2026-03-15T07:08:58.089190963Z [err]  2026-03-15 07:08:58,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:59 UTC)" (scheduled at 2026-03-15 07:08:58.085414+00:00)
+2026-03-15T07:08:58.207691895Z [err]  2026-03-15 07:08:58,204 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:08:59 UTC)" executed successfully
+2026-03-15T07:08:59.090122086Z [err]  2026-03-15 07:08:59,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:00 UTC)" (scheduled at 2026-03-15 07:08:59.085414+00:00)
+2026-03-15T07:08:59.775771645Z [err]  2026-03-15 07:08:59,336 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:00 UTC)" executed successfully
+2026-03-15T07:09:00.089188680Z [err]  2026-03-15 07:09:00,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:01 UTC)" (scheduled at 2026-03-15 07:09:00.085414+00:00)
+2026-03-15T07:09:00.215282160Z [err]  2026-03-15 07:09:00,204 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:01 UTC)" executed successfully
+2026-03-15T07:09:01.087449069Z [err]  2026-03-15 07:09:01,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:02 UTC)" (scheduled at 2026-03-15 07:09:01.085414+00:00)
+2026-03-15T07:09:01.204276471Z [err]  2026-03-15 07:09:01,195 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:02 UTC)" executed successfully
+2026-03-15T07:09:02.089893425Z [err]  2026-03-15 07:09:02,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:03 UTC)" (scheduled at 2026-03-15 07:09:02.085414+00:00)
+2026-03-15T07:09:02.218984372Z [err]  2026-03-15 07:09:02,203 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:03 UTC)" executed successfully
+2026-03-15T07:09:03.097432442Z [err]  2026-03-15 07:09:03,085 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:04 UTC)" (scheduled at 2026-03-15 07:09:03.085414+00:00)
+2026-03-15T07:09:03.207232397Z [err]  2026-03-15 07:09:03,202 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:04 UTC)" executed successfully
+2026-03-15T07:09:04.087579503Z [err]  2026-03-15 07:09:04,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:05 UTC)" (scheduled at 2026-03-15 07:09:04.085414+00:00)
+2026-03-15T07:09:04.204776348Z [err]  2026-03-15 07:09:04,200 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:05 UTC)" executed successfully
+2026-03-15T07:09:05.088989176Z [err]  2026-03-15 07:09:05,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:06 UTC)" (scheduled at 2026-03-15 07:09:05.085414+00:00)
+2026-03-15T07:09:05.199370241Z [err]  2026-03-15 07:09:05,197 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:06 UTC)" executed successfully
+2026-03-15T07:09:06.090696335Z [err]  2026-03-15 07:09:06,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:07 UTC)" (scheduled at 2026-03-15 07:09:06.085414+00:00)
+2026-03-15T07:09:06.205349545Z [err]  2026-03-15 07:09:06,204 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:07 UTC)" executed successfully
+2026-03-15T07:09:07.089905307Z [err]  2026-03-15 07:09:07,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:08 UTC)" (scheduled at 2026-03-15 07:09:07.085414+00:00)
+2026-03-15T07:09:07.301133424Z [err]  2026-03-15 07:09:07,289 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:08 UTC)" executed successfully
+2026-03-15T07:09:08.090212190Z [err]  2026-03-15 07:09:08,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:09 UTC)" (scheduled at 2026-03-15 07:09:08.085414+00:00)
+2026-03-15T07:09:08.203344576Z [err]  2026-03-15 07:09:08,197 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:09 UTC)" executed successfully
+2026-03-15T07:09:09.089223896Z [err]  2026-03-15 07:09:09,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:10 UTC)" (scheduled at 2026-03-15 07:09:09.085414+00:00)
+2026-03-15T07:09:09.221081585Z [err]  2026-03-15 07:09:09,214 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:10 UTC)" executed successfully
+2026-03-15T07:09:10.096096674Z [err]  2026-03-15 07:09:10,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:11 UTC)" (scheduled at 2026-03-15 07:09:10.085414+00:00)
+2026-03-15T07:09:10.201242300Z [err]  2026-03-15 07:09:10,195 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:11 UTC)" executed successfully
+2026-03-15T07:09:11.105848071Z [err]  2026-03-15 07:09:11,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:12 UTC)" (scheduled at 2026-03-15 07:09:11.085414+00:00)
+2026-03-15T07:09:11.205249988Z [err]  2026-03-15 07:09:11,197 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:12 UTC)" executed successfully
+2026-03-15T07:09:12.097132332Z [err]  2026-03-15 07:09:12,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:13 UTC)" (scheduled at 2026-03-15 07:09:12.085414+00:00)
+2026-03-15T07:09:12.222769359Z [err]  2026-03-15 07:09:12,218 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:13 UTC)" executed successfully
+2026-03-15T07:09:13.093064461Z [err]  2026-03-15 07:09:13,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:14 UTC)" (scheduled at 2026-03-15 07:09:13.085414+00:00)
+2026-03-15T07:09:13.206959884Z [err]  2026-03-15 07:09:13,205 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:14 UTC)" executed successfully
+2026-03-15T07:09:14.096663687Z [err]  2026-03-15 07:09:14,085 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:15 UTC)" (scheduled at 2026-03-15 07:09:14.085414+00:00)
+2026-03-15T07:09:14.206127227Z [err]  2026-03-15 07:09:14,204 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:15 UTC)" executed successfully
+2026-03-15T07:09:15.088518857Z [err]  2026-03-15 07:09:15,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:16 UTC)" (scheduled at 2026-03-15 07:09:15.085414+00:00)
+2026-03-15T07:09:15.256030880Z [err]  2026-03-15 07:09:15,237 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:16 UTC)" executed successfully
+2026-03-15T07:09:16.094115937Z [err]  2026-03-15 07:09:16,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:17 UTC)" (scheduled at 2026-03-15 07:09:16.085414+00:00)
+2026-03-15T07:09:16.202727662Z [err]  2026-03-15 07:09:16,197 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:17 UTC)" executed successfully
+2026-03-15T07:09:17.089430287Z [err]  2026-03-15 07:09:17,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:18 UTC)" (scheduled at 2026-03-15 07:09:17.085414+00:00)
+2026-03-15T07:09:17.200379352Z [err]  2026-03-15 07:09:17,196 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:18 UTC)" executed successfully
+2026-03-15T07:09:18.091655076Z [err]  2026-03-15 07:09:18,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:19 UTC)" (scheduled at 2026-03-15 07:09:18.085414+00:00)
+2026-03-15T07:09:18.218992934Z [err]  2026-03-15 07:09:18,199 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:19 UTC)" executed successfully
+2026-03-15T07:09:19.091435768Z [err]  2026-03-15 07:09:19,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:20 UTC)" (scheduled at 2026-03-15 07:09:19.085414+00:00)
+2026-03-15T07:09:19.207037062Z [err]  2026-03-15 07:09:19,202 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:20 UTC)" executed successfully
+2026-03-15T07:09:20.094697028Z [err]  2026-03-15 07:09:20,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:21 UTC)" (scheduled at 2026-03-15 07:09:20.085414+00:00)
+2026-03-15T07:09:20.205006975Z [err]  2026-03-15 07:09:20,200 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:21 UTC)" executed successfully
+2026-03-15T07:09:21.089734594Z [err]  2026-03-15 07:09:21,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:22 UTC)" (scheduled at 2026-03-15 07:09:21.085414+00:00)
+2026-03-15T07:09:21.198317640Z [err]  2026-03-15 07:09:21,196 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:22 UTC)" executed successfully
+2026-03-15T07:09:22.092917085Z [err]  2026-03-15 07:09:22,087 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:23 UTC)" (scheduled at 2026-03-15 07:09:22.085414+00:00)
+2026-03-15T07:09:22.216461869Z [err]  2026-03-15 07:09:22,212 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:23 UTC)" executed successfully
+2026-03-15T07:09:23.096560429Z [err]  2026-03-15 07:09:23,086 - apscheduler.executors.default - INFO - Running job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:24 UTC)" (scheduled at 2026-03-15 07:09:23.085414+00:00)
+2026-03-15T07:09:23.204862770Z [err]  2026-03-15 07:09:23,199 - apscheduler.scheduler - INFO - Removed job c60c6b417ebb4f59958e5f264a550253
+2026-03-15T07:09:23.204866380Z [err]  2026-03-15 07:09:23,199 - apscheduler.executors.default - INFO - Job "countdown_6295164527 (trigger: interval[0:00:01], next run at: 2026-03-15 07:09:24 UTC)" executed successfully
+2026-03-15T07:16:45.194933239Z [inf]  Stopping Container
+2026-03-15T07:16:45.865470103Z [err]  2026-03-15 07:16:44,497 - telegram.ext.Application - INFO - Application is stopping. This might take a moment.
+2026-03-15T07:16:45.865477073Z [err]  2026-03-15 07:16:44,497 - apscheduler.scheduler - INFO - Scheduler has been shut down
+2026-03-15T07:16:45.865481833Z [err]  2026-03-15 07:16:44,508 - telegram.ext.Application - INFO - Application.stop() complete
+2026-03-15T07:16:45.865529202Z [err]  2026-03-15 07:16:39,309 - __main__ - WARNING - Conflict: Bot boshqa joyda ham ishlayapti. Faqat bitta instance (Railway yoki kompyuter).

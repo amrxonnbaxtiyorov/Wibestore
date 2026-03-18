@@ -264,6 +264,172 @@ export const useAdminGrantSubscription = () => {
     });
 };
 
+// ========== BLOCK 1: Telegram Bot Analytics ==========
+
+export function useAdminTelegramStats() {
+  return useQuery({
+    queryKey: ['admin-telegram-stats'],
+    queryFn: () => apiClient.get('/api/v1/admin-panel/telegram/stats/').then(r => r.data),
+    refetchInterval: 60000,
+  })
+}
+
+export function useAdminTelegramUsers(filters = {}) {
+  return useQuery({
+    queryKey: ['admin-telegram-users', filters],
+    queryFn: () => apiClient.get('/api/v1/admin-panel/telegram/users/', { params: filters }).then(r => r.data),
+  })
+}
+
+export function useAdminTelegramUser(telegramId) {
+  return useQuery({
+    queryKey: ['admin-telegram-user', telegramId],
+    queryFn: () => apiClient.get(`/api/v1/admin-panel/telegram/users/${telegramId}/`).then(r => r.data),
+    enabled: !!telegramId,
+  })
+}
+
+export function useAdminUpdateTelegramUser() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ telegramId, data }) => apiClient.patch(`/api/v1/admin-panel/telegram/users/${telegramId}/`, data).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-telegram-users'])
+      queryClient.invalidateQueries(['admin-telegram-user'])
+    },
+  })
+}
+
+export function useAdminRegistrationsByDate(dateFrom, dateTo) {
+  return useQuery({
+    queryKey: ['admin-registrations-by-date', dateFrom, dateTo],
+    queryFn: () => apiClient.get('/api/v1/admin-panel/telegram/registrations/by-date/', {
+      params: { date_from: dateFrom, date_to: dateTo }
+    }).then(r => r.data),
+  })
+}
+
+export function useAdminDeposits(filters = {}) {
+  return useQuery({
+    queryKey: ['admin-deposits', filters],
+    queryFn: () => apiClient.get('/api/v1/admin-panel/deposits/', { params: filters }).then(r => r.data),
+  })
+}
+
+export function useAdminDeposit(id) {
+  return useQuery({
+    queryKey: ['admin-deposit', id],
+    queryFn: () => apiClient.get(`/api/v1/admin-panel/deposits/${id}/`).then(r => r.data),
+    enabled: !!id,
+  })
+}
+
+export function useAdminUpdateDeposit() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }) => apiClient.patch(`/api/v1/admin-panel/deposits/${id}/`, data).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-deposits'])
+      queryClient.invalidateQueries(['admin-deposit-stats'])
+    },
+  })
+}
+
+export function useAdminDepositStats() {
+  return useQuery({
+    queryKey: ['admin-deposit-stats'],
+    queryFn: () => apiClient.get('/api/v1/admin-panel/deposits/stats/').then(r => r.data),
+    refetchInterval: 30000,
+  })
+}
+
+// ========== BLOCK 5: Trade Management ==========
+
+export function useAdminTrades(filters = {}) {
+  return useQuery({
+    queryKey: ['admin-trades', filters],
+    queryFn: () => apiClient.get('/api/v1/admin-panel/trades/', { params: filters }).then(r => r.data),
+    refetchInterval: 30000,
+  })
+}
+
+export function useAdminTrade(id) {
+  return useQuery({
+    queryKey: ['admin-trade', id],
+    queryFn: () => apiClient.get(`/api/v1/admin-panel/trades/${id}/`).then(r => r.data),
+    enabled: !!id,
+  })
+}
+
+export function useAdminTradeStats() {
+  return useQuery({
+    queryKey: ['admin-trade-stats'],
+    queryFn: () => apiClient.get('/api/v1/admin-panel/trades/stats/').then(r => r.data),
+    refetchInterval: 30000,
+  })
+}
+
+export function useAdminCompleteTrade() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => apiClient.post(`/api/v1/admin-panel/trades/${id}/complete/`).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-trades'])
+      queryClient.invalidateQueries(['admin-trade-stats'])
+    },
+  })
+}
+
+export function useAdminRefundTrade() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => apiClient.post(`/api/v1/admin-panel/trades/${id}/refund/`).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-trades'])
+      queryClient.invalidateQueries(['admin-trade-stats'])
+    },
+  })
+}
+
+export function useAdminResolveTradeDispute() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, winner, note }) => apiClient.post(`/api/v1/admin-panel/trades/${id}/resolve-dispute/`, { winner, note }).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-trades'])
+    },
+  })
+}
+
+// ========== BLOCK 4: Seller Verifications ==========
+
+export function useAdminSellerVerifications(filters = {}) {
+  return useQuery({
+    queryKey: ['admin-seller-verifications', filters],
+    queryFn: () => apiClient.get('/api/v1/admin-panel/seller-verifications/', { params: filters }).then(r => r.data),
+  })
+}
+
+export function useAdminApproveVerification() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => apiClient.post(`/api/v1/admin-panel/seller-verifications/${id}/approve/`).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-seller-verifications'])
+    },
+  })
+}
+
+export function useAdminRejectVerification() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, reason }) => apiClient.post(`/api/v1/admin-panel/seller-verifications/${id}/reject/`, { reason }).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-seller-verifications'])
+    },
+  })
+}
+
 export default {
     useAdminDashboard,
     useAdminFraudStats,

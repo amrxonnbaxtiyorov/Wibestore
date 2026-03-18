@@ -836,5 +836,56 @@
         "details_label": "Детали (для разработчиков)",
         "retry": "Обновить страницу",
         "home": "На главную"
+    },
+    "admin_telegram": {
+        "title": "Telegram Bot",
+        "tabs": {
+            "overview": "Обзор",
+            "users": "Пользователи бота",
+            "deposits": "Пополнения",
+            "analytics": "Аналитика"
+        },
+        "stats": {
+            "total_users": "Всего пользователей",
+            "active_today": "Активны сегодня",
+            "registered": "Зарегистрировались",
+            "blocked": "Заблокировали бота"
+        }
+    },
+    "admin_trades": {
+        "title": "Торговые сделки",
+        "tabs": {
+            "trades": "Все сделки",
+            "verifications": "Верификации"
+        },
+        "stats": {
+            "active": "Активные",
+            "pending_delivery": "Ожидают передачи",
+            "disputed": "Споры",
+            "completed_today": "Завершено сегодня"
+        },
+        "actions": {
+            "complete": "Завершить сделку",
+            "refund": "Вернуть деньги",
+            "resolve_dispute": "Разрешить спор",
+            "approve": "Одобрить",
+            "reject": "Отклонить"
+        }
+    },
+    "trade": {
+        "title": "Сделка",
+        "status": {
+            "paid": "Оплачено",
+            "delivered": "Передано",
+            "confirmed": "Завершено",
+            "disputed": "Спор",
+            "refunded": "Возврат"
+        },
+        "actions": {
+            "deliver": "Я передал аккаунт",
+            "confirm": "Аккаунт получен, всё ок",
+            "dispute": "Есть проблема",
+            "open_chat": "Открыть чат"
+        }
     }
 }

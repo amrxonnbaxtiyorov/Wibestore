@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, Package, AlertTriangle, Star,
-    DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft, MessageSquare
+    DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft, MessageSquare, Send, ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { useLanguage } from '../../context/LanguageContext';
@@ -35,6 +35,8 @@ const AdminLayout = ({ children }) => {
         { icon: Star, label: t('admin.menu_premium'), to: '/admin/premium' },
         { icon: DollarSign, label: t('admin.menu_finance'), to: '/admin/finance' },
         { icon: MessageSquare, label: 'Savdo chatlari', to: '/admin/trade-chats' },
+        { icon: Send, label: 'Telegram Бот', to: '/admin/telegram' },
+        { icon: ShoppingBag, label: 'Сделки', to: '/admin/trades' },
         { icon: Settings, label: t('admin.menu_settings'), to: '/admin/settings' },
     ];
 

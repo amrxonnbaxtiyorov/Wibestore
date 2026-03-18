@@ -875,6 +875,214 @@ def notify_listing_rejected(listing, reason: str = "") -> None:
     _send_message(seller.telegram_id, text)
 
 
+def notify_seller_deliver_account(escrow) -> None:
+    """
+    Block 2.1 / Block 8.3: Reminder to seller to deliver account.
+    Called from Celery task when escrow has been in 'paid' status for > DELIVERY_REMINDER_HOURS.
+    """
+    try:
+        seller = escrow.seller
+        if not getattr(seller, "telegram_id", None):
+            return
+        listing_title = escrow.listing.title if escrow.listing else "—"
+        trade_link = f"{SITE_URL}/trade/{escrow.id}"
+        text = (
+            f"⏰ <b>Eslatma: Akkaunt topshirilmadi!</b>\n\n"
+            f"📦 Akkaunt: <b>{listing_title}</b>\n"
+            f"💰 Savdo miqdori: {escrow.amount} UZS\n\n"
+            f"Haridoringiz sizning akkauntingizni kutmoqda.\n"
+            f"Iltimos, akkauntni imkon qadar tezroq topshiring.\n\n"
+            f"🔑 Savdo: #{str(escrow.id)[:8]}"
+        )
+        keyboard = {
+            "inline_keyboard": [[
+                {"text": "📦 Akkauntni topshirish", "url": trade_link},
+            ]]
+        }
+        _send_message(seller.telegram_id, text, reply_markup=keyboard)
+    except Exception as e:
+        import logging
+        logging.getLogger("apps.payments.telegram_notify").warning(
+            "notify_seller_deliver_account failed: %s", e
+        )
+
+
+def notify_seller_confirm_transfer(escrow) -> None:
+    """
+    Block 2.1: Ask seller to confirm transfer via Telegram inline buttons.
+    """
+    try:
+        seller = escrow.seller
+        if not getattr(seller, "telegram_id", None):
+            return
+        listing_title = escrow.listing.title if escrow.listing else "—"
+        escrow_id = str(escrow.id)
+        text = (
+            f"📦 <b>Akkauntni topshirdingizmi?</b>\n\n"
+            f"«{listing_title}» akkauntini haridorga topshirdingizmi?\n\n"
+            f"🔑 Savdo: #{escrow_id[:8]}"
+        )
+        keyboard = {
+            "inline_keyboard": [[
+                {"text": "✅ Ha, akkaunt topshirildi", "callback_data": f"seller_confirm_transfer_{escrow_id}"},
+                {"text": "❌ Savdoni bekor qilish", "callback_data": f"seller_cancel_trade_{escrow_id}"},
+            ]]
+        }
+        _send_message(seller.telegram_id, text, reply_markup=keyboard)
+    except Exception as e:
+        import logging
+        logging.getLogger("apps.payments.telegram_notify").warning(
+            "notify_seller_confirm_transfer failed: %s", e
+        )
+
+
+def notify_buyer_confirm_received(escrow) -> None:
+    """
+    Block 2.1: Ask buyer to confirm receiving account via Telegram inline buttons.
+    """
+    try:
+        buyer = escrow.buyer
+        if not getattr(buyer, "telegram_id", None):
+            return
+        listing_title = escrow.listing.title if escrow.listing else "—"
+        escrow_id = str(escrow.id)
+        text = (
+            f"📦 <b>Sotuvchi akkauntni topshirdi!</b>\n\n"
+            f"«{listing_title}» akkauntining ma'lumotlari yuborildi.\n"
+            f"Akkauntni tekshiring va tasdiqlang.\n\n"
+            f"🔑 Savdo: #{escrow_id[:8]}"
+        )
+        keyboard = {
+            "inline_keyboard": [
+                [
+                    {"text": "✅ Akkaunt olindi, hammasi yaxshi", "callback_data": f"buyer_confirm_received_{escrow_id}"},
+                ],
+                [
+                    {"text": "⚠️ Muammo bor / Nizo", "callback_data": f"buyer_open_dispute_{escrow_id}"},
+                    {"text": "❌ Savdoni bekor qilish", "callback_data": f"buyer_cancel_trade_{escrow_id}"},
+                ],
+            ]
+        }
+        _send_message(buyer.telegram_id, text, reply_markup=keyboard)
+    except Exception as e:
+        import logging
+        logging.getLogger("apps.payments.telegram_notify").warning(
+            "notify_buyer_confirm_received failed: %s", e
+        )
+
+
+def notify_admin_new_trade(escrow) -> None:
+    """
+    Block 5.3: Notify all admin users when a new trade is created.
+    """
+    try:
+        buyer = escrow.buyer
+        seller = escrow.seller
+        listing = escrow.listing
+        escrow_id = str(escrow.id)
+        trade_link = f"{SITE_URL}/admin/trades"
+        chat_link = f"{SITE_URL}/admin/trade-chats"
+
+        text = (
+            f"🛍️ <b>Yangi savdo #{escrow_id[:8]}</b>\n\n"
+            f"📦 Akkaunt: <b>{listing.title if listing else '—'}</b>\n"
+            f"🎮 O'yin: {listing.game.name if listing and listing.game else '—'}\n"
+            f"💰 Miqdor: {escrow.amount} UZS\n\n"
+            f"👤 Харidор: {getattr(buyer, 'display_name', '') or buyer.email}\n"
+            f"   📱 {buyer.phone_number or '—'}\n"
+            f"   💬 @{getattr(buyer, 'telegram_username', '') or '—'}\n\n"
+            f"👤 Sotuvchi: {getattr(seller, 'display_name', '') or seller.email}\n"
+            f"   📱 {seller.phone_number or '—'}\n"
+            f"   💬 @{getattr(seller, 'telegram_username', '') or '—'}"
+        )
+        keyboard = {
+            "inline_keyboard": [[
+                {"text": "📋 Panelda ochish", "url": trade_link},
+                {"text": "💬 Savdo chati", "url": chat_link},
+            ]]
+        }
+        for admin_id in _get_admin_telegram_ids():
+            if admin_id in (getattr(buyer, "telegram_id", None), getattr(seller, "telegram_id", None)):
+                continue
+            _send_message(admin_id, text, reply_markup=keyboard)
+    except Exception as e:
+        import logging
+        logging.getLogger("apps.payments.telegram_notify").warning(
+            "notify_admin_new_trade failed: %s", e
+        )
+
+
+def notify_admin_dispute_opened(escrow, reason: str = "") -> None:
+    """
+    Block 5.3: Notify admins when a dispute is opened.
+    """
+    try:
+        buyer = escrow.buyer
+        seller = escrow.seller
+        listing = escrow.listing
+        escrow_id = str(escrow.id)
+        trade_link = f"{SITE_URL}/admin/trades"
+
+        text = (
+            f"⚠️ <b>Savdoda nizo ochildi #{escrow_id[:8]}</b>\n\n"
+            f"Sabab: {reason or '—'}\n\n"
+            f"📦 Akkaunt: {listing.title if listing else '—'}\n"
+            f"💰 Miqdor: {escrow.amount} UZS\n\n"
+            f"🛒 Харidор: {getattr(buyer, 'display_name', '') or buyer.email}\n"
+            f"💼 Sotuvchi: {getattr(seller, 'display_name', '') or seller.email}"
+        )
+        keyboard = {
+            "inline_keyboard": [[
+                {"text": "🔍 Nizoni ko'rish", "url": trade_link},
+                {"text": "✅ Sotuvchi foydasiga", "callback_data": f"admin_complete_trade_{escrow_id}"},
+                {"text": "↩️ Харidorga qaytarish", "callback_data": f"admin_refund_trade_{escrow_id}"},
+            ]]
+        }
+        for admin_id in _get_admin_telegram_ids():
+            _send_message(admin_id, text, reply_markup=keyboard)
+    except Exception as e:
+        import logging
+        logging.getLogger("apps.payments.telegram_notify").warning(
+            "notify_admin_dispute_opened failed: %s", e
+        )
+
+
+def notify_admin_seller_verification_submitted(verification) -> None:
+    """
+    Block 5.3: Notify admins when seller submits verification documents.
+    """
+    try:
+        escrow = verification.escrow
+        seller = verification.seller
+        listing = escrow.listing if escrow else None
+        verification_id = str(verification.id)
+        escrow_id = str(escrow.id)[:8] if escrow else "—"
+        panel_link = f"{SITE_URL}/admin/trades"
+
+        text = (
+            f"🔍 <b>Yangi sotuvchi tasdiqlanishi</b>\n\n"
+            f"Sotuvchi: {getattr(seller, 'display_name', '') or seller.email}\n"
+            f"   (@{getattr(seller, 'telegram_username', '') or '—'})\n\n"
+            f"Savdo: #{escrow_id} — {listing.title if listing else '—'}\n"
+            f"To'lov miqdori: {escrow.seller_earnings if escrow else '—'} UZS\n\n"
+            f"Barcha hujjatlar qabul qilindi. Tekshirish talab qilinadi."
+        )
+        keyboard = {
+            "inline_keyboard": [[
+                {"text": "✅ Tasdiqlash va o'tkazish", "callback_data": f"admin_approve_verification_{verification_id}"},
+                {"text": "❌ Rad etish", "callback_data": f"admin_reject_verification_{verification_id}"},
+                {"text": "📋 Batafsil", "url": panel_link},
+            ]]
+        }
+        for admin_id in _get_admin_telegram_ids():
+            _send_message(admin_id, text, reply_markup=keyboard)
+    except Exception as e:
+        import logging
+        logging.getLogger("apps.payments.telegram_notify").warning(
+            "notify_admin_seller_verification_submitted failed: %s", e
+        )
+
+
 try:
     from celery import shared_task
 

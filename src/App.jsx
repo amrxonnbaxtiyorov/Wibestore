@@ -53,7 +53,10 @@ const AdminPremium = lazyWithRetry(() => import('./pages/admin/AdminPremium'));
 const AdminReports = lazyWithRetry(() => import('./pages/admin/AdminReports'));
 const AdminFinance = lazyWithRetry(() => import('./pages/admin/AdminFinance'));
 const AdminSettings = lazyWithRetry(() => import('./pages/admin/AdminSettings'));
-const AdminTradeChats = lazyWithRetry(() => import('./pages/admin/AdminTradeChats'));
+const AdminTradeChats = lazyWithRetry(() => import('./pages/admin/AdminTradeChats'))
+const AdminTelegramPanel = lazyWithRetry(() => import('./pages/admin/AdminTelegramPanel'))
+const AdminTradePanel = lazyWithRetry(() => import('./pages/admin/AdminTradePanel'))
+const TradePage = lazyWithRetry(() => import('./pages/TradePage'));
 
 // Page loading fallback with skeleton shimmer
 const PageLoader = () => (
@@ -211,6 +214,16 @@ function App() {
                             <AdminGuard><AdminLayout><AdminTradeChats /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
+                        <Route path="/admin/telegram" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <AdminGuard><AdminLayout><AdminTelegramPanel /></AdminLayout></AdminGuard>
+                          </Suspense>
+                        } />
+                        <Route path="/admin/trades" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <AdminGuard><AdminLayout><AdminTradePanel /></AdminLayout></AdminGuard>
+                          </Suspense>
+                        } />
 
                         {/* Public Routes with Layout */}
                         <Route path="/" element={
@@ -313,6 +326,11 @@ function App() {
                         <Route path="/chat/:roomId" element={
                           <Suspense fallback={<PageLoader />}>
                             <PublicLayout><AuthGuard><ChatRoomPage /></AuthGuard></PublicLayout>
+                          </Suspense>
+                        } />
+                        <Route path="/trade/:escrowId" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <PublicLayout><AuthGuard><TradePage /></AuthGuard></PublicLayout>
                           </Suspense>
                         } />
                         
