@@ -187,17 +187,30 @@ class AdminSellerVerificationSerializer(serializers.ModelSerializer):
 
 
 class AdminTradeSerializer(serializers.ModelSerializer):
+    # Listing fields
+    listing_id = serializers.SerializerMethodField()
     listing_title = serializers.SerializerMethodField()
     listing_game = serializers.SerializerMethodField()
+    listing_game_icon = serializers.SerializerMethodField()
     listing_price = serializers.SerializerMethodField()
+    listing_image = serializers.SerializerMethodField()
+    # Buyer fields
+    buyer_id = serializers.SerializerMethodField()
     buyer_email = serializers.SerializerMethodField()
     buyer_username = serializers.SerializerMethodField()
     buyer_phone = serializers.SerializerMethodField()
+    buyer_telegram_id = serializers.SerializerMethodField()
     buyer_telegram = serializers.SerializerMethodField()
+    buyer_avatar = serializers.SerializerMethodField()
+    # Seller fields
+    seller_id = serializers.SerializerMethodField()
     seller_email = serializers.SerializerMethodField()
     seller_username = serializers.SerializerMethodField()
     seller_phone = serializers.SerializerMethodField()
+    seller_telegram_id = serializers.SerializerMethodField()
     seller_telegram = serializers.SerializerMethodField()
+    seller_avatar = serializers.SerializerMethodField()
+    # Meta
     chat_room_id = serializers.SerializerMethodField()
     verification_status = serializers.SerializerMethodField()
 
@@ -205,12 +218,19 @@ class AdminTradeSerializer(serializers.ModelSerializer):
         model = EscrowTransaction
         fields = [
             "id", "status", "amount", "commission_amount", "seller_earnings",
-            "created_at", "updated_at",
-            "listing_title", "listing_game", "listing_price",
-            "buyer_email", "buyer_username", "buyer_phone", "buyer_telegram",
-            "seller_email", "seller_username", "seller_phone", "seller_telegram",
+            "created_at", "updated_at", "buyer_confirmed_at", "seller_paid_at", "admin_released_at",
+            "dispute_reason",
+            "listing_id", "listing_title", "listing_game", "listing_game_icon",
+            "listing_price", "listing_image",
+            "buyer_id", "buyer_email", "buyer_username", "buyer_phone",
+            "buyer_telegram_id", "buyer_telegram", "buyer_avatar",
+            "seller_id", "seller_email", "seller_username", "seller_phone",
+            "seller_telegram_id", "seller_telegram", "seller_avatar",
             "chat_room_id", "verification_status",
         ]
+
+    def get_listing_id(self, obj):
+        return str(obj.listing.id) if obj.listing else None
 
     def get_listing_title(self, obj):
         return obj.listing.title if obj.listing else None
@@ -220,8 +240,32 @@ class AdminTradeSerializer(serializers.ModelSerializer):
             return obj.listing.game.name
         return None
 
+    def get_listing_game_icon(self, obj):
+        if obj.listing and obj.listing.game and obj.listing.game.icon:
+            request = self.context.get("request")
+            try:
+                return request.build_absolute_uri(obj.listing.game.icon.url) if request else obj.listing.game.icon.url
+            except Exception:
+                return None
+        return None
+
     def get_listing_price(self, obj):
         return str(obj.listing.price) if obj.listing else None
+
+    def get_listing_image(self, obj):
+        if not obj.listing:
+            return None
+        try:
+            img = obj.listing.images.first()
+            if img and img.image:
+                request = self.context.get("request")
+                return request.build_absolute_uri(img.image.url) if request else img.image.url
+        except Exception:
+            pass
+        return None
+
+    def get_buyer_id(self, obj):
+        return str(obj.buyer.id) if obj.buyer else None
 
     def get_buyer_email(self, obj):
         return obj.buyer.email if obj.buyer else None
@@ -232,8 +276,37 @@ class AdminTradeSerializer(serializers.ModelSerializer):
     def get_buyer_phone(self, obj):
         return obj.buyer.phone_number if obj.buyer else None
 
+    def get_buyer_telegram_id(self, obj):
+        return obj.buyer.telegram_id if obj.buyer else None
+
     def get_buyer_telegram(self, obj):
-        return getattr(obj.buyer, "telegram_username", None) if obj.buyer else None
+        if not obj.buyer:
+            return None
+        # First try from TelegramBotStat for the stored username
+        try:
+            from apps.accounts.models import TelegramBotStat
+            stat = TelegramBotStat.objects.filter(user=obj.buyer).first()
+            if stat and stat.telegram_username:
+                return stat.telegram_username
+        except Exception:
+            pass
+        return getattr(obj.buyer, "telegram_username", None)
+
+    def get_buyer_avatar(self, obj):
+        if not obj.buyer:
+            return None
+        if obj.buyer.avatar_url:
+            return obj.buyer.avatar_url
+        if obj.buyer.avatar:
+            try:
+                request = self.context.get("request")
+                return request.build_absolute_uri(obj.buyer.avatar.url) if request else obj.buyer.avatar.url
+            except Exception:
+                pass
+        return None
+
+    def get_seller_id(self, obj):
+        return str(obj.seller.id) if obj.seller else None
 
     def get_seller_email(self, obj):
         return obj.seller.email if obj.seller else None
@@ -244,8 +317,33 @@ class AdminTradeSerializer(serializers.ModelSerializer):
     def get_seller_phone(self, obj):
         return obj.seller.phone_number if obj.seller else None
 
+    def get_seller_telegram_id(self, obj):
+        return obj.seller.telegram_id if obj.seller else None
+
     def get_seller_telegram(self, obj):
-        return getattr(obj.seller, "telegram_username", None) if obj.seller else None
+        if not obj.seller:
+            return None
+        try:
+            from apps.accounts.models import TelegramBotStat
+            stat = TelegramBotStat.objects.filter(user=obj.seller).first()
+            if stat and stat.telegram_username:
+                return stat.telegram_username
+        except Exception:
+            pass
+        return getattr(obj.seller, "telegram_username", None)
+
+    def get_seller_avatar(self, obj):
+        if not obj.seller:
+            return None
+        if obj.seller.avatar_url:
+            return obj.seller.avatar_url
+        if obj.seller.avatar:
+            try:
+                request = self.context.get("request")
+                return request.build_absolute_uri(obj.seller.avatar.url) if request else obj.seller.avatar.url
+            except Exception:
+                pass
+        return None
 
     def get_chat_room_id(self, obj):
         try:

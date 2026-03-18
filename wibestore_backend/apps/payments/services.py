@@ -147,8 +147,9 @@ class EscrowService:
             chat_room_id = None
 
         try:
-            from .telegram_notify import notify_purchase_created
+            from .telegram_notify import notify_purchase_created, notify_admin_new_trade
             notify_purchase_created(escrow, chat_room_id=chat_room_id)
+            notify_admin_new_trade(escrow)
         except Exception as tg_err:
             logger.warning("Telegram purchase notification failed: %s", tg_err)
 
@@ -229,6 +230,15 @@ class EscrowService:
         escrow.save(update_fields=["status", "buyer_confirmed_at"])
 
         logger.info("Escrow delivery confirmed: %s", escrow.id)
+
+        # Block 2.2: Notify seller to confirm transfer, notify buyer to confirm receipt
+        try:
+            from .telegram_notify import notify_seller_confirm_transfer, notify_buyer_confirm_received
+            notify_seller_confirm_transfer(escrow)
+            notify_buyer_confirm_received(escrow)
+        except Exception as tg_err:
+            logger.warning("Telegram delivery confirmation notifications failed: %s", tg_err)
+
         return escrow
 
     @staticmethod
@@ -409,6 +419,13 @@ class EscrowService:
         listing.save(update_fields=["status", "sold_at"])
 
         logger.info("Escrow refunded: %s by admin %s", escrow.id, admin_user.email)
+
+        # Block 2.2: Telegram notification — trade cancelled (refunded by admin)
+        try:
+            from .telegram_notify import notify_trade_cancelled
+            notify_trade_cancelled(escrow, cancelled_by="admin")
+        except Exception as tg_err:
+            logger.warning("Telegram trade_cancelled notification failed: %s", tg_err)
 
         # BLOCK 7.2: In-app notification for refund
         try:

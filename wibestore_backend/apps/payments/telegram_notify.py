@@ -875,6 +875,64 @@ def notify_listing_rejected(listing, reason: str = "") -> None:
     _send_message(seller.telegram_id, text)
 
 
+def notify_buyer_purchase_success(escrow) -> None:
+    """
+    Block 2.1: Notify buyer about successful purchase.
+    Delegates to notify_purchase_created which covers buyer + seller + admin notification.
+    """
+    buyer = escrow.buyer
+    if not getattr(buyer, "telegram_id", None):
+        return
+    listing = escrow.listing
+    price_str = _fmt_price(escrow.amount)
+    trade_link = f"{SITE_URL}/trade/{escrow.id}"
+    text = (
+        f"🛒 <b>Xarid muvaffaqiyatli amalga oshirildi!</b>\n\n"
+        f"📦 Akkaunt: <b>{listing.title if listing else '—'}</b>\n"
+        f"🎮 O'yin: {listing.game.name if listing and listing.game else '—'}\n"
+        f"💰 Balansingizdan yechildi: <b>{price_str}</b>\n"
+        f"🔒 Mablag' escrow himoyasida saqlanmoqda\n\n"
+        f"Sotuvchi: @{getattr(escrow.seller, 'username', '') or escrow.seller.display_name}\n"
+        f"Savdo: #{str(escrow.id)[:8]}"
+    )
+    keyboard = {
+        "inline_keyboard": [[
+            {"text": "🔗 Saytda ochish", "url": trade_link},
+        ]]
+    }
+    _send_message(buyer.telegram_id, text, reply_markup=keyboard)
+
+
+def notify_seller_account_sold(escrow) -> None:
+    """
+    Block 2.1: Notify seller that their account has been sold.
+    Delegates to notify_purchase_created which covers buyer + seller + admin notification.
+    """
+    seller = escrow.seller
+    if not getattr(seller, "telegram_id", None):
+        return
+    listing = escrow.listing
+    price_str = _fmt_price(escrow.amount)
+    earnings_str = _fmt_price(escrow.seller_earnings)
+    trade_link = f"{SITE_URL}/trade/{escrow.id}"
+    text = (
+        f"🎉 <b>Akkauntingiz sotildi!</b>\n\n"
+        f"📦 Akkaunt: <b>{listing.title if listing else '—'}</b>\n"
+        f"🎮 O'yin: {listing.game.name if listing and listing.game else '—'}\n"
+        f"💰 Xarid summasi: <b>{price_str}</b>\n"
+        f"💵 Sizga tushadigan summa: <b>{earnings_str}</b>\n\n"
+        f"Haridor: @{getattr(escrow.buyer, 'username', '') or escrow.buyer.display_name}\n"
+        f"Savdo: #{str(escrow.id)[:8]}\n\n"
+        f"⚠️ Pul akkaunt tekshirilgandan keyin o'tkaziladi."
+    )
+    keyboard = {
+        "inline_keyboard": [[
+            {"text": "📦 Akkauntni topshirish", "url": trade_link},
+        ]]
+    }
+    _send_message(seller.telegram_id, text, reply_markup=keyboard)
+
+
 def notify_seller_deliver_account(escrow) -> None:
     """
     Block 2.1 / Block 8.3: Reminder to seller to deliver account.

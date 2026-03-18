@@ -194,7 +194,7 @@ def auto_release_escrow_after_timeout():
     for escrow in stale:
         try:
             from apps.payments.services import EscrowService
-            EscrowService.release_payment(str(escrow.id))
+            EscrowService.release_payment(escrow)
             count += 1
         except Exception as e:
             logger.warning("auto_release_escrow: escrow %s: %s", escrow.id, e)
