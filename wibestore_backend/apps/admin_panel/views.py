@@ -731,7 +731,23 @@ class AdminTradeCompleteView(APIView):
 
         try:
             from apps.payments.services import EscrowService
-            EscrowService.release_payment(str(escrow.id))
+            # Force-approve verification if not yet done, then release payment
+            from apps.payments.models import SellerVerification
+            verif = SellerVerification.objects.filter(escrow=escrow).order_by("-created_at").first()
+            if not verif or verif.status != SellerVerification.STATUS_APPROVED:
+                if not verif:
+                    verif = SellerVerification.objects.create(
+                        escrow=escrow, seller=escrow.seller,
+                        status=SellerVerification.STATUS_APPROVED,
+                        reviewed_by=request.user,
+                    )
+                else:
+                    from django.utils import timezone as _tz
+                    verif.status = SellerVerification.STATUS_APPROVED
+                    verif.reviewed_by = request.user
+                    verif.reviewed_at = _tz.now()
+                    verif.save(update_fields=["status", "reviewed_by", "reviewed_at"])
+            EscrowService.release_payment(escrow)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 
@@ -755,7 +771,12 @@ class AdminTradeRefundView(APIView):
 
         try:
             from apps.payments.services import EscrowService
-            EscrowService.refund_escrow(str(escrow.id))
+            # Mark as disputed first if not already, so refund_escrow accepts it
+            if escrow.status != "disputed":
+                escrow.status = "disputed"
+                escrow.dispute_reason = "Admin forced refund"
+                escrow.save(update_fields=["status", "dispute_reason"])
+            EscrowService.refund_escrow(escrow, request.user, "Admin forced refund")
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 
@@ -784,12 +805,26 @@ class AdminTradeResolveDisputeView(APIView):
             return Response({"error": "Trade is not in disputed status"}, status=400)
 
         try:
+            from apps.payments.services import EscrowService
             if winner == "seller":
-                from apps.payments.services import EscrowService
-                EscrowService.release_payment(str(escrow.id))
+                from apps.payments.models import SellerVerification
+                verif = SellerVerification.objects.filter(escrow=escrow).order_by("-created_at").first()
+                if not verif or verif.status != SellerVerification.STATUS_APPROVED:
+                    if not verif:
+                        verif = SellerVerification.objects.create(
+                            escrow=escrow, seller=escrow.seller,
+                            status=SellerVerification.STATUS_APPROVED,
+                            reviewed_by=request.user,
+                        )
+                    else:
+                        from django.utils import timezone as _tz
+                        verif.status = SellerVerification.STATUS_APPROVED
+                        verif.reviewed_by = request.user
+                        verif.reviewed_at = _tz.now()
+                        verif.save(update_fields=["status", "reviewed_by", "reviewed_at"])
+                EscrowService.release_payment(escrow)
             else:
-                from apps.payments.services import EscrowService
-                EscrowService.refund_escrow(str(escrow.id))
+                EscrowService.refund_escrow(escrow, request.user, note or "Admin resolved dispute in favor of buyer")
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 

@@ -177,6 +177,30 @@ def _save_user(telegram_id: int) -> None:
         logger.warning("Foydalanuvchi ID saqlanmadi: %s", e)
 
 
+# ===== BLOCK 8.1: CALLBACK IDEMPOTENCY (Redis-based, 1h TTL) =====
+
+async def is_callback_already_processed(callback_id: str) -> bool:
+    """
+    Tekshirish: bu callback allaqachon qayta ishlangan.
+    Redis TTL: 1 soat. Agar Redis mavjud bo'lmasa — False qaytaradi (xavfsiz degradatsiya).
+    """
+    if not _REDIS_AVAILABLE or not callback_id:
+        return False
+    try:
+        r = await _aioredis.from_url(PAYMENT_REDIS_URL, decode_responses=True)
+        key = f"cb_processed:{callback_id}"
+        already = await r.get(key)
+        if already:
+            await r.aclose()
+            return True
+        await r.set(key, "1", ex=3600)
+        await r.aclose()
+        return False
+    except Exception as e:
+        logger.warning("is_callback_already_processed Redis error: %s", e)
+        return False
+
+
 # ===== HELPER FUNCTIONS =====
 
 def _normalize_phone(phone: str) -> str:
@@ -1512,7 +1536,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Yordam"""
-    payment_line = "\n💰 <b>To'lov paneli</b> — hisobni to'ldirish (WebApp)\n" if PAYMENT_ENABLED else ""
+    payment_line = "\n💰 <b>To'lov paneli</b> �� hisobni to'ldirish (WebApp)\n" if PAYMENT_ENABLED else ""
     await update.message.reply_html(
         "📚 <b>Yordam — WibeStore Bot</b>\n"
         "━━━━━━━━━━━━━━━━━━━━\n\n"
@@ -3076,6 +3100,10 @@ async def seller_confirm_transfer_callback(update: Update, context: ContextTypes
     query = update.callback_query
     await query.answer()
 
+    # BLOCK 8.1: idempotency check
+    if await is_callback_already_processed(query.id):
+        return
+
     callback_data = query.data
     escrow_id = callback_data.replace("seller_confirm_transfer_", "")
 
@@ -3101,8 +3129,8 @@ async def seller_confirm_transfer_callback(update: Update, context: ContextTypes
             await query.edit_message_text("❌ Siz bu savdoning sotuvchisi emassiz.")
             return
 
-        # Update escrow to delivered
-        EscrowService.deliver_account(str(escrow.id))
+        # Update escrow — seller confirms transfer (triggers verification flow)
+        EscrowService.seller_confirm_transfer(escrow, escrow.seller)
 
         # Notify buyer
         try:
@@ -3125,6 +3153,10 @@ async def seller_cancel_trade_callback(update: Update, context: ContextTypes.DEF
     query = update.callback_query
     await query.answer()
 
+    # BLOCK 8.1: idempotency check
+    if await is_callback_already_processed(query.id):
+        return
+
     callback_data = query.data
     escrow_id = callback_data.replace("seller_cancel_trade_", "")
 
@@ -3142,7 +3174,7 @@ async def seller_cancel_trade_callback(update: Update, context: ContextTypes.DEF
             await query.edit_message_text("❌ Siz bu savdoning sotuvchisi emassiz.")
             return
 
-        EscrowService.refund_escrow(str(escrow.id))
+        EscrowService.cancel_trade_by_party(escrow, "seller")
 
         await query.edit_message_text(
             "Savdo bekor qilindi. Харidor pulini qaytarib oldi.\n"
@@ -3157,6 +3189,10 @@ async def buyer_confirm_received_callback(update: Update, context: ContextTypes.
     """callback_data: buyer_confirm_received_{escrow_id}"""
     query = update.callback_query
     await query.answer()
+
+    # BLOCK 8.1: idempotency check
+    if await is_callback_already_processed(query.id):
+        return
 
     callback_data = query.data
     escrow_id = callback_data.replace("buyer_confirm_received_", "")
@@ -3175,7 +3211,8 @@ async def buyer_confirm_received_callback(update: Update, context: ContextTypes.
             await query.edit_message_text("❌ Siz bu savdoning харidori emassiz.")
             return
 
-        EscrowService.release_payment(str(escrow.id))
+        # Buyer confirms receipt → process confirmation (marks as confirmed if both parties confirm)
+        EscrowService.process_trade_confirmation(escrow, "buyer")
 
         await query.edit_message_text(
             "✅ Savdo muvaffaqiyatli yakunlandi!\n\n"
@@ -3208,6 +3245,10 @@ async def buyer_cancel_trade_callback(update: Update, context: ContextTypes.DEFA
     query = update.callback_query
     await query.answer()
 
+    # BLOCK 8.1: idempotency check
+    if await is_callback_already_processed(query.id):
+        return
+
     callback_data = query.data
     escrow_id = callback_data.replace("buyer_cancel_trade_", "")
 
@@ -3225,7 +3266,7 @@ async def buyer_cancel_trade_callback(update: Update, context: ContextTypes.DEFA
             await query.edit_message_text("❌ Siz bu savdoning харidori emassiz.")
             return
 
-        EscrowService.refund_escrow(str(escrow.id))
+        EscrowService.cancel_trade_by_party(escrow, "buyer")
 
         await query.edit_message_text(
             "Savdo bekor qilindi. Pulingiz hisobingizga qaytarildi."
@@ -3246,8 +3287,31 @@ async def admin_complete_trade_callback(update: Update, context: ContextTypes.DE
     escrow_id = callback_data.replace("admin_complete_trade_", "")
 
     try:
+        from apps.payments.models import EscrowTransaction, SellerVerification
         from apps.payments.services import EscrowService
-        EscrowService.release_payment(escrow_id)
+        from django.utils import timezone as _tz
+
+        escrow = EscrowTransaction.objects.select_related("seller", "listing").filter(
+            id=escrow_id
+        ).first()
+        if not escrow:
+            await query.edit_message_text("❌ Savdo topilmadi.")
+            return
+
+        # Force-approve verification so release_payment succeeds
+        verif = SellerVerification.objects.filter(escrow=escrow).order_by("-created_at").first()
+        if not verif or verif.status != SellerVerification.STATUS_APPROVED:
+            if not verif:
+                SellerVerification.objects.create(
+                    escrow=escrow, seller=escrow.seller,
+                    status=SellerVerification.STATUS_APPROVED,
+                )
+            else:
+                verif.status = SellerVerification.STATUS_APPROVED
+                verif.reviewed_at = _tz.now()
+                verif.save(update_fields=["status", "reviewed_at"])
+
+        EscrowService.release_payment(escrow)
         await query.edit_message_text(f"✅ Savdo #{escrow_id[:8]} yakunlandi. Pul sotuvchiga o'tkazildi.")
     except Exception as e:
         logger.error("admin_complete_trade_callback error: %s", e)
@@ -3263,8 +3327,20 @@ async def admin_refund_trade_callback(update: Update, context: ContextTypes.DEFA
     escrow_id = callback_data.replace("admin_refund_trade_", "")
 
     try:
+        from apps.payments.models import EscrowTransaction
         from apps.payments.services import EscrowService
-        EscrowService.refund_escrow(escrow_id)
+        escrow = EscrowTransaction.objects.filter(id=escrow_id).first()
+        if not escrow:
+            await query.edit_message_text("❌ Savdo topilmadi.")
+            return
+        if escrow.status not in ("paid", "delivered", "disputed"):
+            await query.edit_message_text("❌ Savdo qaytarib bo'lmaydi.")
+            return
+        if escrow.status != "disputed":
+            escrow.status = "disputed"
+            escrow.dispute_reason = "Admin forced refund via bot"
+            escrow.save(update_fields=["status", "dispute_reason"])
+        EscrowService.refund_escrow(escrow, None, "Admin forced refund via bot")
         await query.edit_message_text(f"↩️ Savdo #{escrow_id[:8]} bekor qilindi. Pul харidorga qaytarildi.")
     except Exception as e:
         logger.error("admin_refund_trade_callback error: %s", e)

@@ -4,6 +4,7 @@ import { Search, Menu, X, Sun, Moon, User, LogOut, Settings, ShoppingBag, Chevro
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
+import { useProfile } from '../hooks';
 import { getDisplayInitial, capitalizeFirst, resolveImageUrl } from '../lib/displayUtils';
 import NotificationWidget from './NotificationWidget';
 import Logo from './Logo';
@@ -13,6 +14,7 @@ const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const { toggleTheme, isDark } = useTheme();
     const { t, language, setLanguage } = useLanguage();
+    const { data: profileData } = useProfile({ enabled: isAuthenticated, refetchInterval: 60000 });
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -412,7 +414,7 @@ const Navbar = () => {
                                             }
                                         }}
                                     >
-                                        {user?.balance !== undefined && (
+                                        {(user?.balance !== undefined || profileData?.balance !== undefined) && (
                                           <span style={{
                                             fontSize: 13,
                                             fontWeight: 600,
@@ -422,8 +424,9 @@ const Navbar = () => {
                                             borderRadius: 20,
                                             padding: '4px 10px',
                                             marginRight: 8,
+                                            transition: 'color 0.3s ease',
                                           }}>
-                                            💰 {Number(user.balance || 0).toLocaleString()} UZS
+                                            💰 {Number(profileData?.balance ?? user?.balance ?? 0).toLocaleString()} UZS
                                           </span>
                                         )}
                                         <div className="relative shrink-0">

@@ -483,6 +483,14 @@ const ProfilePage = () => {
                                                             {t('profile.seller') || 'Seller'}: {txn.seller_name}
                                                         </p>
                                                     )}
+                                                    <div style={{ marginTop: '8px' }}>
+                                                        <Link
+                                                            to={`/trade/${txn.id}`}
+                                                            style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-blue)', textDecoration: 'none', fontWeight: 'var(--font-weight-medium)' }}
+                                                        >
+                                                            🔗 {t('profile.open_trade') || 'Открыть сделку'} →
+                                                        </Link>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
@@ -525,6 +533,14 @@ const ProfilePage = () => {
                                                             {t('profile.buyer') || 'Buyer'}: {txn.buyer_name}
                                                         </p>
                                                     )}
+                                                    <div style={{ marginTop: '8px' }}>
+                                                        <Link
+                                                            to={`/trade/${txn.id}`}
+                                                            style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-blue)', textDecoration: 'none', fontWeight: 'var(--font-weight-medium)' }}
+                                                        >
+                                                            🔗 {t('profile.open_trade') || 'Открыть сделку'} →
+                                                        </Link>
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
