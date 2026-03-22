@@ -154,7 +154,7 @@ const ProductsPage = () => {
                         value={selectedGame}
                         onChange={(e) => setSelectedGame(e.target.value)}
                         className="select select-md"
-                        style={{ maxWidth: '200px' }}
+                        style={{ maxWidth: '100%', minWidth: 0 }}
                         aria-label="Filter by game"
                     >
                         <option value="all">{t('products.all_games') || 'All Games'}</option>
@@ -164,7 +164,7 @@ const ProductsPage = () => {
                     </select>
 
                     {/* Min / Max narx */}
-                    <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
+                    <div className="flex items-center gap-2" style={{ flexWrap: 'wrap', minWidth: 0 }}>
                         <input
                             type="number"
                             min={0}
@@ -172,7 +172,7 @@ const ProductsPage = () => {
                             value={priceRange.min || ''}
                             onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) || 0 }))}
                             className="input input-md"
-                            style={{ width: '110px' }}
+                            style={{ width: '100px', minWidth: 0, flex: '1 1 80px', maxWidth: '130px' }}
                         />
                         <span style={{ color: 'var(--color-text-muted)' }}>–</span>
                         <input
@@ -182,7 +182,7 @@ const ProductsPage = () => {
                             value={priceRange.max >= 10000000 ? '' : priceRange.max || ''}
                             onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) || 10000000 }))}
                             className="input input-md"
-                            style={{ width: '110px' }}
+                            style={{ width: '100px', minWidth: 0, flex: '1 1 80px', maxWidth: '130px' }}
                         />
                     </div>
 
@@ -191,7 +191,7 @@ const ProductsPage = () => {
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
                         className="select select-md"
-                        style={{ maxWidth: '180px' }}
+                        style={{ maxWidth: '100%', minWidth: 0 }}
                         aria-label="Sort by"
                     >
                         {sortOptions.map(opt => (

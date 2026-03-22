@@ -834,6 +834,13 @@ p {
   border-bottom: 1px solid var(--color-border-default);
   gap: 0;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -3420,5 +3427,379 @@ p {
   .chat-page-grid input,
   .chat-room-page input {
     min-height: 44px;
+  }
+}
+
+/* ============================================
+   COMPREHENSIVE MOBILE RESPONSIVENESS
+   Barcha telefonlar uchun (320px — 480px)
+   ============================================ */
+
+/* ---- Navbar Mobile Fixes ---- */
+@media (max-width: 479px) {
+  .navbar-balance-badge {
+    max-width: 120px !important;
+    font-size: 11px !important;
+    padding: 3px 7px !important;
+    margin-right: 4px !important;
+  }
+}
+
+@media (max-width: 374px) {
+  /* Ultra-kichik telefonlar (iPhone SE, Galaxy S) */
+  .navbar-balance-badge {
+    max-width: 95px !important;
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+  }
+}
+
+/* ---- HomePage Mobile ---- */
+@media (max-width: 479px) {
+  .page-enter section:first-child {
+    padding-top: 48px !important;
+    padding-bottom: 32px !important;
+  }
+
+  /* Hero CTA tugmalari to'liq kenglikda */
+  .page-enter .btn-xl {
+    width: 100% !important;
+    min-width: unset !important;
+    justify-content: center;
+  }
+
+  /* Stats bo'limi */
+  .page-enter .flex.flex-wrap.items-center.justify-center {
+    gap: 16px !important;
+  }
+
+  /* Trust section padding */
+  .page-enter .gh-container > div[style*="padding: 48px 32px"] {
+    padding: 24px 16px !important;
+  }
+
+  /* CTA section padding */
+  .page-enter .gh-container > div[style*="padding: 64px 32px"] {
+    padding: 32px 16px !important;
+  }
+}
+
+/* ---- ProductsPage Mobile ---- */
+@media (max-width: 639px) {
+  /* Filterlar ustunma-ustun */
+  .gh-container .flex.flex-col.sm\:flex-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* Select va input to'liq kenglikda */
+  .gh-container select.select-md {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Narx filterlari to'liq kenglikda */
+  .gh-container .flex.items-center.gap-2 input[type="number"] {
+    flex: 1 1 0 !important;
+    max-width: none !important;
+    width: auto !important;
+  }
+}
+
+/* ---- AccountCard Mobile ---- */
+@media (max-width: 479px) {
+  .account-card-hover {
+    border-radius: var(--radius-md) !important;
+  }
+
+  /* Grid bo'lsa 2ta ustunli qolsin, lekin kichikroq gap */
+  .grid-cols-2 {
+    gap: 8px !important;
+  }
+}
+
+/* ---- AccountDetailPage Mobile ---- */
+@media (max-width: 639px) {
+  /* Main content 1 ustunli */
+  .account-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Rasm to'liq kenglikda */
+  .account-detail-image-wrap {
+    max-height: 280px;
+  }
+
+  /* Sidebar to'liq kenglikda */
+  .account-detail-sidebar {
+    position: static !important;
+    width: 100% !important;
+  }
+}
+
+/* ---- ProfilePage Mobile ---- */
+@media (max-width: 639px) {
+  /* Profil kartocha */
+  .profile-card {
+    padding: var(--space-4) !important;
+  }
+
+  /* Avatar kichikroq */
+  .profile-avatar-wrap {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  /* Tab buttonlari scroll */
+  .profile-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap !important;
+  }
+
+  .profile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .profile-tabs button,
+  .profile-tabs a {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+/* ---- SettingsPage Mobile ---- */
+@media (max-width: 1023px) {
+  .settings-sidebar-wrap {
+    width: 100% !important;
+    flex-shrink: 1 !important;
+    max-width: none !important;
+  }
+
+  .settings-sidebar nav {
+    flex-direction: row !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px !important;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .settings-sidebar nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .settings-sidebar nav button,
+  .settings-sidebar nav a {
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-height: 40px;
+    font-size: var(--font-size-sm) !important;
+    padding: 8px 14px !important;
+  }
+}
+
+/* ---- SellPage Mobile ---- */
+@media (max-width: 479px) {
+  .sell-page-card {
+    padding: var(--space-4) !important;
+  }
+
+  /* Step indicator kichikroq */
+  .step-circle {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 10px !important;
+  }
+
+  .step-line {
+    width: 20px !important;
+  }
+
+  /* Rasm yuklash zonasi */
+  .sell-image-upload {
+    min-height: 120px !important;
+    padding: var(--space-3) !important;
+  }
+}
+
+/* ---- PremiumPage Mobile ---- */
+@media (max-width: 479px) {
+  .pricing-card {
+    padding: var(--space-4) var(--space-3) !important;
+  }
+
+  .pricing-card-header {
+    padding: var(--space-4) var(--space-3) !important;
+  }
+}
+
+/* ---- Footer Mobile ---- */
+@media (max-width: 479px) {
+  footer .gh-container {
+    padding-left: var(--space-3) !important;
+    padding-right: var(--space-3) !important;
+  }
+
+  footer .grid {
+    gap: var(--space-4) !important;
+  }
+}
+
+/* ---- Global Mobile Utilities ---- */
+
+/* Barcha telefonlarda overflow ni oldini olish */
+@media (max-width: 639px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Matn overflow ellipsis */
+  .text-truncate-mobile {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Grid 1 ustunli */
+  .grid-auto-fill-280 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-2) !important;
+  }
+
+  /* Container padding kamroq */
+  .gh-container {
+    padding-left: var(--space-3) !important;
+    padding-right: var(--space-3) !important;
+  }
+
+  /* Button full width on mobile */
+  .btn-mobile-full {
+    width: 100% !important;
+  }
+
+  /* Sections kamroq padding */
+  section {
+    padding-top: 32px !important;
+    padding-bottom: 32px !important;
+  }
+
+  /* Font sizes kichikroq */
+  .font-size-display-mobile {
+    font-size: var(--font-size-2xl) !important;
+  }
+
+  /* Modal mobil uchun */
+  .modal-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
+  .modal-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 90vh !important;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Table scroll */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  /* Badge kichikroq */
+  .badge {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+}
+
+/* 320px va undan kichik ekranlar */
+@media (max-width: 374px) {
+  .gh-container {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .grid-auto-fill-280 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  h1 {
+    font-size: var(--font-size-lg) !important;
+  }
+
+  h2 {
+    font-size: var(--font-size-base) !important;
+  }
+
+  .btn {
+    padding: 8px 12px !important;
+    font-size: var(--font-size-sm) !important;
+  }
+
+  .btn-xl, .btn-lg {
+    padding: 10px 16px !important;
+    font-size: var(--font-size-base) !important;
+  }
+
+  /* Navbar kichikroq */
+  nav[role="navigation"] {
+    height: 56px !important;
+  }
+
+  /* Page content navbar offset */
+  .page-enter {
+    padding-top: 0;
+  }
+}
+
+/* ---- iPhone notch / Dynamic Island safe areas ---- */
+@supports (padding: max(0px)) {
+  nav[role="navigation"] {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .page-enter {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Mobile menu safe area */
+  .lg\:hidden[style*="position: absolute"] {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}
+
+/* ---- Landscape mode — telefonlarni yotqizganda ---- */
+@media (max-height: 500px) and (orientation: landscape) {
+  nav[role="navigation"] {
+    height: 48px !important;
+  }
+
+  section {
+    padding-top: 16px !important;
+    padding-bottom: 16px !important;
+  }
+
+  .modal-container {
+    max-height: 95vh !important;
+  }
+}
+
+/* ---- Tablet (768px-1023px) ---- */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .grid-auto-fill-280 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .pricing-card {
+    padding: var(--space-5) !important;
   }
 }

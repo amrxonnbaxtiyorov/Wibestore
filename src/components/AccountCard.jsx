@@ -59,7 +59,7 @@ const AccountCard = ({ account, featured = false }) => {
                 border: `1px solid ${accountIsPro ? 'var(--color-pro-purple)' : accountIsPremium ? 'var(--color-premium-gold-light)' : 'var(--color-border-default)'}`,
                 borderRadius: 'var(--radius-lg)',
                 overflow: 'hidden',
-                width: featured ? '280px' : 'auto',
+                width: featured ? 'min(280px, 85vw)' : 'auto',
                 textDecoration: 'none',
             }}
         >

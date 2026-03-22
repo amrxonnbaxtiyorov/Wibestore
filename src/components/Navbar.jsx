@@ -122,7 +122,7 @@ const Navbar = () => {
                 role="navigation"
                 aria-label="Main navigation"
             >
-                <div className="h-full w-full max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-24 lg:pr-32">
+                <div className="h-full w-full max-w-[1800px] mx-auto px-2 sm:px-4 md:px-6 lg:px-24 lg:pr-32">
                     <div className="h-full flex items-center gap-1">
 
                         {/* ─── Logo ─── */}
@@ -415,7 +415,7 @@ const Navbar = () => {
                                         }}
                                     >
                                         {(user?.balance !== undefined || profileData?.balance !== undefined) && (
-                                          <span style={{
+                                          <span className="navbar-balance-badge" style={{
                                             fontSize: 13,
                                             fontWeight: 600,
                                             color: 'var(--color-success-text)',
@@ -425,6 +425,10 @@ const Navbar = () => {
                                             padding: '4px 10px',
                                             marginRight: 8,
                                             transition: 'color 0.3s ease',
+                                            maxWidth: '160px',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
                                           }}>
                                             💰 {Number(profileData?.balance ?? user?.balance ?? 0).toLocaleString()} UZS
                                           </span>

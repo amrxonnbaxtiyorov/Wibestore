@@ -219,8 +219,8 @@ const SettingsPage = () => {
 
                 <div className="flex flex-col lg:flex-row gap-5">
                     {/* Sidebar */}
-                    <div style={{ width: '240px', flexShrink: 0 }}>
-                        <div style={{ ...cardStyle, padding: '8px' }}>
+                    <div className="settings-sidebar-wrap" style={{ width: '240px', flexShrink: 0 }}>
+                        <div className="settings-sidebar" style={{ ...cardStyle, padding: '8px' }}>
                             <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                 {tabs.map((tab) => (
                                     <button
