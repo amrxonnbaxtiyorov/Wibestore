@@ -24,6 +24,7 @@ const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [searchFocused, setSearchFocused] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
 
     const profileRef = useRef(null);
     const langRef = useRef(null);
@@ -71,6 +72,13 @@ const Navbar = () => {
         const handleScroll = () => setIsScrolled(window.scrollY > 10);
         window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // Mobile detection
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize, { passive: true });
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     // Close mobile menu on route change
@@ -414,8 +422,8 @@ const Navbar = () => {
                                             }
                                         }}
                                     >
-                                        {(user?.balance !== undefined || profileData?.balance !== undefined) && (
-                                          <span className="navbar-balance-badge hidden md:inline-flex" style={{
+                                        {!isMobile && (user?.balance !== undefined || profileData?.balance !== undefined) && (
+                                          <span className="navbar-balance-badge" style={{
                                             fontSize: 13,
                                             fontWeight: 600,
                                             color: 'var(--color-success-text)',
