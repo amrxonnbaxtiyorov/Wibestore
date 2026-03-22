@@ -128,7 +128,7 @@ const Navbar = () => {
                         {/* ─── Logo ─── */}
                         <Link
                             to="/"
-                            className="flex items-center shrink-0 mr-4 transition-opacity duration-200 hover:opacity-80"
+                            className="flex items-center shrink-0 mr-2 sm:mr-4 transition-opacity duration-200 hover:opacity-80"
                             style={{ textDecoration: 'none'}}
                         >
                             <Logo />
@@ -257,10 +257,10 @@ const Navbar = () => {
                             <div className="relative" ref={langRef}>
                                 <button
                                     onClick={() => setIsLangOpen(!isLangOpen)}
-                                    className="flex items-center gap-2 h-8 px-3 rounded-md transition-all duration-200"
+                                    className="flex items-center gap-1 sm:gap-2 h-8 px-2 sm:px-3 rounded-md transition-all duration-200"
                                     aria-label="Change language"
                                     style={{
-                                        padding: '10px',
+                                        padding: '6px',
                                         backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                                         border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
                                     }}
@@ -398,12 +398,12 @@ const Navbar = () => {
                                 <div className="relative" ref={profileRef}>
                                     <button
                                         onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                        className="flex items-center gap-2 h-8 pl-1 pr-2 rounded-md transition-colors duration-150"
+                                        className="flex items-center gap-1 sm:gap-2 h-8 pl-1 pr-1 sm:pr-2 rounded-md transition-colors duration-150"
                                         style={{
                                             backgroundColor: isProfileOpen
                                                 ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)')
                                                 : 'transparent',
-                                            padding: '10px',
+                                            padding: '4px',
                                         }}
                                         onMouseEnter={(e) => {
                                             e.currentTarget.style.backgroundColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
@@ -415,7 +415,7 @@ const Navbar = () => {
                                         }}
                                     >
                                         {(user?.balance !== undefined || profileData?.balance !== undefined) && (
-                                          <span className="navbar-balance-badge" style={{
+                                          <span className="navbar-balance-badge hidden md:inline-flex" style={{
                                             fontSize: 13,
                                             fontWeight: 600,
                                             color: 'var(--color-success-text)',
@@ -677,6 +677,76 @@ const Navbar = () => {
                                     </Link>
                                 )}
                             </nav>
+
+                            {/* User balance & profile links (mobile) */}
+                            {isAuthenticated && (
+                                <div
+                                    className="pt-4 mt-4 flex flex-col gap-2"
+                                    style={{ borderTop: `1px solid ${isDark ? '#21262d' : '#eaeef2'}` }}
+                                >
+                                    {/* Balance card (mobile only) */}
+                                    {(user?.balance !== undefined || profileData?.balance !== undefined) && (
+                                        <div
+                                            className="flex items-center justify-between rounded-lg px-4 py-3"
+                                            style={{
+                                                backgroundColor: isDark ? 'rgba(34, 197, 94, 0.08)' : 'rgba(34, 197, 94, 0.06)',
+                                                border: `1px solid ${isDark ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.15)'}`,
+                                            }}
+                                        >
+                                            <span style={{ fontSize: '13px', color: isDark ? '#8b949e' : '#656d76' }}>
+                                                💰 {t('nav.balance') || 'Balans'}
+                                            </span>
+                                            <span style={{
+                                                fontSize: '15px',
+                                                fontWeight: 700,
+                                                color: 'var(--color-success-text)',
+                                            }}>
+                                                {Number(profileData?.balance ?? user?.balance ?? 0).toLocaleString()} UZS
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Profile links */}
+                                    {[
+                                        { to: '/profile', icon: User, label: t('nav.profile') || 'Profil' },
+                                        { to: '/sell', icon: ShoppingBag, label: t('nav.sell') || 'Akkaunt sotish' },
+                                        { to: '/settings', icon: Settings, label: t('nav.settings') || 'Sozlamalar' },
+                                    ].map((item) => (
+                                        <Link
+                                            key={item.to}
+                                            to={item.to}
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="flex items-center gap-3 rounded-lg min-h-[44px] pl-5 pr-4 py-3 text-sm font-medium transition-colors duration-100"
+                                            style={{
+                                                textDecoration: 'none',
+                                                color: isActive(item.to)
+                                                    ? (isDark ? '#f0f6fc' : '#1f2328')
+                                                    : (isDark ? '#8b949e' : '#656d76'),
+                                                backgroundColor: isActive(item.to)
+                                                    ? (isDark ? 'rgba(56,139,253,0.15)' : 'rgba(9,105,218,0.08)')
+                                                    : 'transparent',
+                                            }}
+                                        >
+                                            <item.icon className="w-5 h-5 shrink-0" />
+                                            <span>{item.label}</span>
+                                        </Link>
+                                    ))}
+
+                                    {/* Logout */}
+                                    <button
+                                        onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                                        className="flex items-center gap-3 rounded-lg min-h-[44px] pl-5 pr-4 py-3 text-sm font-medium transition-colors duration-100 text-left w-full"
+                                        style={{
+                                            color: isDark ? '#f85149' : '#cf222e',
+                                            backgroundColor: 'transparent',
+                                            border: 'none',
+                                        }}
+                                    >
+                                        <LogOut className="w-5 h-5 shrink-0" />
+                                        <span>{t('nav.logout') || 'Chiqish'}</span>
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Auth Actions (mobile) */}
                             {!isAuthenticated && (
