@@ -12,7 +12,7 @@ from django.utils import timezone
 from core.exceptions import BusinessLogicError, InsufficientFundsError
 from core.utils import calculate_commission, calculate_seller_earnings
 
-from .models import EscrowTransaction, PaymentMethod, SellerVerification, Transaction
+from .models import EscrowTransaction, PaymentMethod, SellerVerification, Transaction, WithdrawalRequest
 
 logger = logging.getLogger("apps.payments")
 
@@ -442,93 +442,161 @@ class EscrowService:
         """
         Sotuvchi yoki haridor savdoni tasdiqlaydi.
         side = 'seller' | 'buyer'
-        Ikkala tomon tasdiqlaganda to'lovni avtomatik sotuvchiga o'tkazadi.
+        Ikkala tomon tasdiqlaganda verifikatsiya jarayoni boshlanadi.
         Returns (escrow, both_confirmed: bool)
         """
-        import json as _json
-        from django.utils import timezone as _tz
-
         if escrow.status not in ("paid", "delivered"):
             raise BusinessLogicError("Savdo allaqachon yakunlangan yoki bekor qilingan.")
 
-        try:
-            resolution = _json.loads(escrow.dispute_resolution) if escrow.dispute_resolution else {}
-        except Exception:
-            resolution = {}
-
-        now = _tz.now().isoformat()
+        now = timezone.now()
         if side == "seller":
-            resolution["trade_seller_confirmed"] = True
-            resolution["trade_seller_confirmed_at"] = now
+            if escrow.seller_confirmed:
+                raise BusinessLogicError("Sotuvchi allaqachon tasdiqlagan.")
+            escrow.seller_confirmed = True
+            escrow.seller_confirmed_at_trade = now
         elif side == "buyer":
-            resolution["trade_buyer_confirmed"] = True
-            resolution["trade_buyer_confirmed_at"] = now
+            if escrow.buyer_confirmed:
+                raise BusinessLogicError("Haridor allaqachon tasdiqlagan.")
+            escrow.buyer_confirmed = True
+            escrow.buyer_confirmed_at_trade = now
 
-        escrow.dispute_resolution = _json.dumps(resolution)
-
-        both_confirmed = bool(
-            resolution.get("trade_seller_confirmed") and resolution.get("trade_buyer_confirmed")
-        )
+        both_confirmed = escrow.seller_confirmed and escrow.buyer_confirmed
 
         if both_confirmed:
-            escrow.status = "confirmed"
-            escrow.buyer_confirmed_at = _tz.now()
-            escrow.seller_paid_at = _tz.now()
+            # Ikki tomon tasdiqladi — verifikatsiya jarayoniga o'tish
             escrow.save(update_fields=[
-                "status", "buyer_confirmed_at", "seller_paid_at", "dispute_resolution"
+                "seller_confirmed", "seller_confirmed_at_trade",
+                "buyer_confirmed", "buyer_confirmed_at_trade",
             ])
 
-            seller = escrow.seller
-            seller.balance += escrow.seller_earnings
-            seller.save(update_fields=["balance"])
+            # Sotuvchi verifikatsiyasini boshlash (BLOK 3)
+            verification = SellerVerification.objects.filter(escrow=escrow).order_by("-created_at").first()
+            if verification and verification.status == SellerVerification.STATUS_REJECTED:
+                verification.reset_for_resubmission()
+            elif not verification:
+                verification = SellerVerification.objects.create(
+                    escrow=escrow,
+                    seller=escrow.seller,
+                    status=SellerVerification.STATUS_PENDING,
+                )
 
-            from apps.marketplace.services import ListingService
-            ListingService.mark_as_sold(escrow.listing)
+            try:
+                from .telegram_notify import notify_verification_request
+                notify_verification_request(escrow, verification)
+            except Exception as tg_err:
+                logger.warning("Verification request notification failed: %s", tg_err)
 
-            Transaction.objects.create(
-                user=seller,
-                amount=escrow.commission_amount,
-                type="commission",
-                status="completed",
-                description=f"Commission for listing {escrow.listing.title}",
-                processed_at=_tz.now(),
-            )
-            logger.info("Trade confirmed by both parties: escrow %s", escrow.id)
+            logger.info("Trade confirmed by both parties: escrow %s — verification started", escrow.id)
         else:
-            escrow.save(update_fields=["dispute_resolution"])
+            escrow.save(update_fields=[
+                "seller_confirmed", "seller_confirmed_at_trade",
+                "buyer_confirmed", "buyer_confirmed_at_trade",
+            ])
             logger.info("Trade confirmation by %s: escrow %s (waiting for other party)", side, escrow.id)
 
         return escrow, both_confirmed
 
     @staticmethod
     @db_transaction.atomic
-    def cancel_trade_by_party(escrow: "EscrowTransaction", side: str) -> "EscrowTransaction":
+    def cancel_trade_by_party(escrow: "EscrowTransaction", side: str, reason: str = "") -> "EscrowTransaction":
         """
         Sotuvchi yoki haridor savdoni bekor qiladi.
-        Haridor pulini qaytarib oladi, listing qayta aktiv bo'ladi.
+        Ikkala tomon bekor qilsa — pul qaytariladi.
+        Bir tomon tasdiqlagan, biri bekor qilsa — nizo (dispute).
         """
-        from django.utils import timezone as _tz
-
         if escrow.status not in ("paid", "delivered"):
             raise BusinessLogicError("Savdoni bekor qilish mumkin emas.")
 
-        buyer = escrow.buyer
-        buyer.balance += escrow.amount
-        buyer.save(update_fields=["balance"])
+        now = timezone.now()
+        if side == "seller":
+            if escrow.seller_cancelled:
+                raise BusinessLogicError("Sotuvchi allaqachon bekor qilgan.")
+            escrow.seller_cancelled = True
+            escrow.seller_cancelled_at = now
+            escrow.seller_cancel_reason = reason
+        elif side == "buyer":
+            if escrow.buyer_cancelled:
+                raise BusinessLogicError("Haridor allaqachon bekor qilgan.")
+            escrow.buyer_cancelled = True
+            escrow.buyer_cancelled_at = now
+            escrow.buyer_cancel_reason = reason
 
-        who = "Sotuvchi" if side == "seller" else "Haridor"
-        escrow.status = "refunded"
-        escrow.dispute_reason = f"{who} savdoni bekor qildi."
-        escrow.admin_released_at = _tz.now()
-        escrow.save(update_fields=["status", "dispute_reason", "admin_released_at"])
+        both_cancelled = escrow.seller_cancelled and escrow.buyer_cancelled
 
-        listing = escrow.listing
-        listing.status = "active"
-        listing.sold_at = None
-        listing.save(update_fields=["status", "sold_at"])
+        # Bir tomon tasdiqlagan, biri bekor qilgan → nizo
+        one_confirmed_one_cancelled = (
+            (escrow.seller_confirmed and escrow.buyer_cancelled) or
+            (escrow.buyer_confirmed and escrow.seller_cancelled)
+        )
 
-        logger.info("Trade cancelled by %s: escrow %s, refunded %s to buyer", side, escrow.id, escrow.amount)
+        if both_cancelled:
+            # Ikki tomon ham bekor qildi → pul qaytarish
+            buyer = escrow.buyer
+            buyer.balance += escrow.amount
+            buyer.save(update_fields=["balance"])
+
+            escrow.status = "refunded"
+            escrow.dispute_reason = "Ikkala tomon savdoni bekor qildi."
+            escrow.admin_released_at = now
+            escrow.save()
+
+            listing = escrow.listing
+            listing.status = "active"
+            listing.sold_at = None
+            listing.save(update_fields=["status", "sold_at"])
+
+            logger.info("Trade cancelled by both parties: escrow %s, refunded", escrow.id)
+        elif one_confirmed_one_cancelled:
+            # Nizo → admin hal qiladi
+            escrow.status = "disputed"
+            who = "Sotuvchi" if side == "seller" else "Haridor"
+            escrow.dispute_reason = f"{who} bekor qildi (boshqa tomon tasdiqlagan). Sabab: {reason}"
+            escrow.save()
+            logger.info("Trade disputed (one confirmed, one cancelled): escrow %s", escrow.id)
+        else:
+            # Faqat bir tomon bekor qildi, ikkinchisi hali javob bermagan
+            escrow.save()
+            logger.info("Trade cancel by %s: escrow %s (waiting for other party)", side, escrow.id)
+
         return escrow
+
+    # ── Alohida tasdiqlash/bekor qilish metodlari (API uchun) ──
+
+    @staticmethod
+    @db_transaction.atomic
+    def seller_confirm_trade(escrow_id, user):
+        """Sotuvchi savdoni tasdiqlaydi (API endpoint uchun)."""
+        escrow = EscrowTransaction.objects.select_related(
+            "buyer", "seller", "listing"
+        ).get(id=escrow_id, seller=user)
+        return EscrowService.process_trade_confirmation(escrow, "seller")
+
+    @staticmethod
+    @db_transaction.atomic
+    def buyer_confirm_trade(escrow_id, user):
+        """Haridor savdoni tasdiqlaydi (API endpoint uchun)."""
+        escrow = EscrowTransaction.objects.select_related(
+            "buyer", "seller", "listing"
+        ).get(id=escrow_id, buyer=user)
+        return EscrowService.process_trade_confirmation(escrow, "buyer")
+
+    @staticmethod
+    @db_transaction.atomic
+    def seller_cancel_trade(escrow_id, user, reason=""):
+        """Sotuvchi savdoni bekor qiladi (API endpoint uchun)."""
+        escrow = EscrowTransaction.objects.select_related(
+            "buyer", "seller", "listing"
+        ).get(id=escrow_id, seller=user)
+        return EscrowService.cancel_trade_by_party(escrow, "seller", reason)
+
+    @staticmethod
+    @db_transaction.atomic
+    def buyer_cancel_trade(escrow_id, user, reason=""):
+        """Haridor savdoni bekor qiladi (API endpoint uchun)."""
+        escrow = EscrowTransaction.objects.select_related(
+            "buyer", "seller", "listing"
+        ).get(id=escrow_id, buyer=user)
+        return EscrowService.cancel_trade_by_party(escrow, "buyer", reason)
 
     @staticmethod
     def _get_seller_plan(seller) -> str:
@@ -546,3 +614,105 @@ class EscrowService:
         if active_sub.plan.is_premium:
             return "premium"
         return "free"
+
+
+class WithdrawalService:
+    """Pul yechish so'rovlarini boshqarish."""
+
+    @staticmethod
+    @db_transaction.atomic
+    def create_withdrawal(user, amount, card_number, card_holder_name, card_type="humo"):
+        """Yangi pul yechish so'rovi yaratish."""
+        from decimal import Decimal
+
+        amount = Decimal(str(amount))
+        if amount < Decimal("10000"):
+            raise BusinessLogicError("Minimal pul yechish miqdori: 10,000 so'm")
+        if user.balance < amount:
+            raise InsufficientFundsError("Balans yetarli emas.")
+
+        # Balansdan ushlab turish (freeze)
+        user.balance -= amount
+        user.save(update_fields=["balance"])
+
+        withdrawal = WithdrawalRequest.objects.create(
+            user=user,
+            amount=amount,
+            card_number=card_number,
+            card_holder_name=card_holder_name,
+            card_type=card_type,
+            user_telegram_id=getattr(user, "telegram_id", None),
+        )
+
+        logger.info("Withdrawal request created: %s, amount: %s, user: %s", withdrawal.id, amount, user.email)
+
+        # Adminlarga Telegram xabar
+        try:
+            from .telegram_notify import notify_withdrawal_request
+            notify_withdrawal_request(user, amount, card_number)
+        except Exception as tg_err:
+            logger.warning("Withdrawal Telegram notification failed: %s", tg_err)
+
+        return withdrawal
+
+    @staticmethod
+    @db_transaction.atomic
+    def approve_withdrawal(withdrawal_id, admin_user=None):
+        """Admin pul yechish so'rovini tasdiqlaydi."""
+        withdrawal = WithdrawalRequest.objects.select_related("user").get(id=withdrawal_id)
+        if withdrawal.status != WithdrawalRequest.STATUS_PENDING:
+            raise BusinessLogicError("Bu so'rov allaqachon ko'rib chiqilgan.")
+
+        withdrawal.status = WithdrawalRequest.STATUS_COMPLETED
+        withdrawal.reviewed_by = admin_user
+        withdrawal.reviewed_at = timezone.now()
+        withdrawal.save(update_fields=["status", "reviewed_by", "reviewed_at"])
+
+        # Transaction yozuvi
+        Transaction.objects.create(
+            user=withdrawal.user,
+            amount=withdrawal.amount,
+            type="withdrawal",
+            status="completed",
+            description=f"Pul yechish — {withdrawal.card_type} {withdrawal.card_number}",
+            processed_at=timezone.now(),
+        )
+
+        logger.info("Withdrawal approved: %s by admin %s", withdrawal.id, admin_user)
+
+        try:
+            from .telegram_notify import notify_withdrawal_processed
+            notify_withdrawal_processed(withdrawal.user, withdrawal.amount, "completed")
+        except Exception as tg_err:
+            logger.warning("Withdrawal approval Telegram notification failed: %s", tg_err)
+
+        return withdrawal
+
+    @staticmethod
+    @db_transaction.atomic
+    def reject_withdrawal(withdrawal_id, admin_user=None, reason=""):
+        """Admin pul yechish so'rovini rad etadi va balansni qaytaradi."""
+        withdrawal = WithdrawalRequest.objects.select_related("user").get(id=withdrawal_id)
+        if withdrawal.status != WithdrawalRequest.STATUS_PENDING:
+            raise BusinessLogicError("Bu so'rov allaqachon ko'rib chiqilgan.")
+
+        withdrawal.status = WithdrawalRequest.STATUS_REJECTED
+        withdrawal.reviewed_by = admin_user
+        withdrawal.reviewed_at = timezone.now()
+        withdrawal.rejection_reason = reason
+        withdrawal.save(update_fields=["status", "reviewed_by", "reviewed_at", "rejection_reason"])
+
+        # Balansni qaytarish (unfreeze)
+        user = withdrawal.user
+        user.balance += withdrawal.amount
+        user.save(update_fields=["balance"])
+
+        logger.info("Withdrawal rejected: %s, balance restored for user %s", withdrawal.id, user.email)
+
+        try:
+            from .telegram_notify import notify_withdrawal_processed
+            notify_withdrawal_processed(user, withdrawal.amount, "rejected")
+        except Exception as tg_err:
+            logger.warning("Withdrawal rejection Telegram notification failed: %s", tg_err)
+
+        return withdrawal

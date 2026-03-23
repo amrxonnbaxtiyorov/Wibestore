@@ -202,6 +202,89 @@ def auto_release_escrow_after_timeout():
     logger.info("auto_release_escrow_after_timeout: released %d escrows", count)
 
 
+@shared_task(name="apps.payments.tasks.check_pending_trade_confirmations")
+def check_pending_trade_confirmations():
+    """
+    Har 6 soatda: 24 soatdan oshgan javobsiz savdolarni tekshirish.
+    Ikkala tomonga eslatma + adminlarga bildirish.
+    """
+    from datetime import timedelta
+    from django.db.models import Q
+    from apps.payments.models import EscrowTransaction
+
+    threshold = timezone.now() - timedelta(hours=24)
+    pending = EscrowTransaction.objects.filter(
+        status="paid",
+        created_at__lte=threshold,
+    ).exclude(
+        Q(seller_confirmed=True) & Q(buyer_confirmed=True)
+    ).select_related("buyer", "seller", "listing")
+
+    for escrow in pending:
+        # Ikki tomonga eslatma
+        try:
+            from apps.payments.telegram_notify import _send_message, _get_admin_telegram_ids
+            escrow_id = str(escrow.id)[:8]
+            msg = (
+                f"⏰ <b>Savdo eslatmasi</b>\n\n"
+                f"Savdo #{escrow_id} — {escrow.listing.title if escrow.listing else '—'}\n"
+                f"24 soatdan oshdi. Iltimos, tasdiqlang yoki bekor qiling.\n\n"
+                f"Tasdiqlash uchun Telegram botga qarang."
+            )
+            for user in (escrow.buyer, escrow.seller):
+                tg_id = getattr(user, "telegram_id", None)
+                if tg_id:
+                    _send_message(tg_id, msg)
+
+            # Admin xabari
+            admin_msg = (
+                f"⚠️ <b>Savdo 24+ soat javobsiz</b>\n\n"
+                f"#{escrow_id} — {escrow.listing.title if escrow.listing else '—'}\n"
+                f"Sotuvchi: {escrow.seller.email}\n"
+                f"Haridor: {escrow.buyer.email}\n"
+                f"Sotuvchi tasdiqladi: {'Ha' if escrow.seller_confirmed else 'Yo`q'}\n"
+                f"Haridor tasdiqladi: {'Ha' if escrow.buyer_confirmed else 'Yo`q'}"
+            )
+            for admin_id in _get_admin_telegram_ids():
+                _send_message(admin_id, admin_msg)
+        except Exception as e:
+            logger.warning("check_pending_trade_confirmations: %s", e)
+
+    logger.info("check_pending_trade_confirmations: %d pending trades notified", pending.count())
+
+
+@shared_task(name="apps.payments.tasks.check_pending_withdrawals")
+def check_pending_withdrawals():
+    """
+    Har 12 soatda: 48 soatdan oshgan ko'rib chiqilmagan withdrawal so'rovlarni tekshirish.
+    """
+    from datetime import timedelta
+    from apps.payments.models import WithdrawalRequest
+
+    threshold = timezone.now() - timedelta(hours=48)
+    pending = WithdrawalRequest.objects.filter(
+        status="pending",
+        created_at__lte=threshold,
+    ).select_related("user")
+
+    for withdrawal in pending:
+        try:
+            from apps.payments.telegram_notify import _send_message, _get_admin_telegram_ids
+            msg = (
+                f"⚠️ <b>Pul yechish so'rovi 48+ soat kutmoqda!</b>\n\n"
+                f"Foydalanuvchi: {withdrawal.user.email}\n"
+                f"Miqdor: {int(withdrawal.amount):,} so'm\n"
+                f"Karta: {withdrawal.card_type} {withdrawal.card_number}\n"
+                f"Yaratilgan: {withdrawal.created_at.strftime('%d.%m.%Y %H:%M')}"
+            )
+            for admin_id in _get_admin_telegram_ids():
+                _send_message(admin_id, msg)
+        except Exception as e:
+            logger.warning("check_pending_withdrawals: %s", e)
+
+    logger.info("check_pending_withdrawals: %d pending withdrawals notified", pending.count())
+
+
 def _transaction_status_display(status: str) -> tuple[str, str]:
     """Return (status_class, status_text) for receipt template."""
     mapping = {

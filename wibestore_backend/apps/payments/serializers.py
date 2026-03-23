@@ -4,7 +4,7 @@ WibeStore Backend - Payments Serializers
 
 from rest_framework import serializers
 
-from .models import EscrowTransaction, PaymentMethod, Transaction
+from .models import EscrowTransaction, PaymentMethod, Transaction, WithdrawalRequest
 
 
 class PaymentMethodSerializer(serializers.ModelSerializer):
@@ -78,14 +78,85 @@ class EscrowTransactionSerializer(serializers.ModelSerializer):
             "admin_released_at",
             "dispute_reason",
             "dispute_resolution",
+            # Ikki tomonlama tasdiqlash/bekor qilish
+            "seller_confirmed",
+            "seller_confirmed_at_trade",
+            "seller_cancelled",
+            "seller_cancelled_at",
+            "seller_cancel_reason",
+            "buyer_confirmed",
+            "buyer_confirmed_at_trade",
+            "buyer_cancelled",
+            "buyer_cancelled_at",
+            "buyer_cancel_reason",
             "created_at",
             "updated_at",
         ]
         read_only_fields = [
             "id", "commission_amount", "seller_earnings",
             "buyer_confirmed_at", "seller_paid_at", "admin_released_at",
+            "seller_confirmed", "seller_confirmed_at_trade",
+            "seller_cancelled", "seller_cancelled_at",
+            "buyer_confirmed", "buyer_confirmed_at_trade",
+            "buyer_cancelled", "buyer_cancelled_at",
             "created_at", "updated_at",
         ]
+
+
+class TradeStatusSerializer(serializers.Serializer):
+    """Savdo holatini ko'rsatish uchun serializer."""
+
+    escrow_id = serializers.UUIDField(source="id")
+    status = serializers.CharField()
+    seller_confirmed = serializers.BooleanField()
+    buyer_confirmed = serializers.BooleanField()
+    seller_cancelled = serializers.BooleanField()
+    buyer_cancelled = serializers.BooleanField()
+    both_confirmed = serializers.SerializerMethodField()
+    both_cancelled = serializers.SerializerMethodField()
+    waiting_for = serializers.SerializerMethodField()
+
+    def get_both_confirmed(self, obj):
+        return obj.seller_confirmed and obj.buyer_confirmed
+
+    def get_both_cancelled(self, obj):
+        return obj.seller_cancelled and obj.buyer_cancelled
+
+    def get_waiting_for(self, obj):
+        if obj.seller_confirmed and obj.buyer_confirmed:
+            return "none"
+        if obj.seller_cancelled and obj.buyer_cancelled:
+            return "none"
+        if not obj.seller_confirmed and not obj.buyer_confirmed:
+            return "both"
+        if not obj.seller_confirmed:
+            return "seller"
+        return "buyer"
+
+
+class WithdrawalRequestSerializer(serializers.ModelSerializer):
+    """Pul yechish so'rovi serializer."""
+
+    class Meta:
+        model = WithdrawalRequest
+        fields = [
+            "id", "amount", "currency", "card_number", "card_holder_name",
+            "card_type", "status", "admin_note", "rejection_reason",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = [
+            "id", "status", "admin_note", "rejection_reason",
+            "created_at", "updated_at",
+        ]
+
+
+class CreateWithdrawalSerializer(serializers.Serializer):
+    """Pul yechish so'rovi yaratish uchun serializer."""
+
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=10000)
+    card_number = serializers.CharField(max_length=20)
+    card_holder_name = serializers.CharField(max_length=200)
+    card_type = serializers.ChoiceField(choices=["humo", "uzcard", "visa", "mastercard"])
 
 
 class PurchaseListingSerializer(serializers.Serializer):

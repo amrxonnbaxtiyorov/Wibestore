@@ -55,4 +55,14 @@ app.conf.beat_schedule = {
         "task": "apps.payments.tasks.auto_release_escrow_after_timeout",
         "schedule": crontab(minute=30),
     },
+    # BLOK 7: Savdo tasdiqlash eslatmalari (har 6 soatda)
+    "check-pending-trades": {
+        "task": "apps.payments.tasks.check_pending_trade_confirmations",
+        "schedule": crontab(hour="*/6"),
+    },
+    # BLOK 7: Pul yechish so'rovlari eslatmasi (har 12 soatda)
+    "check-pending-withdrawals": {
+        "task": "apps.payments.tasks.check_pending_withdrawals",
+        "schedule": crontab(hour="*/12"),
+    },
 }

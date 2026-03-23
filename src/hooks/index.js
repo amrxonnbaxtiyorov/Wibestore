@@ -45,7 +45,11 @@ export {
     useMarkNotificationRead,
     useMarkAllNotificationsRead,
 } from './useNotifications';
-export { useTransactions, useDeposit, useWithdraw, usePurchaseListing } from './usePayments';
+export {
+    useTransactions, useDeposit, useWithdraw, usePurchaseListing,
+    useConfirmTrade, useCancelTrade, useTradeStatus,
+    useCreateWithdrawal, useWithdrawals,
+} from './usePayments';
 export {
     useSubscriptionPlans,
     useMySubscriptions,

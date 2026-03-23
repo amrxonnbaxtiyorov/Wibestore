@@ -13,15 +13,18 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import DepositRequest, EscrowTransaction, SellerVerification, Transaction
+from .models import DepositRequest, EscrowTransaction, SellerVerification, Transaction, WithdrawalRequest
 from .serializers import (
+    CreateWithdrawalSerializer,
     DepositSerializer,
     EscrowTransactionSerializer,
     PurchaseListingSerializer,
+    TradeStatusSerializer,
     TransactionSerializer,
+    WithdrawalRequestSerializer,
     WithdrawSerializer,
 )
-from .services import EscrowService, PaymentService
+from .services import EscrowService, PaymentService, WithdrawalService
 
 logger = logging.getLogger("apps.payments")
 
@@ -796,3 +799,340 @@ class SellerVerificationSubmitView(APIView):
             "status": verification.status,
             "verification_id": str(verification.id),
         })
+
+
+# ── BLOK 2: Ikki tomonlama tasdiqlash/bekor qilish endpointlari ──
+
+
+@extend_schema(tags=["Trade"])
+class SellerConfirmTradeView(APIView):
+    """POST /api/v1/payments/escrow/{id}/seller-confirm-trade/ — Sotuvchi savdoni tasdiqlaydi."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        from core.exceptions import BusinessLogicError
+        try:
+            escrow, both_confirmed = EscrowService.seller_confirm_trade(pk, request.user)
+        except EscrowTransaction.DoesNotExist:
+            return Response({"success": False, "error": {"message": "Savdo topilmadi."}}, status=status.HTTP_404_NOT_FOUND)
+        except BusinessLogicError as e:
+            return Response({"success": False, "error": {"message": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Telegram bildirishnomalar
+        try:
+            from .telegram_notify import notify_trade_both_confirmed
+            if both_confirmed:
+                notify_trade_both_confirmed(escrow)
+            else:
+                from .telegram_notify import notify_trade_party_confirmed
+                notify_trade_party_confirmed(escrow, confirmed_by="seller")
+        except Exception as tg_err:
+            logger.warning("Telegram notify (seller confirm trade) failed: %s", tg_err)
+
+        return Response({
+            "success": True,
+            "data": {"status": "confirmed" if both_confirmed else escrow.status, "both_confirmed": both_confirmed},
+        })
+
+
+@extend_schema(tags=["Trade"])
+class SellerCancelTradeView(APIView):
+    """POST /api/v1/payments/escrow/{id}/seller-cancel/ — Sotuvchi savdoni bekor qiladi."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        from core.exceptions import BusinessLogicError
+        reason = request.data.get("reason", "")
+        try:
+            escrow = EscrowService.seller_cancel_trade(pk, request.user, reason)
+        except EscrowTransaction.DoesNotExist:
+            return Response({"success": False, "error": {"message": "Savdo topilmadi."}}, status=status.HTTP_404_NOT_FOUND)
+        except BusinessLogicError as e:
+            return Response({"success": False, "error": {"message": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+        both_cancelled = escrow.seller_cancelled and escrow.buyer_cancelled
+        try:
+            from .telegram_notify import notify_trade_cancelled
+            notify_trade_cancelled(escrow, cancelled_by="seller")
+        except Exception as tg_err:
+            logger.warning("Telegram notify (seller cancel) failed: %s", tg_err)
+
+        return Response({
+            "success": True,
+            "data": {"status": escrow.status, "both_cancelled": both_cancelled},
+        })
+
+
+@extend_schema(tags=["Trade"])
+class BuyerConfirmTradeView(APIView):
+    """POST /api/v1/payments/escrow/{id}/buyer-confirm/ — Haridor savdoni tasdiqlaydi."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        from core.exceptions import BusinessLogicError
+        try:
+            escrow, both_confirmed = EscrowService.buyer_confirm_trade(pk, request.user)
+        except EscrowTransaction.DoesNotExist:
+            return Response({"success": False, "error": {"message": "Savdo topilmadi."}}, status=status.HTTP_404_NOT_FOUND)
+        except BusinessLogicError as e:
+            return Response({"success": False, "error": {"message": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            from .telegram_notify import notify_trade_both_confirmed
+            if both_confirmed:
+                notify_trade_both_confirmed(escrow)
+            else:
+                from .telegram_notify import notify_trade_party_confirmed
+                notify_trade_party_confirmed(escrow, confirmed_by="buyer")
+        except Exception as tg_err:
+            logger.warning("Telegram notify (buyer confirm trade) failed: %s", tg_err)
+
+        return Response({
+            "success": True,
+            "data": {"status": "confirmed" if both_confirmed else escrow.status, "both_confirmed": both_confirmed},
+        })
+
+
+@extend_schema(tags=["Trade"])
+class BuyerCancelTradeView(APIView):
+    """POST /api/v1/payments/escrow/{id}/buyer-cancel/ — Haridor savdoni bekor qiladi."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        from core.exceptions import BusinessLogicError
+        reason = request.data.get("reason", "")
+        try:
+            escrow = EscrowService.buyer_cancel_trade(pk, request.user, reason)
+        except EscrowTransaction.DoesNotExist:
+            return Response({"success": False, "error": {"message": "Savdo topilmadi."}}, status=status.HTTP_404_NOT_FOUND)
+        except BusinessLogicError as e:
+            return Response({"success": False, "error": {"message": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+        both_cancelled = escrow.seller_cancelled and escrow.buyer_cancelled
+        try:
+            from .telegram_notify import notify_trade_cancelled
+            notify_trade_cancelled(escrow, cancelled_by="buyer")
+        except Exception as tg_err:
+            logger.warning("Telegram notify (buyer cancel) failed: %s", tg_err)
+
+        return Response({
+            "success": True,
+            "data": {"status": escrow.status, "both_cancelled": both_cancelled},
+        })
+
+
+@extend_schema(tags=["Trade"])
+class TradeStatusView(APIView):
+    """GET /api/v1/payments/escrow/{id}/trade-status/ — Savdo holati."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            escrow = EscrowTransaction.objects.get(pk=pk)
+        except EscrowTransaction.DoesNotExist:
+            return Response({"success": False, "error": {"message": "Savdo topilmadi."}}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user not in (escrow.buyer, escrow.seller) and not request.user.is_staff:
+            return Response({"success": False, "error": {"message": "Ruxsat yo'q."}}, status=status.HTTP_403_FORBIDDEN)
+
+        return Response({
+            "success": True,
+            "data": TradeStatusSerializer(escrow).data,
+        })
+
+
+@extend_schema(tags=["Trade"])
+class EscrowDetailView(APIView):
+    """GET /api/v1/payments/escrow/{id}/ — Escrow tafsilotlari."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            escrow = EscrowTransaction.objects.select_related(
+                "buyer", "seller", "listing", "listing__game"
+            ).get(pk=pk)
+        except EscrowTransaction.DoesNotExist:
+            return Response({"success": False, "error": {"message": "Savdo topilmadi."}}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user not in (escrow.buyer, escrow.seller) and not request.user.is_staff:
+            return Response({"success": False, "error": {"message": "Ruxsat yo'q."}}, status=status.HTTP_403_FORBIDDEN)
+
+        data = EscrowTransactionSerializer(escrow).data
+
+        # Chat room ID qo'shish
+        try:
+            from apps.messaging.models import ChatRoom
+            chat_room = ChatRoom.objects.filter(escrow=escrow).first()
+            if chat_room:
+                data["chat_room_id"] = str(chat_room.id)
+        except Exception:
+            pass
+
+        return Response({"success": True, "data": data})
+
+
+# ── BLOK 5: Pul yechish endpointlari ──
+
+
+@extend_schema(tags=["Withdrawal"])
+class CreateWithdrawalView(APIView):
+    """POST /api/v1/payments/withdrawal/create/ — Pul yechish so'rovi yaratish."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = CreateWithdrawalSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        from core.exceptions import BusinessLogicError, InsufficientFundsError
+        try:
+            withdrawal = WithdrawalService.create_withdrawal(
+                user=request.user,
+                amount=serializer.validated_data["amount"],
+                card_number=serializer.validated_data["card_number"],
+                card_holder_name=serializer.validated_data["card_holder_name"],
+                card_type=serializer.validated_data["card_type"],
+            )
+        except InsufficientFundsError as e:
+            return Response({"success": False, "error": {"message": str(e)}}, status=status.HTTP_402_PAYMENT_REQUIRED)
+        except BusinessLogicError as e:
+            return Response({"success": False, "error": {"message": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            "success": True,
+            "message": "Pul yechish so'rovi yaratildi.",
+            "data": WithdrawalRequestSerializer(withdrawal).data,
+        }, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=["Withdrawal"])
+class WithdrawalListView(generics.ListAPIView):
+    """GET /api/v1/payments/withdrawals/ — Foydalanuvchi pul yechish tarixi."""
+
+    serializer_class = WithdrawalRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = WithdrawalRequest.objects.filter(user=self.request.user)
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
+
+
+@extend_schema(tags=["Withdrawal"])
+class WithdrawalApproveView(APIView):
+    """POST /api/v1/payments/withdrawal/{id}/approve/ — Admin tasdiqlash."""
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk):
+        from core.exceptions import BusinessLogicError
+        try:
+            withdrawal = WithdrawalService.approve_withdrawal(pk, request.user)
+        except WithdrawalRequest.DoesNotExist:
+            return Response({"success": False, "error": {"message": "So'rov topilmadi."}}, status=status.HTTP_404_NOT_FOUND)
+        except BusinessLogicError as e:
+            return Response({"success": False, "error": {"message": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"success": True, "data": WithdrawalRequestSerializer(withdrawal).data})
+
+
+@extend_schema(tags=["Withdrawal"])
+class WithdrawalRejectView(APIView):
+    """POST /api/v1/payments/withdrawal/{id}/reject/ — Admin rad etish."""
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk):
+        from core.exceptions import BusinessLogicError
+        reason = request.data.get("reason", "")
+        try:
+            withdrawal = WithdrawalService.reject_withdrawal(pk, request.user, reason)
+        except WithdrawalRequest.DoesNotExist:
+            return Response({"success": False, "error": {"message": "So'rov topilmadi."}}, status=status.HTTP_404_NOT_FOUND)
+        except BusinessLogicError as e:
+            return Response({"success": False, "error": {"message": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"success": True, "data": WithdrawalRequestSerializer(withdrawal).data})
+
+
+@extend_schema(tags=["Withdrawal"])
+class AdminWithdrawalListView(generics.ListAPIView):
+    """GET /api/v1/admin-panel/withdrawals/ — Admin uchun barcha pul yechish so'rovlari."""
+
+    serializer_class = WithdrawalRequestSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+    def get_queryset(self):
+        qs = WithdrawalRequest.objects.select_related("user").all()
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        search = self.request.query_params.get("search")
+        if search:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(user__email__icontains=search) |
+                Q(user__username__icontains=search) |
+                Q(card_number__icontains=search)
+            )
+        return qs
+
+
+@extend_schema(tags=["Verification"])
+class VerificationApproveView(APIView):
+    """POST /api/v1/payments/verification/{id}/approve/ — Admin verifikatsiyani tasdiqlash."""
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk):
+        from core.exceptions import BusinessLogicError
+        try:
+            verification = SellerVerification.objects.select_related("escrow", "seller").get(pk=pk)
+        except SellerVerification.DoesNotExist:
+            return Response({"success": False, "error": {"message": "Tekshiruv topilmadi."}}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            escrow = EscrowService.approve_seller_verification(verification, request.user)
+        except BusinessLogicError as e:
+            return Response({"success": False, "error": {"message": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            from .telegram_notify import notify_verification_approved
+            notify_verification_approved(verification.escrow, verification)
+        except Exception as tg_err:
+            logger.warning("Verification approved Telegram notify failed: %s", tg_err)
+
+        return Response({
+            "success": True,
+            "data": {"status": "approved", "seller_balance": str(escrow.seller.balance)},
+        })
+
+
+@extend_schema(tags=["Verification"])
+class VerificationRejectView(APIView):
+    """POST /api/v1/payments/verification/{id}/reject/ — Admin verifikatsiyani rad etish."""
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk):
+        from core.exceptions import BusinessLogicError
+        reason = request.data.get("reason", "")
+        try:
+            verification = SellerVerification.objects.select_related("escrow", "seller").get(pk=pk)
+        except SellerVerification.DoesNotExist:
+            return Response({"success": False, "error": {"message": "Tekshiruv topilmadi."}}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            EscrowService.reject_seller_verification(verification, request.user, reason)
+        except BusinessLogicError as e:
+            return Response({"success": False, "error": {"message": str(e)}}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"success": True, "data": {"status": "rejected"}})
