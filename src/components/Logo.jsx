@@ -7,8 +7,8 @@ const Logo = () => {
             alt="WibeStore — Gaming Marketplace"
             className="shrink-0 select-none w-auto object-contain"
             style={{
-                height: 'clamp(40px, 10vw, 200px)',
-                maxHeight: '52px',
+                height: 'clamp(48px, 12vw, 200px)',
+                maxHeight: '72px',
                 imageRendering: '-webkit-optimize-contrast',
             }}
             role="img"
