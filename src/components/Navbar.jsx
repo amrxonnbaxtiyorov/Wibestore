@@ -108,7 +108,7 @@ const Navbar = () => {
         { to: '/products', label: t('nav.products') || 'Boshqa mahsulotlar', icon: ShoppingBag },
         { to: '/top', label: t('nav.top') || 'Top akkauntlar', icon: TrendingUp },
         { to: '/statistics', label: t('nav.statistics') || 'Statistika', icon: BarChart3 },
-        { to: '/premium', label: t('nav.premium') || 'Site Premium', icon: Zap, badge: 'NEW' },
+        { to: '/premium', label: t('nav.premium') || 'Obunalar', icon: Zap, badge: 'NEW' },
     ];
 
     const isAdmin = user?.is_staff || false;
