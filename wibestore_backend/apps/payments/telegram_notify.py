@@ -786,6 +786,53 @@ def notify_balance_topup(user, amount) -> None:
     _send_message(user.telegram_id, text)
 
 
+def notify_withdrawal_request(user, amount, card_number: str) -> None:
+    """Pul yechish so'rovi yaratilganda adminlarga Telegram xabar yuborish."""
+    user_name = getattr(user, "display_name", None) or getattr(user, "email", "") or "Noma'lum"
+    user_phone = getattr(user, "phone_number", "") or "—"
+    user_tg = getattr(user, "telegram_id", None)
+    user_username = getattr(user, "username", "") or "—"
+
+    text = (
+        f"📤 <b>YANGI PUL YECHISH SO'ROVI!</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 <b>Foydalanuvchi:</b>\n"
+        f"   📝 Ism: {user_name}\n"
+        f"   📱 Telefon: {user_phone}\n"
+        f"   👤 Username: @{user_username}\n"
+    )
+    if user_tg:
+        text += f"   🆔 Telegram ID: <code>{user_tg}</code>\n"
+    text += (
+        f"\n💰 <b>Summa:</b> {_fmt_price(amount)}\n"
+        f"💳 <b>Karta:</b> <code>{card_number}</code>\n"
+        f"━━━━━━━━━━━━━━━━━━━━"
+    )
+
+    # Agar sotuvchining tekshirilgan savdolari bo'lsa, info qo'shamiz
+    try:
+        from .models import SellerVerification
+        verifications = SellerVerification.objects.filter(
+            seller=user, status=SellerVerification.STATUS_APPROVED,
+        ).select_related("escrow", "escrow__listing").order_by("-created_at")[:5]
+        if verifications:
+            text += "\n\n📋 <b>So'nggi tasdiqlangan savdolar:</b>"
+            for v in verifications:
+                listing_title = v.escrow.listing.title if v.escrow and v.escrow.listing else "—"
+                text += f"\n   • {listing_title}"
+    except Exception:
+        pass
+
+    keyboard = {
+        "inline_keyboard": [[
+            {"text": "👤 Profilni ko'rish", "url": f"{SITE_URL}/seller/{user.id}"},
+        ]]
+    }
+
+    for admin_tg_id in _get_admin_telegram_ids():
+        _send_message(admin_tg_id, text, reply_markup=keyboard)
+
+
 def notify_withdrawal_processed(user, amount, status: str) -> None:
     """Pul yechish so'rovi yakunlanganda foydalanuvchiga Telegram xabar."""
     if not getattr(user, "telegram_id", None):
