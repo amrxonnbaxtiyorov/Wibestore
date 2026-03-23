@@ -1240,7 +1240,7 @@ HARIDOR                          TIZIM                           SOTUVCHI
 
 1. **BLOK 1** — EscrowTransaction modelini kengaytirish + Telegram bildirishnomalar
 2. **BLOK 2** — Ikki tomonlama tasdiqlash/bekor qilish tizimi
-3. **BLOK 3** — Sotuvchi verifikatsiyasi (ID + video)
+3. **BLOK 3** — Sotuvchi verifikatsiyasi (ID + video + joylashuv + telefon raqam + jonli joylashuv)
 4. **BLOK 4** — Avtomatik pul o'tkazish
 5. **BLOK 5** — Pul yechish (withdrawal) tizimi
 6. **BLOK 6** — Frontend o'zgarishlar (TradePage, ProfilePage, AdminPanel)

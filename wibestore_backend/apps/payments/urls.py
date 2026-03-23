@@ -25,6 +25,7 @@ urlpatterns = [
     path("escrow/<uuid:pk>/seller-confirm-trade/", views.SellerConfirmTradeView.as_view(), name="seller-confirm-trade"),
     path("escrow/<uuid:pk>/seller-cancel/", views.SellerCancelTradeView.as_view(), name="seller-cancel-trade"),
     path("escrow/<uuid:pk>/buyer-confirm/", views.BuyerConfirmTradeView.as_view(), name="buyer-confirm-trade"),
+    path("escrow/<uuid:pk>/buyer-confirm-trade/", views.BuyerConfirmTradeView.as_view(), name="buyer-confirm-trade-alias"),
     path("escrow/<uuid:pk>/buyer-cancel/", views.BuyerCancelTradeView.as_view(), name="buyer-cancel-trade"),
     path("escrow/<uuid:pk>/trade-status/", views.TradeStatusView.as_view(), name="trade-status"),
     # Verifikatsiya (BLOK 3)

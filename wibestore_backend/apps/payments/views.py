@@ -584,6 +584,8 @@ class TelegramCallbackView(APIView):
                 else:
                     post_system_message_to_order_chat(escrow,
                         "Sotuvchi akkauntni topshirganini tasdiqladi. Haridor tasdiqlashi kutilmoqda.")
+                    from .telegram_notify import notify_trade_party_confirmed
+                    notify_trade_party_confirmed(escrow, confirmed_by="seller")
             except Exception as e:
                 logger.warning("Chat/Telegram notify (trade_seller_ok) failed: %s", e)
             if both_confirmed:
@@ -611,6 +613,8 @@ class TelegramCallbackView(APIView):
                 else:
                     post_system_message_to_order_chat(escrow,
                         "Haridor akkauntni qabul qilganini tasdiqladi. Sotuvchi tasdiqlashi kutilmoqda.")
+                    from .telegram_notify import notify_trade_party_confirmed
+                    notify_trade_party_confirmed(escrow, confirmed_by="buyer")
             except Exception as e:
                 logger.warning("Chat/Telegram notify (trade_buyer_ok) failed: %s", e)
             if both_confirmed:
@@ -1019,10 +1023,22 @@ class WithdrawalListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = WithdrawalRequest.objects.filter(user=self.request.user)
+        # Admin ko'rish rejimi: barcha withdrawallarni ko'rsatish
+        if self.request.user.is_staff and self.request.query_params.get("admin") == "true":
+            qs = WithdrawalRequest.objects.select_related("user").all()
+        else:
+            qs = WithdrawalRequest.objects.filter(user=self.request.user)
         status_filter = self.request.query_params.get("status")
         if status_filter:
             qs = qs.filter(status=status_filter)
+        search = self.request.query_params.get("search")
+        if search and self.request.user.is_staff:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(user__email__icontains=search) |
+                Q(user__username__icontains=search) |
+                Q(card_number__icontains=search)
+            )
         return qs
 
 
