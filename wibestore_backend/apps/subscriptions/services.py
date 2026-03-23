@@ -177,6 +177,37 @@ class SubscriptionService:
         return subscription
 
     @staticmethod
+    def check_listing_limit(user) -> dict:
+        """
+        Check if user can create a new listing based on their plan's monthly limit.
+        Returns dict with 'allowed', 'used', 'limit' keys.
+        """
+        from apps.marketplace.models import Listing
+
+        plan_slug = SubscriptionService.get_user_plan(user)
+        try:
+            plan = SubscriptionPlan.objects.get(slug=plan_slug, is_active=True)
+            limit = plan.monthly_listing_limit
+        except SubscriptionPlan.DoesNotExist:
+            limit = 5  # default free limit
+
+        # Count listings created this month
+        now = timezone.now()
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        used = Listing.objects.filter(
+            seller=user,
+            created_at__gte=month_start,
+            deleted_at__isnull=True,
+        ).count()
+
+        return {
+            "allowed": used < limit,
+            "used": used,
+            "limit": limit,
+            "plan": plan_slug,
+        }
+
+    @staticmethod
     def get_user_plan(user) -> str:
         """Get user's current plan type."""
         subscription = UserSubscription.objects.filter(

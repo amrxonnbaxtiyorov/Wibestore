@@ -20,6 +20,7 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
             "features",
             "is_premium",
             "is_pro",
+            "monthly_listing_limit",
             "sort_order",
         ]
 

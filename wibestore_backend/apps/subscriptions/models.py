@@ -20,6 +20,9 @@ class SubscriptionPlan(BaseModel):
     features = models.JSONField(default=list, blank=True)
     is_premium = models.BooleanField(default=False)
     is_pro = models.BooleanField(default=False)
+    monthly_listing_limit = models.PositiveIntegerField(
+        default=5, help_text="Maximum listings a user can create per month on this plan"
+    )
     sort_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
 

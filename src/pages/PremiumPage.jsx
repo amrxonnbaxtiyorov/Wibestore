@@ -26,28 +26,29 @@ const PremiumPage = () => {
     const features = {
         free: [
             { text: t('premium.feat_sell') || 'Sell accounts', included: true },
+            { text: t('premium.feat_listing_limit_5') || "Oyiga 5 ta e'lon", included: true, highlight: true },
             { text: t('premium.feat_commission_10') || '10% commission', included: true },
             { text: t('premium.feat_standard') || 'Standard position', included: true },
             { text: t('premium.feat_basic_stats') || 'Basic statistics', included: true },
             { text: t('premium.feat_badge') || 'Premium badge', included: false },
             { text: t('premium.feat_homepage') || 'Homepage visibility', included: false },
             { text: t('premium.feat_fast_pay') || 'Fast payout', included: false },
-            { text: t('premium.feat_manager') || 'Personal manager', included: false },
         ],
         premium: [
             { text: t('premium.feat_sell') || 'Sell accounts', included: true },
+            { text: t('premium.feat_listing_limit_30') || "Oyiga 30 ta e'lon", included: true, highlight: true },
             { text: t('premium.feat_commission_8') || '8% commission', included: true },
-            { text: t('premium.feat_boost_10') || "Birinchi 10 ta e'lon bosh sahifada tepada", included: true, highlight: true },
+            { text: t('premium.feat_boost_10') || "Birinchi 10 ta e'lon bosh sahifada tepada", included: true },
             { text: t('premium.feat_badge') || 'Premium badge', included: true },
             { text: t('premium.feat_homepage') || 'Homepage visibility', included: true },
             { text: t('premium.feat_search') || 'Top search position', included: true },
             { text: t('premium.feat_support') || 'Priority support', included: true },
-            { text: t('premium.feat_manager') || 'Personal manager', included: false },
         ],
         pro: [
             { text: t('premium.feat_sell') || 'Sell accounts', included: true },
+            { text: t('premium.feat_listing_limit_70') || "Oyiga 70 ta e'lon", included: true, highlight: true },
             { text: t('premium.feat_commission_5') || '5% commission', included: true },
-            { text: t('premium.feat_boost_30') || "Birinchi 30 ta e'lon bosh sahifada tepada", included: true, highlight: true },
+            { text: t('premium.feat_boost_30') || "Birinchi 30 ta e'lon bosh sahifada tepada", included: true },
             { text: t('premium.feat_vip_badge') || 'VIP golden badge', included: true },
             { text: t('premium.feat_homepage_first') || 'Homepage first', included: true },
             { text: t('premium.feat_fast_pay') || 'Fast payout (24h)', included: true },
@@ -60,8 +61,8 @@ const PremiumPage = () => {
     const apiPlans = Array.isArray(plansData) ? plansData : (Array.isArray(plansData?.results) ? plansData.results : []);
     const premiumPlan = apiPlans.find(p => p.slug === 'premium');
     const proPlan = apiPlans.find(p => p.slug === 'pro');
-    const premiumPriceUZS = premiumPlan ? Number(premiumPlan.price_monthly) : 50000;
-    const proPriceUZS = proPlan ? Number(proPlan.price_monthly) : 100000;
+    const premiumPriceUZS = premiumPlan ? Number(premiumPlan.price_monthly) : 99999;
+    const proPriceUZS = proPlan ? Number(proPlan.price_monthly) : 249999;
 
     const plans = [
         {
