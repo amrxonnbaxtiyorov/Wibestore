@@ -232,10 +232,11 @@ class ListingImageUploadView(APIView):
 class ListingReviewsView(generics.ListAPIView):
     """GET /api/v1/listings/{id}/reviews/ — Reviews for a specific listing."""
 
-    from apps.reviews.serializers import ReviewSerializer
-
-    serializer_class = ReviewSerializer
     permission_classes = [permissions.AllowAny]
+
+    def get_serializer_class(self):
+        from apps.reviews.serializers import ReviewSerializer
+        return ReviewSerializer
 
     def get_queryset(self):
         from apps.reviews.models import Review

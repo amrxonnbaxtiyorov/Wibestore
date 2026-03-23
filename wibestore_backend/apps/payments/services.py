@@ -93,7 +93,12 @@ class EscrowService:
     @staticmethod
     @db_transaction.atomic
     def create_escrow(buyer, listing) -> EscrowTransaction:
-        """Create an escrow transaction for a listing purchase."""
+        """Create an escrow transaction for a listing purchase.
+
+        MUHIM: Faqat DB operatsiyalari atomic block ichida.
+        Chat yaratish, Telegram xabarlar va Celery tasklari
+        PurchaseListingView tomonidan chaqiriladi (atomic tashqarida).
+        """
         if listing.status != "active":
             raise BusinessLogicError("Listing is not available for purchase.")
 
@@ -136,39 +141,6 @@ class EscrowService:
             "Escrow created: %s (buyer: %s, seller: %s, amount: %s)",
             escrow.id, buyer.email, listing.seller.email, listing.price,
         )
-
-        # BLOCK 2.2: Telegram notifications for new purchase
-        try:
-            from apps.messaging.services import create_order_chat_for_escrow
-            chat_room = create_order_chat_for_escrow(escrow)
-            chat_room_id = str(chat_room.id) if chat_room else None
-        except Exception as chat_err:
-            logger.warning("Could not create order chat: %s", chat_err)
-            chat_room_id = None
-
-        try:
-            from .telegram_notify import notify_purchase_created, notify_admin_new_trade
-            notify_purchase_created(escrow, chat_room_id=chat_room_id)
-            notify_admin_new_trade(escrow)
-        except Exception as tg_err:
-            logger.warning("Telegram purchase notification failed: %s", tg_err)
-
-        # BLOCK 7.2: In-app notification
-        try:
-            from apps.notifications.services import NotificationService
-            NotificationService.notify_trade_status_change(escrow, "paid")
-        except Exception as notif_err:
-            logger.warning("In-app trade notification failed: %s", notif_err)
-
-        # Schedule auto-release (optional — fails silently if Celery/Redis unavailable)
-        try:
-            from .tasks import release_escrow_payment
-            release_escrow_payment.apply_async(
-                args=[str(escrow.id)],
-                countdown=getattr(settings, "ESCROW_AUTO_RELEASE_HOURS", 24) * 3600,
-            )
-        except Exception as celery_err:
-            logger.warning("Could not schedule auto-release for escrow %s: %s", escrow.id, celery_err)
 
         return escrow
 

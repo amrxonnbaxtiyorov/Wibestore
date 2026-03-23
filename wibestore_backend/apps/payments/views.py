@@ -151,7 +151,10 @@ class PurchaseListingView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        # Open chat between buyer, seller and site admin(s) after payment
+        # ── Side-effectlar: atomic tashqarida (Telegram, chat, Celery) ──
+        # Bular xato bo'lsa ham xarid bekor qilinmaydi.
+
+        # 1. Chat yaratish
         chat_room_id = None
         try:
             from apps.messaging.services import create_order_chat_for_escrow
@@ -160,14 +163,18 @@ class PurchaseListingView(APIView):
         except Exception as chat_err:
             logger.warning("Could not create order chat for escrow %s: %s", escrow.id, chat_err)
 
-        # Notify buyer, seller and admins via Telegram (after chat room is known — link is correct)
+        # 2. Telegram bildirishnomalar
         try:
-            from .telegram_notify import notify_purchase_created
+            from .telegram_notify import (
+                notify_purchase_created, notify_admin_new_trade, notify_trade_confirmation_request,
+            )
             notify_purchase_created(escrow, chat_room_id=chat_room_id)
+            notify_admin_new_trade(escrow)
+            notify_trade_confirmation_request(escrow, chat_link=chat_room_id or "")
         except Exception as tg_err:
-            logger.warning("Telegram purchase notification failed: %s", tg_err)
+            logger.warning("Telegram purchase notifications failed: %s", tg_err)
 
-        # Sotuvchiga web (in-app) notification
+        # 3. In-app notification
         try:
             from apps.notifications.services import NotificationService
             chat_link = f"/chat/{chat_room_id}" if chat_room_id else "/chat"
@@ -179,15 +186,19 @@ class PurchaseListingView(APIView):
                 data={"escrow_id": str(escrow.id), "listing_id": str(escrow.listing.id)},
                 link=chat_link,
             )
+            NotificationService.notify_trade_status_change(escrow, "paid")
         except Exception as notif_err:
             logger.warning("In-app notification for seller failed: %s", notif_err)
 
-        # Sotuvchi va haridorga tasdiqlash so'rovi (ikkala tomonga tugmalar bilan)
+        # 4. Celery auto-release task
         try:
-            from .telegram_notify import notify_trade_confirmation_request
-            notify_trade_confirmation_request(escrow, chat_link=chat_room_id or "")
-        except Exception as tg_err2:
-            logger.warning("Telegram trade confirmation request failed: %s", tg_err2)
+            from .tasks import release_escrow_payment
+            release_escrow_payment.apply_async(
+                args=[str(escrow.id)],
+                countdown=getattr(settings, "ESCROW_AUTO_RELEASE_HOURS", 24) * 3600,
+            )
+        except Exception as celery_err:
+            logger.warning("Could not schedule auto-release for escrow %s: %s", escrow.id, celery_err)
 
         escrow_data = EscrowTransactionSerializer(escrow).data
         if chat_room_id:
