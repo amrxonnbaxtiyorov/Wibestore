@@ -41,8 +41,6 @@ class ListingMinimalSerializer(serializers.Serializer):
         first_img = obj.images.first() if hasattr(obj, 'images') else None
         if first_img:
             image = first_img.image
-        elif obj.primary_image:
-            image = obj.primary_image
         if image and request:
             return request.build_absolute_uri(image.url) if hasattr(image, 'url') else str(image)
         return str(image) if image else None
