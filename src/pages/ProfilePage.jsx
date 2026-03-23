@@ -485,7 +485,7 @@ const ProfilePage = () => {
                                                     )}
                                                     <div style={{ marginTop: '8px' }}>
                                                         <Link
-                                                            to={`/trade/${txn.id}`}
+                                                            to={`/trade/${txn.escrow_id || txn.id}`}
                                                             style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-blue)', textDecoration: 'none', fontWeight: 'var(--font-weight-medium)' }}
                                                         >
                                                             🔗 {t('profile.open_trade') || 'Открыть сделку'} →
@@ -535,7 +535,7 @@ const ProfilePage = () => {
                                                     )}
                                                     <div style={{ marginTop: '8px' }}>
                                                         <Link
-                                                            to={`/trade/${txn.id}`}
+                                                            to={`/trade/${txn.escrow_id || txn.id}`}
                                                             style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-accent-blue)', textDecoration: 'none', fontWeight: 'var(--font-weight-medium)' }}
                                                         >
                                                             🔗 {t('profile.open_trade') || 'Открыть сделку'} →

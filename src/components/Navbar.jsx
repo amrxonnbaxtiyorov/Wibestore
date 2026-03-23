@@ -14,7 +14,7 @@ const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const { toggleTheme, isDark } = useTheme();
     const { t, language, setLanguage } = useLanguage();
-    const { data: profileData } = useProfile({ enabled: isAuthenticated, refetchInterval: 60000 });
+    const { data: profileData, isLoading: isProfileLoading } = useProfile({ enabled: isAuthenticated, refetchInterval: 60000 });
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -422,7 +422,7 @@ const Navbar = () => {
                                             }
                                         }}
                                     >
-                                        {!isMobile && (user?.balance !== undefined || profileData?.balance !== undefined) && (
+                                        {!isMobile && isAuthenticated && (
                                           <span className="navbar-balance-badge" style={{
                                             fontSize: 13,
                                             fontWeight: 600,
@@ -432,13 +432,18 @@ const Navbar = () => {
                                             borderRadius: 20,
                                             padding: '4px 10px',
                                             marginRight: 8,
-                                            transition: 'color 0.3s ease',
+                                            transition: 'all 0.3s ease',
                                             maxWidth: '160px',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                             whiteSpace: 'nowrap',
+                                            animation: (!isProfileLoading && profileData?.balance !== undefined) ? 'none' : undefined,
+                                            opacity: isProfileLoading ? 0.5 : 1,
                                           }}>
-                                            💰 {Number(profileData?.balance ?? user?.balance ?? 0).toLocaleString()} UZS
+                                            {isProfileLoading
+                                              ? '...'
+                                              : `💰 ${Number(profileData?.balance ?? user?.balance ?? 0).toLocaleString()} UZS`
+                                            }
                                           </span>
                                         )}
                                         <div className="relative shrink-0">
@@ -693,26 +698,26 @@ const Navbar = () => {
                                     style={{ borderTop: `1px solid ${isDark ? '#21262d' : '#eaeef2'}` }}
                                 >
                                     {/* Balance card (mobile only) */}
-                                    {(user?.balance !== undefined || profileData?.balance !== undefined) && (
-                                        <div
-                                            className="flex items-center justify-between rounded-lg px-4 py-3"
-                                            style={{
-                                                backgroundColor: isDark ? 'rgba(34, 197, 94, 0.08)' : 'rgba(34, 197, 94, 0.06)',
-                                                border: `1px solid ${isDark ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.15)'}`,
-                                            }}
-                                        >
-                                            <span style={{ fontSize: '13px', color: isDark ? '#8b949e' : '#656d76' }}>
-                                                💰 {t('nav.balance') || 'Balans'}
-                                            </span>
-                                            <span style={{
-                                                fontSize: '15px',
-                                                fontWeight: 700,
-                                                color: 'var(--color-success-text)',
-                                            }}>
-                                                {Number(profileData?.balance ?? user?.balance ?? 0).toLocaleString()} UZS
-                                            </span>
-                                        </div>
-                                    )}
+                                    <div
+                                        className="flex items-center justify-between rounded-lg px-4 py-3"
+                                        style={{
+                                            backgroundColor: isDark ? 'rgba(34, 197, 94, 0.08)' : 'rgba(34, 197, 94, 0.06)',
+                                            border: `1px solid ${isDark ? 'rgba(34, 197, 94, 0.2)' : 'rgba(34, 197, 94, 0.15)'}`,
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '13px', color: isDark ? '#8b949e' : '#656d76' }}>
+                                            {t('nav.balance') || 'Balans'}
+                                        </span>
+                                        <span style={{
+                                            fontSize: '15px',
+                                            fontWeight: 700,
+                                            color: 'var(--color-success-text)',
+                                            opacity: isProfileLoading ? 0.5 : 1,
+                                            transition: 'opacity 0.3s ease',
+                                        }}>
+                                            {isProfileLoading ? '...' : `${Number(profileData?.balance ?? user?.balance ?? 0).toLocaleString()} UZS`}
+                                        </span>
+                                    </div>
 
                                     {/* Profile links */}
                                     {[

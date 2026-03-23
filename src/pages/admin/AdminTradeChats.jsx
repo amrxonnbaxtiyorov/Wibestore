@@ -6,17 +6,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MessageCircle, Send, ShoppingBag, Clock, CheckCircle, AlertTriangle, XCircle, RefreshCw, User, Filter } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useAdminOrderChats, useChatMessages, useSendMessage, useMarkChatRead } from '../../hooks/useChat';
 import { getDisplayInitial } from '../../lib/displayUtils';
 
 /* ─── Escrow status badge ────────────────────────────────────── */
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({ status, t }) => {
     const map = {
-        paid:       { label: 'To\'lov qilindi',   bg: '#dbeafe', color: '#1d4ed8', icon: Clock },
-        delivered:  { label: 'Akkaunt topshirildi', bg: '#dcfce7', color: '#15803d', icon: CheckCircle },
-        confirmed:  { label: 'Tasdiqlandi',        bg: '#f0fdf4', color: '#166534', icon: CheckCircle },
-        disputed:   { label: 'Bahsli',             bg: '#fef9c3', color: '#92400e', icon: AlertTriangle },
-        refunded:   { label: 'Qaytarildi',         bg: '#fee2e2', color: '#b91c1c', icon: XCircle },
+        paid:       { label: t('admin_trade_chats.status_paid'),       bg: '#dbeafe', color: '#1d4ed8', icon: Clock },
+        delivered:  { label: t('admin_trade_chats.status_delivered'),   bg: '#dcfce7', color: '#15803d', icon: CheckCircle },
+        confirmed:  { label: t('admin_trade_chats.status_confirmed'),  bg: '#f0fdf4', color: '#166534', icon: CheckCircle },
+        disputed:   { label: t('admin_trade_chats.status_disputed'),   bg: '#fef9c3', color: '#92400e', icon: AlertTriangle },
+        refunded:   { label: t('trade.status_refunded'),               bg: '#fee2e2', color: '#b91c1c', icon: XCircle },
     };
     const cfg = map[status] || { label: status, bg: '#f3f4f6', color: '#6b7280', icon: MessageCircle };
     const Icon = cfg.icon;
@@ -34,15 +35,15 @@ const StatusBadge = ({ status }) => {
 };
 
 /* ─── Chat list item ─────────────────────────────────────────── */
-const ChatListItem = ({ chat, isActive, onClick }) => {
-    const title = chat.listing_title || 'Noma\'lum akkaunt';
+const ChatListItem = ({ chat, isActive, onClick, t }) => {
+    const title = chat.listing_title || t('admin_trade_chats.unknown_account');
     const game  = chat.listing_game || '';
-    const buyer = chat.buyer_name || 'Xaridor';
-    const seller = chat.seller_name || 'Sotuvchi';
+    const buyer = chat.buyer_name || t('admin_trade_chats.buyer');
+    const seller = chat.seller_name || t('admin_trade_chats.seller');
     const unread = chat.unread_count || 0;
     const preview = chat.last_message_preview || '';
     const ts = chat.last_message_at
-        ? new Date(chat.last_message_at).toLocaleString('uz-UZ', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
+        ? new Date(chat.last_message_at).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
         : '';
 
     return (
@@ -72,7 +73,7 @@ const ChatListItem = ({ chat, isActive, onClick }) => {
             )}
 
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <StatusBadge status={chat.escrow_status} />
+                <StatusBadge status={chat.escrow_status} t={t} />
                 {unread > 0 && (
                     <span style={{
                         padding: '1px 6px', borderRadius: '999px',
@@ -83,9 +84,9 @@ const ChatListItem = ({ chat, isActive, onClick }) => {
             </div>
 
             <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                <span>🛒 {buyer}</span>
-                <span style={{ margin: '0 6px' }}>↔</span>
-                <span>💰 {seller}</span>
+                <span>{buyer}</span>
+                <span style={{ margin: '0 6px' }}>\u2194</span>
+                <span>{seller}</span>
             </div>
 
             {preview && (
@@ -105,9 +106,9 @@ const MessageBubble = ({ msg, currentUserId }) => {
     const isSystem = msg.message_type === 'system';
     const isOwn    = msg.sender?.id === currentUserId;
     const time = msg.created_at
-        ? new Date(msg.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })
+        ? new Date(msg.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
         : '';
-    const senderName = msg.sender?.display_name || msg.sender?.email || 'Noma\'lum';
+    const senderName = msg.sender?.display_name || msg.sender?.email || '?';
 
     if (isSystem) {
         return (
@@ -165,7 +166,7 @@ const MessageBubble = ({ msg, currentUserId }) => {
 };
 
 /* ─── Empty state ────────────────────────────────────────────── */
-const EmptyState = ({ icon: Icon, title, desc }) => (
+const EmptyStateBox = ({ icon: Icon, title, desc }) => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px', color: 'var(--color-text-muted)', padding: '40px' }}>
         <Icon style={{ width: '48px', height: '48px', opacity: 0.3 }} />
         <p style={{ fontWeight: 600, color: 'var(--color-text-secondary)', textAlign: 'center' }}>{title}</p>
@@ -173,23 +174,23 @@ const EmptyState = ({ icon: Icon, title, desc }) => (
     </div>
 );
 
-/* ─── FILTER TABS ─────────────────────────────────────────────── */
-const FILTERS = [
-    { label: 'Barchasi', value: '' },
-    { label: 'To\'lov qilindi', value: 'paid' },
-    { label: 'Topshirildi', value: 'delivered' },
-    { label: 'Tasdiqlandi', value: 'confirmed' },
-    { label: 'Bahsli', value: 'disputed' },
-];
-
 /* ─── MAIN COMPONENT ──────────────────────────────────────────── */
 export default function AdminTradeChats() {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [activeFilter, setActiveFilter] = useState('');
     const [activeChatId, setActiveChatId] = useState(null);
     const [text, setText] = useState('');
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
+
+    const FILTERS = [
+        { label: t('admin_trade_chats.all'), value: '' },
+        { label: t('admin_trade_chats.status_paid'), value: 'paid' },
+        { label: t('admin_trade_chats.status_delivered'), value: 'delivered' },
+        { label: t('admin_trade_chats.status_confirmed'), value: 'confirmed' },
+        { label: t('admin_trade_chats.status_disputed'), value: 'disputed' },
+    ];
 
     const { data: chatsData, isLoading: chatsLoading, refetch } = useAdminOrderChats(activeFilter);
     const chats = useMemo(() => {
@@ -240,10 +241,10 @@ export default function AdminTradeChats() {
             {/* Page header */}
             <div style={{ marginBottom: '24px' }}>
                 <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
-                    Savdo chatlari
+                    {t('admin_trade_chats.title')}
                 </h1>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: '13px', marginTop: '4px' }}>
-                    Barcha escrow savdolarining chatlari. Admin birinchi xabar yuborganda akkaunt ma'lumotlari avtomatik chiqadi.
+                    {t('admin_trade_chats.description')}
                 </p>
             </div>
 
@@ -270,12 +271,12 @@ export default function AdminTradeChats() {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
                                 <Filter style={{ width: '14px', height: '14px' }} />
-                                Filtr
+                                {t('admin_trade_chats.filter')}
                             </div>
                             <button
                                 onClick={() => refetch()}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: '4px', borderRadius: '6px' }}
-                                title="Yangilash"
+                                title={t('admin_trade_chats.refresh')}
                             >
                                 <RefreshCw style={{ width: '14px', height: '14px' }} />
                             </button>
@@ -303,9 +304,9 @@ export default function AdminTradeChats() {
                     {/* Chat list */}
                     <div style={{ flex: 1, overflowY: 'auto' }}>
                         {chatsLoading ? (
-                            <EmptyState icon={RefreshCw} title="Yuklanmoqda..." />
+                            <EmptyStateBox icon={RefreshCw} title={t('common.loading') || '...'} />
                         ) : chats.length === 0 ? (
-                            <EmptyState icon={ShoppingBag} title="Savdo chatlari yo'q" desc="Hozircha bu filtrdagi savdolar mavjud emas." />
+                            <EmptyStateBox icon={ShoppingBag} title={t('admin_trade_chats.no_chats')} />
                         ) : (
                             chats.map(chat => (
                                 <ChatListItem
@@ -313,6 +314,7 @@ export default function AdminTradeChats() {
                                     chat={chat}
                                     isActive={chat.id === activeChatId}
                                     onClick={() => setActiveChatId(chat.id)}
+                                    t={t}
                                 />
                             ))
                         )}
@@ -326,17 +328,17 @@ export default function AdminTradeChats() {
                         display: 'flex', alignItems: 'center', gap: '6px',
                     }}>
                         <ShoppingBag style={{ width: '12px', height: '12px' }} />
-                        Jami: <strong style={{ color: 'var(--color-text-secondary)' }}>{chats.length}</strong> ta savdo
+                        {t('admin_trade_chats.total_trades')}: <strong style={{ color: 'var(--color-text-secondary)' }}>{chats.length}</strong>
                     </div>
                 </div>
 
                 {/* ── Right: chat panel ── */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     {!activeChatId ? (
-                        <EmptyState
+                        <EmptyStateBox
                             icon={MessageCircle}
-                            title="Chatni tanlang"
-                            desc="Chap tomondagi ro'yxatdan savdo chatini tanlang."
+                            title={t('admin_trade_chats.select_chat')}
+                            desc={t('admin_trade_chats.select_chat_desc')}
                         />
                     ) : (
                         <>
@@ -356,20 +358,20 @@ export default function AdminTradeChats() {
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <p style={{ fontWeight: 600, fontSize: '14px', color: 'var(--color-text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {activeChat?.listing_title || 'Savdo chat'}
+                                        {activeChat?.listing_title || t('admin_trade_chats.trade_chat')}
                                     </p>
                                     <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', margin: 0 }}>
-                                        {activeChat?.buyer_name && `🛒 ${activeChat.buyer_name}`}
-                                        {activeChat?.buyer_name && activeChat?.seller_name && ' ↔ '}
-                                        {activeChat?.seller_name && `💰 ${activeChat.seller_name}`}
-                                        {activeChat?.listing_game && ` · ${activeChat.listing_game}`}
+                                        {activeChat?.buyer_name}
+                                        {activeChat?.buyer_name && activeChat?.seller_name && ' \u2194 '}
+                                        {activeChat?.seller_name}
+                                        {activeChat?.listing_game && ` \u00b7 ${activeChat.listing_game}`}
                                     </p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-                                    {activeChat?.escrow_status && <StatusBadge status={activeChat.escrow_status} />}
+                                    {activeChat?.escrow_status && <StatusBadge status={activeChat.escrow_status} t={t} />}
                                     {activeChat?.escrow_amount && (
                                         <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-accent-green)' }}>
-                                            {Number(activeChat.escrow_amount).toLocaleString('uz-UZ')} so'm
+                                            {Number(activeChat.escrow_amount).toLocaleString()} UZS
                                         </span>
                                     )}
                                 </div>
@@ -385,18 +387,16 @@ export default function AdminTradeChats() {
                                     display: 'flex', alignItems: 'center', gap: '6px',
                                 }}>
                                     <AlertTriangle style={{ width: '14px', height: '14px', color: 'var(--color-accent-orange)', flexShrink: 0 }} />
-                                    <span>
-                                        <strong>Eslatma:</strong> Siz birinchi xabar yuborganingizda akkaunt login/parol ma'lumotlari avtomatik chatga qo'shiladi.
-                                    </span>
+                                    <span>{t('admin_trade_chats.admin_note')}</span>
                                 </div>
                             )}
 
                             {/* Messages area */}
                             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0', display: 'flex', flexDirection: 'column' }}>
                                 {msgsLoading ? (
-                                    <EmptyState icon={RefreshCw} title="Xabarlar yuklanmoqda..." />
+                                    <EmptyStateBox icon={RefreshCw} title={t('common.loading') || '...'} />
                                 ) : messages.length === 0 ? (
-                                    <EmptyState icon={MessageCircle} title="Xabarlar yo'q" desc="Hali hech kim xabar yubormagan." />
+                                    <EmptyStateBox icon={MessageCircle} title={t('admin_trade_chats.no_messages')} />
                                 ) : (
                                     messages.map(msg => (
                                         <MessageBubble key={msg.id} msg={msg} currentUserId={user?.id} />
@@ -418,7 +418,7 @@ export default function AdminTradeChats() {
                                         value={text}
                                         onChange={e => setText(e.target.value)}
                                         onKeyDown={handleKeyDown}
-                                        placeholder="Xabar yozing... (Enter — yuborish, Shift+Enter — yangi qator)"
+                                        placeholder={t('admin_trade_chats.message_placeholder')}
                                         rows={1}
                                         style={{
                                             width: '100%', resize: 'none', overflowY: 'auto',
@@ -449,7 +449,7 @@ export default function AdminTradeChats() {
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         transition: 'background 0.15s',
                                     }}
-                                    title="Yuborish (Enter)"
+                                    title={t('admin_trade_chats.send')}
                                 >
                                     <Send style={{ width: '16px', height: '16px' }} />
                                 </button>
