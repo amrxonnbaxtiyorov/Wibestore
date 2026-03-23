@@ -12,7 +12,7 @@ import urllib.request
 
 logger = logging.getLogger("apps.payments")
 
-BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "") or os.getenv("TELEGRAM_BOT_TOKEN", "")
 SITE_URL = os.getenv("SITE_URL", "https://wibestore.net").rstrip("/")
 TELEGRAM_BOT_LINK = os.getenv("TELEGRAM_BOT_LINK", "https://t.me/wibestoreuz_bot")
 
