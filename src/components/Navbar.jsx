@@ -25,6 +25,8 @@ const Navbar = () => {
     const [searchFocused, setSearchFocused] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+    const [balancePulse, setBalancePulse] = useState(false);
+    const prevBalanceRef = useRef(null);
 
     const profileRef = useRef(null);
     const langRef = useRef(null);
@@ -41,6 +43,17 @@ const Navbar = () => {
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, []);
+
+    // Balance pulse animation when balance changes
+    useEffect(() => {
+        const currentBalance = profileData?.balance;
+        if (currentBalance !== undefined && prevBalanceRef.current !== null && currentBalance !== prevBalanceRef.current) {
+            setBalancePulse(true);
+            const timer = setTimeout(() => setBalancePulse(false), 650);
+            return () => clearTimeout(timer);
+        }
+        if (currentBalance !== undefined) prevBalanceRef.current = currentBalance;
+    }, [profileData?.balance]);
 
     // Close dropdowns on outside click or Escape
     useEffect(() => {
@@ -423,7 +436,7 @@ const Navbar = () => {
                                         }}
                                     >
                                         {!isMobile && isAuthenticated && (
-                                          <span className="navbar-balance-badge" style={{
+                                          <span className={`navbar-balance-badge${balancePulse ? ' balance-pulse' : ''}`} style={{
                                             fontSize: 13,
                                             fontWeight: 600,
                                             color: 'var(--color-success-text)',
