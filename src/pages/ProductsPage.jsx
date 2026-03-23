@@ -120,114 +120,117 @@ const ProductsPage = () => {
 
             <div className="gh-container">
                 {/* Search & Filters Bar */}
-                <div
-                    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
-                    style={{ marginBottom: '24px' }}
-                >
-                    {/* Search */}
-                    <div className="relative flex-1">
-                        <Search
-                            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-                            style={{ color: 'var(--color-text-muted)' }}
-                        />
-                        <input
-                            type="text"
-                            placeholder={t('products.search_placeholder') || 'Search accounts...'}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="input input-md w-full"
-                            style={{ paddingLeft: '36px' }}
-                        />
-                        {searchQuery && (
+                <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {/* Row 1: Search + Game filter */}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {/* Search */}
+                        <div className="relative" style={{ flex: '1 1 200px', minWidth: '180px' }}>
+                            <Search
+                                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                                style={{ color: 'var(--color-text-muted)' }}
+                            />
+                            <input
+                                type="text"
+                                placeholder={t('products.search_placeholder') || 'Akkauntlarni qidirish...'}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="input input-md w-full"
+                                style={{ paddingLeft: '36px' }}
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                                    style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Game Filter */}
+                        <select
+                            value={selectedGame}
+                            onChange={(e) => setSelectedGame(e.target.value)}
+                            className="select select-md"
+                            style={{ minWidth: '160px', flex: '0 1 200px' }}
+                            aria-label="Filter by game"
+                        >
+                            <option value="all">{t('products.all_games') || "Barcha o'yinlar"}</option>
+                            {games.map((game, index) => (
+                                <option key={game?.id ?? game?.slug ?? index} value={game?.slug ?? game?.id ?? ''}>{game?.name ?? ''}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Row 2: Price range + Sort + Warranty + View toggle */}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {/* Min / Max narx */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <input
+                                type="number"
+                                min={0}
+                                placeholder={t('products.min_price') || 'Min narx'}
+                                value={priceRange.min || ''}
+                                onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) || 0 }))}
+                                className="input input-md"
+                                style={{ width: '120px' }}
+                            />
+                            <span style={{ color: 'var(--color-text-muted)', flexShrink: 0 }}>–</span>
+                            <input
+                                type="number"
+                                min={0}
+                                placeholder={t('products.max_price') || 'Max narx'}
+                                value={priceRange.max >= 10000000 ? '' : priceRange.max || ''}
+                                onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) || 10000000 }))}
+                                className="input input-md"
+                                style={{ width: '120px' }}
+                            />
+                        </div>
+
+                        {/* Sort */}
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="select select-md"
+                            style={{ minWidth: '150px', flex: '0 1 180px' }}
+                            aria-label="Sort by"
+                        >
+                            {sortOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+
+                        {/* Warranty filter */}
+                        <label className="flex items-center gap-2 cursor-pointer" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            <input
+                                type="checkbox"
+                                checked={hasWarrantyOnly}
+                                onChange={(e) => setHasWarrantyOnly(e.target.checked)}
+                                className="checkbox checkbox-sm"
+                            />
+                            <span className="text-sm">{t('products.warranty_only') || 'Kafolatli'}</span>
+                        </label>
+
+                        {/* View toggle */}
+                        <div className="flex items-center gap-1" style={{ marginLeft: 'auto', flexShrink: 0 }}>
                             <button
-                                onClick={() => setSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2"
-                                style={{ color: 'var(--color-text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                onClick={() => setViewMode('grid')}
+                                className={`btn btn-sm ${viewMode === 'grid' ? 'btn-secondary' : 'btn-ghost'}`}
+                                style={{ padding: '0 8px' }}
+                                aria-label="Grid view"
                             >
-                                <X className="w-4 h-4" />
+                                <Grid className="w-4 h-4" />
                             </button>
-                        )}
-                    </div>
-
-                    {/* Game Filter */}
-                    <select
-                        value={selectedGame}
-                        onChange={(e) => setSelectedGame(e.target.value)}
-                        className="select select-md"
-                        style={{ maxWidth: '100%', minWidth: 0 }}
-                        aria-label="Filter by game"
-                    >
-                        <option value="all">{t('products.all_games') || 'All Games'}</option>
-                        {games.map((game, index) => (
-                            <option key={game?.id ?? game?.slug ?? index} value={game?.slug ?? game?.id ?? ''}>{game?.name ?? ''}</option>
-                        ))}
-                    </select>
-
-                    {/* Min / Max narx */}
-                    <div className="flex items-center gap-2" style={{ flexWrap: 'wrap', minWidth: 0 }}>
-                        <input
-                            type="number"
-                            min={0}
-                            placeholder={t('products.min_price') || 'Min narx'}
-                            value={priceRange.min || ''}
-                            onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) || 0 }))}
-                            className="input input-md"
-                            style={{ width: '100px', minWidth: 0, flex: '1 1 80px', maxWidth: '130px' }}
-                        />
-                        <span style={{ color: 'var(--color-text-muted)' }}>–</span>
-                        <input
-                            type="number"
-                            min={0}
-                            placeholder={t('products.max_price') || 'Max narx'}
-                            value={priceRange.max >= 10000000 ? '' : priceRange.max || ''}
-                            onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) || 10000000 }))}
-                            className="input input-md"
-                            style={{ width: '100px', minWidth: 0, flex: '1 1 80px', maxWidth: '130px' }}
-                        />
-                    </div>
-
-                    {/* Sort */}
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="select select-md"
-                        style={{ maxWidth: '100%', minWidth: 0 }}
-                        aria-label="Sort by"
-                    >
-                        {sortOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-
-                    {/* Warranty filter */}
-                    <label className="flex items-center gap-2 cursor-pointer" style={{ whiteSpace: 'nowrap' }}>
-                        <input
-                            type="checkbox"
-                            checked={hasWarrantyOnly}
-                            onChange={(e) => setHasWarrantyOnly(e.target.checked)}
-                            className="checkbox checkbox-sm"
-                        />
-                        <span className="text-sm">{t('products.warranty_only') || 'Kafolatli'}</span>
-                    </label>
-
-                    {/* View toggle */}
-                    <div className="flex items-center gap-1">
-                        <button
-                            onClick={() => setViewMode('grid')}
-                            className={`btn btn-sm ${viewMode === 'grid' ? 'btn-secondary' : 'btn-ghost'}`}
-                            style={{ padding: '0 8px' }}
-                            aria-label="Grid view"
-                        >
-                            <Grid className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className={`btn btn-sm ${viewMode === 'list' ? 'btn-secondary' : 'btn-ghost'}`}
-                            style={{ padding: '0 8px' }}
-                            aria-label="List view"
-                        >
-                            <List className="w-4 h-4" />
-                        </button>
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`btn btn-sm ${viewMode === 'list' ? 'btn-secondary' : 'btn-ghost'}`}
+                                style={{ padding: '0 8px' }}
+                                aria-label="List view"
+                            >
+                                <List className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
