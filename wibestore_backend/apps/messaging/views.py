@@ -36,6 +36,13 @@ class ChatRoomListView(generics.ListAPIView):
             participants=self.request.user, is_active=True
         ).select_related("listing", "listing__game").prefetch_related("participants", "listing__images")
 
+    def list(self, request, *args, **kwargs):
+        try:
+            return super().list(request, *args, **kwargs)
+        except Exception as e:
+            logger.error("ChatRoomListView error: %s", e, exc_info=True)
+            return Response({"results": []}, status=status.HTTP_200_OK)
+
 
 @extend_schema(tags=["Messaging"])
 class ChatRoomCreateView(APIView):

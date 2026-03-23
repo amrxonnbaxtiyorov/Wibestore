@@ -26,7 +26,9 @@ function t(key) {
  */
 
 // Глобальный обработчик ошибок
-const globalErrorHandler = (error) => {
+const globalErrorHandler = (error, query) => {
+  // Skip toast for silent queries (background polling like chats)
+  if (query?.meta?.silent) return;
   console.error('[React Query] Global error:', error);
 
   // Логирование в Sentry (если настроен)
