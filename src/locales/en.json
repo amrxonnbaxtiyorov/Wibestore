@@ -69,6 +69,7 @@
         "popular_games": "Popular Games",
         "premium_accounts": "Premium Accounts",
         "recommended": "Recommended",
+        "all_accounts": "Accounts",
         "all": "All",
         "more": "More"
     },
@@ -109,7 +110,9 @@
         "feat_homepage": "Homepage visibility",
         "feat_homepage_first": "Homepage first",
         "feat_3x": "3x more visibility",
+        "feat_boost_10": "First 10 listings boosted to homepage top",
         "feat_top": "Top position",
+        "feat_boost_30": "First 30 listings boosted to homepage top",
         "feat_vip_badge": "VIP golden badge",
         "feat_search": "Top search position",
         "feat_support": "Priority support",

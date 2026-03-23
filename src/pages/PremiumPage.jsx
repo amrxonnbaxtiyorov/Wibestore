@@ -37,7 +37,7 @@ const PremiumPage = () => {
         premium: [
             { text: t('premium.feat_sell') || 'Sell accounts', included: true },
             { text: t('premium.feat_commission_8') || '8% commission', included: true },
-            { text: t('premium.feat_3x') || '3x more visibility', included: true },
+            { text: t('premium.feat_boost_10') || "Birinchi 10 ta e'lon bosh sahifada tepada", included: true, highlight: true },
             { text: t('premium.feat_badge') || 'Premium badge', included: true },
             { text: t('premium.feat_homepage') || 'Homepage visibility', included: true },
             { text: t('premium.feat_search') || 'Top search position', included: true },
@@ -47,7 +47,7 @@ const PremiumPage = () => {
         pro: [
             { text: t('premium.feat_sell') || 'Sell accounts', included: true },
             { text: t('premium.feat_commission_5') || '5% commission', included: true },
-            { text: t('premium.feat_top') || 'Top position', included: true },
+            { text: t('premium.feat_boost_30') || "Birinchi 30 ta e'lon bosh sahifada tepada", included: true, highlight: true },
             { text: t('premium.feat_vip_badge') || 'VIP golden badge', included: true },
             { text: t('premium.feat_homepage_first') || 'Homepage first', included: true },
             { text: t('premium.feat_fast_pay') || 'Fast payout (24h)', included: true },
@@ -318,7 +318,8 @@ const PremiumPage = () => {
                                         </div>
                                         <span style={{
                                             fontSize: 'var(--font-size-sm)',
-                                            color: feature.included ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                                            color: feature.highlight ? 'var(--color-accent-blue)' : feature.included ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                                            fontWeight: feature.highlight ? 'var(--font-weight-semibold)' : 'normal',
                                         }}>
                                             {feature.text}
                                         </span>

@@ -69,6 +69,7 @@
         "popular_games": "Mashhur o'yinlar",
         "premium_accounts": "Premium akkauntlar",
         "recommended": "Tavsiya etilgan",
+        "all_accounts": "Akkauntlar",
         "all": "Barchasi",
         "more": "Ko'proq"
     },
@@ -109,7 +110,9 @@
         "feat_homepage": "Bosh sahifada ko'rinish",
         "feat_homepage_first": "Bosh sahifada birinchi",
         "feat_3x": "3 marta ko'proq ko'rinish",
+        "feat_boost_10": "Birinchi 10 ta e'lon bosh sahifada tepada",
         "feat_top": "Eng yuqori joylashuv",
+        "feat_boost_30": "Birinchi 30 ta e'lon bosh sahifada tepada",
         "feat_vip_badge": "VIP oltin nishon",
         "feat_search": "Qidiruvda birinchi",
         "feat_support": "Ustuvor qo'llab-quvvatlash",

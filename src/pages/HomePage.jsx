@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Shield, Zap, Users, TrendingUp, Star, Crown, ChevronRight, Trophy } from 'lucide-react';
+import { ArrowRight, Shield, Zap, Users, TrendingUp, Crown, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useGames, useListings, useSEO } from '../hooks';
 import GameCard from '../components/GameCard';
 import AccountCard from '../components/AccountCard';
@@ -53,7 +53,7 @@ const HomePage = () => {
 
     // API hooks
     const { data: gamesData, isLoading: gamesLoading } = useGames();
-    const { data: listingsData, isLoading: listingsLoading } = useListings({ limit: 8 });
+    const { data: listingsData, isLoading: listingsLoading } = useListings({ limit: 40 });
 
     // Faqat backend (API) dan kelgan o'yinlar
     const rawGames = gamesData?.results ?? gamesData ?? [];
@@ -69,10 +69,7 @@ const HomePage = () => {
     const rawListings = listingsData?.pages?.flatMap?.(page => page?.results ?? []) ?? listingsData?.results ?? listingsData ?? [];
     const allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
 
-    const premiumAccounts = allListings.filter(l => l?.is_premium || l?.isPremium || l?.seller?.is_premium || l?.seller?.plan === 'premium' || l?.seller?.plan === 'pro').slice(0, 6);
-    const recommendedAccounts = allListings.slice(0, 8);
-
-    // Listing → AccountCard format (API va mock ikkalasini qo'llab-quvvatlash)
+    // Listing → AccountCard format
     const toAccountCard = (account) => ({
         id: account?.id,
         gameId: account?.game?.slug ?? account?.game_slug ?? account?.game?.id ?? account?.gameId,
@@ -87,17 +84,25 @@ const HomePage = () => {
         is_pro: account?.seller?.is_pro ?? (account?.seller?.plan === 'pro') ?? false,
     });
 
-    // Top accounts - sorted by premium status and rating
-    const topAccounts = [...allListings]
-        .sort((a, b) => {
-            if (!a || !b) return 0;
-            const aPremium = a.is_premium || a.isPremium;
-            const bPremium = b.is_premium || b.isPremium;
-            if (aPremium && !bPremium) return -1;
-            if (!aPremium && bPremium) return 1;
-            return (b.seller?.rating || 0) - (a.seller?.rating || 0);
-        })
-        .slice(0, 8);
+    // Akkauntlarni obuna bo'yicha tartiblash:
+    // 1) Pro obunali sotuvchilar (birinchi 30 ta e'lon tepada)
+    // 2) Premium obunali sotuvchilar (birinchi 10 ta e'lon tepada)
+    // 3) Oddiy (obunasiz) foydalanuvchilar pastda
+    const sortedAccounts = [...allListings].sort((a, b) => {
+        if (!a || !b) return 0;
+        const aPlan = a.seller?.plan || 'free';
+        const bPlan = b.seller?.plan || 'free';
+        const aPro = aPlan === 'pro' || a.seller?.is_pro;
+        const bPro = bPlan === 'pro' || b.seller?.is_pro;
+        const aPremium = aPlan === 'premium' || a.is_premium || a.isPremium || a.seller?.is_premium;
+        const bPremium = bPlan === 'premium' || b.is_premium || b.isPremium || b.seller?.is_premium;
+        // Pro > Premium > Free
+        const aRank = aPro ? 3 : aPremium ? 2 : 1;
+        const bRank = bPro ? 3 : bPremium ? 2 : 1;
+        if (aRank !== bRank) return bRank - aRank;
+        // Bir xil darajada — reytingga qarab
+        return (b.seller?.rating || 0) - (a.seller?.rating || 0);
+    });
 
     const totalListings = listingsData?.pages?.[0]?.count ?? 0;
     const statsData = [
@@ -302,114 +307,7 @@ const HomePage = () => {
                 </div>
             </section>
 
-            {/* Premium Accounts Section */}
-            <section
-                style={{
-                    paddingTop: '48px',
-                    paddingBottom: '48px',
-                    position: 'relative',
-                }}
-            >
-                {/* Subtle premium line */}
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '1px',
-                        background: 'linear-gradient(90deg, transparent, var(--color-premium-gold-light), transparent)',
-                        opacity: 0.3,
-                    }}
-                />
-
-                <div className="gh-container">
-                    <div className="flex items-center justify-between" style={{ marginBottom: '24px' }}>
-                        <h2
-                            className="flex items-center gap-2"
-                            style={{
-                                fontSize: 'var(--font-size-xl)',
-                                fontWeight: 'var(--font-weight-semibold)',
-                                color: 'var(--color-text-primary)',
-                            }}
-                        >
-                            <Crown className="w-5 h-5" style={{ color: 'var(--color-premium-gold-light)' }} />
-                            {t('sections.premium_accounts')}
-                        </h2>
-                        <Link
-                            to="/top"
-                            className="flex items-center gap-1 text-sm font-medium"
-                            style={{ color: 'var(--color-premium-gold-light)', textDecoration: 'none' }}
-                        >
-                            {t('sections.all')}
-                            <ChevronRight className="w-4 h-4" />
-                        </Link>
-                    </div>
-
-                    {/* Horizontal scroll slider — ma'lumot bor bo'lsa darhol ko'rsatamiz, API kutmaymiz */}
-                    <div className="scroll-fade-x" style={{ margin: '0 -16px', padding: '0 16px 16px' }}>
-                        <div
-                            className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
-                        >
-                            {premiumAccounts.length > 0 ? (
-                                premiumAccounts.map((account) => (
-                                    <AccountCard key={account?.id ?? account?.title} account={toAccountCard(account)} featured />
-                                ))
-                            ) : listingsLoading ? (
-                                Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-                            ) : null}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Top Accounts Section */}
-            <section
-                style={{
-                    paddingTop: '48px',
-                    paddingBottom: '48px',
-                    backgroundColor: 'var(--color-bg-secondary)',
-                }}
-            >
-                <div className="gh-container">
-                    <div className="flex items-center justify-between" style={{ marginBottom: '24px' }}>
-                        <h2
-                            className="flex items-center gap-2"
-                            style={{
-                                fontSize: 'var(--font-size-xl)',
-                                fontWeight: 'var(--font-weight-semibold)',
-                                color: 'var(--color-text-primary)',
-                            }}
-                        >
-                            <Trophy className="w-5 h-5" style={{ color: 'var(--color-premium-gold-light)' }} />
-                            {t('nav.top')}
-                        </h2>
-                        <Link
-                            to="/top"
-                            className="flex items-center gap-1 text-sm font-medium"
-                            style={{ color: 'var(--color-text-accent)', textDecoration: 'none' }}
-                        >
-                            {t('sections.all')}
-                            <ChevronRight className="w-4 h-4" />
-                        </Link>
-                    </div>
-
-                    <div
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger"
-                        style={{ gap: '16px' }}
-                    >
-                        {topAccounts.length > 0 ? (
-                            topAccounts.map((account) => (
-                                <AccountCard key={account?.id ?? account?.title} account={toAccountCard(account)} />
-                            ))
-                        ) : listingsLoading ? (
-                            Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-                        ) : null}
-                    </div>
-                </div>
-            </section>
-
-            {/* Recommended Accounts Section */}
+            {/* All Accounts — obunali tepada, oddiy pastda */}
             <section style={{ paddingTop: '48px', paddingBottom: '48px' }}>
                 <div className="gh-container">
                     <div className="flex items-center justify-between" style={{ marginBottom: '24px' }}>
@@ -421,15 +319,15 @@ const HomePage = () => {
                                 color: 'var(--color-text-primary)',
                             }}
                         >
-                            <Star className="w-5 h-5" style={{ color: 'var(--color-text-accent)' }} />
-                            {t('sections.recommended')}
+                            <ShoppingBag className="w-5 h-5" style={{ color: 'var(--color-text-accent)' }} />
+                            {t('sections.all_accounts') || 'Akkauntlar'}
                         </h2>
                         <Link
                             to="/products"
                             className="flex items-center gap-1 text-sm font-medium"
                             style={{ color: 'var(--color-text-accent)', textDecoration: 'none' }}
                         >
-                            {t('sections.more')}
+                            {t('sections.all')}
                             <ChevronRight className="w-4 h-4" />
                         </Link>
                     </div>
@@ -438,13 +336,17 @@ const HomePage = () => {
                         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger"
                         style={{ gap: '16px' }}
                     >
-                        {recommendedAccounts.length > 0 ? (
-                            recommendedAccounts.map((account) => (
+                        {sortedAccounts.length > 0 ? (
+                            sortedAccounts.map((account) => (
                                 <AccountCard key={account?.id ?? account?.title} account={toAccountCard(account)} />
                             ))
                         ) : listingsLoading ? (
                             Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-                        ) : null}
+                        ) : (
+                            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', padding: 'var(--space-6)' }}>
+                                {t('common.no_data') || "Hozircha e'lonlar yo'q"}
+                            </p>
+                        )}
                     </div>
                 </div>
             </section>
