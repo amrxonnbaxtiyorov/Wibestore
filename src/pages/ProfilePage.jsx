@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Tag, Heart, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle, BarChart3, Copy, Star, Crown, Gem, Wallet, TrendingUp } from 'lucide-react';
+import { ShoppingBag, Tag, Heart, Settings, Edit2, LogOut, Package, Clock, CheckCircle, XCircle, Trash2, PlusCircle, BarChart3, Copy, Star, Crown, Gem, Wallet, TrendingUp, ArrowDownCircle, CreditCard, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing, useSellerDashboard, useGames } from '../hooks';
+import { useProfile, useProfileListings, useProfileFavorites, useProfilePurchases, useProfileSales, useDeleteListing, useSellerDashboard, useGames, useCreateWithdrawal, useWithdrawals } from '../hooks';
 import AccountCard from '../components/AccountCard';
 import AvatarEditModal from '../components/AvatarEditModal';
 import UserAvatar from '../components/UserAvatar';
@@ -32,6 +32,12 @@ const ProfilePage = () => {
 
     const { mutate: deleteListingMutation } = useDeleteListing();
     const { data: gamesData } = useGames();
+
+    // Withdrawal hooks
+    const { data: withdrawalsData, isLoading: withdrawalsLoading } = useWithdrawals();
+    const { mutate: createWithdrawal, isPending: withdrawalSubmitting } = useCreateWithdrawal();
+    const [showWithdrawalForm, setShowWithdrawalForm] = useState(false);
+    const [withdrawalForm, setWithdrawalForm] = useState({ amount: '', card_number: '', card_holder_name: '', card_type: 'humo' });
 
     useEffect(() => {
         if (!isAuthenticated) navigate('/login');
@@ -363,6 +369,179 @@ const ProfilePage = () => {
                                 <div className="card" style={{ padding: '16px', textAlign: 'center' }}>
                                     <div style={{ fontSize: '24px', fontWeight: 700 }}>{dashboardData?.conversion ?? 0}%</div>
                                     <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{t('profile.conversion') || 'Conversion'}</div>
+                                </div>
+                            </div>
+
+                            {/* Withdrawal Section */}
+                            <div style={{
+                                backgroundColor: 'var(--color-bg-secondary)',
+                                border: '1px solid var(--color-border-default)',
+                                borderRadius: 'var(--radius-xl)',
+                                overflow: 'hidden',
+                            }}>
+                                <div style={{
+                                    padding: '16px 20px',
+                                    borderBottom: '1px solid var(--color-border-muted)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <ArrowDownCircle style={{ width: '18px', height: '18px', color: 'var(--color-accent-orange)' }} />
+                                        <h3 style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                                            {t('withdrawal.title') || 'Pul yechish'}
+                                        </h3>
+                                    </div>
+                                    <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() => setShowWithdrawalForm(!showWithdrawalForm)}
+                                        disabled={Number(user.balance ?? 0) < 10000}
+                                    >
+                                        <CreditCard className="w-3.5 h-3.5" />
+                                        {showWithdrawalForm ? (t('common.cancel') || 'Bekor qilish') : (t('withdrawal.submit') || "So'rov yuborish")}
+                                    </button>
+                                </div>
+
+                                {/* Withdrawal Form */}
+                                {showWithdrawalForm && (
+                                    <div style={{ padding: '20px', borderBottom: '1px solid var(--color-border-muted)' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                            <div>
+                                                <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>
+                                                    {t('withdrawal.amount') || 'Miqdor'} (UZS)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    className="input"
+                                                    placeholder="10000"
+                                                    min="10000"
+                                                    max={user.balance ?? 0}
+                                                    value={withdrawalForm.amount}
+                                                    onChange={(e) => setWithdrawalForm(f => ({ ...f, amount: e.target.value }))}
+                                                    style={{ width: '100%' }}
+                                                />
+                                                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                                                    {t('withdrawal.min_amount') || "Minimal miqdor: 10,000 so'm"}
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>
+                                                    {t('withdrawal.card_type') || 'Karta turi'}
+                                                </label>
+                                                <select
+                                                    className="input"
+                                                    value={withdrawalForm.card_type}
+                                                    onChange={(e) => setWithdrawalForm(f => ({ ...f, card_type: e.target.value }))}
+                                                    style={{ width: '100%' }}
+                                                >
+                                                    <option value="humo">HUMO</option>
+                                                    <option value="uzcard">UZCARD</option>
+                                                    <option value="visa">VISA</option>
+                                                    <option value="mastercard">MasterCard</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                                            <div>
+                                                <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>
+                                                    {t('withdrawal.card_number') || 'Karta raqami'}
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    className="input"
+                                                    placeholder="8600 1234 5678 9012"
+                                                    maxLength={19}
+                                                    value={withdrawalForm.card_number}
+                                                    onChange={(e) => {
+                                                        const v = e.target.value.replace(/\D/g, '').slice(0, 16);
+                                                        const formatted = v.replace(/(.{4})/g, '$1 ').trim();
+                                                        setWithdrawalForm(f => ({ ...f, card_number: formatted }));
+                                                    }}
+                                                    style={{ width: '100%' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>
+                                                    {t('withdrawal.card_holder') || 'Karta egasi'}
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    className="input"
+                                                    placeholder="ALIYEV JASUR"
+                                                    value={withdrawalForm.card_holder_name}
+                                                    onChange={(e) => setWithdrawalForm(f => ({ ...f, card_holder_name: e.target.value.toUpperCase() }))}
+                                                    style={{ width: '100%' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <button
+                                            className="btn btn-primary"
+                                            disabled={withdrawalSubmitting || !withdrawalForm.amount || !withdrawalForm.card_number || !withdrawalForm.card_holder_name || Number(withdrawalForm.amount) < 10000 || Number(withdrawalForm.amount) > Number(user.balance ?? 0)}
+                                            onClick={() => {
+                                                createWithdrawal({
+                                                    amount: Number(withdrawalForm.amount),
+                                                    card_number: withdrawalForm.card_number.replace(/\s/g, ''),
+                                                    card_holder_name: withdrawalForm.card_holder_name,
+                                                    card_type: withdrawalForm.card_type,
+                                                }, {
+                                                    onSuccess: () => {
+                                                        addToast({ type: 'success', title: t('common.success'), message: t('withdrawal.submit') || "So'rov yuborildi" });
+                                                        setShowWithdrawalForm(false);
+                                                        setWithdrawalForm({ amount: '', card_number: '', card_holder_name: '', card_type: 'humo' });
+                                                    },
+                                                    onError: (err) => {
+                                                        addToast({ type: 'error', title: t('common.error'), message: err?.response?.data?.error || err?.message || t('withdrawal.insufficient_balance') });
+                                                    },
+                                                });
+                                            }}
+                                            style={{ width: '100%' }}
+                                        >
+                                            {withdrawalSubmitting && <Loader2 className="animate-spin w-4 h-4" />}
+                                            {t('withdrawal.submit') || "So'rov yuborish"}
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Withdrawal History */}
+                                <div style={{ padding: '16px 20px' }}>
+                                    <h4 style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-muted)', marginBottom: '12px' }}>
+                                        {t('withdrawal.history') || 'Yechish tarixi'}
+                                    </h4>
+                                    {withdrawalsLoading ? (
+                                        <div style={{ textAlign: 'center', padding: '20px' }}>
+                                            <Loader2 className="animate-spin" style={{ width: '24px', height: '24px', margin: '0 auto', color: 'var(--color-accent-blue)' }} />
+                                        </div>
+                                    ) : (withdrawalsData?.results || withdrawalsData || []).length > 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            {(withdrawalsData?.results || withdrawalsData || []).map((w) => (
+                                                <div key={w.id} style={{
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                    padding: '12px', borderRadius: 'var(--radius-lg)',
+                                                    backgroundColor: 'var(--color-bg-primary)', border: '1px solid var(--color-border-muted)',
+                                                }}>
+                                                    <div>
+                                                        <div style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                                                            {formatPrice(w.amount)}
+                                                        </div>
+                                                        <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                                            {(w.card_type || '').toUpperCase()} •••• {(w.card_number || '').slice(-4)} — {w.created_at ? new Date(w.created_at).toLocaleDateString() : ''}
+                                                        </div>
+                                                    </div>
+                                                    <span style={{
+                                                        padding: '2px 10px', borderRadius: 'var(--radius-full)', fontSize: 'var(--font-size-xs)', fontWeight: 'var(--font-weight-medium)',
+                                                        backgroundColor: w.status === 'completed' ? 'var(--color-success-bg)' : w.status === 'rejected' ? 'var(--color-error-bg)' : 'var(--color-warning-bg)',
+                                                        color: w.status === 'completed' ? 'var(--color-success-text)' : w.status === 'rejected' ? 'var(--color-error)' : 'var(--color-warning-text)',
+                                                    }}>
+                                                        {w.status === 'completed' ? (t('withdrawal.completed') || 'Bajarildi') : w.status === 'rejected' ? (t('withdrawal.rejected') || 'Rad etildi') : (t('withdrawal.pending') || 'Kutilmoqda')}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', padding: '12px 0' }}>
+                                            {t('withdrawal.no_withdrawals') || "Hali pul yechish so'rovlari yo'q"}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
