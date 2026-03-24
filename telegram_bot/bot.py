@@ -3576,44 +3576,168 @@ async def cmd_user_support(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 async def trade_confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Savdo tasdiqlash: trade_seller_ok / trade_buyer_ok / trade_cancel."""
+    """Savdo tasdiqlash: trade_seller_ok / trade_buyer_ok / trade_cancel.
+
+    Ikki tomon ham tasdiqlagandan so'ng avtomatik verifikatsiyaga o'tadi.
+    Kim birinchi tasdiqlashi muhim emas — ikkalasi ham tasdiqlashi kerak.
+    """
     query = update.callback_query
     await query.answer()
+
+    if await is_callback_already_processed(query.id):
+        return
 
     try:
         action, escrow_id = query.data.split(":", 1)
     except ValueError:
         return
 
-    api_url = f"{WEBSITE_URL}/api/v1/escrow/{escrow_id}/"
-    headers = {"Authorization": f"Bot {BOT_SECRET_KEY}"}
+    telegram_id = query.from_user.id
 
-    if action == "trade_seller_ok":
-        try:
-            if _AIOHTTP_AVAILABLE:
-                async with _aiohttp.ClientSession() as session:
-                    await session.patch(api_url, json={"seller_confirmed": True}, headers=headers)
-        except Exception as e:
-            logger.warning("trade_seller_ok API: %s", e)
-        await query.message.edit_text("✅ Siz tasdiqladingiz. Xaridor tasdiqini kutmoqda...")
+    try:
+        from apps.payments.models import EscrowTransaction
+        from apps.payments.services import EscrowService
 
-    elif action == "trade_buyer_ok":
-        try:
-            if _AIOHTTP_AVAILABLE:
-                async with _aiohttp.ClientSession() as session:
-                    await session.patch(api_url, json={"buyer_confirmed": True}, headers=headers)
-        except Exception as e:
-            logger.warning("trade_buyer_ok API: %s", e)
-        await query.message.edit_text("✅ Siz tasdiqladingiz. To'lov chiqarilmoqda...")
+        escrow = EscrowTransaction.objects.select_related(
+            "buyer", "seller", "listing"
+        ).filter(id=escrow_id).first()
 
-    elif action == "trade_cancel":
-        try:
-            if _AIOHTTP_AVAILABLE:
-                async with _aiohttp.ClientSession() as session:
-                    await session.post(f"{WEBSITE_URL}/api/v1/escrow/{escrow_id}/dispute/", headers=headers)
-        except Exception as e:
-            logger.warning("trade_cancel API: %s", e)
-        await query.message.edit_text("⚠️ Nizo ochildi. Moderator tez orada hal qiladi.")
+        if not escrow:
+            await query.edit_message_text("❌ Savdo topilmadi.")
+            return
+
+        if escrow.status not in ("paid", "delivered"):
+            await query.edit_message_text("ℹ️ Bu savdo allaqachon yakunlangan yoki bekor qilingan.")
+            return
+
+        listing_title = escrow.listing.title if escrow.listing else "—"
+
+        if action == "trade_seller_ok":
+            # Sotuvchi faqat o'z savdosini tasdiqlay oladi
+            if escrow.seller.telegram_id != telegram_id:
+                await query.answer("❌ Siz bu savdoning sotuvchisi emassiz!", show_alert=True)
+                return
+            if escrow.seller_confirmed:
+                await query.answer("ℹ️ Siz allaqachon tasdiqlagansiz.", show_alert=True)
+                return
+
+            escrow_obj, both = EscrowService.process_trade_confirmation(escrow, "seller")
+
+            if both:
+                await query.edit_message_text(
+                    f"🎉 <b>Savdo tasdiqlandi!</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"✅ Ikkala tomon ham tasdiqladi!\n"
+                    f"📋 Keyingi qadam: Verifikatsiya — hujjatlaringizni taqdim eting.\n\n"
+                    f"Bot sizga verifikatsiya so'rovini yuboradi.",
+                    parse_mode="HTML",
+                )
+                # Ikkinchi tomonga xabar
+                try:
+                    from apps.payments.telegram_notify import notify_trade_both_confirmed
+                    notify_trade_both_confirmed(escrow_obj)
+                except Exception as e:
+                    logger.warning("notify_trade_both_confirmed: %s", e)
+            else:
+                await query.edit_message_text(
+                    f"✅ <b>Siz savdoni tasdiqladingiz!</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"⏳ Haridor tasdiqini kutmoqda...\n"
+                    f"Haridor ham tasdiqlagandan so'ng keyingi bosqichga o'tiladi.",
+                    parse_mode="HTML",
+                )
+                # Haridorga xabar
+                try:
+                    from apps.payments.telegram_notify import notify_trade_party_confirmed
+                    notify_trade_party_confirmed(escrow_obj, confirmed_by="seller")
+                except Exception as e:
+                    logger.warning("notify_trade_party_confirmed: %s", e)
+
+        elif action == "trade_buyer_ok":
+            # Haridor faqat o'z savdosini tasdiqlay oladi
+            if escrow.buyer.telegram_id != telegram_id:
+                await query.answer("❌ Siz bu savdoning haridori emassiz!", show_alert=True)
+                return
+            if escrow.buyer_confirmed:
+                await query.answer("ℹ️ Siz allaqachon tasdiqlagansiz.", show_alert=True)
+                return
+
+            escrow_obj, both = EscrowService.process_trade_confirmation(escrow, "buyer")
+
+            if both:
+                await query.edit_message_text(
+                    f"🎉 <b>Savdo tasdiqlandi!</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"✅ Ikkala tomon ham tasdiqladi!\n"
+                    f"📋 Sotuvchi verifikatsiyadan o'tishi kerak.\n"
+                    f"Tasdiqlangandan so'ng pul sotuvchiga o'tkaziladi.",
+                    parse_mode="HTML",
+                )
+                try:
+                    from apps.payments.telegram_notify import notify_trade_both_confirmed
+                    notify_trade_both_confirmed(escrow_obj)
+                except Exception as e:
+                    logger.warning("notify_trade_both_confirmed: %s", e)
+            else:
+                await query.edit_message_text(
+                    f"✅ <b>Siz savdoni tasdiqladingiz!</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"⏳ Sotuvchi tasdiqini kutmoqda...\n"
+                    f"Sotuvchi ham tasdiqlagandan so'ng keyingi bosqichga o'tiladi.",
+                    parse_mode="HTML",
+                )
+                try:
+                    from apps.payments.telegram_notify import notify_trade_party_confirmed
+                    notify_trade_party_confirmed(escrow_obj, confirmed_by="buyer")
+                except Exception as e:
+                    logger.warning("notify_trade_party_confirmed: %s", e)
+
+        elif action == "trade_cancel":
+            # Kim bosganligi aniqlanadi
+            if escrow.seller.telegram_id == telegram_id:
+                side = "seller"
+            elif escrow.buyer.telegram_id == telegram_id:
+                side = "buyer"
+            else:
+                await query.answer("❌ Siz bu savdoning ishtirokchisi emassiz!", show_alert=True)
+                return
+
+            escrow_obj = EscrowService.cancel_trade_by_party(escrow, side, reason="Telegram orqali bekor qilindi")
+
+            if escrow_obj.status == "refunded":
+                await query.edit_message_text(
+                    f"❌ <b>Savdo bekor qilindi</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"Ikkala tomon ham bekor qildi.\n"
+                    f"💰 Pul haridorga qaytarildi.",
+                    parse_mode="HTML",
+                )
+            elif escrow_obj.status == "disputed":
+                await query.edit_message_text(
+                    f"⚠️ <b>Nizo ochildi</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"Bir tomon tasdiqladi, biri bekor qildi.\n"
+                    f"Admin tez orada hal qiladi.",
+                    parse_mode="HTML",
+                )
+            else:
+                other = "haridor" if side == "seller" else "sotuvchi"
+                await query.edit_message_text(
+                    f"❌ <b>Siz savdoni bekor qildingiz</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"⏳ {other.capitalize()} javobini kutmoqda...",
+                    parse_mode="HTML",
+                )
+
+            try:
+                from apps.payments.telegram_notify import notify_trade_cancelled
+                notify_trade_cancelled(escrow_obj, cancelled_by=side)
+            except Exception as e:
+                logger.warning("notify_trade_cancelled: %s", e)
+
+    except Exception as e:
+        logger.error("trade_confirm_callback error: %s", e, exc_info=True)
+        await query.edit_message_text(f"❌ Xatolik yuz berdi. Qayta urinib ko'ring.")
 
 
 # =================== BLOCK 2.3: Trade callback handlers ===================
