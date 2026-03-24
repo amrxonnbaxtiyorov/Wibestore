@@ -1880,24 +1880,542 @@ async def cb_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             logger.warning("Foydalanuvchi %s ga xabar yuborib bo'lmadi: %s", user_id, e)
 
 
+async def _admin_panel_text_and_kb():
+    """Admin panel uchun matn va klaviatura tayyorlash."""
+    import django
+    try:
+        django.setup()
+    except Exception:
+        pass
+    from django.contrib.auth import get_user_model
+    from apps.payments.models import EscrowTransaction, WithdrawalRequest, SellerVerification
+    User = get_user_model()
+
+    total_users = User.objects.filter(is_active=True).count()
+    tg_users = User.objects.filter(telegram_id__isnull=False, is_active=True).count()
+    active_trades = EscrowTransaction.objects.filter(status__in=['paid', 'delivered']).count()
+    pending_withdrawals = WithdrawalRequest.objects.filter(status='pending').count()
+    pending_verifications = SellerVerification.objects.filter(
+        status__in=['submitted', 'pending', 'passport_front_received', 'passport_back_received', 'video_received']
+    ).count()
+    completed_trades = EscrowTransaction.objects.filter(status='confirmed').count()
+    bot_users = len(_load_users())
+
+    # Bugungi start
+    from django.utils import timezone
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_new = User.objects.filter(date_joined__gte=today_start).count()
+
+    text = (
+        "🛠 <b>ADMIN PANEL</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👥 Jami foydalanuvchilar: <b>{total_users}</b>\n"
+        f"📱 Telegram ulangan: <b>{tg_users}</b>\n"
+        f"🤖 Bot foydalanuvchilari: <b>{bot_users}</b>\n"
+        f"🆕 Bugungi yangi: <b>{today_new}</b>\n\n"
+        f"📦 Aktiv savdolar: <b>{active_trades}</b>\n"
+        f"✅ Yakunlangan savdolar: <b>{completed_trades}</b>\n"
+        f"💳 Pul yechish so'rovlari: <b>{pending_withdrawals}</b>\n"
+        f"🔐 Verifikatsiya so'rovlari: <b>{pending_verifications}</b>\n"
+    )
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": f"📦 Savdolar ({active_trades})", "callback_data": "admpanel:trades"},
+                {"text": f"💳 Pul yechish ({pending_withdrawals})", "callback_data": "admpanel:withdrawals"},
+            ],
+            [
+                {"text": f"🔐 Verifikatsiya ({pending_verifications})", "callback_data": "admpanel:verifications"},
+                {"text": "👤 Foydalanuvchi qidirish", "callback_data": "admpanel:usersearch"},
+            ],
+            [
+                {"text": "📊 Statistika", "callback_data": "admpanel:stats"},
+                {"text": "🤖 Bot statistikasi", "callback_data": "admpanel:botstats"},
+            ],
+            [
+                {"text": "📢 Broadcast xabar", "callback_data": "admpanel:broadcast"},
+            ],
+        ]
+    }
+    return text, keyboard
+
+
 async def cmd_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Admin: umumiy panel (/admin)."""
+    """Admin: interaktiv panel (/admin)."""
     if not _is_admin(update.effective_user.id):
         return
-    _, data = await _payment_api("GET", "/transactions?status=PENDING&limit=100")
-    count = len(data.get("data", [])) if data.get("success") else "?"
-    users_count = len(_load_users())
-    await update.message.reply_html(
-        "🛠 <b>Admin Panel</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"📋 Kutilayotgan to'lovlar: <b>{count}</b>\n"
-        f"👥 Bot foydalanuvchilari: <b>{users_count}</b>\n\n"
-        "<b>Buyruqlar:</b>\n"
-        "/pending — kutilayotgan to'lovlar ro'yxati\n"
-        "/stats — to'lov statistikasi\n"
-        "/balance &lt;telegram_id&gt; — foydalanuvchi balansi\n"
-        "/broadcast &lt;matn&gt; — barcha userlarga xabar\n"
-        "/notify — soatlik xabarni hozir yuborish",
+    text, keyboard = await _admin_panel_text_and_kb()
+    await update.message.reply_html(text, reply_markup=InlineKeyboardMarkup(
+        keyboard["inline_keyboard"]
+    ))
+
+
+async def _cb_admin_panel_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin panelga qaytish."""
+    query = update.callback_query
+    await query.answer()
+    text, keyboard = await _admin_panel_text_and_kb()
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(
+        keyboard["inline_keyboard"]
+    ))
+
+
+async def _cb_admin_trades(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Aktiv savdolar ro'yxati."""
+    query = update.callback_query
+    await query.answer()
+    from apps.payments.models import EscrowTransaction
+    trades = (
+        EscrowTransaction.objects
+        .filter(status__in=['paid', 'delivered', 'disputed'])
+        .select_related('listing', 'buyer', 'seller')
+        .order_by('-created_at')[:10]
+    )
+    if not trades:
+        text = "📦 <b>Aktiv savdolar</b>\n\n✅ Hozircha aktiv savdo yo'q."
+    else:
+        lines = ["📦 <b>Aktiv savdolar</b> (oxirgi 10 ta)\n━━━━━━━━━━━━━━━━━━━━\n"]
+        status_emoji = {'paid': '💰', 'delivered': '📬', 'disputed': '⚠️'}
+        for t in trades:
+            emoji = status_emoji.get(t.status, '❓')
+            buyer_name = t.buyer.display_name if t.buyer else '?'
+            seller_name = t.seller.display_name if t.seller else '?'
+            title = t.listing.title[:25] if t.listing else '?'
+            amount = f"{int(t.amount):,}".replace(",", " ")
+            lines.append(
+                f"{emoji} <b>{title}</b>\n"
+                f"   💰 {amount} | {t.status}\n"
+                f"   👤 {buyer_name} → {seller_name}\n"
+            )
+        text = "\n".join(lines)
+    kb = InlineKeyboardMarkup([[
+        {"text": "🔙 Orqaga", "callback_data": "admpanel:back"},
+    ]])
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_withdrawals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Pul yechish so'rovlari."""
+    query = update.callback_query
+    await query.answer()
+    from apps.payments.models import WithdrawalRequest
+    pending = (
+        WithdrawalRequest.objects
+        .filter(status='pending')
+        .select_related('user')
+        .order_by('-created_at')[:10]
+    )
+    if not pending:
+        text = "💳 <b>Pul yechish so'rovlari</b>\n\n✅ Kutilayotgan so'rov yo'q."
+        kb = InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}]])
+    else:
+        lines = [f"💳 <b>Pul yechish so'rovlari</b> ({pending.count()} ta)\n━━━━━━━━━━━━━━━━━━━━\n"]
+        buttons = []
+        for w in pending:
+            uname = w.user.display_name if w.user else '?'
+            amount = f"{int(w.amount):,}".replace(",", " ")
+            card = w.card_number[-4:] if w.card_number else '****'
+            tg_id = w.user.telegram_id if w.user else '?'
+            lines.append(
+                f"👤 <b>{uname}</b> (TG: <code>{tg_id}</code>)\n"
+                f"   💰 {amount} so'm → {w.card_type} ****{card}\n"
+                f"   📛 {w.card_holder_name}\n"
+            )
+            wid = str(w.id)[:8]
+            buttons.append([
+                {"text": f"✅ {uname} — {amount}", "callback_data": f"adm_w_detail:{w.id}"},
+            ])
+        text = "\n".join(lines)
+        buttons.append([{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}])
+        kb = InlineKeyboardMarkup(buttons)
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_withdrawal_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Bitta pul yechish so'rovi tafsilotlari."""
+    query = update.callback_query
+    await query.answer()
+    wid = query.data.split(":", 1)[1]
+    from apps.payments.models import WithdrawalRequest
+    from apps.payments.models import EscrowTransaction
+    try:
+        w = WithdrawalRequest.objects.select_related('user').get(pk=wid)
+    except WithdrawalRequest.DoesNotExist:
+        await query.edit_message_text("❌ So'rov topilmadi.", reply_markup=InlineKeyboardMarkup(
+            [[{"text": "🔙 Orqaga", "callback_data": "admpanel:withdrawals"}]]
+        ))
+        return
+
+    user = w.user
+    total_sales = EscrowTransaction.objects.filter(seller=user, status='confirmed').count()
+    total_earned = EscrowTransaction.objects.filter(seller=user, status='confirmed').aggregate(
+        total=__import__('django').db.models.Sum('seller_earnings')
+    )['total'] or 0
+    balance = f"{int(user.balance):,}".replace(",", " ") if hasattr(user, 'balance') else '?'
+    amount = f"{int(w.amount):,}".replace(",", " ")
+
+    text = (
+        f"💳 <b>Pul yechish so'rovi</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 <b>{user.display_name}</b>\n"
+        f"🆔 Telegram: <code>{user.telegram_id or '—'}</code>\n"
+        f"📧 Email: {user.email}\n"
+        f"📱 Telefon: {user.phone_number or '—'}\n\n"
+        f"💰 So'rov: <b>{amount} so'm</b>\n"
+        f"💳 Karta: {w.card_type} <code>{w.card_number}</code>\n"
+        f"📛 Karta egasi: {w.card_holder_name}\n\n"
+        f"📊 <b>Foydalanuvchi statistikasi:</b>\n"
+        f"   💼 Joriy balans: {balance} so'm\n"
+        f"   📦 Sotilgan akkauntlar: {total_sales} ta\n"
+        f"   💵 Jami daromad: {int(total_earned):,} so'm\n".replace(",", " ")
+    )
+    kb = InlineKeyboardMarkup([
+        [
+            {"text": "✅ Tasdiqlash", "callback_data": f"withdraw_paid:{w.id}"},
+            {"text": "❌ Rad etish", "callback_data": f"withdraw_reject:{w.id}"},
+        ],
+        [{"text": "🔙 So'rovlar ro'yxati", "callback_data": "admpanel:withdrawals"}],
+    ])
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_verifications(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Verifikatsiya so'rovlari."""
+    query = update.callback_query
+    await query.answer()
+    from apps.payments.models import SellerVerification
+    pending = (
+        SellerVerification.objects
+        .filter(status__in=['submitted', 'pending', 'passport_front_received', 'passport_back_received', 'video_received'])
+        .select_related('seller', 'escrow', 'escrow__listing')
+        .order_by('-created_at')[:10]
+    )
+    if not pending:
+        text = "🔐 <b>Verifikatsiya so'rovlari</b>\n\n✅ Kutilayotgan so'rov yo'q."
+        kb = InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}]])
+    else:
+        lines = [f"🔐 <b>Verifikatsiya so'rovlari</b> ({pending.count()} ta)\n━━━━━━━━━━━━━━━━━━━━\n"]
+        buttons = []
+        for v in pending:
+            sname = v.seller.display_name if v.seller else '?'
+            listing_title = v.escrow.listing.title[:20] if v.escrow and v.escrow.listing else '?'
+            status_label = {
+                'submitted': '📨 Yuborildi',
+                'pending': '⏳ Kutilmoqda',
+                'passport_front_received': '📸 Old qism',
+                'passport_back_received': '📸 Orqa qism',
+                'video_received': '🎥 Video',
+            }.get(v.status, v.status)
+            lines.append(
+                f"👤 <b>{sname}</b> — {listing_title}\n"
+                f"   {status_label} | F.I.SH: {v.full_name or '—'}\n"
+            )
+            buttons.append([
+                {"text": f"📋 {sname} — {listing_title}", "callback_data": f"adm_v_detail:{v.id}"},
+            ])
+        text = "\n".join(lines)
+        buttons.append([{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}])
+        kb = InlineKeyboardMarkup(buttons)
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_verification_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Bitta verifikatsiya tafsilotlari — hujjatlarni ko'rish."""
+    query = update.callback_query
+    await query.answer()
+    vid = query.data.split(":", 1)[1]
+    from apps.payments.models import SellerVerification
+    try:
+        v = SellerVerification.objects.select_related('seller', 'escrow', 'escrow__listing').get(pk=vid)
+    except SellerVerification.DoesNotExist:
+        await query.edit_message_text("❌ Topilmadi.", reply_markup=InlineKeyboardMarkup(
+            [[{"text": "🔙 Orqaga", "callback_data": "admpanel:verifications"}]]
+        ))
+        return
+
+    seller = v.seller
+    listing = v.escrow.listing if v.escrow else None
+    lat = v.location_latitude
+    lng = v.location_longitude
+    loc_str = f"{lat:.5f}, {lng:.5f}" if lat and lng else "—"
+    maps_url = f"https://maps.google.com/?q={lat},{lng}" if lat and lng else ""
+
+    text = (
+        f"🔐 <b>Verifikatsiya tafsilotlari</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 Sotuvchi: <b>{seller.display_name}</b>\n"
+        f"📝 F.I.SH: <b>{v.full_name or '—'}</b>\n"
+        f"🆔 Telegram: <code>{seller.telegram_id or '—'}</code>\n"
+        f"📧 Email: {seller.email}\n\n"
+        f"📦 Akkaunt: <b>{listing.title if listing else '—'}</b>\n"
+        f"📍 Joylashuv: {loc_str}\n"
+    )
+    if maps_url:
+        text += f"🗺 <a href='{maps_url}'>Xaritada ko'rish</a>\n"
+    text += (
+        f"\n📸 Pasport old: {'✅ bor' if v.passport_front_file_id else '❌ yo`q'}\n"
+        f"📸 Pasport orqa: {'✅ bor' if v.passport_back_file_id else '❌ yo`q'}\n"
+        f"🎥 Video: {'✅ bor' if v.circle_video_file_id else '❌ yo`q'}\n"
+        f"📍 Joylashuv: {'✅ bor' if lat else '❌ yo`q'}\n"
+    )
+    buttons = []
+    if v.passport_front_file_id:
+        buttons.append([{"text": "📸 Pasport old tomonini ko'rish", "callback_data": f"adm_v_doc:front:{v.id}"}])
+    if v.passport_back_file_id:
+        buttons.append([{"text": "📸 Pasport orqa tomonini ko'rish", "callback_data": f"adm_v_doc:back:{v.id}"}])
+    if v.circle_video_file_id:
+        buttons.append([{"text": "🎥 Videoni ko'rish", "callback_data": f"adm_v_doc:video:{v.id}"}])
+    buttons.append([
+        {"text": "✅ Tasdiqlash", "callback_data": f"verify_approve:{v.id}"},
+        {"text": "❌ Rad etish", "callback_data": f"verify_reject:{v.id}"},
+    ])
+    buttons.append([{"text": "🔙 Verifikatsiyalar", "callback_data": "admpanel:verifications"}])
+    kb = InlineKeyboardMarkup(buttons)
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb, disable_web_page_preview=True)
+
+
+async def _cb_admin_view_doc(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Verifikatsiya hujjatini ko'rsatish (rasm/video)."""
+    query = update.callback_query
+    await query.answer()
+    parts = query.data.split(":")  # adm_v_doc:front:uuid
+    if len(parts) < 3:
+        return
+    doc_type = parts[1]
+    vid = parts[2]
+    from apps.payments.models import SellerVerification
+    try:
+        v = SellerVerification.objects.get(pk=vid)
+    except SellerVerification.DoesNotExist:
+        return
+
+    back_kb = InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": f"adm_v_detail:{vid}"}]])
+    bot = context.bot
+    chat_id = query.message.chat_id
+
+    if doc_type == "front" and v.passport_front_file_id:
+        await bot.send_photo(chat_id, v.passport_front_file_id, caption=f"📸 Pasport OLD tomoni\n👤 {v.full_name or '—'}", reply_markup=back_kb)
+    elif doc_type == "back" and v.passport_back_file_id:
+        await bot.send_photo(chat_id, v.passport_back_file_id, caption="📸 Pasport ORQA tomoni", reply_markup=back_kb)
+    elif doc_type == "video" and v.circle_video_file_id:
+        try:
+            await bot.send_video_note(chat_id, v.circle_video_file_id)
+        except Exception:
+            await bot.send_video(chat_id, v.circle_video_file_id, caption="🎥 Verifikatsiya video")
+        await bot.send_message(chat_id, "🔙 Orqaga qaytish:", reply_markup=back_kb)
+    else:
+        await bot.send_message(chat_id, "❌ Fayl topilmadi.", reply_markup=back_kb)
+
+
+async def _cb_admin_usersearch(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Foydalanuvchi qidirish — telegram_id so'rash."""
+    query = update.callback_query
+    await query.answer()
+    context.user_data["admin_awaiting_user_search"] = True
+    await query.edit_message_text(
+        "👤 <b>Foydalanuvchi qidirish</b>\n\n"
+        "Foydalanuvchining <b>Telegram ID</b> raqamini yuboring:\n\n"
+        "Misol: <code>7947969825</code>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}]]),
+    )
+
+
+async def _admin_user_search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin foydalanuvchi qidirish — matn orqali telegram_id qabul qilish."""
+    if not _is_admin(update.effective_user.id):
+        return
+    if not context.user_data.get("admin_awaiting_user_search"):
+        return
+    context.user_data["admin_awaiting_user_search"] = False
+
+    text_input = (update.message.text or "").strip()
+    if not text_input.isdigit():
+        await update.message.reply_html(
+            "⚠️ Faqat raqam kiriting (Telegram ID).\n\nQayta urinib ko'ring yoki /admin bosing."
+        )
+        return
+
+    tg_id = int(text_input)
+    await _show_user_profile(update.message, tg_id)
+
+
+async def _show_user_profile(message, tg_id: int) -> None:
+    """Foydalanuvchi profilini ko'rsatish."""
+    from django.contrib.auth import get_user_model
+    from apps.payments.models import EscrowTransaction, WithdrawalRequest, SellerVerification
+    from django.db.models import Sum
+
+    User = get_user_model()
+    try:
+        user = User.objects.get(telegram_id=tg_id)
+    except User.DoesNotExist:
+        await message.reply_html(
+            f"❌ Telegram ID <code>{tg_id}</code> bilan foydalanuvchi topilmadi.",
+            reply_markup=InlineKeyboardMarkup([[{"text": "🔙 Admin panel", "callback_data": "admpanel:back"}]]),
+        )
+        return
+
+    # Statistikalar
+    total_purchases = EscrowTransaction.objects.filter(buyer=user, status='confirmed').count()
+    total_sales = EscrowTransaction.objects.filter(seller=user, status='confirmed').count()
+    total_earned = EscrowTransaction.objects.filter(seller=user, status='confirmed').aggregate(
+        t=Sum('seller_earnings'))['t'] or 0
+    total_spent = EscrowTransaction.objects.filter(buyer=user, status='confirmed').aggregate(
+        t=Sum('amount'))['t'] or 0
+    active_trades = EscrowTransaction.objects.filter(
+        seller=user, status__in=['paid', 'delivered']
+    ).count() + EscrowTransaction.objects.filter(
+        buyer=user, status__in=['paid', 'delivered']
+    ).count()
+    withdrawals = WithdrawalRequest.objects.filter(user=user).count()
+    pending_withdrawals = WithdrawalRequest.objects.filter(user=user, status='pending').count()
+    verifications = SellerVerification.objects.filter(seller=user).count()
+    balance = f"{int(user.balance):,}".replace(",", " ") if hasattr(user, 'balance') else '?'
+    earned_str = f"{int(total_earned):,}".replace(",", " ")
+    spent_str = f"{int(total_spent):,}".replace(",", " ")
+
+    text = (
+        f"👤 <b>Foydalanuvchi profili</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"📛 Ism: <b>{user.display_name}</b>\n"
+        f"📧 Email: {user.email}\n"
+        f"📱 Telefon: {user.phone_number or '—'}\n"
+        f"🆔 Telegram: <code>{tg_id}</code>\n"
+        f"📅 Ro'yxatdan o'tgan: {user.date_joined.strftime('%d.%m.%Y')}\n"
+        f"{'🟢' if user.is_active else '🔴'} Status: {'Aktiv' if user.is_active else 'Bloklangan'}\n"
+        f"{'👑' if user.is_staff else '👤'} Rol: {'Admin' if user.is_staff else 'Foydalanuvchi'}\n\n"
+        f"━━━ <b>Moliyaviy</b> ━━━\n"
+        f"💼 Balans: <b>{balance} so'm</b>\n"
+        f"💵 Jami daromad: {earned_str} so'm\n"
+        f"🛒 Jami xarajat: {spent_str} so'm\n\n"
+        f"━━━ <b>Savdo tarixi</b> ━━━\n"
+        f"📦 Sotilgan: <b>{total_sales}</b> ta akkaunt\n"
+        f"🛒 Sotib olingan: <b>{total_purchases}</b> ta\n"
+        f"⏳ Aktiv savdolar: {active_trades} ta\n\n"
+        f"━━━ <b>Boshqa</b> ━━━\n"
+        f"💳 Pul yechish so'rovlari: {withdrawals} ta ({pending_withdrawals} kutilmoqda)\n"
+        f"🔐 Verifikatsiyalar: {verifications} ta\n"
+    )
+    kb = InlineKeyboardMarkup([
+        [{"text": "🔙 Admin panel", "callback_data": "admpanel:back"}],
+    ])
+    await message.reply_html(text, reply_markup=kb)
+
+
+async def _cb_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Moliyaviy statistika."""
+    query = update.callback_query
+    await query.answer()
+    from apps.payments.models import EscrowTransaction, Transaction, WithdrawalRequest
+    from django.db.models import Sum, Count
+    from django.utils import timezone
+
+    total_volume = EscrowTransaction.objects.filter(status='confirmed').aggregate(t=Sum('amount'))['t'] or 0
+    total_commission = EscrowTransaction.objects.filter(status='confirmed').aggregate(t=Sum('commission_amount'))['t'] or 0
+    total_trades = EscrowTransaction.objects.count()
+    confirmed_trades = EscrowTransaction.objects.filter(status='confirmed').count()
+    disputed_trades = EscrowTransaction.objects.filter(status='disputed').count()
+    refunded_trades = EscrowTransaction.objects.filter(status='refunded').count()
+    total_withdrawn = WithdrawalRequest.objects.filter(status='completed').aggregate(t=Sum('amount'))['t'] or 0
+    pending_withdrawn = WithdrawalRequest.objects.filter(status='pending').aggregate(t=Sum('amount'))['t'] or 0
+
+    # Bugungi
+    today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_trades = EscrowTransaction.objects.filter(created_at__gte=today).count()
+    today_volume = EscrowTransaction.objects.filter(created_at__gte=today, status='confirmed').aggregate(t=Sum('amount'))['t'] or 0
+
+    def fmt(n):
+        return f"{int(n):,}".replace(",", " ")
+
+    text = (
+        f"📊 <b>MOLIYAVIY STATISTIKA</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"💰 Jami savdo hajmi: <b>{fmt(total_volume)} so'm</b>\n"
+        f"🏦 Jami komissiya: <b>{fmt(total_commission)} so'm</b>\n\n"
+        f"📦 Jami savdolar: {total_trades}\n"
+        f"   ✅ Yakunlangan: {confirmed_trades}\n"
+        f"   ⚠️ Nizoli: {disputed_trades}\n"
+        f"   ↩️ Qaytarilgan: {refunded_trades}\n\n"
+        f"💳 Yechilgan: {fmt(total_withdrawn)} so'm\n"
+        f"⏳ Kutilmoqda: {fmt(pending_withdrawn)} so'm\n\n"
+        f"━━━ <b>Bugun</b> ━━━\n"
+        f"📦 Savdolar: {today_trades}\n"
+        f"💰 Hajm: {fmt(today_volume)} so'm\n"
+    )
+    kb = InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}]])
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_botstats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Bot statistikasi — kunlik start, OTP kodlari."""
+    query = update.callback_query
+    await query.answer()
+    from django.contrib.auth import get_user_model
+    from django.utils import timezone
+    User = get_user_model()
+
+    today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    week_ago = timezone.now() - __import__('datetime').timedelta(days=7)
+    month_ago = timezone.now() - __import__('datetime').timedelta(days=30)
+
+    bot_users = _load_users()
+    total_bot = len(bot_users)
+    today_new = User.objects.filter(date_joined__gte=today).count()
+    week_new = User.objects.filter(date_joined__gte=week_ago).count()
+    month_new = User.objects.filter(date_joined__gte=month_ago).count()
+
+    # OTP kodlari (verification_codes.json dan)
+    codes_file = Path(__file__).parent / "verification_codes.json"
+    total_codes = 0
+    today_codes = 0
+    if codes_file.exists():
+        try:
+            codes_data = json.loads(codes_file.read_text())
+            total_codes = len(codes_data)
+            # Bugungilarni sanash
+            for _k, v in codes_data.items():
+                if isinstance(v, dict) and v.get("created"):
+                    try:
+                        from datetime import datetime
+                        ct = datetime.fromisoformat(v["created"])
+                        if ct.date() == timezone.now().date():
+                            today_codes += 1
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    tg_linked = User.objects.filter(telegram_id__isnull=False, is_active=True).count()
+
+    text = (
+        f"🤖 <b>BOT STATISTIKASI</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👥 Bot foydalanuvchilari: <b>{total_bot}</b>\n"
+        f"📱 Telegram ulangan: <b>{tg_linked}</b>\n\n"
+        f"━━━ <b>Yangi foydalanuvchilar</b> ━━━\n"
+        f"🆕 Bugun: <b>{today_new}</b>\n"
+        f"📅 Shu hafta: <b>{week_new}</b>\n"
+        f"📆 Shu oy: <b>{month_new}</b>\n\n"
+        f"━━━ <b>OTP kodlari</b> ━━━\n"
+        f"🔑 Jami kodlar: <b>{total_codes}</b>\n"
+        f"📅 Bugungi kodlar: <b>{today_codes}</b>\n"
+    )
+    kb = InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}]])
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_broadcast_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Broadcast xabar yuborish — matn so'rash."""
+    query = update.callback_query
+    await query.answer()
+    context.user_data["admin_awaiting_broadcast"] = True
+    await query.edit_message_text(
+        "📢 <b>Broadcast xabar</b>\n\n"
+        "Barcha bot foydalanuvchilariga yuboriladigan xabarni yozing:\n\n"
+        "⚠️ Xabar HTML formatida yuboriladi.",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([[{"text": "🔙 Bekor qilish", "callback_data": "admpanel:back"}]]),
     )
 
 
@@ -3653,13 +4171,32 @@ def main():
     app.add_handler(CallbackQueryHandler(admin_approve_verification_callback, pattern=r"^admin_approve_verification_"))
     app.add_handler(CallbackQueryHandler(admin_reject_verification_callback, pattern=r"^admin_reject_verification_"))
 
-    # Admin buyruqlari (faqat adminlar uchun, lekin global — conversation tashqarida)
+    # ---- Admin panel interaktiv handlerlari ----
+    app.add_handler(CallbackQueryHandler(_cb_admin_panel_back, pattern=r"^admpanel:back$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_trades, pattern=r"^admpanel:trades$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_withdrawals, pattern=r"^admpanel:withdrawals$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_withdrawal_detail, pattern=r"^adm_w_detail:"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_verifications, pattern=r"^admpanel:verifications$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_verification_detail, pattern=r"^adm_v_detail:"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_view_doc, pattern=r"^adm_v_doc:"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_usersearch, pattern=r"^admpanel:usersearch$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_stats, pattern=r"^admpanel:stats$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_botstats, pattern=r"^admpanel:botstats$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_broadcast_prompt, pattern=r"^admpanel:broadcast$"))
+
+    # Admin buyruqlari
     app.add_handler(CommandHandler('admin', cmd_admin_panel))
     app.add_handler(CommandHandler('pending', cmd_pending))
     app.add_handler(CommandHandler('stats', cmd_stats))
     app.add_handler(CommandHandler('balance', cmd_balance))
     app.add_handler(CommandHandler('broadcast', cmd_broadcast))
     app.add_handler(CommandHandler('user_support', cmd_user_support))
+
+    # Admin foydalanuvchi qidirish (matn handler) — boshqa handlerlardan KEYIN
+    app.add_handler(MessageHandler(
+        filters.TEXT & ~filters.COMMAND,
+        _admin_user_search_handler,
+    ), group=1)
 
     # ---- Umumiy buyruqlar ----
     app.add_handler(CommandHandler('help', help_command))
