@@ -12,9 +12,13 @@ import urllib.request
 
 logger = logging.getLogger("apps.payments")
 
-BOT_TOKEN = os.getenv("BOT_TOKEN", "") or os.getenv("TELEGRAM_BOT_TOKEN", "")
 SITE_URL = os.getenv("SITE_URL", "https://wibestore.net").rstrip("/")
 TELEGRAM_BOT_LINK = os.getenv("TELEGRAM_BOT_LINK", "https://t.me/wibestoreuz_bot")
+
+
+def _get_bot_token() -> str:
+    """BOT_TOKEN ni har safar env dan o'qiydi (deploy vaqtida o'zgarishi mumkin)."""
+    return os.getenv("BOT_TOKEN", "") or os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 
 def _fmt_price(amount) -> str:
@@ -27,10 +31,13 @@ def _fmt_price(amount) -> str:
 
 def _send_message(chat_id: int, text: str, reply_markup: dict = None) -> bool:
     """Telegram Bot API orqali xabar yuborish (sinxron)."""
-    if not BOT_TOKEN or not chat_id:
+    bot_token = _get_bot_token()
+    if not bot_token or not chat_id:
+        if not bot_token:
+            logger.warning("Telegram xabar yuborilmadi: BOT_TOKEN sozlanmagan (backend .env yoki Railway Variables da BOT_TOKEN yo'q)")
         return False
 
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload: dict = {
         "chat_id": chat_id,
         "text": text,
@@ -226,9 +233,10 @@ def _get_admin_telegram_ids() -> list:
 
 def _answer_callback_query(callback_query_id: str, text: str = "") -> bool:
     """Answer a Telegram callback query."""
-    if not BOT_TOKEN or not callback_query_id:
+    bot_token = _get_bot_token()
+    if not bot_token or not callback_query_id:
         return False
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery"
+    url = f"https://api.telegram.org/bot{bot_token}/answerCallbackQuery"
     payload = {"callback_query_id": callback_query_id, "text": text, "show_alert": False}
     body = __import__("json").dumps(payload).encode("utf-8")
     req = __import__("urllib.request", fromlist=["request"]).Request(
@@ -521,7 +529,7 @@ def notify_verification_rejected(verification) -> None:
 
     text = (
         f"❌ <b>Hujjatlaringiz rad etildi</b>\n\n"
-        f"📝 Sabab: {note or 'Ko'rsatilmagan'}\n\n"
+        f"📝 Sabab: {note or 'Koʻrsatilmagan'}\n\n"
         f"Hujjatlaringiz soxta yoki noto'g'ri topildi.\n"
         f"Iltimos, haqiqiy hujjatlar bilan qayta yuboring.\n\n"
         f"⬇️ Qayta yuborish uchun quyidagi tugmani bosing:"
