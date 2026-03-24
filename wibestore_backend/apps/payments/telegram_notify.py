@@ -116,12 +116,10 @@ def notify_purchase_created(escrow, chat_room_id: str = None) -> None:
             f"🌐 <a href='{chat_link}'>Chatga o'tish →</a>"
         )
         seller_keyboard = {
-            "inline_keyboard": [[
-                {
-                    "text": "✅ Akkauntni topshirdim",
-                    "callback_data": f"escrow_seller_ok:{escrow_id}",
-                },
-            ]]
+            "inline_keyboard": [
+                [{"text": "📨 Chatga o'tish", "url": chat_link}],
+                [{"text": "✅ Akkauntni topshirdim", "callback_data": f"escrow_seller_ok:{escrow_id}"}],
+            ]
         }
         _send_message(seller.telegram_id, seller_text, reply_markup=seller_keyboard)
 
@@ -162,10 +160,10 @@ def notify_seller_confirmed(escrow) -> None:
             f"⚠️ Tasdiqlashdan oldin akkauntni sinab ko'ring!"
         )
         buyer_keyboard = {
-            "inline_keyboard": [[
-                {"text": "✅ Akkauntni to'liq oldim", "callback_data": f"escrow_buyer_ok:{escrow_id}"},
-                {"text": "❌ Muammo bor", "callback_data": f"escrow_buyer_no:{escrow_id}"},
-            ]]
+            "inline_keyboard": [
+                [{"text": "✅ Akkauntni to'liq oldim", "callback_data": f"escrow_buyer_ok:{escrow_id}"}],
+                [{"text": "❌ Muammo bor", "callback_data": f"escrow_buyer_no:{escrow_id}"}],
+            ]
         }
         _send_message(buyer.telegram_id, buyer_text, reply_markup=buyer_keyboard)
 
@@ -651,10 +649,13 @@ def notify_trade_confirmation_request(escrow, chat_link: str = "") -> None:
             f"🌐 <a href='{chat_url}'>Chatga o'tish →</a>"
         )
         seller_keyboard = {
-            "inline_keyboard": [[
-                {"text": "✅ Tasdiqlash", "callback_data": f"trade_seller_ok:{escrow_id}"},
-                {"text": "❌ Savdoni bekor qilish", "callback_data": f"trade_cancel:{escrow_id}"},
-            ]]
+            "inline_keyboard": [
+                [{"text": "💬 Chatga o'tish", "url": chat_url}],
+                [
+                    {"text": "✅ Savdoni tasdiqlash", "callback_data": f"trade_seller_ok:{escrow_id}"},
+                    {"text": "❌ Bekor qilish", "callback_data": f"trade_cancel:{escrow_id}"},
+                ],
+            ]
         }
         _send_message(seller.telegram_id, seller_text, reply_markup=seller_keyboard)
 
@@ -666,13 +667,16 @@ def notify_trade_confirmation_request(escrow, chat_link: str = "") -> None:
             f"💰 To'langan summa: <b>{price_str}</b>\n\n"
             f"Admin chatga kirganidan so'ng akkaunt ma'lumotlarini tekshiring.\n"
             f"Hammasi yaxshi bo'lsa — <b>Tasdiqlash</b> tugmasini bosing.\n\n"
-            f"🌐 <a href='{chat_url}'>Chatga o'tish →</a>"
+            f"🌐 <a href='{chat_url}'>Chatga o'tish</a>"
         )
         buyer_keyboard = {
-            "inline_keyboard": [[
-                {"text": "✅ Tasdiqlash", "callback_data": f"trade_buyer_ok:{escrow_id}"},
-                {"text": "❌ Savdoni bekor qilish", "callback_data": f"trade_cancel:{escrow_id}"},
-            ]]
+            "inline_keyboard": [
+                [{"text": "💬 Chatga o'tish", "url": chat_url}],
+                [
+                    {"text": "✅ Savdoni tasdiqlash", "callback_data": f"trade_buyer_ok:{escrow_id}"},
+                    {"text": "❌ Bekor qilish", "callback_data": f"trade_cancel:{escrow_id}"},
+                ],
+            ]
         }
         _send_message(buyer.telegram_id, buyer_text, reply_markup=buyer_keyboard)
 
