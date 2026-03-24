@@ -27,7 +27,11 @@ def _fmt_price(amount) -> str:
 
 def _send_message(chat_id: int, text: str, reply_markup: dict = None) -> bool:
     """Telegram Bot API orqali xabar yuborish (sinxron)."""
-    if not BOT_TOKEN or not chat_id:
+    if not BOT_TOKEN:
+        logger.warning("Telegram BOT_TOKEN sozlanmagan — xabar yuborilmadi (chat_id=%s)", chat_id)
+        return False
+    if not chat_id:
+        logger.debug("Telegram chat_id bo'sh — xabar yuborilmadi")
         return False
 
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -519,9 +523,10 @@ def notify_verification_rejected(verification) -> None:
     if not seller.telegram_id:
         return
 
+    reason = note or "Ko`rsatilmagan"
     text = (
         f"❌ <b>Hujjatlaringiz rad etildi</b>\n\n"
-        f"📝 Sabab: {note or 'Ko'rsatilmagan'}\n\n"
+        f"📝 Sabab: {reason}\n\n"
         f"Hujjatlaringiz soxta yoki noto'g'ri topildi.\n"
         f"Iltimos, haqiqiy hujjatlar bilan qayta yuboring.\n\n"
         f"⬇️ Qayta yuborish uchun quyidagi tugmani bosing:"
@@ -856,55 +861,91 @@ def notify_new_chat_message_sync(message_id: str) -> None:
         from apps.messaging.models import Message
         from django.conf import settings as _settings
 
-        msg = Message.objects.select_related("sender", "room").get(id=message_id)
+        msg = (
+            Message.objects
+            .select_related("sender", "room", "room__listing")
+            .get(id=message_id)
+        )
 
         # Agar xabar allaqachon o'qilgan bo'lsa — user chatda online edi, notification kerak emas
         if msg.is_read:
+            logger.debug("Chat notification skipped (already read): msg=%s", message_id)
             return
 
         room = msg.room
         sender = msg.sender
 
-        recipients = room.participants.exclude(id=sender.id)
+        # Antispam: faqat birinchi o'qilmagan xabar uchun (loop tashqarisida — barcha recipient uchun bir xil)
+        unread_from_sender = Message.objects.filter(
+            room=room,
+            sender=sender,
+            is_read=False,
+        ).count()
+        if unread_from_sender > 1:
+            logger.debug(
+                "Chat notification skipped (antispam, %d unread): msg=%s",
+                unread_from_sender, message_id,
+            )
+            return
+
+        recipients = list(room.participants.exclude(id=sender.id))
+        if not recipients:
+            return
+
         frontend_url = getattr(_settings, "FRONTEND_URL", SITE_URL).rstrip("/")
 
+        sender_name = (
+            getattr(sender, "display_name", None)
+            or getattr(sender, "full_name", None)
+            or getattr(sender, "username", None)
+            or "Foydalanuvchi"
+        )
+        preview = msg.content[:80] + ("..." if len(msg.content) > 80 else "")
+        chat_url = f"{frontend_url}/chat/{room.id}"
+
+        # Listing nomi (agar savdo chati bo'lsa)
+        listing_info = ""
+        if room.listing_id and room.listing:
+            listing_info = f"📦 {room.listing.title}\n"
+
+        text = (
+            f"💬 <b>Yangi xabar!</b>\n\n"
+            f"👤 <b>{sender_name}</b> sizga xabar yozdi:\n"
+            f"{listing_info}"
+            f"<i>{preview}</i>\n\n"
+            f"<a href='{chat_url}'>💬 Chatga o'tish →</a>"
+        )
+
+        sent_count = 0
         for recipient in recipients:
-            if not getattr(recipient, "telegram_id", None):
+            tg_id = getattr(recipient, "telegram_id", None)
+            if not tg_id:
+                logger.debug(
+                    "Chat notification skipped (no telegram_id): user=%s",
+                    recipient.id,
+                )
                 continue
 
-            # Antispam: faqat birinchi o'qilmagan xabar uchun yuborish
-            unread_count = Message.objects.filter(
-                room=room,
-                sender=sender,
-                is_read=False,
-            ).count()
-            if unread_count > 1:
-                continue
+            ok = _send_message(tg_id, text)
+            if ok:
+                sent_count += 1
+                logger.info(
+                    "Chat notification sent: msg=%s → telegram_id=%s (user=%s)",
+                    message_id, tg_id, recipient.id,
+                )
+            else:
+                logger.warning(
+                    "Chat notification FAILED: msg=%s → telegram_id=%s (user=%s)",
+                    message_id, tg_id, recipient.id,
+                )
 
-            sender_name = (
-                getattr(sender, "display_name", None)
-                or getattr(sender, "full_name", None)
-                or getattr(sender, "username", None)
-                or "Foydalanuvchi"
+        if sent_count == 0 and recipients:
+            logger.debug(
+                "Chat notification: no recipients with telegram_id for msg=%s",
+                message_id,
             )
-            preview = msg.content[:80] + ("..." if len(msg.content) > 80 else "")
-            chat_url = f"{frontend_url}/chat/{room.id}"
-
-            # Listing nomi (agar savdo chati bo'lsa)
-            listing_info = ""
-            if room.listing:
-                listing_info = f"📦 {room.listing.title}\n"
-
-            text = (
-                f"💬 <b>Yangi xabar!</b>\n\n"
-                f"👤 <b>{sender_name}</b> sizga xabar yozdi:\n"
-                f"{listing_info}"
-                f"<i>{preview}</i>\n\n"
-                f"<a href='{chat_url}'>💬 Chatga o'tish →</a>"
-            )
-            _send_message(recipient.telegram_id, text)
     except Exception as e:
-        logger.error("Failed to send chat notification: %s", e)
+        logger.error("Failed to send chat notification: %s", e, exc_info=True)
 
 
 def notify_listing_approved(listing) -> None:
