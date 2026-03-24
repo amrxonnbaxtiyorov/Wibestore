@@ -48,13 +48,13 @@ export default function AdminTradePanel() {
 
   const { data: tradeStats } = useQuery({
     queryKey: ['admin-trade-stats'],
-    queryFn: () => apiClient.get('/admin-panel/trades/stats/').then(r => r.data),
+    queryFn: () => apiClient.get('/api/v1/admin-panel/trades/stats/').then(r => r.data),
     refetchInterval: 30000,
   })
 
   const { data: tradesData, isLoading: tradesLoading } = useQuery({
     queryKey: ['admin-trades', tradeStatus, tradeSearch],
-    queryFn: () => apiClient.get('/admin-panel/trades/', {
+    queryFn: () => apiClient.get('/api/v1/admin-panel/trades/', {
       params: { status: tradeStatus, search: tradeSearch }
     }).then(r => r.data),
     enabled: activeTab === 'trades',
@@ -63,14 +63,14 @@ export default function AdminTradePanel() {
 
   const { data: verifsData, isLoading: verifsLoading } = useQuery({
     queryKey: ['admin-seller-verifs', verifStatus],
-    queryFn: () => apiClient.get('/admin-panel/seller-verifications/', {
+    queryFn: () => apiClient.get('/api/v1/admin-panel/seller-verifications/', {
       params: { status: verifStatus }
     }).then(r => r.data),
     enabled: activeTab === 'verifications',
   })
 
   const completeTrade = useMutation({
-    mutationFn: (id) => apiClient.post(`/admin-panel/trades/${id}/complete/`).then(r => r.data),
+    mutationFn: (id) => apiClient.post(`/api/v1/admin-panel/trades/${id}/complete/`).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries(['admin-trades'])
       queryClient.invalidateQueries(['admin-trade-stats'])
@@ -79,7 +79,7 @@ export default function AdminTradePanel() {
   })
 
   const refundTrade = useMutation({
-    mutationFn: (id) => apiClient.post(`/admin-panel/trades/${id}/refund/`).then(r => r.data),
+    mutationFn: (id) => apiClient.post(`/api/v1/admin-panel/trades/${id}/refund/`).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries(['admin-trades'])
       queryClient.invalidateQueries(['admin-trade-stats'])
@@ -88,7 +88,7 @@ export default function AdminTradePanel() {
   })
 
   const resolveDispute = useMutation({
-    mutationFn: ({ id, winner, note }) => apiClient.post(`/admin-panel/trades/${id}/resolve-dispute/`, { winner, note }).then(r => r.data),
+    mutationFn: ({ id, winner, note }) => apiClient.post(`/api/v1/admin-panel/trades/${id}/resolve-dispute/`, { winner, note }).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries(['admin-trades'])
       setSelectedTrade(null)
@@ -97,7 +97,7 @@ export default function AdminTradePanel() {
   })
 
   const approveVerif = useMutation({
-    mutationFn: (id) => apiClient.post(`/admin-panel/seller-verifications/${id}/approve/`).then(r => r.data),
+    mutationFn: (id) => apiClient.post(`/api/v1/admin-panel/seller-verifications/${id}/approve/`).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries(['admin-seller-verifs'])
       setSelectedVerif(null)
@@ -105,7 +105,7 @@ export default function AdminTradePanel() {
   })
 
   const rejectVerif = useMutation({
-    mutationFn: ({ id, reason }) => apiClient.post(`/admin-panel/seller-verifications/${id}/reject/`, { reason }).then(r => r.data),
+    mutationFn: ({ id, reason }) => apiClient.post(`/api/v1/admin-panel/seller-verifications/${id}/reject/`, { reason }).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries(['admin-seller-verifs'])
       setSelectedVerif(null)

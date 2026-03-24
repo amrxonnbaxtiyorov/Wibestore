@@ -66,13 +66,13 @@ export default function AdminTelegramPanel() {
 
   const { data: stats } = useQuery({
     queryKey: ['admin-telegram-stats'],
-    queryFn: () => apiClient.get('/admin-panel/telegram/stats/').then(r => r.data),
+    queryFn: () => apiClient.get('/api/v1/admin-panel/telegram/stats/').then(r => r.data),
     refetchInterval: 60000,
   })
 
   const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['admin-telegram-users', userSearch, userStatus, userDateFrom, userDateTo],
-    queryFn: () => apiClient.get('/admin-panel/telegram/users/', {
+    queryFn: () => apiClient.get('/api/v1/admin-panel/telegram/users/', {
       params: { search: userSearch, status: userStatus, date_from: userDateFrom, date_to: userDateTo }
     }).then(r => r.data),
     enabled: activeTab === 'users',
@@ -80,7 +80,7 @@ export default function AdminTelegramPanel() {
 
   const { data: depositsData, isLoading: depositsLoading } = useQuery({
     queryKey: ['admin-deposits', depositStatus, depositSearch],
-    queryFn: () => apiClient.get('/admin-panel/deposits/', {
+    queryFn: () => apiClient.get('/api/v1/admin-panel/deposits/', {
       params: { status: depositStatus, search: depositSearch }
     }).then(r => r.data),
     enabled: activeTab === 'deposits',
@@ -88,21 +88,21 @@ export default function AdminTelegramPanel() {
 
   const { data: depositStats } = useQuery({
     queryKey: ['admin-deposit-stats'],
-    queryFn: () => apiClient.get('/admin-panel/deposits/stats/').then(r => r.data),
+    queryFn: () => apiClient.get('/api/v1/admin-panel/deposits/stats/').then(r => r.data),
     enabled: activeTab === 'deposits',
     refetchInterval: 30000,
   })
 
   const { data: regData } = useQuery({
     queryKey: ['admin-registrations-by-date', regDateFrom, regDateTo],
-    queryFn: () => apiClient.get('/admin-panel/telegram/registrations/by-date/', {
+    queryFn: () => apiClient.get('/api/v1/admin-panel/telegram/registrations/by-date/', {
       params: { date_from: regDateFrom, date_to: regDateTo }
     }).then(r => r.data),
     enabled: activeTab === 'analytics',
   })
 
   const updateDeposit = useMutation({
-    mutationFn: ({ id, data }) => apiClient.patch(`/admin-panel/deposits/${id}/`, data).then(r => r.data),
+    mutationFn: ({ id, data }) => apiClient.patch(`/api/v1/admin-panel/deposits/${id}/`, data).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries(['admin-deposits'])
       queryClient.invalidateQueries(['admin-deposit-stats'])
@@ -111,7 +111,7 @@ export default function AdminTelegramPanel() {
   })
 
   const updateUser = useMutation({
-    mutationFn: ({ telegram_id, data }) => apiClient.patch(`/admin-panel/telegram/users/${telegram_id}/`, data).then(r => r.data),
+    mutationFn: ({ telegram_id, data }) => apiClient.patch(`/api/v1/admin-panel/telegram/users/${telegram_id}/`, data).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries(['admin-telegram-users'])
       setSelectedUser(null)
