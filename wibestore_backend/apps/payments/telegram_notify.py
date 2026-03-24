@@ -848,14 +848,20 @@ def notify_withdrawal_processed(user, amount, status: str) -> None:
 
 def notify_new_chat_message_sync(message_id: str) -> None:
     """
-    Yangi chat xabarida qabul qiluvchiga Telegram xabarnoma yuborish (sinxron, Celery task dan chaqiriladi).
-    Faqat birinchi o'qilmagan xabar uchun (antispam).
+    Yangi chat xabarida qabul qiluvchiga Telegram xabarnoma yuborish.
+    Faqat o'qilmagan (user chatda online bo'lmagan) xabarlar uchun.
+    Antispam: bir xabar yuboruvchidan faqat birinchi o'qilmagan xabar uchun.
     """
     try:
         from apps.messaging.models import Message
         from django.conf import settings as _settings
 
         msg = Message.objects.select_related("sender", "room").get(id=message_id)
+
+        # Agar xabar allaqachon o'qilgan bo'lsa — user chatda online edi, notification kerak emas
+        if msg.is_read:
+            return
+
         room = msg.room
         sender = msg.sender
 
@@ -875,15 +881,26 @@ def notify_new_chat_message_sync(message_id: str) -> None:
             if unread_count > 1:
                 continue
 
-            sender_name = getattr(sender, "display_name", None) or getattr(sender, "username", None) or "Foydalanuvchi"
+            sender_name = (
+                getattr(sender, "display_name", None)
+                or getattr(sender, "full_name", None)
+                or getattr(sender, "username", None)
+                or "Foydalanuvchi"
+            )
             preview = msg.content[:80] + ("..." if len(msg.content) > 80 else "")
             chat_url = f"{frontend_url}/chat/{room.id}"
+
+            # Listing nomi (agar savdo chati bo'lsa)
+            listing_info = ""
+            if room.listing:
+                listing_info = f"📦 {room.listing.title}\n"
 
             text = (
                 f"💬 <b>Yangi xabar!</b>\n\n"
                 f"👤 <b>{sender_name}</b> sizga xabar yozdi:\n"
+                f"{listing_info}"
                 f"<i>{preview}</i>\n\n"
-                f"<a href='{chat_url}'>💬 Xabarni ko'rish →</a>"
+                f"<a href='{chat_url}'>💬 Chatga o'tish →</a>"
             )
             _send_message(recipient.telegram_id, text)
     except Exception as e:
