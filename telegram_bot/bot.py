@@ -2459,12 +2459,14 @@ async def _cb_escrow_buyer_no(update: Update, context: ContextTypes.DEFAULT_TYPE
 # ===== SOTUVCHI SHAXS TASDIQLASH OQIMI =======================
 # ============================================================
 
-async def _verification_submit_api(verification_id: str, step: str, **kwargs) -> tuple[bool, str]:
+async def _verification_submit_api(verification_id: str, step: str, telegram_id: int = None, **kwargs) -> tuple[bool, str]:
     """Backend API ga tasdiqlash qadamini yuborish."""
     if not BOT_SECRET_KEY or not _AIOHTTP_AVAILABLE:
         return False, "Konfiguratsiya xatosi"
     url = f"{WEBSITE_URL}/api/v1/payments/telegram/seller-verification/submit/"
     payload = {"secret_key": BOT_SECRET_KEY, "verification_id": verification_id, "step": step}
+    if telegram_id:
+        payload["telegram_id"] = telegram_id
     payload.update(kwargs)
     try:
         async with _aiohttp.ClientSession() as session:
@@ -2529,10 +2531,11 @@ async def _verify_receive_passport_front(update: Update, context: ContextTypes.D
         return VERIFY_PASSPORT_FRONT
 
     file_id = update.message.photo[-1].file_id
-    verification_id = context.user_data.get("verification_id")
+    verification_id = context.user_data.get("verification_id", "")
+    tg_id = update.effective_user.id
 
     ok, err = await _verification_submit_api(
-        verification_id, "passport_front", file_id=file_id, full_name=caption
+        verification_id, "passport_front", telegram_id=tg_id, file_id=file_id, full_name=caption
     )
     if not ok:
         await update.message.reply_html(
@@ -2563,9 +2566,10 @@ async def _verify_receive_passport_back(update: Update, context: ContextTypes.DE
         return VERIFY_PASSPORT_BACK
 
     file_id = update.message.photo[-1].file_id
-    verification_id = context.user_data.get("verification_id")
+    verification_id = context.user_data.get("verification_id", "")
+    tg_id = update.effective_user.id
 
-    ok, err = await _verification_submit_api(verification_id, "passport_back", file_id=file_id)
+    ok, err = await _verification_submit_api(verification_id, "passport_back", telegram_id=tg_id, file_id=file_id)
     if not ok:
         await update.message.reply_html(f"❌ Xatolik: {err}\n\nQayta urinib ko'ring.")
         return VERIFY_PASSPORT_BACK
@@ -2610,10 +2614,10 @@ async def _verify_receive_video(update: Update, context: ContextTypes.DEFAULT_TY
         )
         return VERIFY_VIDEO
 
-    file_id = file_id
-    verification_id = context.user_data.get("verification_id")
+    verification_id = context.user_data.get("verification_id", "")
+    tg_id = update.effective_user.id
 
-    ok, err = await _verification_submit_api(verification_id, "video", file_id=file_id)
+    ok, err = await _verification_submit_api(verification_id, "video", telegram_id=tg_id, file_id=file_id)
     if not ok:
         await update.message.reply_html(f"❌ Xatolik: {err}\n\nQayta urinib ko'ring.")
         return VERIFY_VIDEO
@@ -2648,10 +2652,11 @@ async def _verify_receive_location(update: Update, context: ContextTypes.DEFAULT
     location = update.message.location
     lat = location.latitude
     lng = location.longitude
-    verification_id = context.user_data.get("verification_id")
+    verification_id = context.user_data.get("verification_id", "")
+    tg_id = update.effective_user.id
 
     ok, err = await _verification_submit_api(
-        verification_id, "location", latitude=lat, longitude=lng
+        verification_id, "location", telegram_id=tg_id, latitude=lat, longitude=lng
     )
     if not ok:
         await update.message.reply_html(f"❌ Xatolik: {err}\n\nQayta urinib ko'ring.")

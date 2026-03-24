@@ -733,20 +733,48 @@ class SellerVerificationSubmitView(APIView):
 
         verification_id = request.data.get("verification_id")
         step = request.data.get("step")
+        telegram_id = request.data.get("telegram_id")
 
-        if not verification_id or not step:
+        if not step:
             return Response(
-                {"success": False, "error": "verification_id va step majburiy"},
+                {"success": False, "error": "step majburiy"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            verification = SellerVerification.objects.select_related(
-                "escrow", "escrow__listing", "seller"
-            ).get(pk=verification_id)
-        except SellerVerification.DoesNotExist:
+        verification = None
+
+        # 1. verification_id orqali topish
+        if verification_id:
+            try:
+                verification = SellerVerification.objects.select_related(
+                    "escrow", "escrow__listing", "seller"
+                ).get(pk=verification_id)
+            except (SellerVerification.DoesNotExist, Exception):
+                verification = None
+
+        # 2. Topilmasa — telegram_id orqali aktiv verifikatsiyani topish
+        if not verification and telegram_id:
+            active_statuses = [
+                SellerVerification.STATUS_PENDING,
+                SellerVerification.STATUS_PASSPORT_FRONT,
+                SellerVerification.STATUS_PASSPORT_BACK,
+                SellerVerification.STATUS_VIDEO,
+                SellerVerification.STATUS_REJECTED,
+            ]
+            verification = (
+                SellerVerification.objects
+                .select_related("escrow", "escrow__listing", "seller")
+                .filter(
+                    seller__telegram_id=telegram_id,
+                    status__in=active_statuses,
+                )
+                .order_by("-created_at")
+                .first()
+            )
+
+        if not verification:
             return Response(
-                {"success": False, "error": "Tekshiruv topilmadi"},
+                {"success": False, "error": "Tekshiruv topilmadi. Avval savdoni tasdiqlang."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
