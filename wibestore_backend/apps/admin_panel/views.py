@@ -17,8 +17,9 @@ from rest_framework.views import APIView
 from apps.marketplace.models import Listing
 from apps.marketplace.serializers import ListingSerializer
 from apps.marketplace.services import ListingService
-from apps.payments.models import EscrowTransaction, Transaction
-from apps.payments.services import EscrowService
+from apps.payments.models import EscrowTransaction, Transaction, WithdrawalRequest
+from apps.payments.serializers import WithdrawalRequestSerializer
+from apps.payments.services import EscrowService, WithdrawalService
 from apps.reports.models import Report, SuspiciousActivity
 from apps.reports.serializers import ReportSerializer
 from core.permissions import IsAdminUser
@@ -869,3 +870,90 @@ def _log_admin_action(request, action_type: str, target_type: str, target_id: st
         )
     except Exception as e:
         logger.warning("Could not log admin action: %s", e)
+
+
+# ── Withdrawal Admin Views (BLOK 5 / BLOK 10) ──
+
+
+@extend_schema(tags=["Admin - Withdrawals"])
+class AdminWithdrawalsView(generics.ListAPIView):
+    """GET /api/v1/admin-panel/withdrawals/ — Barcha pul yechish so'rovlari."""
+
+    serializer_class = WithdrawalRequestSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        qs = WithdrawalRequest.objects.select_related("user", "reviewed_by").all()
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        search = self.request.query_params.get("search")
+        if search:
+            qs = qs.filter(
+                Q(user__email__icontains=search)
+                | Q(user__username__icontains=search)
+                | Q(card_number__icontains=search)
+            )
+        date_from = self.request.query_params.get("date_from")
+        if date_from:
+            qs = qs.filter(created_at__date__gte=date_from)
+        date_to = self.request.query_params.get("date_to")
+        if date_to:
+            qs = qs.filter(created_at__date__lte=date_to)
+        return qs
+
+
+@extend_schema(tags=["Admin - Withdrawals"])
+class AdminWithdrawalApproveView(APIView):
+    """POST /api/v1/admin-panel/withdrawals/{id}/approve/ — Pul yechishni tasdiqlash."""
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        from core.exceptions import BusinessLogicError
+
+        try:
+            withdrawal = WithdrawalService.approve_withdrawal(pk, request.user)
+        except WithdrawalRequest.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"message": "So'rov topilmadi."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except BusinessLogicError as e:
+            return Response(
+                {"success": False, "error": {"message": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        _log_admin_action(request, "withdrawal_approve", "withdrawal", str(pk))
+        return Response({"success": True, "data": {"status": "completed"}})
+
+
+@extend_schema(tags=["Admin - Withdrawals"])
+class AdminWithdrawalRejectView(APIView):
+    """POST /api/v1/admin-panel/withdrawals/{id}/reject/ — Pul yechishni rad etish."""
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request, pk):
+        from core.exceptions import BusinessLogicError
+
+        reason = request.data.get("reason", "")
+        try:
+            withdrawal = WithdrawalService.reject_withdrawal(pk, request.user, reason)
+        except WithdrawalRequest.DoesNotExist:
+            return Response(
+                {"success": False, "error": {"message": "So'rov topilmadi."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except BusinessLogicError as e:
+            return Response(
+                {"success": False, "error": {"message": str(e)}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        _log_admin_action(
+            request, "withdrawal_reject", "withdrawal", str(pk),
+            details={"reason": reason},
+        )
+        return Response({"success": True, "data": {"status": "rejected"}})

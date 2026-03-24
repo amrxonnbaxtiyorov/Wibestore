@@ -45,4 +45,8 @@ urlpatterns = [
     path("trades/<uuid:pk>/complete/", views.AdminTradeCompleteView.as_view(), name="admin-trade-complete"),
     path("trades/<uuid:pk>/refund/", views.AdminTradeRefundView.as_view(), name="admin-trade-refund"),
     path("trades/<uuid:pk>/resolve-dispute/", views.AdminTradeResolveDisputeView.as_view(), name="admin-trade-resolve-dispute"),
+    # Withdrawals (BLOK 5 / BLOK 10)
+    path("withdrawals/", views.AdminWithdrawalsView.as_view(), name="admin-withdrawals"),
+    path("withdrawals/<uuid:pk>/approve/", views.AdminWithdrawalApproveView.as_view(), name="admin-withdrawal-approve"),
+    path("withdrawals/<uuid:pk>/reject/", views.AdminWithdrawalRejectView.as_view(), name="admin-withdrawal-reject"),
 ]
