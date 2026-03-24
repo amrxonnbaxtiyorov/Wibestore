@@ -1196,6 +1196,44 @@ def notify_admin_seller_verification_submitted(verification) -> None:
         )
 
 
+def notify_trade_party_confirmed(escrow, confirmed_by: str = "seller") -> None:
+    """Bir tomon tasdiqladi — ikkinchisiga xabar yuborish."""
+    try:
+        listing = escrow.listing
+        escrow_id = str(escrow.id)[:8]
+        if confirmed_by == "seller":
+            # Haridorga xabar
+            chat_id = getattr(escrow.buyer, "telegram_id", None)
+            who = "Sotuvchi"
+        else:
+            # Sotuvchiga xabar
+            chat_id = getattr(escrow.seller, "telegram_id", None)
+            who = "Haridor"
+
+        if not chat_id:
+            return
+
+        text = (
+            f"✅ <b>{who} savdoni tasdiqladi!</b>\n\n"
+            f"📋 Savdo ID: #{escrow_id}\n"
+            f"📦 Akkaunt: {listing.title}\n\n"
+            f"⏳ Endi sizning javobingiz kutilmoqda.\n"
+            f"Iltimos, savdoni tasdiqlang yoki bekor qiling."
+        )
+        keyboard = {
+            "inline_keyboard": [[
+                {"text": "✅ Tasdiqlash", "callback_data": f"trade_{'buyer' if confirmed_by == 'seller' else 'seller'}_ok:{escrow.id}"},
+                {"text": "❌ Bekor qilish", "callback_data": f"trade_cancel:{escrow.id}"},
+            ]]
+        }
+        _send_message(chat_id, text, reply_markup=keyboard)
+    except Exception as e:
+        import logging
+        logging.getLogger("apps.payments.telegram_notify").warning(
+            "notify_trade_party_confirmed failed: %s", e
+        )
+
+
 try:
     from celery import shared_task
 

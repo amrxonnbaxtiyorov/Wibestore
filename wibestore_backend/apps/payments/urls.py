@@ -16,9 +16,26 @@ urlpatterns = [
     path("methods/", views.PaymentMethodsListView.as_view(), name="payment-methods"),
     path("transactions/", views.TransactionListView.as_view(), name="transaction-list"),
     path("transactions/<uuid:pk>/", views.TransactionDetailView.as_view(), name="transaction-detail"),
+    # Escrow — mavjud
+    path("escrow/<uuid:pk>/", views.EscrowDetailView.as_view(), name="escrow-detail"),
     path("escrow/<uuid:pk>/confirm/", views.EscrowConfirmDeliveryView.as_view(), name="escrow-confirm"),
     path("escrow/<uuid:pk>/seller-confirm/", views.EscrowSellerConfirmView.as_view(), name="escrow-seller-confirm"),
     path("escrow/<uuid:pk>/dispute/", views.EscrowDisputeView.as_view(), name="escrow-dispute"),
+    # Ikki tomonlama tasdiqlash/bekor qilish (BLOK 2)
+    path("escrow/<uuid:pk>/seller-confirm-trade/", views.SellerConfirmTradeView.as_view(), name="seller-confirm-trade"),
+    path("escrow/<uuid:pk>/seller-cancel/", views.SellerCancelTradeView.as_view(), name="seller-cancel-trade"),
+    path("escrow/<uuid:pk>/buyer-confirm/", views.BuyerConfirmTradeView.as_view(), name="buyer-confirm-trade"),
+    path("escrow/<uuid:pk>/buyer-cancel/", views.BuyerCancelTradeView.as_view(), name="buyer-cancel-trade"),
+    path("escrow/<uuid:pk>/trade-status/", views.TradeStatusView.as_view(), name="trade-status"),
+    # Verifikatsiya (BLOK 3)
+    path("verification/<uuid:pk>/approve/", views.VerificationApproveView.as_view(), name="verification-approve"),
+    path("verification/<uuid:pk>/reject/", views.VerificationRejectView.as_view(), name="verification-reject"),
+    # Pul yechish (BLOK 5)
+    path("withdrawal/create/", views.CreateWithdrawalView.as_view(), name="withdrawal-create"),
+    path("withdrawal/<uuid:pk>/approve/", views.WithdrawalApproveView.as_view(), name="withdrawal-approve"),
+    path("withdrawal/<uuid:pk>/reject/", views.WithdrawalRejectView.as_view(), name="withdrawal-reject"),
+    path("withdrawals/", views.WithdrawalListView.as_view(), name="withdrawal-list"),
+    # Webhooks
     path("webhooks/<str:provider>/", views.WebhookView.as_view(), name="webhook"),
     # Telegram bot endpoints
     path("telegram/deposit-request/", views.TelegramDepositRequestView.as_view(), name="telegram-deposit-request"),

@@ -122,3 +122,37 @@ async def create_deposit_request(
             content_type="image/jpeg",
         )
     return await _post_form("/api/v1/payments/telegram/deposit-request/", data=form)
+
+
+# ── Withdrawal management ────────────────────────────────────────────
+
+async def create_withdrawal_request(
+    telegram_id: int,
+    amount: float,
+    card_number: str,
+    card_holder_name: str,
+    card_type: str = "humo",
+) -> dict:
+    """Create a withdrawal request via backend API."""
+    return await _post("/api/v1/payments/withdrawal/create/", data={
+        "telegram_id": telegram_id,
+        "amount": amount,
+        "card_number": card_number,
+        "card_holder_name": card_holder_name,
+        "card_type": card_type,
+    })
+
+
+async def approve_withdrawal(withdrawal_id: str, admin_telegram_id: int) -> dict:
+    """Admin approves a withdrawal request."""
+    return await _post(f"/api/v1/payments/withdrawal/{withdrawal_id}/approve/", data={
+        "admin_telegram_id": admin_telegram_id,
+    })
+
+
+async def reject_withdrawal(withdrawal_id: str, admin_telegram_id: int, reason: str = "") -> dict:
+    """Admin rejects a withdrawal request."""
+    return await _post(f"/api/v1/payments/withdrawal/{withdrawal_id}/reject/", data={
+        "admin_telegram_id": admin_telegram_id,
+        "reason": reason,
+    })

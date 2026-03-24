@@ -430,6 +430,38 @@ export function useAdminRejectVerification() {
   })
 }
 
+// ========== BLOCK 6: Withdrawal Management ==========
+
+export function useAdminWithdrawals(filters = {}) {
+  return useQuery({
+    queryKey: ['admin-withdrawals', filters],
+    queryFn: () => apiClient.get('/payments/withdrawals/', { params: { ...filters, admin: true } }).then(r => r.data),
+    refetchInterval: 30000,
+  })
+}
+
+export function useAdminApproveWithdrawal() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => apiClient.post(`/payments/withdrawal/${id}/approve/`).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-withdrawals'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+    },
+  })
+}
+
+export function useAdminRejectWithdrawal() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, reason }) => apiClient.post(`/payments/withdrawal/${id}/reject/`, { reason }).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-withdrawals'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+    },
+  })
+}
+
 export default {
     useAdminDashboard,
     useAdminFraudStats,

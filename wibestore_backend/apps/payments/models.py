@@ -116,6 +116,23 @@ class EscrowTransaction(BaseModel):
     )
     dispute_resolution = models.TextField(blank=True, default="")
 
+    # ── Ikki tomonlama tasdiqlash/bekor qilish (BLOK 1) ──
+    seller_confirmed = models.BooleanField(default=False)
+    seller_confirmed_at_trade = models.DateTimeField(null=True, blank=True)
+    seller_cancelled = models.BooleanField(default=False)
+    seller_cancelled_at = models.DateTimeField(null=True, blank=True)
+    seller_cancel_reason = models.TextField(blank=True, default="")
+
+    buyer_confirmed = models.BooleanField(default=False)
+    buyer_confirmed_at_trade = models.DateTimeField(null=True, blank=True)
+    buyer_cancelled = models.BooleanField(default=False)
+    buyer_cancelled_at = models.DateTimeField(null=True, blank=True)
+    buyer_cancel_reason = models.TextField(blank=True, default="")
+
+    # Telegram xabar IDlari (tugmalarni keyinchalik o'chirish uchun)
+    seller_telegram_message_id = models.BigIntegerField(null=True, blank=True)
+    buyer_telegram_message_id = models.BigIntegerField(null=True, blank=True)
+
     class Meta:
         db_table = "escrow_transactions"
         ordering = ["-created_at"]
@@ -275,3 +292,72 @@ class DepositRequest(BaseModel):
     def __str__(self) -> str:
         amount_str = f"{int(self.amount):,} UZS" if self.amount else "Noma'lum summa"
         return f"DepositRequest #{str(self.id)[:8]} — {amount_str} ({self.get_status_display()})"
+
+
+class WithdrawalRequest(BaseModel):
+    """Pul yechish so'rovi — foydalanuvchi Telegram bot orqali yuboradi."""
+
+    STATUS_PENDING = "pending"
+    STATUS_PROCESSING = "processing"
+    STATUS_COMPLETED = "completed"
+    STATUS_REJECTED = "rejected"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Kutilmoqda"),
+        (STATUS_PROCESSING, "Jarayonda"),
+        (STATUS_COMPLETED, "Bajarildi"),
+        (STATUS_REJECTED, "Rad etildi"),
+    ]
+
+    CARD_TYPE_CHOICES = [
+        ("humo", "HUMO"),
+        ("uzcard", "UZCARD"),
+        ("visa", "VISA"),
+        ("mastercard", "MasterCard"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="withdrawal_requests",
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=10, default="UZS")
+
+    # Karta ma'lumotlari
+    card_number = models.CharField(max_length=20)
+    card_holder_name = models.CharField(max_length=200, blank=True, default="")
+    card_type = models.CharField(max_length=20, choices=CARD_TYPE_CHOICES, default="humo")
+
+    # Holat
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        db_index=True,
+    )
+
+    # Admin
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_withdrawals",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    admin_note = models.TextField(blank=True, default="")
+    rejection_reason = models.TextField(blank=True, default="")
+
+    # Telegram
+    user_telegram_id = models.BigIntegerField(null=True, blank=True)
+    admin_message_id = models.BigIntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = "withdrawal_requests"
+        ordering = ["-created_at"]
+        verbose_name = "Pul yechish so'rovi"
+        verbose_name_plural = "Pul yechish so'rovlari"
+
+    def __str__(self) -> str:
+        return f"WithdrawalRequest #{str(self.id)[:8]} — {int(self.amount):,} UZS ({self.get_status_display()})"

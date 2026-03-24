@@ -523,3 +523,12 @@ ADMIN_TELEGRAM_IDS = [int(x) for x in os.getenv("ADMIN_TELEGRAM_IDS", "").split(
 CHAT_NOTIFICATION_DELAY_SECONDS = int(os.getenv("CHAT_NOTIFICATION_DELAY_SECONDS", "10"))
 ESCROW_AUTO_RELEASE_HOURS = int(os.getenv("ESCROW_AUTO_RELEASE_HOURS", "48"))
 DELIVERY_REMINDER_HOURS = int(os.getenv("DELIVERY_REMINDER_HOURS", "2"))
+# Savdo tasdiqlash timeout (soat)
+TRADE_CONFIRMATION_TIMEOUT_HOURS = int(os.getenv("TRADE_CONFIRMATION_TIMEOUT_HOURS", "24"))
+# Pul yechish sozlamalari
+WITHDRAWAL_MIN_AMOUNT = int(os.getenv("WITHDRAWAL_MIN_AMOUNT", "10000"))
+WITHDRAWAL_REVIEW_TIMEOUT_HOURS = int(os.getenv("WITHDRAWAL_REVIEW_TIMEOUT_HOURS", "48"))
+# Platforma komissiya stavkasi
+PLATFORM_COMMISSION_RATE = float(os.getenv("PLATFORM_COMMISSION_RATE", "0.05"))
+# Verifikatsiya maksimal kutish vaqti (soat)
+VERIFICATION_MAX_HOLD_HOURS = int(os.getenv("VERIFICATION_MAX_HOLD_HOURS", "168"))
