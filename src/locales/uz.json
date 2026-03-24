@@ -25,7 +25,9 @@
         "choose_placeholder": "Avval suhbatni tanlang",
         "load_older": "Eski xabarlar",
         "no_conversations": "Suhbatlar yo'q",
-        "search_placeholder": "Suhbatlarni qidirish..."
+        "search_placeholder": "Suhbatlarni qidirish...",
+        "today": "Bugun",
+        "yesterday": "Kecha"
     },
     "onboarding": {
         "welcome_title": "WibeStore ga xush kelibsiz",

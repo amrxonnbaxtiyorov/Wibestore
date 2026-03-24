@@ -25,7 +25,9 @@
         "choose_placeholder": "Select a chat first",
         "load_older": "Load older messages",
         "no_conversations": "No conversations yet",
-        "search_placeholder": "Search conversations..."
+        "search_placeholder": "Search conversations...",
+        "today": "Today",
+        "yesterday": "Yesterday"
     },
     "onboarding": {
         "welcome_title": "Welcome to WibeStore",

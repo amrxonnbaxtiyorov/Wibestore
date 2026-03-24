@@ -15,7 +15,7 @@ export default function ChatPage() {
     const { user, isAuthenticated } = useAuth();
     const userId = user?.id ?? null;
     const navigate = useNavigate();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { data: chatsData, isLoading } = useChats();
     const chats = useMemo(() => chatsData?.results ?? chatsData ?? [], [chatsData]);
     const [activeRoomId, setActiveRoomId] = useState(null);
@@ -392,10 +392,11 @@ export default function ChatPage() {
                                     const showDateSep = msgDate && (!prevDate || msgDate.toDateString() !== prevDate.toDateString());
                                     const today = new Date();
                                     const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+                                    const dateLocale = language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : 'uz-UZ';
                                     const dateSepLabel = msgDate
-                                        ? (msgDate.toDateString() === today.toDateString() ? 'Bugun'
-                                          : msgDate.toDateString() === yesterday.toDateString() ? 'Kecha'
-                                          : msgDate.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }))
+                                        ? (msgDate.toDateString() === today.toDateString() ? (t('chat.today') || 'Bugun')
+                                          : msgDate.toDateString() === yesterday.toDateString() ? (t('chat.yesterday') || 'Kecha')
+                                          : msgDate.toLocaleDateString(dateLocale, { day: '2-digit', month: '2-digit', year: 'numeric' }))
                                         : '';
                                     return (
                                         <div key={msg.id}>

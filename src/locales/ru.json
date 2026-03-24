@@ -25,7 +25,9 @@
         "choose_placeholder": "Сначала выберите чат",
         "load_older": "Загрузить старые сообщения",
         "no_conversations": "Нет диалогов",
-        "search_placeholder": "Поиск диалогов..."
+        "search_placeholder": "Поиск диалогов...",
+        "today": "Сегодня",
+        "yesterday": "Вчера"
     },
     "onboarding": {
         "welcome_title": "Добро пожаловать в WibeStore",

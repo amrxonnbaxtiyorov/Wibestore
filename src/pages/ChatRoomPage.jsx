@@ -16,7 +16,7 @@ export default function ChatRoomPage() {
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
     const userId = user?.id ?? null;
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [text, setText] = useState('');
     const [soundEnabled, toggleSound] = useChatSoundEnabled();
 
@@ -310,10 +310,11 @@ export default function ChatRoomPage() {
                                 const showDateSep = msgDate && (!prevDate || msgDate.toDateString() !== prevDate.toDateString());
                                 const today = new Date();
                                 const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+                                const dateLocale = language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : 'uz-UZ';
                                 const dateSepLabel = msgDate
-                                    ? (msgDate.toDateString() === today.toDateString() ? 'Bugun'
-                                      : msgDate.toDateString() === yesterday.toDateString() ? 'Kecha'
-                                      : msgDate.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }))
+                                    ? (msgDate.toDateString() === today.toDateString() ? (t('chat.today') || 'Bugun')
+                                      : msgDate.toDateString() === yesterday.toDateString() ? (t('chat.yesterday') || 'Kecha')
+                                      : msgDate.toLocaleDateString(dateLocale, { day: '2-digit', month: '2-digit', year: 'numeric' }))
                                     : '';
                                 // System message
                                 if (msg.message_type === 'system') {
