@@ -203,8 +203,8 @@ export default function ChatPage() {
 
                     {/* Left: conversations */}
                     <div className="chat-page-list" style={{ borderRight: '1px solid var(--color-border-muted)', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)' }}>
-                            <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                        <div style={{ padding: '14px 16px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)' }}>
+                            <p style={{ margin: 0, fontWeight: 700, color: 'var(--color-text-primary)', fontSize: '16px', letterSpacing: '-0.01em' }}>
                                 {t('nav.chat') || 'Xabarlar'}
                             </p>
                         </div>
@@ -272,20 +272,20 @@ export default function ChatPage() {
                                             )}
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center justify-between gap-3">
-                                                    <p className="truncate" style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', margin: 0 }}>
+                                                    <p className="truncate" style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
                                                         {primaryTitle}
                                                     </p>
                                                     {unread > 0 && (
-                                                        <span style={{ fontSize: 'var(--font-size-xs)', padding: '2px 8px', borderRadius: '999px', backgroundColor: 'var(--color-accent-blue)', color: '#fff', flexShrink: 0 }}>
+                                                        <span style={{ fontSize: '12px', fontWeight: 700, padding: '3px 9px', borderRadius: '999px', backgroundColor: 'var(--color-accent-blue)', color: '#fff', flexShrink: 0, minWidth: '22px', textAlign: 'center' }}>
                                                             {unread}
                                                         </span>
                                                     )}
                                                 </div>
-                                                <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
+                                                <p className="truncate" style={{ fontSize: '13px', fontWeight: 500, color: 'var(--color-text-secondary)', margin: '3px 0 0 0' }}>
                                                     {listingGameName ? `${listingGameName} · ${sellerName}` : sellerName}
                                                 </p>
                                                 {!!room?.last_message_preview && (
-                                                    <p className="truncate" style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
+                                                    <p className="truncate" style={{ fontSize: '13px', color: 'var(--color-text-muted)', margin: '3px 0 0 0', fontWeight: 400 }}>
                                                         {room.last_message_preview}
                                                     </p>
                                                 )}
@@ -299,33 +299,33 @@ export default function ChatPage() {
 
                     {/* Middle: messages */}
                     <div className="chat-page-messages-panel" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0, position: 'relative' }}>
-                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ padding: '14px 16px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
                             {activeRoom && activeRoomOther ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                                     {resolveImageUrl(activeRoom?.listing?.primary_image) ? (
                                         <img
                                             src={resolveImageUrl(activeRoom.listing.primary_image)}
                                             alt=""
-                                            style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-md)', objectFit: 'cover', flexShrink: 0 }}
+                                            style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', objectFit: 'cover', flexShrink: 0 }}
                                         />
                                     ) : resolveImageUrl(activeRoomOther.avatar) ? (
                                         <img
                                             src={resolveImageUrl(activeRoomOther.avatar)}
                                             alt=""
-                                            style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
+                                            style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
                                         />
                                     ) : (
                                         <div
                                             style={{
-                                                width: '36px',
-                                                height: '36px',
+                                                width: '40px',
+                                                height: '40px',
                                                 borderRadius: 'var(--radius-md)',
                                                 backgroundColor: 'var(--color-bg-tertiary)',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                fontSize: 'var(--font-size-sm)',
-                                                fontWeight: 'var(--font-weight-semibold)',
+                                                fontSize: '15px',
+                                                fontWeight: 700,
                                                 color: 'var(--color-text-secondary)',
                                                 flexShrink: 0,
                                             }}
@@ -334,7 +334,7 @@ export default function ChatPage() {
                                         </div>
                                     )}
                                     <div className="flex-1 min-w-0">
-                                        <p className="truncate" style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
+                                        <p className="truncate" style={{ margin: 0, fontWeight: 700, color: 'var(--color-text-primary)', fontSize: '15px', letterSpacing: '-0.01em' }}>
                                             {activeRoom?.listing?.title || activeRoomOther.display_name}
                                         </p>
                                         {activeRoom?.listing?.title && (
@@ -343,7 +343,7 @@ export default function ChatPage() {
                                                 state={{ seller: { id: activeRoomOther.id, display_name: activeRoomOther.display_name, name: activeRoomOther.display_name, avatar: activeRoomOther.avatar } }}
                                                 style={{ textDecoration: 'none' }}
                                             >
-                                                <p className="truncate" style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                                <p className="truncate" style={{ margin: 0, fontSize: '13px', fontWeight: 500, color: 'var(--color-accent-blue)' }}>
                                                     {activeRoom?.listing?.game_name ? `${activeRoom.listing.game_name} · ` : ''}{activeRoomOther.display_name}
                                                 </p>
                                             </Link>
@@ -351,7 +351,7 @@ export default function ChatPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <p style={{ margin: 0, fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                                <p style={{ margin: 0, fontWeight: 700, color: 'var(--color-text-primary)', fontSize: '15px' }}>
                                     {t('chat.choose')}
                                 </p>
                             )}
@@ -401,35 +401,35 @@ export default function ChatPage() {
                                     return (
                                         <div key={msg.id}>
                                             {showDateSep && (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0', padding: '0 4px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '12px 0', padding: '0 4px' }}>
                                                     <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
-                                                    <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', flexShrink: 0, padding: '2px 8px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '999px', border: '1px solid var(--color-border-muted)' }}>
+                                                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)', flexShrink: 0, padding: '4px 12px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '999px', border: '1px solid var(--color-border-muted)' }}>
                                                         {dateSepLabel}
                                                     </span>
                                                     <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
                                                 </div>
                                             )}
-                                        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '10px' }}>
                                             {!isMe &&
                                                 (resolveImageUrl(senderAvatar) ? (
                                                     <img
                                                         src={resolveImageUrl(senderAvatar)}
                                                         alt=""
-                                                        style={{ width: '28px', height: '28px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0, alignSelf: 'flex-end' }}
+                                                        style={{ width: '34px', height: '34px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0, alignSelf: 'flex-end' }}
                                                     />
                                                 ) : (
                                                     <div
                                                         style={{
-                                                            width: '28px',
-                                                            height: '28px',
+                                                            width: '34px',
+                                                            height: '34px',
                                                             borderRadius: 'var(--radius-full)',
                                                             backgroundColor: 'var(--color-bg-tertiary)',
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
-                                                            fontSize: 'var(--font-size-xs)',
-                                                            fontWeight: 'var(--font-weight-semibold)',
-                                                            color: 'var(--color-text-muted)',
+                                                            fontSize: '13px',
+                                                            fontWeight: 700,
+                                                            color: 'var(--color-text-secondary)',
                                                             flexShrink: 0,
                                                             alignSelf: 'flex-end',
                                                         }}
@@ -439,35 +439,35 @@ export default function ChatPage() {
                                                 ))}
                                             <div style={{ maxWidth: '72%', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                                                 {!isMe && senderName && (
-                                                    <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '3px', paddingLeft: '4px', fontWeight: 600 }}>{senderName}</span>
+                                                    <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '4px', paddingLeft: '4px', fontWeight: 700 }}>{senderName}</span>
                                                 )}
                                             <div
                                                 style={{
-                                                    padding: '10px 14px',
+                                                    padding: '12px 16px',
                                                     overflowWrap: 'break-word',
                                                     wordBreak: 'break-word',
-                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.10)',
+                                                    boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
                                                     ...(isMe
                                                         ? {
                                                             background: 'linear-gradient(135deg, #2563EB, #1d4ed8)',
                                                             color: '#ffffff',
-                                                            borderRadius: '18px 18px 4px 18px',
+                                                            borderRadius: '20px 20px 4px 20px',
                                                         }
                                                         : {
-                                                            backgroundColor: 'var(--color-bg-secondary)',
+                                                            backgroundColor: 'var(--color-bg-primary)',
                                                             color: 'var(--color-text-primary)',
-                                                            border: '1px solid var(--color-border-muted)',
-                                                            borderRadius: '18px 18px 18px 4px',
+                                                            border: '1.5px solid var(--color-border-default)',
+                                                            borderRadius: '20px 20px 20px 4px',
                                                         }),
                                                 }}
                                             >
-                                                <p style={{ fontSize: '14px', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'break-word', fontWeight: 400 }}>{msg.content}</p>
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginTop: '4px' }}>
-                                                    <span style={{ fontSize: '11px', opacity: isMe ? 0.75 : 0.7, color: isMe ? '#fff' : 'var(--color-text-muted)' }}>
+                                                <p style={{ fontSize: '15px', lineHeight: '1.55', margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'break-word', fontWeight: 500 }}>{msg.content}</p>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px', marginTop: '5px' }}>
+                                                    <span style={{ fontSize: '12px', fontWeight: 500, opacity: isMe ? 0.8 : 0.75, color: isMe ? '#fff' : 'var(--color-text-muted)' }}>
                                                         {msg.created_at ? new Date(msg.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : ''}
                                                     </span>
                                                     {isMe && (
-                                                        <span style={{ fontSize: '12px', lineHeight: 1, color: msg.is_read ? '#93c5fd' : 'rgba(255,255,255,0.6)' }}>
+                                                        <span style={{ fontSize: '13px', lineHeight: 1, fontWeight: 600, color: msg.is_read ? '#93c5fd' : 'rgba(255,255,255,0.65)' }}>
                                                             {msg.is_read ? '✓✓' : '✓'}
                                                         </span>
                                                     )}
@@ -482,8 +482,8 @@ export default function ChatPage() {
                             <div ref={messagesEndRef} />
                         </div>
 
-                        <form onSubmit={handleSend} style={{ padding: '10px 12px', borderTop: '1px solid var(--color-border-muted)', backgroundColor: 'var(--color-bg-primary)', flexShrink: 0 }}>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                        <form onSubmit={handleSend} style={{ padding: '12px 14px', borderTop: '1px solid var(--color-border-muted)', backgroundColor: 'var(--color-bg-primary)', flexShrink: 0 }}>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
                                 <textarea
                                     value={text}
                                     onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
@@ -494,22 +494,23 @@ export default function ChatPage() {
                                     style={{
                                         flex: 1,
                                         resize: 'none',
-                                        minHeight: '44px',
+                                        minHeight: '48px',
                                         maxHeight: '120px',
                                         overflowY: 'auto',
-                                        padding: '10px 16px',
-                                        borderRadius: '22px',
-                                        border: '1.5px solid var(--color-border-default)',
+                                        padding: '12px 18px',
+                                        borderRadius: '24px',
+                                        border: '2px solid var(--color-border-default)',
                                         backgroundColor: 'var(--color-bg-secondary)',
                                         color: 'var(--color-text-primary)',
-                                        fontSize: '14px',
+                                        fontSize: '15px',
+                                        fontWeight: 500,
                                         lineHeight: '1.5',
                                         outline: 'none',
-                                        transition: 'border-color 0.15s',
+                                        transition: 'border-color 0.15s, box-shadow 0.15s',
                                         fontFamily: 'inherit',
                                     }}
-                                    onFocus={(e) => { e.target.style.borderColor = '#2563EB'; }}
-                                    onBlur={(e) => { e.target.style.borderColor = 'var(--color-border-default)'; }}
+                                    onFocus={(e) => { e.target.style.borderColor = '#2563EB'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.15)'; }}
+                                    onBlur={(e) => { e.target.style.borderColor = 'var(--color-border-default)'; e.target.style.boxShadow = 'none'; }}
                                 />
                                 <button
                                     type="submit"
