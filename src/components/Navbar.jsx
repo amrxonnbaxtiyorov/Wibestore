@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
 import { useProfile } from '../hooks';
-import { getDisplayInitial, capitalizeFirst, resolveImageUrl } from '../lib/displayUtils';
+import { capitalizeFirst } from '../lib/displayUtils';
 import NotificationWidget from './NotificationWidget';
 import Logo from './Logo';
 import UserAvatar from './UserAvatar';

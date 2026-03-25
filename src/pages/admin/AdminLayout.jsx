@@ -14,6 +14,7 @@ const AdminLayout = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const { t } = useLanguage();
 
     // Admin panel faqat staff foydalanuvchilar uchun; AdminGuard allaqachon tekshiradi
     if (user && !user.is_staff) {
@@ -25,8 +26,6 @@ const AdminLayout = ({ children }) => {
         await logout();
         navigate('/admin/login');
     };
-
-    const { t } = useLanguage();
     const menuItems = [
         { icon: LayoutDashboard, label: t('admin.menu_dashboard'), to: '/admin' },
         { icon: Users, label: t('admin.menu_users'), to: '/admin/users' },

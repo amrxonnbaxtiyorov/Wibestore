@@ -81,7 +81,7 @@ const HomePage = () => {
         image: account?.images?.[0]?.image ?? account?.primary_image ?? account?.image ?? '',
         isLiked: account?.is_favorited ?? account?.isLiked ?? false,
         isPremium: account?.is_premium ?? account?.isPremium ?? account?.seller?.is_premium ?? false,
-        is_pro: account?.seller?.is_pro ?? (account?.seller?.plan === 'pro') ?? false,
+        is_pro: account?.seller?.is_pro || account?.seller?.plan === 'pro' || false,
     });
 
     // Akkauntlarni obuna bo'yicha tartiblash:

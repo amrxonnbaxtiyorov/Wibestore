@@ -10,19 +10,21 @@ const NotificationWidget = () => {
     const dropdownRef = useRef(null);
     const prevUnreadRef = useRef(null);
 
-    const { data: notificationsData, isLoading } = useNotifications();
+    const { data: notificationsData } = useNotifications();
     const markAsReadMutation = useMarkNotificationRead();
     const markAllReadMutation = useMarkAllNotificationsRead();
 
-    const rawList = notificationsData?.results ?? (Array.isArray(notificationsData) ? notificationsData : []);
-    const notifications = useMemo(() => rawList.map((n) => ({
-        id: n.id,
-        title: n.title,
-        message: n.message,
-        read: !!n.is_read,
-        time: n.created_at,
-        icon: n.type?.icon || '🔔',
-    })), [rawList]);
+    const notifications = useMemo(() => {
+        const rawList = notificationsData?.results ?? (Array.isArray(notificationsData) ? notificationsData : []);
+        return rawList.map((n) => ({
+            id: n.id,
+            title: n.title,
+            message: n.message,
+            read: !!n.is_read,
+            time: n.created_at,
+            icon: n.type?.icon || '🔔',
+        }));
+    }, [notificationsData]);
     const unreadCount = notifications.filter((n) => !n.read).length;
 
     useEffect(() => {

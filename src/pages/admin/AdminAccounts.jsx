@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Eye, EyeOff, Check, X, Ban, Key, AlertCircle, RefreshCw } from 'lucide-react';
 import { formatPrice } from '../../data/mockData';
 import {

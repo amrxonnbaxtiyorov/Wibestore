@@ -14,6 +14,14 @@ const STATUS_COLORS = {
 
 const TABS = ['trades', 'verifications']
 
+function TradeBadge({ status, statusLabels }) {
+  return (
+    <span className={`badge ${STATUS_COLORS[status] || 'badge-blue'}`}>
+      {statusLabels[status] || status}
+    </span>
+  )
+}
+
 export default function AdminTradePanel() {
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('trades')
@@ -36,14 +44,6 @@ export default function AdminTradePanel() {
     disputed: t('admin_trades.filter_disputed'),
     refunded: t('admin_trades.filter_refunded'),
     cancelled: t('trade.status_cancelled'),
-  }
-
-  function TradeBadge({ status }) {
-    return (
-      <span className={`badge ${STATUS_COLORS[status] || 'badge-blue'}`}>
-        {statusLabels[status] || status}
-      </span>
-    )
   }
 
   const { data: tradeStats } = useQuery({
@@ -213,7 +213,7 @@ export default function AdminTradePanel() {
                           {tr.seller_telegram && <div style={{ fontSize: 12, color: 'var(--color-accent-blue)' }}>@{tr.seller_telegram}</div>}
                         </td>
                         <td style={{ fontWeight: 600 }}>{Number(tr.amount).toLocaleString()} UZS</td>
-                        <td><TradeBadge status={tr.status} /></td>
+                        <td><TradeBadge status={tr.status} statusLabels={statusLabels} /></td>
                         <td style={{ fontSize: 12 }}>{tr.created_at ? new Date(tr.created_at).toLocaleString() : '\u2014'}</td>
                         <td>
                           <button className="btn btn-sm btn-secondary" onClick={e => { e.stopPropagation(); setSelectedTrade(tr) }}>
@@ -246,7 +246,7 @@ export default function AdminTradePanel() {
               </div>
 
               <div style={{ marginBottom: 12 }}>
-                <TradeBadge status={selectedTrade.status} />
+                <TradeBadge status={selectedTrade.status} statusLabels={statusLabels} />
                 <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--color-text-secondary)' }}>#{selectedTrade.id?.slice(0, 8)}</span>
               </div>
 

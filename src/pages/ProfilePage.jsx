@@ -8,7 +8,7 @@ import AvatarEditModal from '../components/AvatarEditModal';
 import UserAvatar from '../components/UserAvatar';
 import ReviewList from '../components/ReviewList';
 import { formatPrice } from '../data/mockData';
-import { getDisplayInitial, capitalizeFirst, resolveImageUrl } from '../lib/displayUtils';
+import { capitalizeFirst, resolveImageUrl } from '../lib/displayUtils';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import SkeletonLoader from '../components/SkeletonLoader';

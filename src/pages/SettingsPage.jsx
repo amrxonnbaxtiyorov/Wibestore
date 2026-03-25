@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Settings, User, Lock, Bell, Globe, CreditCard, ArrowDownCircle, ArrowUpCircle, Trash2, Camera, Save, AlertCircle, CheckCircle, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getDisplayInitial } from '../lib/displayUtils';
 import UserAvatar from '../components/UserAvatar';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
 
