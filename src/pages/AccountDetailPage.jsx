@@ -3,10 +3,11 @@ import { useState, useEffect, useMemo } from 'react';
 import {
     Heart, Share2, Shield, Star, MessageCircle, CheckCircle,
     AlertCircle, ChevronLeft, ChevronRight, Copy, Check,
-    Gamepad2, Trophy, Swords, Layers, ArrowLeft, Send, Wallet, X
+    Gamepad2, Trophy, Swords, Layers, ArrowLeft, Send, Wallet, X, Video, ExternalLink
 } from 'lucide-react';
 
 import { useListing, useAddToFavorites, useRemoveFromFavorites, useListings, usePurchaseListing } from '../hooks';
+import apiClient from '../lib/apiClient';
 import { useListingReviews } from '../hooks/useReviews';
 import { resolveImageUrl } from '../lib/displayUtils';
 import ReviewList from '../components/ReviewList';
@@ -648,9 +649,47 @@ const AccountDetailPage = () => {
                     className="grid grid-cols-1 lg:grid-cols-2"
                     style={{ gap: '32px', marginTop: '20px' }}
                 >
-                    {/* ── Left: Images ── */}
+                    {/* ── Left: Images + Video ── */}
                     <div>
                         <ImageCarousel images={images} title={listing.title} noImageText={t('detail.no_image')} imageErrorText={t('detail.image_load_failed')} />
+
+                        {/* Video ko'rish tugmasi */}
+                        {listing.has_video && (
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const resp = await apiClient.post(`/listings/${listing.id}/video-view/`);
+                                        const link = resp?.data?.deep_link;
+                                        if (link) window.open(link, '_blank');
+                                    } catch {
+                                        // silently fail
+                                    }
+                                }}
+                                style={{
+                                    width: '100%',
+                                    marginTop: '12px',
+                                    padding: '14px 20px',
+                                    borderRadius: 'var(--radius-xl)',
+                                    border: '2px solid var(--color-accent-blue)',
+                                    background: 'linear-gradient(135deg, rgba(37,99,235,0.1), rgba(37,99,235,0.05))',
+                                    color: 'var(--color-accent-blue)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '10px',
+                                    fontWeight: 700,
+                                    fontSize: '15px',
+                                    transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)'; e.currentTarget.style.color = '#fff'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(37,99,235,0.1), rgba(37,99,235,0.05))'; e.currentTarget.style.color = 'var(--color-accent-blue)'; }}
+                            >
+                                <Video style={{ width: '22px', height: '22px' }} />
+                                {t('detail.watch_video') || "Videoni ko'rish"}
+                                <ExternalLink style={{ width: '16px', height: '16px', opacity: 0.7 }} />
+                            </button>
+                        )}
                     </div>
 
                     {/* ── Right: Info + Purchase ── */}

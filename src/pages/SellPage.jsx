@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Upload, X, Plus, DollarSign, Image, FileText, Tag, Shield, AlertCircle, CheckCircle, Search, ArrowLeft, Send, Loader2 } from 'lucide-react';
+import { Upload, X, Plus, DollarSign, Image, FileText, Tag, Shield, AlertCircle, CheckCircle, Search, ArrowLeft, Send, Loader2, Video, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
@@ -40,6 +40,7 @@ const SellPage = () => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [createdListingId, setCreatedListingId] = useState(null);
     const [showGameModal, setShowGameModal] = useState(false);
     const [modalGameSearch, setModalGameSearch] = useState('');
     
@@ -200,6 +201,7 @@ const SellPage = () => {
                         title: t('common.success') || 'Muvaffaqiyatli!',
                         message: t('sell.success_listing_created') || 'Listing yaratildi. Moderatsiyadan keyin ko\'rinadi.',
                     });
+                    if (listingId) setCreatedListingId(listingId);
                     setSubmitted(true);
                 },
                 onError: (error) => {
@@ -267,10 +269,26 @@ title: t('common.error') || 'Xatolik',
 
     const errorStyle = { color: 'var(--color-error)', fontSize: 'var(--font-size-sm)', marginTop: '4px' };
 
+    const handleVideoUpload = async () => {
+        if (!createdListingId) return;
+        try {
+            const { data } = await apiClient.post(`/listings/${createdListingId}/video-upload/`);
+            if (data?.deep_link) {
+                window.open(data.deep_link, '_blank');
+            }
+        } catch {
+            addToast({
+                type: 'error',
+                title: t('common.error') || 'Xatolik',
+                message: t('sell.video_upload_error') || 'Video yuklash linkini olishda xatolik.',
+            });
+        }
+    };
+
     if (submitted) {
         return (
             <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div className="text-center" style={{ maxWidth: '400px', padding: '0 16px' }}>
+                <div className="text-center" style={{ maxWidth: '440px', padding: '0 16px' }}>
                     <div style={{
                         width: '72px', height: '72px', borderRadius: 'var(--radius-full)',
                         backgroundColor: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -281,9 +299,49 @@ title: t('common.error') || 'Xatolik',
                     <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '12px' }}>
                         {t('sell.success_title') || "E'lon yuborildi!"}
                     </h1>
-                    <p style={{ color: 'var(--color-text-secondary)', marginBottom: '28px' }}>
+                    <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
                         {t('sell.success_description') || "Sizning e'loningiz moderatsiyaga yuborildi. 24 soat ichida tekshiriladi va tasdiqlangandan keyin saytda paydo bo'ladi."}
                     </p>
+
+                    {/* Video yuklash bloki */}
+                    {createdListingId && (
+                        <div style={{
+                            border: '2px dashed var(--color-accent-blue)',
+                            borderRadius: 'var(--radius-xl)',
+                            padding: '20px',
+                            marginBottom: '24px',
+                            backgroundColor: 'rgba(37,99,235,0.05)',
+                        }}>
+                            <Video style={{ width: '32px', height: '32px', color: 'var(--color-accent-blue)', margin: '0 auto 8px' }} />
+                            <p style={{ fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '6px', fontSize: '15px' }}>
+                                {t('sell.video_add_title') || "Video qo'shmoqchimisiz?"}
+                            </p>
+                            <p style={{ color: 'var(--color-text-secondary)', fontSize: '13px', marginBottom: '14px' }}>
+                                {t('sell.video_add_desc') || "Telegram bot orqali akkauntingiz haqida video yuklang (10-300 MB). Haridorlar videoni ko'rib, ko'proq ishonadi."}
+                            </p>
+                            <button
+                                onClick={handleVideoUpload}
+                                className="btn btn-lg"
+                                style={{
+                                    width: '100%',
+                                    background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                                    color: '#fff',
+                                    border: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    fontWeight: 700,
+                                    fontSize: '15px',
+                                }}
+                            >
+                                <Send className="w-5 h-5" />
+                                {t('sell.video_upload_btn') || 'Telegram orqali video yuklash'}
+                                <ExternalLink className="w-4 h-4" style={{ opacity: 0.7 }} />
+                            </button>
+                        </div>
+                    )}
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <button onClick={() => navigate('/profile')} className="btn btn-primary btn-lg" style={{ width: '100%' }}>
                             {t('common.go_to_profile')}
@@ -635,6 +693,40 @@ title: t('common.error') || 'Xatolik',
                                             <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>PNG, JPG (max 5MB, {5 - formData.images.length} ta qoldi)</p>
                                         </label>
                                     )}
+                                </div>
+
+                                {/* Video upload via Telegram (ixtiyoriy) */}
+                                <div style={{ marginTop: '20px' }}>
+                                    <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <Video className="w-4 h-4" style={{ color: 'var(--color-accent-blue)' }} />
+                                        {t('sell.video_label') || 'Video (ixtiyoriy)'}
+                                    </label>
+                                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginBottom: '10px' }}>
+                                        {t('sell.video_hint') || "Akkauntingiz haqida video qo'shing — haridorlar ko'proq ishonadi. Video Telegram bot orqali yuklanadi (10-300 MB)."}
+                                    </p>
+                                    <div
+                                        style={{
+                                            border: '2px dashed var(--color-border-default)',
+                                            borderRadius: 'var(--radius-lg)',
+                                            padding: '20px 16px',
+                                            textAlign: 'center',
+                                            backgroundColor: 'var(--color-bg-secondary)',
+                                        }}
+                                    >
+                                        <Video style={{ width: '32px', height: '32px', color: 'var(--color-accent-blue)', margin: '0 auto 8px', opacity: 0.7 }} />
+                                        <p style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)', marginBottom: '12px' }}>
+                                            {t('sell.video_telegram_info') || "E'lon yaratilgandan so'ng video yuklash imkoniyati paydo bo'ladi. Video Telegram bot orqali yuklanadi."}
+                                        </p>
+                                        <div style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                            padding: '8px 16px', borderRadius: 'var(--radius-lg)',
+                                            backgroundColor: 'var(--color-bg-tertiary)',
+                                            color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)',
+                                        }}>
+                                            <Send className="w-4 h-4" />
+                                            {t('sell.video_after_create') || "E'lon yaratilgandan keyin video qo'shish mumkin"}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}

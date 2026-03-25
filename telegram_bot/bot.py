@@ -123,6 +123,9 @@ WAITING_PHONE, CONFIRMING = range(2)
     VERIFY_LOCATION,
 ) = range(30, 34)
 
+# E'lon video yuklash
+WAITING_LISTING_VIDEO = 40
+
 # Yangi keyboard tugmalar matni
 BTN_MY_ACCOUNT = "Mening saytdagi akkauntim"
 BTN_PREMIUM = "Premium olish"
@@ -596,6 +599,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if args and args[0] == "topup":
         return await _cmd_topup(update, context)
 
+    # /start uploadvideo_{token} — e'lon uchun video yuklash
+    if args and args[0].startswith("uploadvideo_"):
+        token = args[0][len("uploadvideo_"):]
+        return await _cmd_upload_video(update, context, token)
+
+    # /start viewvideo_{listing_id} — e'lon videosini ko'rish
+    if args and args[0].startswith("viewvideo_"):
+        listing_id = args[0][len("viewvideo_"):]
+        return await _cmd_view_video(update, context, listing_id)
+
     try:
         reply_markup = _get_main_keyboard()
     except Exception as e:
@@ -621,6 +634,181 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         f"❌ Bekor qilish: /cancel"
     )
     await update.message.reply_html(welcome_text, reply_markup=reply_markup)
+    return WAITING_PHONE
+
+
+# ===== E'LON VIDEO YUKLASH / KO'RISH =====
+
+async def _cmd_upload_video(update: Update, context: ContextTypes.DEFAULT_TYPE, token: str) -> int:
+    """Sotuvchi video yuklash oqimini boshlaydi."""
+    import aiohttp
+
+    # Token orqali listingni tekshirish
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"{WEBSITE_URL}/api/v1/listings/video-webhook/"
+            # Token mavjudligini tekshiramiz — oddiy GET emas, tokenni context'ga saqlaymiz
+            pass
+    except Exception:
+        pass
+
+    context.user_data['video_upload_token'] = token
+
+    await update.message.reply_html(
+        "🎬 <b>E'lon uchun video yuklash</b>\n\n"
+        "Akkauntingiz haqida video yuboring.\n\n"
+        "📋 <b>Talablar:</b>\n"
+        "• Hajmi: <b>10 MB — 300 MB</b>\n"
+        "• Format: MP4, MOV, AVI\n"
+        "• Akkaunt ichidagi o'yinlar, skinlar, darajani ko'rsating\n\n"
+        "📤 <b>Videoni hozir yuboring</b> yoki /cancel bosing.",
+        reply_markup=ReplyKeyboardMarkup(
+            [[KeyboardButton("❌ Bekor qilish")]],
+            resize_keyboard=True,
+        ),
+    )
+    return WAITING_LISTING_VIDEO
+
+
+async def _handle_listing_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Sotuvchi video yuborganda — file_id ni backend'ga saqlash."""
+    import aiohttp
+
+    video = update.message.video or update.message.document
+    if not video:
+        await update.message.reply_html(
+            "❌ Iltimos, <b>video fayl</b> yuboring.\n"
+            "Matn yoki rasm emas, video kerak."
+        )
+        return WAITING_LISTING_VIDEO
+
+    # Hajm tekshirish (10MB - 300MB)
+    file_size = video.file_size or 0
+    min_size = 10 * 1024 * 1024   # 10 MB
+    max_size = 300 * 1024 * 1024  # 300 MB
+
+    if file_size < min_size:
+        size_mb = round(file_size / (1024 * 1024), 1)
+        await update.message.reply_html(
+            f"⚠️ Video hajmi juda kichik: <b>{size_mb} MB</b>\n"
+            f"Minimal hajm: <b>10 MB</b>\n\n"
+            f"Boshqa video yuboring yoki /cancel bosing."
+        )
+        return WAITING_LISTING_VIDEO
+
+    if file_size > max_size:
+        size_mb = round(file_size / (1024 * 1024), 1)
+        await update.message.reply_html(
+            f"⚠️ Video hajmi juda katta: <b>{size_mb} MB</b>\n"
+            f"Maksimal hajm: <b>300 MB</b>\n\n"
+            f"Kichikroq video yuboring yoki /cancel bosing."
+        )
+        return WAITING_LISTING_VIDEO
+
+    token = context.user_data.get('video_upload_token', '')
+    if not token:
+        await update.message.reply_html("❌ Video yuklash sessiyasi tugagan. Saytdan qayta boshlang.")
+        return WAITING_PHONE
+
+    file_id = video.file_id
+    size_mb = round(file_size / (1024 * 1024), 1)
+
+    # Backend'ga file_id yuborish
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"{WEBSITE_URL}/api/v1/listings/video-webhook/"
+            payload = {
+                "secret": BOT_SECRET_KEY,
+                "token": token,
+                "file_id": file_id,
+            }
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                data = await resp.json()
+                if resp.status == 200 and data.get("success"):
+                    listing_title = data.get("listing_title", "")
+                    context.user_data.pop('video_upload_token', None)
+
+                    reply_markup = _get_main_keyboard()
+                    await update.message.reply_html(
+                        f"✅ <b>Video muvaffaqiyatli yuklandi!</b>\n\n"
+                        f"📦 E'lon: <b>{listing_title}</b>\n"
+                        f"📁 Hajmi: <b>{size_mb} MB</b>\n\n"
+                        f"Endi haridorlar sizning e'loningizda \"Videoni ko'rish\" tugmasini bosib, "
+                        f"videoni shu yerda — Telegram'da ko'rishlari mumkin.",
+                        reply_markup=reply_markup,
+                    )
+                    return WAITING_PHONE
+                else:
+                    error_msg = data.get("error", "Noma'lum xato")
+                    await update.message.reply_html(
+                        f"❌ Xatolik: {error_msg}\n\n"
+                        f"Qayta urinib ko'ring yoki saytdan yangi token oling."
+                    )
+                    return WAITING_PHONE
+    except Exception as e:
+        logger.error("Video webhook xatosi: %s", e)
+        await update.message.reply_html(
+            "❌ Serverga ulanib bo'lmadi. Keyinroq urinib ko'ring."
+        )
+        return WAITING_PHONE
+
+
+async def _cmd_view_video(update: Update, context: ContextTypes.DEFAULT_TYPE, listing_id: str) -> int:
+    """Haridor e'lon videosini ko'radi — bot video yuboradi."""
+    import aiohttp
+
+    # Listing ma'lumotlarini va video_file_id ni backend API orqali olish
+    try:
+        async with aiohttp.ClientSession() as session:
+            # video-view endpointdan video_file_id olamiz
+            url = f"{WEBSITE_URL}/api/v1/listings/{listing_id}/video-view/"
+            headers = {"X-Bot-Secret": BOT_SECRET_KEY}
+            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                if resp.status != 200:
+                    await update.message.reply_html("❌ E'lon topilmadi yoki video mavjud emas.")
+                    return WAITING_PHONE
+                video_data = await resp.json()
+
+            # Listing tafsilotlarini olish
+            listing_url = f"{WEBSITE_URL}/api/v1/listings/{listing_id}/"
+            async with session.get(listing_url, timeout=aiohttp.ClientTimeout(total=15)) as resp2:
+                listing_data = await resp2.json() if resp2.status == 200 else {}
+    except Exception as e:
+        logger.error("Video view xatosi: %s", e)
+        await update.message.reply_html("❌ Serverga ulanib bo'lmadi.")
+        return WAITING_PHONE
+
+    file_id = video_data.get("file_id", "")
+    if not file_id:
+        await update.message.reply_html("❌ Bu e'lon uchun video mavjud emas.")
+        return WAITING_PHONE
+
+    # E'lon ma'lumotlari
+    title = listing_data.get('title', '')
+    description = listing_data.get('description', '')
+    price = listing_data.get('price', 0)
+
+    # Tavsifni qisqartirish (max 800 belgi)
+    short_desc = description[:800] + ('...' if len(description) > 800 else '')
+
+    caption = (
+        f"🎬 <b>{title}</b>\n\n"
+        f"💰 Narxi: <b>{int(float(price)):,} UZS</b>\n\n"
+        f"📝 {short_desc}\n\n"
+        f"🌐 <a href='https://wibestore.net/account/{listing_id}'>E'lonni ko'rish</a>"
+    )
+
+    try:
+        await update.message.reply_video(
+            video=file_id,
+            caption=caption,
+            parse_mode='HTML',
+            supports_streaming=True,
+        )
+    except Exception as e:
+        logger.error("Video yuborishda xato: %s", e)
+        await update.message.reply_html("❌ Videoni yuborishda xatolik yuz berdi.")
+
     return WAITING_PHONE
 
 
@@ -4171,6 +4359,12 @@ def main():
                 CallbackQueryHandler(support_send_cb, pattern="^support_send$"),
                 CallbackQueryHandler(support_cancel_cb, pattern="^support_cancel$"),
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
+            WAITING_LISTING_VIDEO: [
+                MessageHandler(filters.VIDEO | filters.Document.VIDEO, _handle_listing_video),
+                MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, lambda u, c: u.message.reply_html("📹 Iltimos, <b>video fayl</b> yuboring.")),
                 CommandHandler('cancel', _cancel_to_menu),
             ],
         },

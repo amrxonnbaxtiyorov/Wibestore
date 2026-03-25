@@ -70,6 +70,17 @@ class Listing(BaseSoftDeleteModel):
     skins_count = models.PositiveIntegerField(default=0)
     features = models.JSONField(default=list, blank=True)
 
+    # Video (Telegram orqali yuklangan)
+    video_file_id = models.CharField(
+        max_length=255, blank=True, default="",
+        help_text="Telegram file_id for uploaded video",
+    )
+    video_upload_token = models.CharField(
+        max_length=64, blank=True, default="",
+        db_index=True,
+        help_text="One-time token for video upload via Telegram bot",
+    )
+
     # Moderation
     moderated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

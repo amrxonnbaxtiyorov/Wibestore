@@ -50,6 +50,7 @@ class ListingSerializer(serializers.ModelSerializer):
     images = ListingImageSerializer(many=True, read_only=True)
     discount_percentage = serializers.IntegerField(read_only=True)
     is_favorited = serializers.SerializerMethodField()
+    has_video = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -75,6 +76,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "skins_count",
             "features",
             "images",
+            "has_video",
             "is_favorited",
             "created_at",
             "updated_at",
@@ -94,6 +96,9 @@ class ListingSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return Favorite.objects.filter(user=request.user, listing=obj).exists()
         return False
+
+    def get_has_video(self, obj) -> bool:
+        return bool(obj.video_file_id)
 
 
 class ListingCreateSerializer(serializers.ModelSerializer):
@@ -170,6 +175,7 @@ class ListingListSerializer(serializers.ModelSerializer):
     game_icon = serializers.CharField(source="game.icon", read_only=True)
     primary_image = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
+    has_video = serializers.SerializerMethodField()
 
     class Meta:
         model = Listing
@@ -184,6 +190,7 @@ class ListingListSerializer(serializers.ModelSerializer):
             "seller",
             "is_premium",
             "is_favorited",
+            "has_video",
             "views_count",
             "favorites_count",
             "warranty_days",
@@ -199,6 +206,9 @@ class ListingListSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return Favorite.objects.filter(user=request.user, listing=obj).exists()
         return False
+
+    def get_has_video(self, obj) -> bool:
+        return bool(obj.video_file_id)
 
     def get_primary_image(self, obj) -> str | None:
         primary = obj.images.filter(is_primary=True).first()

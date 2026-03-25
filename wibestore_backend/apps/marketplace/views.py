@@ -321,3 +321,185 @@ class ApplyPromoView(APIView):
             "final_amount": final_amount,
             "promo_code": promo.code,
         })
+
+
+# ===== VIDEO UPLOAD / VIEW VIA TELEGRAM =====
+
+@extend_schema(tags=["Listings"])
+class ListingVideoUploadTokenView(APIView):
+    """POST /api/v1/listings/{id}/video-upload/ — Generate upload token, return Telegram deep link."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        import secrets
+        from .models import Listing
+
+        try:
+            listing = Listing.objects.get(pk=pk, seller=request.user)
+        except Listing.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Listing topilmadi yoki sizga tegishli emas."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Generate unique token
+        token = secrets.token_urlsafe(32)
+        listing.video_upload_token = token
+        listing.save(update_fields=["video_upload_token"])
+
+        bot_username = getattr(settings, "TELEGRAM_BOT_USERNAME", "wibestorebot")
+        deep_link = f"https://t.me/{bot_username}?start=uploadvideo_{token}"
+
+        return Response({
+            "success": True,
+            "deep_link": deep_link,
+            "token": token,
+            "has_video": bool(listing.video_file_id),
+        })
+
+    def get(self, request, pk):
+        """GET — Check video status for listing."""
+        from .models import Listing
+
+        try:
+            listing = Listing.objects.get(pk=pk, seller=request.user)
+        except Listing.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Listing topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response({
+            "success": True,
+            "has_video": bool(listing.video_file_id),
+        })
+
+    def delete(self, request, pk):
+        """DELETE — Remove video from listing."""
+        from .models import Listing
+
+        try:
+            listing = Listing.objects.get(pk=pk, seller=request.user)
+        except Listing.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Listing topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        listing.video_file_id = ""
+        listing.video_upload_token = ""
+        listing.save(update_fields=["video_file_id", "video_upload_token"])
+
+        return Response({"success": True, "message": "Video o'chirildi."})
+
+
+@extend_schema(tags=["Listings"])
+class ListingVideoViewView(APIView):
+    """GET/POST /api/v1/listings/{id}/video-view/ — Request to view video via Telegram bot."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, pk):
+        from .models import Listing
+
+        try:
+            listing = Listing.objects.get(pk=pk)
+        except Listing.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Listing topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not listing.video_file_id:
+            return Response(
+                {"success": False, "error": "Bu e'lon uchun video mavjud emas."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        bot_username = getattr(settings, "TELEGRAM_BOT_USERNAME", "wibestorebot")
+        deep_link = f"https://t.me/{bot_username}?start=viewvideo_{pk}"
+
+        return Response({
+            "success": True,
+            "deep_link": deep_link,
+        })
+
+    def get(self, request, pk):
+        """GET — returns file_id for bot (authenticated by X-Bot-Secret header)."""
+        from .models import Listing
+
+        # Bot secret tekshirish
+        bot_secret = request.headers.get("X-Bot-Secret", "")
+        expected = getattr(settings, "TELEGRAM_BOT_SECRET", "")
+        if not expected or bot_secret != expected:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            listing = Listing.objects.get(pk=pk)
+        except Listing.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Listing topilmadi."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not listing.video_file_id:
+            return Response(
+                {"success": False, "error": "Video mavjud emas."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response({
+            "success": True,
+            "file_id": listing.video_file_id,
+        })
+
+
+@extend_schema(tags=["Listings"])
+class ListingVideoWebhookView(APIView):
+    """POST /api/v1/listings/video-webhook/ — Called by Telegram bot when video is uploaded."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from django.conf import settings as django_settings
+        from .models import Listing
+
+        # Verify bot secret
+        secret = request.data.get("secret", "")
+        expected = getattr(django_settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not expected or secret != expected:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        token = request.data.get("token", "")
+        file_id = request.data.get("file_id", "")
+
+        if not token or not file_id:
+            return Response(
+                {"success": False, "error": "token and file_id required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            listing = Listing.objects.get(video_upload_token=token)
+        except Listing.DoesNotExist:
+            return Response(
+                {"success": False, "error": "Invalid or expired token"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        listing.video_file_id = file_id
+        listing.video_upload_token = ""  # Invalidate token
+        listing.save(update_fields=["video_file_id", "video_upload_token"])
+
+        return Response({
+            "success": True,
+            "listing_id": str(listing.id),
+            "listing_title": listing.title,
+        })
