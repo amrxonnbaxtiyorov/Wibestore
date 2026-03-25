@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MessageCircle, Gamepad2, Send, X, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useChats, useChatMessages, useMarkChatRead, useSendMessage, useChatSoundEnabled } from '../hooks/useChat';
 import { useLanguage } from '../context/LanguageContext';
 import { resolveImageUrl, getDisplayInitial } from '../lib/displayUtils';
@@ -13,9 +14,21 @@ import { ensureSoundUnlocked, playChatNotificationSound } from '../lib/notificat
  */
 export default function ChatPage() {
     const { user, isAuthenticated } = useAuth();
+    const { isDark } = useTheme();
     const userId = user?.id ?? null;
     const navigate = useNavigate();
     const { t, language } = useLanguage();
+
+    // Theme-aware chat colors for maximum readability
+    const chatColors = {
+        msgText: isDark ? '#f1f5f9' : '#1e293b',
+        senderName: isDark ? '#60a5fa' : '#2563eb',
+        timestamp: isDark ? '#94a3b8' : '#64748b',
+        incomingBg: isDark ? 'rgba(255,255,255,0.08)' : '#ffffff',
+        incomingBorder: isDark ? 'rgba(255,255,255,0.12)' : '#e2e8f0',
+        dateSep: isDark ? '#cbd5e1' : '#475569',
+        systemMsg: isDark ? '#cbd5e1' : '#475569',
+    };
     const { data: chatsData, isLoading } = useChats();
     const chats = useMemo(() => chatsData?.results ?? chatsData ?? [], [chatsData]);
     const [activeRoomId, setActiveRoomId] = useState(null);
@@ -403,7 +416,7 @@ export default function ChatPage() {
                                             {showDateSep && (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '12px 0', padding: '0 4px' }}>
                                                     <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
-                                                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)', flexShrink: 0, padding: '4px 12px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '999px', border: '1px solid var(--color-border-muted)' }}>
+                                                    <span style={{ fontSize: '12px', fontWeight: 600, color: chatColors.dateSep, flexShrink: 0, padding: '4px 12px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '999px', border: '1px solid var(--color-border-muted)' }}>
                                                         {dateSepLabel}
                                                     </span>
                                                     <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
@@ -439,35 +452,35 @@ export default function ChatPage() {
                                                 ))}
                                             <div style={{ maxWidth: '72%', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                                                 {!isMe && senderName && (
-                                                    <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '4px', paddingLeft: '4px', fontWeight: 700 }}>{senderName}</span>
+                                                    <span style={{ fontSize: '13px', color: chatColors.senderName, marginBottom: '4px', paddingLeft: '4px', fontWeight: 700 }}>{senderName}</span>
                                                 )}
                                             <div
                                                 style={{
                                                     padding: '12px 16px',
                                                     overflowWrap: 'break-word',
                                                     wordBreak: 'break-word',
-                                                    boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+                                                    boxShadow: isDark ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
                                                     ...(isMe
                                                         ? {
-                                                            background: 'linear-gradient(135deg, #2563EB, #1d4ed8)',
+                                                            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
                                                             color: '#ffffff',
                                                             borderRadius: '20px 20px 4px 20px',
                                                         }
                                                         : {
-                                                            backgroundColor: 'var(--color-bg-primary)',
-                                                            color: 'var(--color-text-primary)',
-                                                            border: '1.5px solid var(--color-border-default)',
+                                                            backgroundColor: chatColors.incomingBg,
+                                                            color: chatColors.msgText,
+                                                            border: `1px solid ${chatColors.incomingBorder}`,
                                                             borderRadius: '20px 20px 20px 4px',
                                                         }),
                                                 }}
                                             >
                                                 <p style={{ fontSize: '15px', lineHeight: '1.55', margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'break-word', fontWeight: 500 }}>{msg.content}</p>
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px', marginTop: '5px' }}>
-                                                    <span style={{ fontSize: '12px', fontWeight: 500, opacity: isMe ? 0.8 : 0.75, color: isMe ? '#fff' : 'var(--color-text-muted)' }}>
+                                                    <span style={{ fontSize: '12px', fontWeight: 500, color: isMe ? 'rgba(255,255,255,0.85)' : chatColors.timestamp }}>
                                                         {msg.created_at ? new Date(msg.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : ''}
                                                     </span>
                                                     {isMe && (
-                                                        <span style={{ fontSize: '13px', lineHeight: 1, fontWeight: 600, color: msg.is_read ? '#93c5fd' : 'rgba(255,255,255,0.65)' }}>
+                                                        <span style={{ fontSize: '13px', lineHeight: 1, fontWeight: 600, color: msg.is_read ? '#93c5fd' : 'rgba(255,255,255,0.7)' }}>
                                                             {msg.is_read ? '✓✓' : '✓'}
                                                         </span>
                                                     )}
