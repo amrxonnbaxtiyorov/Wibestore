@@ -4,6 +4,7 @@ WibeStore Backend - Marketplace Views
 
 import logging
 
+from django.conf import settings
 from django.db.models import F
 from django_filters.rest_framework.backends import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
@@ -465,12 +466,11 @@ class ListingVideoWebhookView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        from django.conf import settings as django_settings
         from .models import Listing
 
         # Verify bot secret
         secret = request.data.get("secret", "")
-        expected = getattr(django_settings, "TELEGRAM_BOT_SECRET", "") or ""
+        expected = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
         if not expected or secret != expected:
             return Response(
                 {"success": False, "error": "Unauthorized"},
