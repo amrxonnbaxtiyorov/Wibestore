@@ -552,7 +552,15 @@
         "success_title": "E'lon yuborildi!",
         "success_description": "Sizning e'loningiz moderatsiyaga yuborildi. 24 soat ichida tekshiriladi va tasdiqlangandan keyin saytda paydo bo'ladi.",
         "another_listing_btn": "Yana e'lon berish",
-        "game_not_loaded": "O'yinlar ro'yxati yuklanmadi. Sahifani yangilang."
+        "game_not_loaded": "O'yinlar ro'yxati yuklanmadi. Sahifani yangilang.",
+        "video_label": "Video (ixtiyoriy)",
+        "video_hint": "Akkauntingiz haqida video qo'shing — haridorlar ko'proq ishonadi. Video Telegram bot orqali yuklanadi (10-300 MB).",
+        "video_telegram_info": "E'lon yaratilgandan so'ng video yuklash imkoniyati paydo bo'ladi. Video Telegram bot orqali yuklanadi.",
+        "video_after_create": "E'lon yaratilgandan keyin video qo'shish mumkin",
+        "video_add_title": "Video qo'shmoqchimisiz?",
+        "video_add_desc": "Telegram bot orqali akkauntingiz haqida video yuklang (10-300 MB). Haridorlar videoni ko'rib, ko'proq ishonadi.",
+        "video_upload_btn": "Telegram orqali video yuklash",
+        "video_upload_error": "Video yuklash linkini olishda xatolik."
     },
     "terms": {
         "title": "Foydalanish shartlari",
@@ -744,6 +752,7 @@
         "delete_error": "O'chirishda xatolik yuz berdi",
         "no_image": "Rasm yo'q",
         "image_load_failed": "Rasm yuklanmadi",
+        "watch_video": "Videoni ko'rish",
         "chat_coming_soon": "Sotuvchi bilan chat tez orada ulanadi.",
         "order_chat": "Buyurtma chat",
         "chat_safety_title": "Firibgarlardan (mashenniklardan) ehtiyot bo'ling",

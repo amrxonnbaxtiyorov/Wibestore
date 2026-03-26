@@ -552,7 +552,15 @@
         "success_title": "Listing submitted!",
         "success_description": "Your listing has been sent for review. It will appear on the site after moderation within 24 hours.",
         "another_listing_btn": "Submit another listing",
-        "game_not_loaded": "Games list failed to load. Please refresh the page."
+        "game_not_loaded": "Games list failed to load. Please refresh the page.",
+        "video_label": "Video (optional)",
+        "video_hint": "Add a video about your account — buyers will trust you more. Video is uploaded via Telegram bot (10-300 MB).",
+        "video_telegram_info": "Video upload will be available after the listing is created. Video is uploaded via Telegram bot.",
+        "video_after_create": "You can add a video after creating the listing",
+        "video_add_title": "Want to add a video?",
+        "video_add_desc": "Upload a video about your account via Telegram bot (10-300 MB). Buyers trust listings with video more.",
+        "video_upload_btn": "Upload video via Telegram",
+        "video_upload_error": "Failed to get the video upload link."
     },
     "terms": {
         "title": "Terms of Service",
@@ -744,6 +752,7 @@
         "delete_error": "Error deleting listing",
         "no_image": "No image",
         "image_load_failed": "Image failed to load",
+        "watch_video": "Watch video",
         "chat_coming_soon": "Chat with seller will be available soon.",
         "order_chat": "Order chat",
         "chat_safety_title": "Beware of scammers",
