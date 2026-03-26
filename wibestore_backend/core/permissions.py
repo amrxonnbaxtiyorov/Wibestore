@@ -2,7 +2,52 @@
 WibeStore Backend - Common Permissions
 """
 
+import hmac
+import hashlib
+import time
+
 from rest_framework import permissions
+
+
+class IsTelegramBot(permissions.BasePermission):
+    """
+    Allow access only to requests from Telegram bot.
+    Checks:
+    1. X-Bot-Secret header matches TELEGRAM_BOT_SECRET
+    2. X-Bot-Timestamp is not older than 60 seconds (replay protection)
+    3. Falls back to body secret_key check for backward compatibility
+    """
+
+    def has_permission(self, request, view) -> bool:
+        from django.conf import settings
+        bot_secret = getattr(settings, 'TELEGRAM_BOT_SECRET', None)
+        if not bot_secret:
+            return False
+
+        # Method 1: Header-based auth (preferred)
+        request_secret = request.headers.get('X-Bot-Secret', '')
+        if request_secret:
+            if not hmac.compare_digest(request_secret, bot_secret):
+                return False
+            # Timestamp check (replay protection)
+            timestamp = request.headers.get('X-Bot-Timestamp', '')
+            if timestamp:
+                try:
+                    ts = int(timestamp)
+                    if abs(time.time() - ts) > 60:
+                        return False
+                except (ValueError, TypeError):
+                    return False
+            return True
+
+        # Method 2: Body secret_key (backward compatibility with existing bot)
+        body_secret = ''
+        if hasattr(request, 'data'):
+            body_secret = request.data.get('secret_key', '')
+        if body_secret and hmac.compare_digest(str(body_secret), bot_secret):
+            return True
+
+        return False
 
 
 class IsOwner(permissions.BasePermission):

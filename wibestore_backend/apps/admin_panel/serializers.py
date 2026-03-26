@@ -8,8 +8,163 @@ from django.db.models import Count, Sum, Avg
 from apps.marketplace.models import Listing
 from apps.payments.models import Transaction
 from apps.reviews.models import Review
+from .models import AdminAction
 
 User = get_user_model()
+
+
+# ── Audit Log ──
+
+class AdminActionSerializer(serializers.ModelSerializer):
+    admin_name = serializers.CharField(source='admin.full_name', read_only=True)
+    admin_email = serializers.CharField(source='admin.email', read_only=True)
+
+    class Meta:
+        model = AdminAction
+        fields = [
+            'id', 'admin', 'admin_name', 'admin_email',
+            'action_type', 'target_type', 'target_id',
+            'details', 'ip_address', 'created_at',
+        ]
+
+
+# ── Admin User Detail ──
+
+class AdminUserDetailSerializer(serializers.ModelSerializer):
+    total_listings = serializers.SerializerMethodField()
+    active_listings = serializers.SerializerMethodField()
+    total_transactions = serializers.SerializerMethodField()
+    total_spent = serializers.SerializerMethodField()
+    total_earned = serializers.SerializerMethodField()
+    subscription_info = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'username', 'full_name', 'phone_number',
+            'telegram_id', 'avatar', 'avatar_url',
+            'is_active', 'is_staff', 'is_verified',
+            'rating', 'total_sales', 'total_purchases', 'balance',
+            'referral_code', 'language',
+            'created_at', 'updated_at', 'last_login',
+            'total_listings', 'active_listings',
+            'total_transactions', 'total_spent', 'total_earned',
+            'subscription_info',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'last_login', 'referral_code']
+
+    def get_total_listings(self, obj):
+        return obj.listings.filter(deleted_at__isnull=True).count()
+
+    def get_active_listings(self, obj):
+        return obj.listings.filter(status='active', deleted_at__isnull=True).count()
+
+    def get_total_transactions(self, obj):
+        return obj.transactions.count()
+
+    def get_total_spent(self, obj):
+        result = obj.transactions.filter(
+            type='purchase', status='completed'
+        ).aggregate(total=Sum('amount'))
+        return str(result['total'] or 0)
+
+    def get_total_earned(self, obj):
+        from apps.payments.models import EscrowTransaction
+        result = EscrowTransaction.objects.filter(
+            seller=obj, status='confirmed'
+        ).aggregate(total=Sum('seller_earnings'))
+        return str(result['total'] or 0)
+
+    def get_subscription_info(self, obj):
+        try:
+            from apps.subscriptions.models import UserSubscription
+            sub = UserSubscription.objects.filter(
+                user=obj, status='active'
+            ).select_related('plan').first()
+            if sub:
+                return {
+                    'plan': sub.plan.name if sub.plan else 'Unknown',
+                    'expires': sub.end_date.isoformat() if sub.end_date else None,
+                    'auto_renew': getattr(sub, 'auto_renew', False),
+                }
+        except Exception:
+            pass
+        return None
+
+
+# ── Admin Listing Detail ──
+
+class AdminListingDetailSerializer(serializers.ModelSerializer):
+    seller_name = serializers.CharField(source='seller.full_name', read_only=True)
+    seller_email = serializers.EmailField(source='seller.email', read_only=True)
+    game_name = serializers.CharField(source='game.name', read_only=True)
+
+    class Meta:
+        model = Listing
+        fields = [
+            'id', 'title', 'description', 'price', 'original_price',
+            'status', 'game', 'game_name', 'is_premium',
+            'seller', 'seller_name', 'seller_email',
+            'level', 'rank', 'skins_count', 'features',
+            'views_count', 'favorites_count',
+            'warranty_days', 'sale_percent',
+            'video_file_id', 'video_status',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'id', 'seller', 'seller_name', 'seller_email',
+            'game_name', 'views_count', 'favorites_count',
+            'created_at', 'updated_at',
+        ]
+
+
+# ── Admin Transaction Detail ──
+
+class AdminTransactionDetailSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.full_name', read_only=True)
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+
+    class Meta:
+        model = Transaction
+        fields = [
+            'id', 'user', 'user_name', 'user_email', 'amount', 'currency',
+            'type', 'status', 'payment_method', 'description',
+            'provider_transaction_id', 'metadata',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = [
+            'id', 'user', 'user_name', 'user_email', 'amount', 'currency',
+            'type', 'payment_method', 'provider_transaction_id',
+            'created_at', 'updated_at',
+        ]
+
+
+# ── Admin PromoCode ──
+
+class AdminPromoCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        from apps.marketplace.models import PromoCode
+        model = PromoCode
+        fields = '__all__'
+
+
+# ── Admin Game ──
+
+class AdminGameSerializer(serializers.ModelSerializer):
+    active_listings_count = serializers.SerializerMethodField()
+
+    class Meta:
+        from apps.games.models import Game
+        model = Game
+        fields = [
+            'id', 'name', 'slug', 'description', 'icon', 'image', 'logo',
+            'color', 'is_active', 'sort_order', 'active_listings_count',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def get_active_listings_count(self, obj):
+        return obj.listings.filter(status='active', deleted_at__isnull=True).count()
 
 
 class AdminDashboardSerializer(serializers.Serializer):

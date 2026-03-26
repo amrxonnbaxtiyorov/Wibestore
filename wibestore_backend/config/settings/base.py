@@ -482,7 +482,22 @@ LOGGING = {
             "level": "ERROR",
             "propagate": False,
         },
+        "django.security": {
+            "handlers": ["console", "error_file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
         "apps": {
+            "handlers": ["console", "file", "error_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "apps.payments": {
+            "handlers": ["console", "file", "error_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "apps.admin_panel": {
             "handlers": ["console", "file", "error_file"],
             "level": "INFO",
             "propagate": False,

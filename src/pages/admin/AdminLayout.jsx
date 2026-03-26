@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, Package, AlertTriangle, Star,
-    DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft, MessageSquare, Send, ShoppingBag
+    DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft, MessageSquare, Send, ShoppingBag,
+    ClipboardList, Tag, Download, FileText
 } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { useLanguage } from '../../context/LanguageContext';
@@ -30,14 +31,19 @@ const AdminLayout = ({ children }) => {
     };
     const menuItems = [
         { icon: LayoutDashboard, label: t('admin.menu_dashboard'), to: '/admin' },
-        { icon: Users, label: t('admin.menu_users'), to: '/admin/users' },
+        { icon: Bell, label: 'Alerts', to: '/admin/alerts' },
         { icon: Package, label: t('admin.menu_accounts'), to: '/admin/accounts' },
+        { icon: Users, label: t('admin.menu_users'), to: '/admin/users' },
+        { icon: DollarSign, label: t('admin.menu_finance'), to: '/admin/finance' },
+        { icon: ShoppingBag, label: 'Trades', to: '/admin/trades' },
+        { icon: MessageSquare, label: 'Trade Chats', to: '/admin/trade-chats' },
         { icon: AlertTriangle, label: t('admin.menu_reports'), to: '/admin/reports' },
         { icon: Star, label: t('admin.menu_premium'), to: '/admin/premium' },
-        { icon: DollarSign, label: t('admin.menu_finance'), to: '/admin/finance' },
-        { icon: MessageSquare, label: 'Savdo chatlari', to: '/admin/trade-chats' },
-        { icon: Send, label: 'Telegram Бот', to: '/admin/telegram' },
-        { icon: ShoppingBag, label: 'Сделки', to: '/admin/trades' },
+        { icon: Gamepad2, label: 'Games', to: '/admin/games' },
+        { icon: Tag, label: 'Promo Codes', to: '/admin/promo-codes' },
+        { icon: Send, label: 'Telegram', to: '/admin/telegram' },
+        { icon: ClipboardList, label: 'Audit Log', to: '/admin/audit' },
+        { icon: Download, label: 'Export', to: '/admin/export' },
         { icon: Settings, label: t('admin.menu_settings'), to: '/admin/settings' },
     ];
 

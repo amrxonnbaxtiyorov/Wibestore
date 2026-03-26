@@ -156,6 +156,80 @@ USERS_FILE = Path(__file__).resolve().parent / "users.json"
 SITE_URL = os.getenv('SITE_URL', os.getenv('REGISTER_URL', 'http://localhost:5173')).rstrip('/')
 
 
+# ===== ANTI-SPAM RATE LIMITING =====
+
+from collections import defaultdict
+
+_user_last_action: dict[int, float] = defaultdict(float)
+_user_action_count: dict[int, int] = defaultdict(int)
+
+
+def _rate_limit(user_id: int, max_actions: int = 10, window: int = 60) -> bool:
+    """
+    Rate limit: max_actions per window seconds.
+    Returns True if limit exceeded.
+    """
+    now = _time.time()
+    if now - _user_last_action[user_id] > window:
+        _user_action_count[user_id] = 0
+    _user_action_count[user_id] += 1
+    _user_last_action[user_id] = now
+    return _user_action_count[user_id] > max_actions
+
+
+def _is_admin(user_id: int) -> bool:
+    """Check if user is admin."""
+    return user_id in ADMIN_IDS
+
+
+# ===== BOT API CALL WITH RETRY =====
+
+async def _safe_api_call(method: str, path: str, data: dict | None = None) -> dict | None:
+    """Safe API call with timeout, retry, and error handling."""
+    url = f"{WEBSITE_URL}{path}"
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Bot-Secret': BOT_SECRET_KEY,
+        'X-Bot-Timestamp': str(int(_time.time())),
+    }
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            if _AIOHTTP_AVAILABLE:
+                timeout = _aiohttp.ClientTimeout(total=15)
+                async with _aiohttp.ClientSession(timeout=timeout) as session:
+                    if method.upper() == 'GET':
+                        async with session.get(url, headers=headers) as resp:
+                            if resp.status == 200:
+                                return await resp.json()
+                            elif resp.status == 429:
+                                await asyncio.sleep(2 ** attempt)
+                                continue
+                            else:
+                                logger.warning("API %s %s returned %s", method, path, resp.status)
+                                return None
+                    else:
+                        async with session.post(url, json=data or {}, headers=headers) as resp:
+                            if resp.status in (200, 201):
+                                return await resp.json()
+                            elif resp.status == 429:
+                                await asyncio.sleep(2 ** attempt)
+                                continue
+                            else:
+                                logger.warning("API %s %s returned %s", method, path, resp.status)
+                                return None
+            else:
+                return None
+        except asyncio.TimeoutError:
+            logger.warning("API timeout: %s %s, attempt %d", method, path, attempt + 1)
+            if attempt < max_retries - 1:
+                await asyncio.sleep(1)
+        except Exception as e:
+            logger.error("API error: %s %s: %s", method, path, e)
+            return None
+    return None
+
+
 # ===== USER TRACKING =====
 
 def _load_users() -> Set[int]:
@@ -4491,6 +4565,58 @@ async def admin_reject_verification_callback(update: Update, context: ContextTyp
     )
 
 
+# ===== /status COMMAND (ADMIN ONLY) =====
+
+async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """/status — Check all system health (admin only)."""
+    if not update.effective_user or not _is_admin(update.effective_user.id):
+        return
+
+    status_text = "🔍 Tizim tekshiruvi...\n\n"
+    checks = []
+
+    # 1. Backend API
+    try:
+        result = await _safe_api_call('GET', '/health/')
+        if result and result.get('status') == 'ok':
+            checks.append("✅ Backend API: ishlayapti")
+        else:
+            checks.append("❌ Backend API: xatolik")
+    except Exception:
+        checks.append("❌ Backend API: ulanib bo'lmadi")
+
+    # 2. Detailed health
+    try:
+        result = await _safe_api_call('GET', '/health/detailed/')
+        if result:
+            db_ok = '✅' if result.get('checks', {}).get('database') == 'ok' else '❌'
+            cache_ok = '✅' if result.get('checks', {}).get('cache') == 'ok' else '❌'
+            celery_ok = '✅' if 'ok' in str(result.get('checks', {}).get('celery', '')) else '⚠️'
+            checks.append(f"{db_ok} Database: {result.get('checks', {}).get('database', 'unknown')}")
+            checks.append(f"{cache_ok} Redis/Cache: {result.get('checks', {}).get('cache', 'unknown')}")
+            checks.append(f"{celery_ok} Celery: {result.get('checks', {}).get('celery', 'unknown')}")
+        else:
+            checks.append("❌ Batafsil tekshiruv: ulanib bo'lmadi")
+    except Exception:
+        checks.append("❌ Batafsil tekshiruv: ulanib bo'lmadi")
+
+    # 3. Storage
+    try:
+        result = await _safe_api_call('GET', '/health/storage/')
+        if result and result.get('is_s3_active'):
+            checks.append("✅ S3/R2 saqlash: ishlayapti")
+        else:
+            checks.append("⚠️ S3/R2 saqlash: faol emas")
+    except Exception:
+        checks.append("⚠️ Saqlash: tekshirilmadi")
+
+    from datetime import datetime
+    status_text += "\n".join(checks)
+    status_text += f"\n\n🕐 Tekshirildi: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+
+    await update.message.reply_text(status_text)
+
+
 def main():
     """Botni ishga tushirish"""
     if BOT_TOKEN == 'YOUR_BOT_TOKEN_HERE':
@@ -4775,9 +4901,12 @@ def main():
 
     # ---- Umumiy buyruqlar ----
     app.add_handler(CommandHandler('help', help_command))
+    app.add_handler(CommandHandler('status', cmd_status))
     app.add_handler(MessageHandler(filters.COMMAND, unknown))
 
     async def error_handler(_update, context):
+        import traceback
+
         if isinstance(context.error, TelegramConflict):
             logger.warning(
                 "Conflict (409): Boshqa instance mavjud. "
@@ -4785,7 +4914,30 @@ def main():
             )
             await asyncio.sleep(15)
             return
+
         logger.exception("Kutilmagan xato: %s", context.error)
+
+        # Admin ga xabar berish
+        error_text = (
+            f"⚠️ Bot xatolik:\n\n"
+            f"```\n{traceback.format_exception_only(type(context.error), context.error)[-1][:500]}```\n"
+            f"Update: {_update.update_id if _update else 'N/A'}\n"
+            f"User: {_update.effective_user.id if _update and _update.effective_user else 'N/A'}"
+        )
+        for admin_id in ADMIN_IDS:
+            try:
+                await context.bot.send_message(admin_id, error_text, parse_mode='Markdown')
+            except Exception:
+                pass
+
+        # Foydalanuvchiga xabar
+        if _update and _update.effective_message:
+            try:
+                await _update.effective_message.reply_text(
+                    "😔 Xatolik yuz berdi. Keyinroq urinib ko'ring yoki adminlarga murojaat qiling."
+                )
+            except Exception:
+                pass
 
     app.add_error_handler(error_handler)
 

@@ -56,6 +56,11 @@ const AdminSettings = lazyWithRetry(() => import('./pages/admin/AdminSettings'))
 const AdminTradeChats = lazyWithRetry(() => import('./pages/admin/AdminTradeChats'))
 const AdminTelegramPanel = lazyWithRetry(() => import('./pages/admin/AdminTelegramPanel'))
 const AdminTradePanel = lazyWithRetry(() => import('./pages/admin/AdminTradePanel'))
+const AdminAuditLog = lazyWithRetry(() => import('./pages/admin/AdminAuditLog'))
+const AdminUserDetail = lazyWithRetry(() => import('./pages/admin/AdminUserDetail'))
+const AdminGames = lazyWithRetry(() => import('./pages/admin/AdminGames'))
+const AdminPromoCodes = lazyWithRetry(() => import('./pages/admin/AdminPromoCodes'))
+const AdminExport = lazyWithRetry(() => import('./pages/admin/AdminExport'))
 const TradePage = lazyWithRetry(() => import('./pages/TradePage'));
 
 // Page loading fallback with skeleton shimmer
@@ -222,6 +227,31 @@ function App() {
                         <Route path="/admin/trades" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminTradePanel /></AdminLayout></AdminGuard>
+                          </Suspense>
+                        } />
+                        <Route path="/admin/audit" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <AdminGuard><AdminAuditLog /></AdminGuard>
+                          </Suspense>
+                        } />
+                        <Route path="/admin/users/:id" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <AdminGuard><AdminUserDetail /></AdminGuard>
+                          </Suspense>
+                        } />
+                        <Route path="/admin/games" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <AdminGuard><AdminGames /></AdminGuard>
+                          </Suspense>
+                        } />
+                        <Route path="/admin/promo-codes" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <AdminGuard><AdminPromoCodes /></AdminGuard>
+                          </Suspense>
+                        } />
+                        <Route path="/admin/export" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <AdminGuard><AdminExport /></AdminGuard>
                           </Suspense>
                         } />
 

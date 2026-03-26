@@ -44,6 +44,12 @@ if not _db_url or (_db_host and _db_host in ("localhost", "127.0.0.1", "::1")):
         "Do not use localhost in production."
     )
 
+# Database connection pooling and health checks
+DATABASES["default"]["CONN_MAX_AGE"] = 600  # Keep connections 10 minutes  # noqa: F405
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True  # noqa: F405
+DATABASES["default"].setdefault("OPTIONS", {})  # noqa: F405
+DATABASES["default"]["OPTIONS"]["connect_timeout"] = 10  # noqa: F405
+
 # Railway: ALLOWED_HOSTS bo'lmasa .railway.app qo'shiladi (DisallowedHost oldini olish)
 if ".railway.app" not in str(ALLOWED_HOSTS):  # noqa: F405
     ALLOWED_HOSTS = list(ALLOWED_HOSTS) + [".railway.app"]  # noqa: F405
@@ -83,17 +89,20 @@ CSRF_TRUSTED_ORIGINS = env.list(  # noqa: F405
 if ".wibestore.net" not in str(ALLOWED_HOSTS):  # noqa: F405
     ALLOWED_HOSTS = list(ALLOWED_HOSTS) + [".wibestore.net"]  # noqa: F405
 
-# CORS — wibestore.net domenini ruxsatlarga qo'shish
+# CORS — faqat ruxsat berilgan domenlar (CORS_ALLOW_ALL_ORIGINS = False)
+CORS_ALLOW_ALL_ORIGINS = False
 _default_cors = [
     "https://wibestore.net",
     "https://www.wibestore.net",
     "https://wibestore.uz",
+    "https://www.wibestore.uz",
     "https://frontend-production-76e67.up.railway.app",
 ]
 CORS_ALLOWED_ORIGINS = env.list(  # noqa: F405
     "CORS_ALLOWED_ORIGINS",
     default=_default_cors,
 )
+CORS_ALLOW_CREDENTIALS = True  # noqa: F811
 
 # ============================================================
 # STORAGE (S3-compatible: AWS S3 / Cloudflare R2 / DigitalOcean Spaces)
