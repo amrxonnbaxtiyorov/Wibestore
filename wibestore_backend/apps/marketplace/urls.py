@@ -20,4 +20,5 @@ urlpatterns = [
     path("<uuid:pk>/video-upload/", views.ListingVideoUploadTokenView.as_view(), name="listing-video-upload"),
     path("<uuid:pk>/video-view/", views.ListingVideoViewView.as_view(), name="listing-video-view"),
     path("video-webhook/", views.ListingVideoWebhookView.as_view(), name="listing-video-webhook"),
+    path("video-moderate/", views.ListingVideoModerateView.as_view(), name="listing-video-moderate"),
 ]

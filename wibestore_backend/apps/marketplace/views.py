@@ -496,10 +496,72 @@ class ListingVideoWebhookView(APIView):
 
         listing.video_file_id = file_id
         listing.video_upload_token = ""  # Invalidate token
-        listing.save(update_fields=["video_file_id", "video_upload_token"])
+        listing.video_status = "pending"
+        listing.video_rejected_reason = ""
+        listing.save(update_fields=["video_file_id", "video_upload_token", "video_status", "video_rejected_reason"])
 
         return Response({
             "success": True,
             "listing_id": str(listing.id),
             "listing_title": listing.title,
+            "seller_id": str(listing.seller_id),
+            "seller_name": getattr(listing.seller, 'full_name', '') or listing.seller.username or listing.seller.email,
+            "game_name": listing.game.name if listing.game else "",
+            "price": str(listing.price),
+        })
+
+
+@extend_schema(tags=["Listings"])
+class ListingVideoModerateView(APIView):
+    """POST /api/v1/listings/video-moderate/ — Admin approves/rejects video via bot."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from .models import Listing
+
+        secret = request.data.get("secret", "")
+        expected = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not expected or secret != expected:
+            return Response({"success": False, "error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+
+        listing_id = request.data.get("listing_id", "")
+        action = request.data.get("action", "")  # approve / reject
+        reason = request.data.get("reason", "")
+
+        if not listing_id or action not in ("approve", "reject"):
+            return Response({"success": False, "error": "listing_id and action (approve/reject) required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            listing = Listing.objects.select_related("seller").get(pk=listing_id)
+        except Listing.DoesNotExist:
+            return Response({"success": False, "error": "Listing not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if action == "approve":
+            listing.video_status = "approved"
+            listing.video_rejected_reason = ""
+            listing.save(update_fields=["video_status", "video_rejected_reason"])
+        else:
+            listing.video_status = "rejected"
+            listing.video_rejected_reason = reason
+            listing.video_file_id = ""  # O'chirish
+            listing.save(update_fields=["video_status", "video_rejected_reason", "video_file_id"])
+
+        # Sotuvchi Telegram ID sini olish
+        seller_telegram_id = None
+        try:
+            from apps.accounts.models import TelegramBotStat
+            tg_stat = TelegramBotStat.objects.filter(user=listing.seller).first()
+            if tg_stat:
+                seller_telegram_id = tg_stat.telegram_id
+        except Exception:
+            pass
+
+        return Response({
+            "success": True,
+            "listing_id": str(listing.id),
+            "listing_title": listing.title,
+            "video_status": listing.video_status,
+            "seller_telegram_id": seller_telegram_id,
+            "seller_name": getattr(listing.seller, 'full_name', '') or listing.seller.username or "",
         })

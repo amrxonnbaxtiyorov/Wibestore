@@ -654,7 +654,7 @@ const AccountDetailPage = () => {
                         <ImageCarousel images={images} title={listing.title} noImageText={t('detail.no_image')} imageErrorText={t('detail.image_load_failed')} />
 
                         {/* Video ko'rish tugmasi */}
-                        {listing.has_video && (
+                        {listing.has_video && listing.video_status === 'approved' && (
                             <button
                                 onClick={async () => {
                                     try {
@@ -689,6 +689,26 @@ const AccountDetailPage = () => {
                                 {t('detail.watch_video') || "Videoni ko'rish"}
                                 <ExternalLink style={{ width: '16px', height: '16px', opacity: 0.7 }} />
                             </button>
+                        )}
+                        {listing.has_video && listing.video_status === 'pending' && (
+                            <div style={{
+                                width: '100%',
+                                marginTop: '12px',
+                                padding: '12px 20px',
+                                borderRadius: 'var(--radius-xl)',
+                                border: '1.5px solid var(--color-warning-border, #f59e0b)',
+                                backgroundColor: 'var(--color-warning-bg, rgba(245,158,11,0.08))',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                color: 'var(--color-warning, #d97706)',
+                            }}>
+                                <Video style={{ width: '18px', height: '18px' }} />
+                                {t('detail.video_pending') || "Video tekshiruvda"}
+                            </div>
                         )}
                     </div>
 

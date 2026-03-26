@@ -753,6 +753,7 @@
         "no_image": "Rasm yo'q",
         "image_load_failed": "Rasm yuklanmadi",
         "watch_video": "Videoni ko'rish",
+        "video_pending": "Video tekshiruvda",
         "chat_coming_soon": "Sotuvchi bilan chat tez orada ulanadi.",
         "order_chat": "Buyurtma chat",
         "chat_safety_title": "Firibgarlardan (mashenniklardan) ehtiyot bo'ling",

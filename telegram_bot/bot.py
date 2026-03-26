@@ -726,6 +726,10 @@ async def _handle_listing_video(update: Update, context: ContextTypes.DEFAULT_TY
                 data = await resp.json()
                 if resp.status == 200 and data.get("success"):
                     listing_title = data.get("listing_title", "")
+                    listing_id = data.get("listing_id", "")
+                    seller_name = data.get("seller_name", "")
+                    game_name = data.get("game_name", "")
+                    price = data.get("price", "0")
                     context.user_data.pop('video_upload_token', None)
 
                     reply_markup = _get_main_keyboard()
@@ -733,10 +737,18 @@ async def _handle_listing_video(update: Update, context: ContextTypes.DEFAULT_TY
                         f"✅ <b>Video muvaffaqiyatli yuklandi!</b>\n\n"
                         f"📦 E'lon: <b>{listing_title}</b>\n"
                         f"📁 Hajmi: <b>{size_mb} MB</b>\n\n"
-                        f"Endi haridorlar sizning e'loningizda \"Videoni ko'rish\" tugmasini bosib, "
-                        f"videoni shu yerda — Telegram'da ko'rishlari mumkin.",
+                        f"⏳ Video admin tekshiruviga yuborildi.\n"
+                        f"Tasdiqlangandan keyin haridorlarga ko'rinadi.",
                         reply_markup=reply_markup,
                     )
+
+                    # Admin ga video + tugmalar yuborish
+                    await _notify_admin_new_video(
+                        context, file_id, listing_id, listing_title,
+                        seller_name, game_name, price, size_mb,
+                        update.effective_user.id,
+                    )
+
                     return WAITING_PHONE
                 else:
                     error_msg = data.get("error", "Noma'lum xato")
@@ -751,6 +763,234 @@ async def _handle_listing_video(update: Update, context: ContextTypes.DEFAULT_TY
             "❌ Serverga ulanib bo'lmadi. Keyinroq urinib ko'ring."
         )
         return WAITING_PHONE
+
+
+async def _notify_admin_new_video(context, file_id, listing_id, title, seller_name, game_name, price, size_mb, seller_tg_id):
+    """Yangi video yuklanganda admin/guruhga xabar + tasdiqlash tugmalari."""
+    caption = (
+        f"🎬 <b>Yangi video yuklandi!</b>\n\n"
+        f"📦 <b>E'lon:</b> {title}\n"
+        f"🎮 <b>O'yin:</b> {game_name}\n"
+        f"💰 <b>Narxi:</b> {int(float(price)):,} UZS\n"
+        f"👤 <b>Sotuvchi:</b> {seller_name} (TG: {seller_tg_id})\n"
+        f"📁 <b>Hajmi:</b> {size_mb} MB\n\n"
+        f"⏳ <b>Status:</b> Tekshiruvda\n"
+        f"🔗 <a href='https://wibestore.net/account/{listing_id}'>E'lonni ko'rish</a>"
+    )
+
+    buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"vidmod_approve:{listing_id}"),
+            InlineKeyboardButton("❌ Rad etish", callback_data=f"vidmod_reject:{listing_id}"),
+        ],
+        [
+            InlineKeyboardButton("💬 Sotuvchiga yozish", callback_data=f"vidmod_msg:{listing_id}:{seller_tg_id}"),
+        ],
+    ])
+
+    targets = []
+    if ADMIN_CHAT_ID:
+        targets.append(ADMIN_CHAT_ID)
+    else:
+        targets.extend(ADMIN_IDS)
+
+    for chat_id in targets:
+        try:
+            await context.bot.send_video(
+                chat_id=chat_id,
+                video=file_id,
+                caption=caption,
+                parse_mode='HTML',
+                reply_markup=buttons,
+                supports_streaming=True,
+            )
+        except Exception as e:
+            logger.error("Admin video notification xatosi (chat=%s): %s", chat_id, e)
+
+
+async def _cb_video_moderate_approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin video tasdiqlash callback."""
+    import aiohttp
+
+    query = update.callback_query
+    await query.answer()
+
+    listing_id = query.data.split(":")[1]
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"{WEBSITE_URL}/api/v1/listings/video-moderate/"
+            payload = {"secret": BOT_SECRET_KEY, "listing_id": listing_id, "action": "approve"}
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                data = await resp.json()
+
+        if data.get("success"):
+            listing_title = data.get("listing_title", "")
+            seller_tg_id = data.get("seller_telegram_id")
+
+            # Admin xabarini yangilash
+            await query.edit_message_caption(
+                caption=(
+                    query.message.caption + "\n\n"
+                    f"✅ <b>TASDIQLANDI</b> — {update.effective_user.first_name}"
+                ),
+                parse_mode='HTML',
+            )
+
+            # Sotuvchiga xabar
+            if seller_tg_id:
+                try:
+                    await context.bot.send_message(
+                        chat_id=seller_tg_id,
+                        text=(
+                            f"✅ <b>Videongiz tasdiqlandi!</b>\n\n"
+                            f"📦 E'lon: <b>{listing_title}</b>\n\n"
+                            f"Endi haridorlar videoni ko'rishlari mumkin."
+                        ),
+                        parse_mode='HTML',
+                    )
+                except Exception as e:
+                    logger.error("Seller notify error: %s", e)
+        else:
+            await query.edit_message_caption(
+                caption=query.message.caption + f"\n\n❌ Xatolik: {data.get('error', '?')}",
+                parse_mode='HTML',
+            )
+    except Exception as e:
+        logger.error("Video approve xatosi: %s", e)
+        await query.answer("Xatolik yuz berdi", show_alert=True)
+
+
+async def _cb_video_moderate_reject(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin video rad etish callback — sabab so'raydi."""
+    query = update.callback_query
+    await query.answer()
+
+    listing_id = query.data.split(":")[1]
+    context.user_data['video_reject_listing_id'] = listing_id
+    context.user_data['video_reject_msg_id'] = query.message.message_id
+    context.user_data['video_reject_caption'] = query.message.caption or ""
+
+    await query.message.reply_html(
+        f"📝 <b>Rad etish sababi:</b>\n\n"
+        f"Listing ID: <code>{listing_id[:8]}...</code>\n\n"
+        f"Sababni yozing (masalan: sifatsiz video, noto'g'ri akkaunt, spam...):"
+    )
+
+
+async def _handle_video_reject_reason(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin rad etish sababini yozgandan keyin — backendga yuborish."""
+    import aiohttp
+
+    listing_id = context.user_data.pop('video_reject_listing_id', '')
+    reject_msg_id = context.user_data.pop('video_reject_msg_id', None)
+    original_caption = context.user_data.pop('video_reject_caption', '')
+
+    if not listing_id:
+        return  # Skip if not in reject flow
+
+    reason = update.message.text.strip()
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"{WEBSITE_URL}/api/v1/listings/video-moderate/"
+            payload = {"secret": BOT_SECRET_KEY, "listing_id": listing_id, "action": "reject", "reason": reason}
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                data = await resp.json()
+
+        if data.get("success"):
+            listing_title = data.get("listing_title", "")
+            seller_tg_id = data.get("seller_telegram_id")
+
+            await update.message.reply_html(
+                f"❌ <b>Video rad etildi</b>\n\n"
+                f"📦 E'lon: {listing_title}\n"
+                f"📝 Sabab: {reason}"
+            )
+
+            # Original admin xabarini yangilash
+            if reject_msg_id:
+                try:
+                    await context.bot.edit_message_caption(
+                        chat_id=update.effective_chat.id,
+                        message_id=reject_msg_id,
+                        caption=(
+                            original_caption + "\n\n"
+                            f"❌ <b>RAD ETILDI</b> — {update.effective_user.first_name}\n"
+                            f"📝 Sabab: {reason}"
+                        ),
+                        parse_mode='HTML',
+                    )
+                except Exception:
+                    pass
+
+            # Sotuvchiga xabar
+            if seller_tg_id:
+                try:
+                    await context.bot.send_message(
+                        chat_id=seller_tg_id,
+                        text=(
+                            f"❌ <b>Videongiz rad etildi</b>\n\n"
+                            f"📦 E'lon: <b>{listing_title}</b>\n"
+                            f"📝 Sabab: {reason}\n\n"
+                            f"Yangi video yuklash uchun saytda e'lonni tahrirlang."
+                        ),
+                        parse_mode='HTML',
+                    )
+                except Exception as e:
+                    logger.error("Seller reject notify error: %s", e)
+        else:
+            await update.message.reply_html(f"❌ Xatolik: {data.get('error', '?')}")
+    except Exception as e:
+        logger.error("Video reject xatosi: %s", e)
+        await update.message.reply_html("❌ Serverga ulanib bo'lmadi.")
+
+
+async def _cb_video_moderate_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin sotuvchiga xabar yozish callback."""
+    query = update.callback_query
+    await query.answer()
+
+    parts = query.data.split(":")
+    listing_id = parts[1]
+    seller_tg_id = parts[2] if len(parts) > 2 else ""
+
+    context.user_data['video_msg_seller_tg_id'] = seller_tg_id
+    context.user_data['video_msg_listing_id'] = listing_id
+
+    await query.message.reply_html(
+        f"💬 <b>Sotuvchiga xabar yuborish</b>\n\n"
+        f"Listing: <code>{listing_id[:8]}...</code>\n"
+        f"Seller TG: <code>{seller_tg_id}</code>\n\n"
+        f"Xabaringizni yozing:"
+    )
+
+
+async def _handle_video_msg_to_seller(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin sotuvchiga xabar yuborganda."""
+    seller_tg_id = context.user_data.pop('video_msg_seller_tg_id', '')
+    listing_id = context.user_data.pop('video_msg_listing_id', '')
+
+    if not seller_tg_id:
+        return
+
+    msg_text = update.message.text.strip()
+
+    try:
+        await context.bot.send_message(
+            chat_id=int(seller_tg_id),
+            text=(
+                f"📩 <b>Admin xabari</b>\n\n"
+                f"E'loningiz videosi haqida:\n"
+                f"🔗 <a href='https://wibestore.net/account/{listing_id}'>E'lonni ko'rish</a>\n\n"
+                f"💬 {msg_text}"
+            ),
+            parse_mode='HTML',
+        )
+        await update.message.reply_html("✅ Xabar sotuvchiga yuborildi!")
+    except Exception as e:
+        logger.error("Admin msg to seller error: %s", e)
+        await update.message.reply_html(f"❌ Xabar yuborib bo'lmadi: {e}")
 
 
 async def _cmd_view_video(update: Update, context: ContextTypes.DEFAULT_TYPE, listing_id: str) -> int:
@@ -4489,6 +4729,11 @@ def main():
     app.add_handler(CallbackQueryHandler(admin_approve_verification_callback, pattern=r"^admin_approve_verification_"))
     app.add_handler(CallbackQueryHandler(admin_reject_verification_callback, pattern=r"^admin_reject_verification_"))
 
+    # ---- Video moderatsiya callback handlerlari ----
+    app.add_handler(CallbackQueryHandler(_cb_video_moderate_approve, pattern=r"^vidmod_approve:"))
+    app.add_handler(CallbackQueryHandler(_cb_video_moderate_reject, pattern=r"^vidmod_reject:"))
+    app.add_handler(CallbackQueryHandler(_cb_video_moderate_msg, pattern=r"^vidmod_msg:"))
+
     # ---- Admin panel interaktiv handlerlari ----
     app.add_handler(CallbackQueryHandler(_cb_admin_panel_back, pattern=r"^admpanel:back$"))
     app.add_handler(CallbackQueryHandler(_cb_admin_trades, pattern=r"^admpanel:trades$"))
@@ -4510,10 +4755,22 @@ def main():
     app.add_handler(CommandHandler('broadcast', cmd_broadcast))
     app.add_handler(CommandHandler('user_support', cmd_user_support))
 
-    # Admin foydalanuvchi qidirish (matn handler) — boshqa handlerlardan KEYIN
+    # Video moderatsiya: admin reject sababi yoki sotuvchiga xabar
+    async def _admin_video_text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Admin video reject sababi yoki sotuvchiga xabar yozganda."""
+        if context.user_data.get('video_reject_listing_id'):
+            await _handle_video_reject_reason(update, context)
+            return
+        if context.user_data.get('video_msg_seller_tg_id'):
+            await _handle_video_msg_to_seller(update, context)
+            return
+        # Boshqa matn — admin user search ga o'tkazish
+        await _admin_user_search_handler(update, context)
+
+    # Admin matn handler (video moderate + user search) — boshqa handlerlardan KEYIN
     app.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND,
-        _admin_user_search_handler,
+        _admin_video_text_handler,
     ), group=1)
 
     # ---- Umumiy buyruqlar ----

@@ -71,6 +71,12 @@ class Listing(BaseSoftDeleteModel):
     features = models.JSONField(default=list, blank=True)
 
     # Video (Telegram orqali yuklangan)
+    VIDEO_STATUS_CHOICES = [
+        ("none", "No video"),
+        ("pending", "Pending review"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
     video_file_id = models.CharField(
         max_length=255, blank=True, default="",
         help_text="Telegram file_id for uploaded video",
@@ -79,6 +85,14 @@ class Listing(BaseSoftDeleteModel):
         max_length=64, blank=True, default="",
         db_index=True,
         help_text="One-time token for video upload via Telegram bot",
+    )
+    video_status = models.CharField(
+        max_length=20, choices=VIDEO_STATUS_CHOICES, default="none", db_index=True,
+        help_text="Admin moderation status for video",
+    )
+    video_rejected_reason = models.TextField(
+        blank=True, default="",
+        help_text="Reason for video rejection (shown to seller)",
     )
 
     # Moderation

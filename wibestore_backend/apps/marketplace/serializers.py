@@ -51,6 +51,7 @@ class ListingSerializer(serializers.ModelSerializer):
     discount_percentage = serializers.IntegerField(read_only=True)
     is_favorited = serializers.SerializerMethodField()
     has_video = serializers.SerializerMethodField()
+    video_status = serializers.CharField(read_only=True)
 
     class Meta:
         model = Listing
@@ -77,6 +78,7 @@ class ListingSerializer(serializers.ModelSerializer):
             "features",
             "images",
             "has_video",
+            "video_status",
             "is_favorited",
             "created_at",
             "updated_at",
@@ -176,6 +178,7 @@ class ListingListSerializer(serializers.ModelSerializer):
     primary_image = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
     has_video = serializers.SerializerMethodField()
+    video_status = serializers.CharField(read_only=True)
 
     class Meta:
         model = Listing
@@ -191,6 +194,7 @@ class ListingListSerializer(serializers.ModelSerializer):
             "is_premium",
             "is_favorited",
             "has_video",
+            "video_status",
             "views_count",
             "favorites_count",
             "warranty_days",
