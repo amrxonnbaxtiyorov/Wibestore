@@ -42,6 +42,9 @@ fi
 echo "==> Creating superuser..."
 python create_superuser.py 2>/dev/null || true
 
+echo "==> Setting up admin users..."
+python manage.py setup_admin 2>/dev/null || true
+
 echo "==> Collecting static files..."
 python manage.py collectstatic --noinput --no-color 2>/dev/null || true
 

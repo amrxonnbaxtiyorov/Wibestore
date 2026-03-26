@@ -32,10 +32,17 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 
 class IsAdminUser(permissions.BasePermission):
-    """Allow access only to admin/staff users."""
+    """Allow access only to verified admin users (is_staff + phone check)."""
 
     def has_permission(self, request, view) -> bool:
-        return bool(request.user and request.user.is_staff)
+        if not request.user or not request.user.is_staff:
+            return False
+        from django.conf import settings
+        admin_phones = getattr(settings, 'ADMIN_PHONE_NUMBERS', [])
+        if not admin_phones:
+            return True  # Agar sozlanmagan bo'lsa — faqat is_staff tekshiriladi
+        user_phone = (getattr(request.user, 'phone_number', '') or '').replace('+', '').replace(' ', '').replace('-', '')
+        return any(user_phone and p.replace('+', '') in user_phone for p in admin_phones)
 
 
 class IsSuperUser(permissions.BasePermission):

@@ -27,13 +27,11 @@ const AuthGuard = ({ children }) => {
 };
 
 /**
- * AdminGuard - Защищенный маршрут для администраторов
- * 
- * Usage:
- * <AdminGuard>
- *   <AdminDashboard />
- * </AdminGuard>
+ * AdminGuard - Faqat ruxsat berilgan admin raqam uchun
+ * Ikki darajali himoya: is_staff=true VA telefon raqam tekshiruvi
  */
+const ADMIN_PHONES = ['+998942014300', '998942014300'];
+
 export const AdminGuard = ({ children }) => {
     const { user, isLoading, isInitialized } = useAuth();
     const location = useLocation();
@@ -46,7 +44,11 @@ export const AdminGuard = ({ children }) => {
         return <Navigate to="/admin/login" state={{ from: location }} replace />;
     }
 
-    if (!user.is_staff) {
+    // Faqat is_staff=true VA ruxsat berilgan telefon raqam
+    const userPhone = (user.phone_number || '').replace(/[\s\-()]/g, '');
+    const isAdmin = user.is_staff && ADMIN_PHONES.some(p => userPhone.includes(p.replace('+', '')));
+
+    if (!isAdmin) {
         return <Navigate to="/" replace />;
     }
 

@@ -16,8 +16,10 @@ const AdminLayout = ({ children }) => {
     const { user, logout } = useAuth();
     const { t } = useLanguage();
 
-    // Admin panel faqat staff foydalanuvchilar uchun; AdminGuard allaqachon tekshiradi
-    if (user && !user.is_staff) {
+    // Admin panel faqat ruxsat berilgan raqam uchun; AdminGuard allaqachon tekshiradi
+    const userPhone = (user?.phone_number || '').replace(/[\s\-+()]/g, '');
+    const isAdmin = user?.is_staff && userPhone.includes('998942014300');
+    if (user && !isAdmin) {
         navigate('/');
         return null;
     }
