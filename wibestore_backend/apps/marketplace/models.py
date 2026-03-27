@@ -30,8 +30,8 @@ class Listing(BaseSoftDeleteModel):
         max_length=10,
         unique=True,
         db_index=True,
+        null=True,
         blank=True,
-        default="",
         help_text="Auto-generated unique listing code (e.g. WB-1001)",
     )
 
@@ -174,17 +174,21 @@ class Listing(BaseSoftDeleteModel):
                 self.listing_code = self._generate_listing_code()
             except Exception as e:
                 logger.warning("Failed to generate listing_code: %s", e)
-                self.listing_code = ""
+                self.listing_code = None  # NULL is safe — PostgreSQL allows multiple NULLs in unique columns
 
-        # Retry on unique constraint violation (race condition or empty code collision)
+        # Retry on unique constraint violation (race condition)
         from django.db import IntegrityError
         try:
             super().save(*args, **kwargs)
         except IntegrityError as e:
-            if "listing_code" in str(e):
+            if "listing_code" in str(e).lower():
                 logger.warning("listing_code collision (%s), regenerating...", self.listing_code)
-                self.listing_code = self._generate_listing_code() + "R"
-                super().save(*args, **kwargs)
+                try:
+                    self.listing_code = self._generate_listing_code()
+                    super().save(*args, **kwargs)
+                except IntegrityError:
+                    self.listing_code = None  # Give up — save without code
+                    super().save(*args, **kwargs)
             else:
                 raise
 

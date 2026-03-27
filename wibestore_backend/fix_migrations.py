@@ -68,7 +68,7 @@ def main():
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "ALTER TABLE listings ADD COLUMN listing_code VARCHAR(10) NOT NULL DEFAULT ''"
+                        "ALTER TABLE listings ADD COLUMN listing_code VARCHAR(10) NULL"
                     )
                     # Populate existing rows with sequential codes
                     cursor.execute(
@@ -88,6 +88,16 @@ def main():
                 print("  [PREEMPTIVE] listing_code column added and populated.")
             except Exception as e:
                 print(f"  [PREEMPTIVE] listing_code creation failed: {e}")
+        else:
+            # Fix existing empty strings → NULL (empty strings violate unique constraint)
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("UPDATE listings SET listing_code = NULL WHERE listing_code = ''")
+                    count = cursor.rowcount
+                    if count:
+                        print(f"  [FIX] Converted {count} empty listing_codes to NULL")
+            except Exception as e:
+                print(f"  [FIX] listing_code cleanup failed: {e}")
 
     if faked:
         for app, name in faked:
