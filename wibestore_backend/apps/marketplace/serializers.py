@@ -181,11 +181,12 @@ class ListingCreateSerializer(serializers.ModelSerializer):
         game_id = validated_data.pop("game_id")
         account_email = validated_data.pop("account_email", "")
         account_password = validated_data.pop("account_password", "")
+        seller = self.context["request"].user
 
         try:
             listing = Listing.objects.create(
                 game_id=game_id,
-                seller=self.context["request"].user,
+                seller=seller,
                 **validated_data,
             )
         except Exception as e:
@@ -198,6 +199,28 @@ class ListingCreateSerializer(serializers.ModelSerializer):
         if account_email or account_password:
             listing.set_account_credentials(account_email, account_password)
             listing.save(update_fields=["account_email", "account_password"])
+
+        # Notify admins about new listing (Telegram + in-app)
+        try:
+            from apps.notifications.services import NotificationService
+            from apps.payments.telegram_notify import _send_message, _get_admin_telegram_ids
+            NotificationService.notify_admins(
+                title="Yangi akkaunt moderatsiya kutmoqda",
+                message=f"{seller.display_name} '{listing.title}' ({listing.game.name}) akkauntini yubordi",
+                data={"listing_id": str(listing.id)},
+            )
+            admin_text = (
+                f"\U0001f195 <b>Yangi akkaunt moderatsiya kutmoqda!</b>\n\n"
+                f"\U0001f4e6 {listing.title}\n"
+                f"\U0001f3ae O'yin: {listing.game.name}\n"
+                f"\U0001f4b0 Narx: {int(listing.price):,} so'm\n"
+                f"\U0001f464 Sotuvchi: {seller.display_name or seller.email}\n\n"
+                f"\U0001f310 <a href='https://wibestore.net/amirxon'>Admin panelga o'tish \u2192</a>"
+            )
+            for admin_tg_id in _get_admin_telegram_ids():
+                _send_message(admin_tg_id, admin_text)
+        except Exception as e:
+            logger.warning("Failed to notify admins about new listing: %s", e)
 
         return listing
 

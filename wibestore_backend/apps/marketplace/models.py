@@ -175,7 +175,7 @@ class Listing(BaseSoftDeleteModel):
         return f"WB-{uuid.uuid4().hex[:6].upper()}"
 
     def save(self, *args, **kwargs):
-        from django.db import IntegrityError
+        from django.db import IntegrityError, transaction
 
         # Generate listing_code if missing
         if not self.listing_code:
@@ -185,55 +185,61 @@ class Listing(BaseSoftDeleteModel):
                 logger.warning("Failed to generate listing_code: %s", e)
                 self.listing_code = self._random_code()
 
-        # Save with retry on IntegrityError (handles both unique and NOT NULL issues)
-        for attempt in range(4):
+        # Save with retry on IntegrityError.
+        # Each attempt is wrapped in a savepoint so PostgreSQL can recover
+        # from the aborted-transaction state after an IntegrityError.
+        last_error = None
+        for attempt in range(5):
             try:
-                super().save(*args, **kwargs)
+                with transaction.atomic():
+                    super().save(*args, **kwargs)
                 return  # Success
             except IntegrityError as e:
                 error_str = str(e).lower()
                 if "listing_code" in error_str or "listings_listing_code" in error_str:
-                    # listing_code collision or constraint issue — try random code
                     self.listing_code = self._random_code()
-                    logger.warning("Listing save attempt %d failed (listing_code), retrying with %s: %s",
-                                   attempt + 1, self.listing_code, e)
+                    last_error = e
+                    logger.warning("Listing save attempt %d failed (listing_code collision), retrying: %s",
+                                   attempt + 1, e)
                     continue
                 else:
-                    # Not a listing_code issue — raise immediately
-                    logger.error("Listing save IntegrityError (not listing_code): %s", e)
+                    logger.error("Listing save IntegrityError (non listing_code): %s", e)
                     raise
 
-        # All retries exhausted — final attempt
+        # All retries exhausted — final attempt with random code
         self.listing_code = self._random_code()
-        super().save(*args, **kwargs)
+        logger.warning("All listing_code retries exhausted, final attempt with %s", self.listing_code)
+        with transaction.atomic():
+            super().save(*args, **kwargs)
 
     @staticmethod
     def _generate_listing_code() -> str:
         """Generate next sequential listing code like WB-1001, WB-1002, ..."""
+        max_num = 1000
         try:
-            # Simple approach: count existing listings + base offset
             from django.db import connection
             with connection.cursor() as cursor:
                 cursor.execute(
                     "SELECT listing_code FROM listings "
-                    "WHERE listing_code LIKE 'WB-%%' "
-                    "ORDER BY length(listing_code) DESC, listing_code DESC LIMIT 1"
+                    "WHERE listing_code LIKE 'WB-%%' AND listing_code IS NOT NULL"
                 )
-                row = cursor.fetchone()
-            if row and row[0]:
+                rows = cursor.fetchall()
+            for (code,) in rows:
+                if not code:
+                    continue
+                suffix = code.replace("WB-", "")
                 try:
-                    max_num = int(row[0].replace("WB-", ""))
+                    num = int(suffix)
+                    if num > max_num:
+                        max_num = num
                 except (ValueError, TypeError):
-                    max_num = 1000
-            else:
-                max_num = 1000
+                    pass  # skip random hex codes like WB-A3F1BC
         except Exception as e:
-            logger.warning("listing_code query failed: %s", e)
-            # Fallback: use total count
+            logger.warning("listing_code query failed (falling back to count): %s", e)
             try:
                 max_num = 1000 + Listing.all_objects.count()
             except Exception:
-                max_num = 1000
+                pass
         return f"WB-{max_num + 1}"
 
     def set_account_credentials(self, email: str, password: str) -> None:
