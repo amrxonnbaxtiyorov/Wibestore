@@ -4906,6 +4906,7 @@ def main():
 
     async def error_handler(_update, context):
         import traceback
+        from telegram.error import NetworkError, TimedOut, RetryAfter
 
         if isinstance(context.error, TelegramConflict):
             logger.warning(
@@ -4915,9 +4916,19 @@ def main():
             await asyncio.sleep(15)
             return
 
+        # Network/timeout xatolarini admin ga yubormaslik (deploy, internet uzilishi — normal holat)
+        if isinstance(context.error, (NetworkError, TimedOut, ConnectionError, OSError)):
+            logger.warning("Vaqtinchalik tarmoq xatosi (admin ga yuborilmaydi): %s", context.error)
+            return
+
+        if isinstance(context.error, RetryAfter):
+            logger.warning("Rate limit: %s soniya kutish kerak", context.error.retry_after)
+            await asyncio.sleep(context.error.retry_after)
+            return
+
         logger.exception("Kutilmagan xato: %s", context.error)
 
-        # Admin ga xabar berish
+        # Admin ga xabar berish (faqat haqiqiy buglar)
         error_text = (
             f"⚠️ Bot xatolik:\n\n"
             f"```\n{traceback.format_exception_only(type(context.error), context.error)[-1][:500]}```\n"
