@@ -169,28 +169,35 @@ class Listing(BaseSoftDeleteModel):
         return f"{prefix}{self.title} ({self.game.name})"
 
     def save(self, *args, **kwargs):
+        from django.db import IntegrityError
+
+        # Generate listing_code if missing
         if not self.listing_code:
             try:
                 self.listing_code = self._generate_listing_code()
             except Exception as e:
                 logger.warning("Failed to generate listing_code: %s", e)
-                self.listing_code = None  # NULL is safe — PostgreSQL allows multiple NULLs in unique columns
+                self.listing_code = None
 
-        # Retry on unique constraint violation (race condition)
-        from django.db import IntegrityError
+        # Save with robust IntegrityError handling
         try:
             super().save(*args, **kwargs)
         except IntegrityError as e:
-            if "listing_code" in str(e).lower():
-                logger.warning("listing_code collision (%s), regenerating...", self.listing_code)
+            error_str = str(e).lower()
+            logger.warning("Listing save IntegrityError: %s (listing_code=%s)", e, self.listing_code)
+
+            # Any IntegrityError related to listing_code — retry without code
+            if "listing_code" in error_str or "listings_listing_code" in error_str:
+                self.listing_code = None
                 try:
-                    self.listing_code = self._generate_listing_code()
                     super().save(*args, **kwargs)
+                    return
                 except IntegrityError:
-                    self.listing_code = None  # Give up — save without code
-                    super().save(*args, **kwargs)
-            else:
-                raise
+                    pass  # Fall through to final attempt
+
+            # Final attempt: strip listing_code and save
+            self.listing_code = None
+            super().save(*args, **kwargs)
 
     @staticmethod
     def _generate_listing_code() -> str:

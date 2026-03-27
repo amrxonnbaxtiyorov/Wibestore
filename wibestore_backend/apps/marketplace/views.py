@@ -88,13 +88,14 @@ class ListingListCreateView(generics.ListCreateAPIView):
             return super().create(request, *args, **kwargs)
         except Exception as e:
             logger.error("Listing create failed: %s — %s", type(e).__name__, e, exc_info=True)
+            detail = str(e)[:300]
             return Response(
                 {
                     "success": False,
                     "error": {
-                        "message": f"E'lon yaratishda xatolik: {type(e).__name__}",
-                        "type": type(e).__name__,
-                        "detail": str(e)[:300],
+                        "code": type(e).__name__.upper(),
+                        "message": f"E'lon yaratishda xatolik: {type(e).__name__}: {detail}",
+                        "details": {"exception": type(e).__name__, "detail": detail},
                     },
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -105,13 +106,14 @@ class ListingListCreateView(generics.ListCreateAPIView):
             return super().list(request, *args, **kwargs)
         except Exception as e:
             logger.error("Listing list failed: %s — %s", type(e).__name__, e, exc_info=True)
+            detail = str(e)[:300]
             return Response(
                 {
                     "success": False,
                     "error": {
-                        "message": f"E'lonlar ro'yxatida xatolik: {type(e).__name__}",
-                        "type": type(e).__name__,
-                        "detail": str(e)[:300],
+                        "code": type(e).__name__.upper(),
+                        "message": f"E'lonlar ro'yxatida xatolik: {type(e).__name__}: {detail}",
+                        "details": {"exception": type(e).__name__, "detail": detail},
                     },
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
