@@ -154,6 +154,7 @@ class ListingCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"rental_period_days": "Ijara muddatini kiriting."})
             if not data.get("rental_price_per_day") and not data.get("price"):
                 raise serializers.ValidationError({"price": "Narxni kiriting."})
+
         return data
 
     def validate_game_id(self, value):
@@ -174,15 +175,25 @@ class ListingCreateSerializer(serializers.ModelSerializer):
             return str(game.pk)
 
     def create(self, validated_data):
+        import logging
+        logger = logging.getLogger("apps.marketplace")
+
         game_id = validated_data.pop("game_id")
         account_email = validated_data.pop("account_email", "")
         account_password = validated_data.pop("account_password", "")
 
-        listing = Listing.objects.create(
-            game_id=game_id,
-            seller=self.context["request"].user,
-            **validated_data,
-        )
+        try:
+            listing = Listing.objects.create(
+                game_id=game_id,
+                seller=self.context["request"].user,
+                **validated_data,
+            )
+        except Exception as e:
+            logger.error(
+                "Listing.objects.create failed: %s — %s | game_id=%s, keys=%s",
+                type(e).__name__, e, game_id, list(validated_data.keys()),
+            )
+            raise
 
         if account_email or account_password:
             listing.set_account_credentials(account_email, account_password)

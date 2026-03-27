@@ -175,7 +175,18 @@ class Listing(BaseSoftDeleteModel):
             except Exception as e:
                 logger.warning("Failed to generate listing_code: %s", e)
                 self.listing_code = ""
-        super().save(*args, **kwargs)
+
+        # Retry on unique constraint violation (race condition or empty code collision)
+        from django.db import IntegrityError
+        try:
+            super().save(*args, **kwargs)
+        except IntegrityError as e:
+            if "listing_code" in str(e):
+                logger.warning("listing_code collision (%s), regenerating...", self.listing_code)
+                self.listing_code = self._generate_listing_code() + "R"
+                super().save(*args, **kwargs)
+            else:
+                raise
 
     @staticmethod
     def _generate_listing_code() -> str:

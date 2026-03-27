@@ -88,10 +88,15 @@ class ListingListCreateView(generics.ListCreateAPIView):
             return super().create(request, *args, **kwargs)
         except Exception as e:
             logger.error("Listing create failed: %s — %s", type(e).__name__, e, exc_info=True)
-            # Return JSON error instead of Django's HTML 500 page
-            error_msg = str(e) if settings.DEBUG else "E'lon yaratishda xatolik yuz berdi"
             return Response(
-                {"success": False, "error": {"message": error_msg, "type": type(e).__name__}},
+                {
+                    "success": False,
+                    "error": {
+                        "message": f"E'lon yaratishda xatolik: {type(e).__name__}",
+                        "type": type(e).__name__,
+                        "detail": str(e)[:300],
+                    },
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -100,9 +105,15 @@ class ListingListCreateView(generics.ListCreateAPIView):
             return super().list(request, *args, **kwargs)
         except Exception as e:
             logger.error("Listing list failed: %s — %s", type(e).__name__, e, exc_info=True)
-            error_msg = str(e) if settings.DEBUG else "E'lonlar ro'yxatida xatolik yuz berdi"
             return Response(
-                {"success": False, "error": {"message": error_msg, "type": type(e).__name__}},
+                {
+                    "success": False,
+                    "error": {
+                        "message": f"E'lonlar ro'yxatida xatolik: {type(e).__name__}",
+                        "type": type(e).__name__,
+                        "detail": str(e)[:300],
+                    },
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

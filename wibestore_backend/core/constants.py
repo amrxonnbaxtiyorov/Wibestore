@@ -33,6 +33,8 @@ LOGIN_METHOD_CHOICES = [
     ("phone", "Phone"),
     ("username", "Username"),
     ("social", "Social Media"),
+    ("google", "Google"),
+    ("facebook", "Facebook"),
 ]
 
 # ============================================================
