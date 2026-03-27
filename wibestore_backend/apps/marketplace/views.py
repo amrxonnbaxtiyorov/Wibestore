@@ -76,6 +76,26 @@ class ListingListCreateView(generics.ListCreateAPIView):
             qs = qs.defer("listing_code")
         return qs.select_related("game", "seller").prefetch_related("images")
 
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            logger.error("Listing create failed: %s — %s", type(e).__name__, e, exc_info=True)
+            return Response(
+                {"success": False, "error": {"message": f"E'lon yaratishda xatolik: {e}"}},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def list(self, request, *args, **kwargs):
+        try:
+            return super().list(request, *args, **kwargs)
+        except Exception as e:
+            logger.error("Listing list failed: %s — %s", type(e).__name__, e, exc_info=True)
+            return Response(
+                {"success": False, "error": {"message": f"E'lonlar ro'yxatida xatolik: {e}"}},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
 
 @extend_schema(tags=["Listings"])
 class ListingDetailView(generics.RetrieveUpdateDestroyAPIView):
