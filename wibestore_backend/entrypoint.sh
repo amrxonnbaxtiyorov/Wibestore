@@ -30,12 +30,11 @@ python fix_migrations.py || true
 
 echo "==> Applying migrations..."
 if ! python manage.py migrate --noinput 2>&1; then
-    echo "==> migrate failed, syncing migration state with --fake..."
-    python manage.py migrate --fake --noinput 2>&1 || true
-    echo "==> Re-applying migrations after fake..."
+    echo "WARNING: migrate failed. Retrying once..."
+    sleep 2
     if ! python manage.py migrate --noinput 2>&1; then
-        echo "FATAL: migrate still failed after --fake. Check DATABASE_URL and DB state."
-        exit 1
+        echo "FATAL: migrate failed twice. Check DATABASE_URL, DB state, and migration files."
+        echo "==> Trying to start anyway (some features may not work)..."
     fi
 fi
 

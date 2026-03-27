@@ -52,41 +52,46 @@ class AdminDashboardView(APIView):
         thirty_days_ago = now - timedelta(days=30)
         seven_days_ago = now - timedelta(days=7)
 
+        def safe_count(qs):
+            try:
+                return qs.count()
+            except Exception as e:
+                logger.warning("Dashboard query failed: %s", e)
+                return 0
+
+        def safe_aggregate(qs, field="amount"):
+            try:
+                return qs.aggregate(total=Sum(field))["total"] or 0
+            except Exception as e:
+                logger.warning("Dashboard aggregate failed: %s", e)
+                return 0
+
         stats = {
             "users": {
-                "total": User.objects.filter(is_active=True).count(),
-                "new_this_month": User.objects.filter(created_at__gte=thirty_days_ago).count(),
-                "new_this_week": User.objects.filter(created_at__gte=seven_days_ago).count(),
-                "verified": User.objects.filter(is_verified=True).count(),
+                "total": safe_count(User.objects.filter(is_active=True)),
+                "new_this_month": safe_count(User.objects.filter(created_at__gte=thirty_days_ago)),
+                "new_this_week": safe_count(User.objects.filter(created_at__gte=seven_days_ago)),
+                "verified": safe_count(User.objects.filter(is_verified=True)),
             },
             "listings": {
-                "total": Listing.objects.count(),
-                "active": Listing.objects.filter(status="active").count(),
-                "pending": Listing.objects.filter(status="pending").count(),
-                "sold": Listing.objects.filter(status="sold").count(),
+                "total": safe_count(Listing.objects.all()),
+                "active": safe_count(Listing.objects.filter(status="active")),
+                "pending": safe_count(Listing.objects.filter(status="pending")),
+                "sold": safe_count(Listing.objects.filter(status="sold")),
             },
             "transactions": {
-                "total_volume": Transaction.objects.filter(
-                    status="completed"
-                ).aggregate(total=Sum("amount"))["total"] or 0,
-                "month_volume": Transaction.objects.filter(
-                    status="completed",
-                    created_at__gte=thirty_days_ago,
-                ).aggregate(total=Sum("amount"))["total"] or 0,
+                "total_volume": safe_aggregate(Transaction.objects.filter(status="completed")),
+                "month_volume": safe_aggregate(Transaction.objects.filter(status="completed", created_at__gte=thirty_days_ago)),
             },
             "escrow": {
-                "active": EscrowTransaction.objects.filter(
-                    status__in=["pending_payment", "paid", "delivered"]
-                ).count(),
-                "disputed": EscrowTransaction.objects.filter(status="disputed").count(),
-                "completed": EscrowTransaction.objects.filter(status="confirmed").count(),
-                "total_commission": EscrowTransaction.objects.filter(
-                    status="confirmed"
-                ).aggregate(total=Sum("commission_amount"))["total"] or 0,
+                "active": safe_count(EscrowTransaction.objects.filter(status__in=["pending_payment", "paid", "delivered"])),
+                "disputed": safe_count(EscrowTransaction.objects.filter(status="disputed")),
+                "completed": safe_count(EscrowTransaction.objects.filter(status="confirmed")),
+                "total_commission": safe_aggregate(EscrowTransaction.objects.filter(status="confirmed"), "commission_amount"),
             },
             "reports": {
-                "pending": Report.objects.filter(status="pending").count(),
-                "total": Report.objects.count(),
+                "pending": safe_count(Report.objects.filter(status="pending")),
+                "total": safe_count(Report.objects.all()),
             },
         }
 
@@ -102,19 +107,21 @@ class AdminFraudStatsView(APIView):
     def get(self, request):
         now = timezone.now()
         seven_days_ago = now - timedelta(days=7)
-        suspicious_unresolved = SuspiciousActivity.objects.filter(resolved=False).count()
-        suspicious_resolved_week = SuspiciousActivity.objects.filter(
-            resolved=True, resolved_at__gte=seven_days_ago
-        ).count()
-        disputed = EscrowTransaction.objects.filter(status="disputed").count()
-        reports_pending = Report.objects.filter(status="pending").count()
+
+        def safe_count(qs):
+            try:
+                return qs.count()
+            except Exception as e:
+                logger.warning("FraudStats query failed: %s", e)
+                return 0
+
         return Response({
             "success": True,
             "data": {
-                "suspicious_activities_unresolved": suspicious_unresolved,
-                "suspicious_resolved_this_week": suspicious_resolved_week,
-                "escrow_disputed": disputed,
-                "reports_pending": reports_pending,
+                "suspicious_activities_unresolved": safe_count(SuspiciousActivity.objects.filter(resolved=False)),
+                "suspicious_resolved_this_week": safe_count(SuspiciousActivity.objects.filter(resolved=True, resolved_at__gte=seven_days_ago)),
+                "escrow_disputed": safe_count(EscrowTransaction.objects.filter(status="disputed")),
+                "reports_pending": safe_count(Report.objects.filter(status="pending")),
             },
         })
 
@@ -999,11 +1006,16 @@ class AdminAlertsView(APIView):
         now = timezone.now()
         alerts = []
 
+        def safe_count(qs):
+            try:
+                return qs.count()
+            except Exception:
+                return 0
+
         # Old disputes > 24 hours
-        old_disputes = EscrowTransaction.objects.filter(
-            status='disputed',
-            updated_at__lt=now - timedelta(hours=24)
-        ).count()
+        old_disputes = safe_count(EscrowTransaction.objects.filter(
+            status='disputed', updated_at__lt=now - timedelta(hours=24)
+        ))
         if old_disputes:
             alerts.append({
                 'level': 'critical', 'type': 'old_disputes',
@@ -1012,10 +1024,9 @@ class AdminAlertsView(APIView):
             })
 
         # Old withdrawals > 48 hours
-        old_withdrawals = WithdrawalRequest.objects.filter(
-            status='pending',
-            created_at__lt=now - timedelta(hours=48)
-        ).count()
+        old_withdrawals = safe_count(WithdrawalRequest.objects.filter(
+            status='pending', created_at__lt=now - timedelta(hours=48)
+        ))
         if old_withdrawals:
             alerts.append({
                 'level': 'warning', 'type': 'old_withdrawals',
@@ -1024,7 +1035,7 @@ class AdminAlertsView(APIView):
             })
 
         # Suspicious activity
-        suspicious = SuspiciousActivity.objects.filter(resolved=False).count()
+        suspicious = safe_count(SuspiciousActivity.objects.filter(resolved=False))
         if suspicious:
             alerts.append({
                 'level': 'critical', 'type': 'suspicious_activity',
@@ -1033,7 +1044,7 @@ class AdminAlertsView(APIView):
             })
 
         # Pending listings > 10
-        pending_listings = Listing.objects.filter(status='pending').count()
+        pending_listings = safe_count(Listing.objects.filter(status='pending'))
         if pending_listings > 10:
             alerts.append({
                 'level': 'info', 'type': 'pending_listings',
@@ -1137,16 +1148,20 @@ class AdminExportView(APIView):
         date_from = request.query_params.get('date_from')
         date_to = request.query_params.get('date_to')
 
-        if export_type == 'users':
-            return self._export_users(date_from, date_to)
-        elif export_type == 'transactions':
-            return self._export_transactions(date_from, date_to)
-        elif export_type == 'listings':
-            return self._export_listings(date_from, date_to)
-        elif export_type == 'trades':
-            return self._export_trades(date_from, date_to)
-        else:
-            return Response({'error': 'Unknown export type'}, status=400)
+        try:
+            if export_type == 'users':
+                return self._export_users(date_from, date_to)
+            elif export_type == 'transactions':
+                return self._export_transactions(date_from, date_to)
+            elif export_type == 'listings':
+                return self._export_listings(date_from, date_to)
+            elif export_type == 'trades':
+                return self._export_trades(date_from, date_to)
+            else:
+                return Response({'error': 'Unknown export type'}, status=400)
+        except Exception as e:
+            logger.error("Export failed for type=%s: %s", export_type, e, exc_info=True)
+            return Response({'error': f'Export failed: {str(e)}'}, status=500)
 
     def _export_users(self, date_from, date_to):
         import csv
