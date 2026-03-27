@@ -87,6 +87,11 @@ class Listing(BaseSoftDeleteModel):
         max_digits=15, decimal_places=2, null=True, blank=True,
         help_text="Kafolat depozit summasi (akkaunt qaytarilmasa ushlanadi)",
     )
+    # Custom time slots: [{"label": "1 soat", "price": 10000}, {"label": "Kechdan tongacha", "price": 50000}]
+    rental_time_slots = models.JSONField(
+        default=list, blank=True,
+        help_text="Foydalanuvchi belgilagan vaqt/narx variantlari (max 5 ta)",
+    )
 
     # Account details
     login_method = models.CharField(

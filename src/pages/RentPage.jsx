@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Upload, X, Plus, Image, FileText, Shield, AlertCircle, CheckCircle, Search, ArrowLeft, Loader2, Key, Clock, Wallet } from 'lucide-react';
+import { Upload, X, Plus, Image, FileText, Shield, AlertCircle, CheckCircle, Search, ArrowLeft, Loader2, Key, Clock, Wallet, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
@@ -21,13 +21,7 @@ function getTopGamesForRent(apiGames) {
     return [...list].sort((a, b) => (b.accountCount ?? 0) - (a.accountCount ?? 0));
 }
 
-const RENTAL_PERIODS = [
-    { days: 1, key: 'period_1' },
-    { days: 3, key: 'period_3' },
-    { days: 7, key: 'period_7' },
-    { days: 14, key: 'period_14' },
-    { days: 30, key: 'period_30' },
-];
+const MAX_TIME_SLOTS = 5;
 
 const RentPage = () => {
     const navigate = useNavigate();
@@ -50,7 +44,7 @@ const RentPage = () => {
     const [imageFiles, setImageFiles] = useState([]);
 
     const { mutate: createListing } = useCreateListing();
-    const { data: gamesData, isLoading: gamesLoading, isError: gamesError } = useGames();
+    const { data: gamesData, isLoading: gamesLoading } = useGames();
 
     const apiGamesList = Array.isArray(gamesData?.results) ? gamesData.results : (Array.isArray(gamesData) ? gamesData : []);
     const hasApiGames = apiGamesList.length > 0;
@@ -64,9 +58,9 @@ const RentPage = () => {
 
     const [formData, setFormData] = useState({
         gameId: '', gameSlug: '', title: '', description: '',
-        rentalPeriod: '', pricePerDay: '', deposit: '',
-        level: '', rank: '', skins: '', features: [],
-        loginMethod: 'email', accountEmail: '', accountPassword: '', additionalInfo: ''
+        deposit: '', level: '', rank: '', skins: '', features: [],
+        loginMethod: 'email', accountEmail: '', accountPassword: '', additionalInfo: '',
+        timeSlots: [{ label: '', price: '' }],
     });
     const [errors, setErrors] = useState({});
 
@@ -81,7 +75,7 @@ const RentPage = () => {
             <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px', display: 'flex', flexDirection: 'column' }}>
                 <div className="gh-container" style={{ maxWidth: '720px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, maxHeight: 'calc(100vh - 120px)' }}>
                     <div className="breadcrumbs" style={{ flexShrink: 0 }}>
-                        <Link to="/">{t('common.home')}</Link>
+                        <Link to="/">{t('common.home') || 'Bosh sahifa'}</Link>
                         <span className="breadcrumb-separator">/</span>
                         <span className="breadcrumb-current">{t('rent.page_title') || 'Arenda'}</span>
                     </div>
@@ -93,9 +87,23 @@ const RentPage = () => {
         );
     }
 
-    const totalPrice = formData.rentalPeriod && formData.pricePerDay
-        ? Number(formData.rentalPeriod) * Number(formData.pricePerDay)
-        : 0;
+    // Time slots management
+    const addTimeSlot = () => {
+        if (formData.timeSlots.length < MAX_TIME_SLOTS) {
+            setFormData(prev => ({ ...prev, timeSlots: [...prev.timeSlots, { label: '', price: '' }] }));
+        }
+    };
+    const removeTimeSlot = (index) => {
+        if (formData.timeSlots.length > 1) {
+            setFormData(prev => ({ ...prev, timeSlots: prev.timeSlots.filter((_, i) => i !== index) }));
+        }
+    };
+    const updateTimeSlot = (index, field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            timeSlots: prev.timeSlots.map((slot, i) => i === index ? { ...slot, [field]: value } : slot),
+        }));
+    };
 
     const featureOptions = [
         { value: 'Original email', labelKey: 'sell.feature_original_email' },
@@ -108,17 +116,21 @@ const RentPage = () => {
     const validateStep = (stepNum) => {
         const newErrors = {};
         if (stepNum === 1) {
-            if (!formData.gameId) newErrors.gameId = t('sell.err_select_game') || "O'yinni tanlang";
-            if (!formData.title.trim()) newErrors.title = t('sell.err_enter_title') || 'Sarlavha kiriting';
-            if (!formData.rentalPeriod) newErrors.rentalPeriod = t('rent.err_select_period') || 'Ijara muddatini tanlang';
-            if (!formData.pricePerDay || formData.pricePerDay <= 0) newErrors.pricePerDay = t('rent.err_enter_price_per_day') || 'Kunlik narxni kiriting';
+            if (!formData.gameId) newErrors.gameId = "O'yinni tanlang";
+            if (!formData.title.trim()) newErrors.title = 'Sarlavha kiriting';
+            const validSlots = formData.timeSlots.filter(s => s.label.trim() && s.price);
+            if (validSlots.length === 0) newErrors.timeSlots = "Kamida 1 ta vaqt va narx kiriting";
+            formData.timeSlots.forEach((slot, i) => {
+                if (slot.label.trim() && !slot.price) newErrors[`slot_price_${i}`] = 'Narxni kiriting';
+                if (!slot.label.trim() && slot.price) newErrors[`slot_label_${i}`] = 'Vaqtni kiriting';
+            });
         }
         if (stepNum === 2) {
-            if (!formData.description.trim()) newErrors.description = t('sell.err_enter_description') || 'Tavsif kiriting';
+            if (!formData.description.trim()) newErrors.description = 'Tavsif kiriting';
         }
         if (stepNum === 3) {
-            if (!formData.accountEmail.trim()) newErrors.accountEmail = t('sell.err_enter_account_email') || 'Akkaunt emailini kiriting';
-            if (!formData.accountPassword.trim()) newErrors.accountPassword = t('sell.err_enter_account_password') || 'Akkaunt parolini kiriting';
+            if (!formData.accountEmail.trim()) newErrors.accountEmail = 'Akkaunt emailini kiriting';
+            if (!formData.accountPassword.trim()) newErrors.accountPassword = 'Akkaunt parolini kiriting';
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -135,19 +147,22 @@ const RentPage = () => {
         if (!validateStep(3)) return;
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (formData.gameId && !uuidRegex.test(formData.gameId)) {
-            addToast({ type: 'error', title: t('common.error'), message: t('sell.game_not_loaded') || "O'yinlar yuklanmadi." });
+            addToast({ type: 'error', title: 'Xatolik', message: "O'yinlar yuklanmadi." });
             return;
         }
         setIsSubmitting(true);
+
+        const validSlots = formData.timeSlots.filter(s => s.label.trim() && s.price);
+        const minPrice = Math.min(...validSlots.map(s => Number(s.price)));
+
         try {
             const listingData = {
                 listing_type: 'rent',
                 game_id: formData.gameId,
                 title: formData.title.trim(),
                 description: formData.description.trim(),
-                price: totalPrice,
-                rental_period_days: Number(formData.rentalPeriod),
-                rental_price_per_day: Number(formData.pricePerDay),
+                price: minPrice,
+                rental_time_slots: validSlots.map(s => ({ label: s.label.trim(), price: Number(s.price) })),
                 rental_deposit: formData.deposit ? Number(formData.deposit) : null,
                 level: (formData.level || '').toString(),
                 rank: (formData.rank || '').toString(),
@@ -166,14 +181,14 @@ const RentPage = () => {
                             const fd = new FormData();
                             imageFiles.forEach(file => fd.append('images', file));
                             await apiClient.post(`/listings/${listingId}/images/`, fd);
-                        } catch { /* images upload warning handled silently */ }
+                        } catch { /* silently handle image upload errors */ }
                     }
-                    addToast({ type: 'success', title: t('common.success'), message: t('rent.success') });
+                    addToast({ type: 'success', title: 'Muvaffaqiyat', message: "Arenda e'loningiz moderatsiyaga yuborildi." });
                     setSubmitted(true);
                 },
                 onError: (error) => {
                     const data = error?.response?.data;
-                    let message = t('sell.error_listing_create') || "E'lon yaratishda xatolik";
+                    let message = "E'lon yaratishda xatolik";
                     if (data?.error?.details) {
                         const firstKey = Object.keys(data.error.details)[0];
                         const val = data.error.details[firstKey];
@@ -181,7 +196,7 @@ const RentPage = () => {
                     } else if (data?.error?.message) {
                         message = data.error.message;
                     }
-                    addToast({ type: 'error', title: t('common.error'), message });
+                    addToast({ type: 'error', title: 'Xatolik', message });
                 },
                 onSettled: () => setIsSubmitting(false),
             });
@@ -207,15 +222,15 @@ const RentPage = () => {
                         <CheckCircle style={{ width: '36px', height: '36px', color: 'var(--color-accent-green)' }} />
                     </div>
                     <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '12px' }}>
-                        {t('sell.success_title') || "E'lon yuborildi!"}
+                        E'lon yuborildi!
                     </h1>
                     <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
-                        {t('rent.success') || "Arenda e'loningiz moderatsiyaga yuborildi."}
+                        Arenda e'loningiz moderatsiyaga yuborildi. Tez orada ko'rib chiqiladi.
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <button onClick={() => navigate('/profile')} className="btn btn-primary btn-lg" style={{ width: '100%' }}>{t('common.go_to_profile')}</button>
-                        <button onClick={() => { setSubmitted(false); setStep(1); setFormData({ gameId: '', gameSlug: '', title: '', description: '', rentalPeriod: '', pricePerDay: '', deposit: '', level: '', rank: '', skins: '', features: [], loginMethod: 'email', accountEmail: '', accountPassword: '', additionalInfo: '' }); setImageFiles([]); }} className="btn btn-secondary btn-lg" style={{ width: '100%' }}>
-                            {t('sell.another_listing_btn') || "Yana e'lon berish"}
+                        <button onClick={() => navigate('/profile')} className="btn btn-primary btn-lg" style={{ width: '100%' }}>Profilga o'tish</button>
+                        <button onClick={() => { setSubmitted(false); setStep(1); setFormData({ gameId: '', gameSlug: '', title: '', description: '', deposit: '', level: '', rank: '', skins: '', features: [], loginMethod: 'email', accountEmail: '', accountPassword: '', additionalInfo: '', timeSlots: [{ label: '', price: '' }] }); setImageFiles([]); }} className="btn btn-secondary btn-lg" style={{ width: '100%' }}>
+                            Yana e'lon berish
                         </button>
                     </div>
                 </div>
@@ -230,7 +245,7 @@ const RentPage = () => {
                 <div className="modal-overlay">
                     <div className="modal-container modal-lg" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)' }}>{t('sell.select_game_title') || "O'yin tanlang"}</h3>
+                            <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)' }}>O'yin tanlang</h3>
                             <button onClick={() => { setShowGameModal(false); setModalGameSearch(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--color-text-muted)' }}>
                                 <X className="w-5 h-5" />
                             </button>
@@ -239,7 +254,7 @@ const RentPage = () => {
                             <div className="relative">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
                                 <input type="text" value={modalGameSearch} onChange={(e) => setModalGameSearch(e.target.value)}
-                                    placeholder={t('sell.search_game_placeholder') || "O'yin nomini qidiring..."} className="input input-lg" style={{ paddingLeft: '40px' }} autoFocus />
+                                    placeholder="O'yin nomini qidiring..." className="input input-lg" style={{ paddingLeft: '40px' }} autoFocus />
                             </div>
                         </div>
                         <div className="modal-body" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
@@ -249,8 +264,8 @@ const RentPage = () => {
                                         onClick={() => { setFormData({ ...formData, gameId: game.id, gameSlug: game.slug || '' }); setShowGameModal(false); setModalGameSearch(''); }}
                                         style={{
                                             padding: '12px', borderRadius: 'var(--radius-lg)',
-                                            border: `2px solid ${formData.gameId === game.id ? 'var(--color-accent-blue)' : 'var(--color-border-default)'}`,
-                                            backgroundColor: formData.gameId === game.id ? 'var(--color-info-bg)' : 'var(--color-bg-secondary)',
+                                            border: `2px solid ${formData.gameId === game.id ? '#a855f7' : 'var(--color-border-default)'}`,
+                                            backgroundColor: formData.gameId === game.id ? 'rgba(168,85,247,0.08)' : 'var(--color-bg-secondary)',
                                             cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s ease',
                                         }}>
                                         {game.image
@@ -261,7 +276,7 @@ const RentPage = () => {
                                     </button>
                                 ))}
                             </div>
-                            {filteredModalGames.length === 0 && <p className="text-center" style={{ color: 'var(--color-text-muted)', padding: '32px 0' }}>{t('sell.no_games_found')}</p>}
+                            {filteredModalGames.length === 0 && <p className="text-center" style={{ color: 'var(--color-text-muted)', padding: '32px 0' }}>O'yin topilmadi</p>}
                         </div>
                     </div>
                 </div>
@@ -270,21 +285,21 @@ const RentPage = () => {
             <div className="page-enter" style={{ minHeight: '100vh', paddingBottom: '64px' }}>
                 <div className="gh-container" style={{ maxWidth: '720px' }}>
                     <div className="breadcrumbs">
-                        <Link to="/">{t('common.home')}</Link>
+                        <Link to="/">{t('common.home') || 'Bosh sahifa'}</Link>
                         <span className="breadcrumb-separator">/</span>
-                        <span className="breadcrumb-current">{t('rent.page_title') || 'Arenda'}</span>
+                        <span className="breadcrumb-current">Arenda</span>
                     </div>
 
                     {/* Header */}
                     <div className="text-center" style={{ paddingTop: '16px', marginBottom: '24px' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', borderRadius: 'var(--radius-full)', backgroundColor: 'rgba(168,85,247,0.12)', color: '#a855f7', fontWeight: 700, fontSize: '13px', marginBottom: '12px' }}>
                             <Key className="w-4 h-4" />
-                            {t('rent.badge') || 'Arenda'}
+                            Arenda
                         </div>
                         <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                            {t('rent.page_title') || 'Akkauntni ijaraga berish'}
+                            Akkauntni ijaraga berish
                         </h1>
-                        <p style={{ color: 'var(--color-text-secondary)' }}>{t('rent.page_subtitle') || "O'yin akkauntingizni ijarada qo'ying"}</p>
+                        <p style={{ color: 'var(--color-text-secondary)' }}>O'yin akkauntingizni ijarada qo'ying va daromad oling</p>
                     </div>
 
                     {/* Progress Steps */}
@@ -304,16 +319,16 @@ const RentPage = () => {
                         ))}
                     </div>
 
-                    {/* Step 1: Game + Rental Details */}
+                    {/* Step 1: Game + Time Slots */}
                     {step === 1 && (
                         <div style={cardStyle}>
                             <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', marginBottom: '20px', color: 'var(--color-text-primary)' }}>
-                                {t('sell.step1_title') || 'Asosiy ma\'lumotlar'}
+                                Asosiy ma'lumotlar
                             </h2>
 
                             {/* Game Selection */}
                             <label style={{ display: 'block', marginBottom: '16px' }}>
-                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>{t('sell.game_label') || "O'yin *"}</span>
+                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>O'yin *</span>
                                 {hasApiGames && (
                                     <div className="grid grid-cols-4" style={{ gap: '8px', marginBottom: '8px' }}>
                                         {topGamesForRent.map((game) => (
@@ -335,7 +350,7 @@ const RentPage = () => {
                                     </div>
                                 )}
                                 <button type="button" onClick={() => setShowGameModal(true)} className="btn btn-secondary btn-sm" style={{ width: '100%' }}>
-                                    {selectedGame ? `${selectedGame.name} (o'zgartirish)` : (t('sell.more_games_btn') || "Boshqa o'yinlarni ko'rish")}
+                                    {selectedGame ? `${selectedGame.name} (o'zgartirish)` : "Boshqa o'yinlarni ko'rish"}
                                 </button>
                                 {errors.gameId && <p style={errorStyle}>{errors.gameId}</p>}
                             </label>
@@ -348,78 +363,95 @@ const RentPage = () => {
                                 {errors.title && <p style={errorStyle}>{errors.title}</p>}
                             </label>
 
-                            {/* Rental Period */}
-                            <label style={{ display: 'block', marginBottom: '16px' }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '8px', color: 'var(--color-text-secondary)' }}>
-                                    <Clock className="w-4 h-4" /> {t('rent.period_label') || 'Ijara muddati *'}
+                            {/* Custom Time Slots */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '10px', color: 'var(--color-text-secondary)' }}>
+                                    <Clock className="w-4 h-4" /> Ijara vaqti va narxlari * <span style={{ fontWeight: 400, fontSize: '12px', color: 'var(--color-text-muted)' }}>(max {MAX_TIME_SLOTS} ta)</span>
                                 </span>
-                                <div className="flex flex-wrap" style={{ gap: '8px' }}>
-                                    {RENTAL_PERIODS.map(({ days, key }) => (
-                                        <button key={days} type="button"
-                                            onClick={() => setFormData({ ...formData, rentalPeriod: days })}
-                                            style={{
-                                                padding: '10px 18px', borderRadius: 'var(--radius-lg)',
-                                                border: `2px solid ${formData.rentalPeriod === days ? '#a855f7' : 'var(--color-border-default)'}`,
-                                                backgroundColor: formData.rentalPeriod === days ? 'rgba(168,85,247,0.1)' : 'var(--color-bg-secondary)',
-                                                color: formData.rentalPeriod === days ? '#a855f7' : 'var(--color-text-primary)',
-                                                cursor: 'pointer', fontWeight: 600, fontSize: 'var(--font-size-sm)', transition: 'all 0.15s',
-                                            }}>
-                                            {t(`rent.${key}`) || `${days} kun`}
-                                        </button>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    {formData.timeSlots.map((slot, index) => (
+                                        <div key={index} style={{
+                                            display: 'flex', gap: '8px', alignItems: 'flex-start',
+                                            padding: '12px', borderRadius: 'var(--radius-lg)',
+                                            backgroundColor: 'var(--color-bg-secondary)',
+                                            border: '1px solid var(--color-border-default)',
+                                        }}>
+                                            <div style={{ flex: 1 }}>
+                                                <input
+                                                    type="text"
+                                                    value={slot.label}
+                                                    onChange={e => updateTimeSlot(index, 'label', e.target.value)}
+                                                    placeholder="Masalan: 1 soat, 1 kun, Kechdan tongacha"
+                                                    className="input input-md"
+                                                    style={{ width: '100%', marginBottom: errors[`slot_label_${index}`] ? '2px' : 0 }}
+                                                />
+                                                {errors[`slot_label_${index}`] && <p style={{ ...errorStyle, marginTop: '2px' }}>{errors[`slot_label_${index}`]}</p>}
+                                            </div>
+                                            <div style={{ width: '160px', flexShrink: 0 }}>
+                                                <input
+                                                    type="number"
+                                                    min={0}
+                                                    value={slot.price}
+                                                    onChange={e => updateTimeSlot(index, 'price', e.target.value)}
+                                                    placeholder="Narx (so'm)"
+                                                    className="input input-md"
+                                                    style={{ width: '100%', marginBottom: errors[`slot_price_${index}`] ? '2px' : 0 }}
+                                                />
+                                                {errors[`slot_price_${index}`] && <p style={{ ...errorStyle, marginTop: '2px' }}>{errors[`slot_price_${index}`]}</p>}
+                                            </div>
+                                            {formData.timeSlots.length > 1 && (
+                                                <button type="button" onClick={() => removeTimeSlot(index)}
+                                                    style={{ padding: '8px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-accent-red)', flexShrink: 0 }}
+                                                    title="O'chirish">
+                                                    <Trash2 style={{ width: '16px', height: '16px' }} />
+                                                </button>
+                                            )}
+                                        </div>
                                     ))}
                                 </div>
-                                {errors.rentalPeriod && <p style={errorStyle}>{errors.rentalPeriod}</p>}
-                            </label>
 
-                            {/* Price per day */}
-                            <label style={{ display: 'block', marginBottom: '16px' }}>
-                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>
-                                    {t('rent.price_per_day_label') || "Kunlik narx (so'm) *"}
-                                </span>
-                                <input type="number" min={0} value={formData.pricePerDay} onChange={e => setFormData({ ...formData, pricePerDay: e.target.value })}
-                                    placeholder="50 000" className="input input-lg" style={{ width: '100%' }} />
-                                {errors.pricePerDay && <p style={errorStyle}>{errors.pricePerDay}</p>}
-                            </label>
+                                {formData.timeSlots.length < MAX_TIME_SLOTS && (
+                                    <button type="button" onClick={addTimeSlot}
+                                        className="btn btn-ghost btn-sm" style={{ marginTop: '8px', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <Plus style={{ width: '14px', height: '14px' }} /> Vaqt qo'shish
+                                    </button>
+                                )}
 
-                            {/* Total price display */}
-                            {totalPrice > 0 && (
-                                <div style={{
-                                    padding: '14px 16px', borderRadius: 'var(--radius-lg)',
-                                    backgroundColor: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.2)',
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
-                                }}>
-                                    <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>{t('rent.total_price_label') || 'Umumiy narx'}:</span>
-                                    <span style={{ fontSize: 'var(--font-size-xl)', fontWeight: 700, color: '#a855f7' }}>{formatPrice(totalPrice)}</span>
-                                </div>
-                            )}
+                                {errors.timeSlots && <p style={errorStyle}>{errors.timeSlots}</p>}
+
+                                <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '6px' }}>
+                                    Har bir qatorga vaqtni (masalan: "1 soat", "12 soat", "Kechdan tongacha", "1 kun") va narxini yozing
+                                </p>
+                            </div>
 
                             {/* Deposit */}
                             <label style={{ display: 'block', marginBottom: '16px' }}>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>
-                                    <Wallet className="w-4 h-4" /> {t('rent.deposit_label') || "Kafolat depozit (so'm)"}
+                                    <Wallet className="w-4 h-4" /> Kafolat depozit (so'm)
                                 </span>
                                 <input type="number" min={0} value={formData.deposit} onChange={e => setFormData({ ...formData, deposit: e.target.value })}
                                     placeholder="100 000" className="input input-lg" style={{ width: '100%' }} />
                                 <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-                                    {t('rent.deposit_hint') || "Akkaunt qaytarilmasa ushlanadigan summa"}
+                                    Akkaunt qaytarilmasa ushlanadigan summa
                                 </p>
                             </label>
 
                             {/* Level / Rank */}
                             <div className="grid grid-cols-2" style={{ gap: '12px', marginBottom: '16px' }}>
                                 <label>
-                                    <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>{t('detail.level') || 'Level'}</span>
+                                    <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>Daraja</span>
                                     <input type="text" value={formData.level} onChange={e => setFormData({ ...formData, level: e.target.value })} placeholder="77" className="input input-md" style={{ width: '100%' }} />
                                 </label>
                                 <label>
-                                    <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>{t('detail.rank') || 'Rank'}</span>
+                                    <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>Reyting</span>
                                     <input type="text" value={formData.rank} onChange={e => setFormData({ ...formData, rank: e.target.value })} placeholder="Conqueror" className="input input-md" style={{ width: '100%' }} />
                                 </label>
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                 <button type="button" onClick={nextStep} className="btn btn-lg" style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '12px 32px', fontWeight: 700 }}>
-                                    {t('sell.next_btn') || 'Keyingi'}
+                                    Keyingi
                                 </button>
                             </div>
                         </div>
@@ -429,19 +461,19 @@ const RentPage = () => {
                     {step === 2 && (
                         <div style={cardStyle}>
                             <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', marginBottom: '20px', color: 'var(--color-text-primary)' }}>
-                                {t('sell.step2_title') || 'Batafsil ma\'lumot'}
+                                Batafsil ma'lumot
                             </h2>
                             <label style={{ display: 'block', marginBottom: '16px' }}>
                                 <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>Tavsif *</span>
                                 <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    placeholder={t('sell.placeholder_description') || 'Akkaunt haqida batafsil...'}
+                                    placeholder="Akkaunt haqida batafsil yozing..."
                                     className="input" style={{ width: '100%', minHeight: '120px', resize: 'vertical' }} />
                                 {errors.description && <p style={errorStyle}>{errors.description}</p>}
                             </label>
 
                             {/* Features */}
                             <div style={{ marginBottom: '16px' }}>
-                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '8px', color: 'var(--color-text-secondary)' }}>{t('sell.features_label') || 'Xususiyatlar'}</span>
+                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '8px', color: 'var(--color-text-secondary)' }}>Xususiyatlar</span>
                                 <div className="flex flex-wrap" style={{ gap: '8px' }}>
                                     {featureOptions.map(({ value, labelKey }) => (
                                         <button key={value} type="button" onClick={() => toggleFeature(value)}
@@ -459,7 +491,7 @@ const RentPage = () => {
 
                             {/* Images */}
                             <div style={{ marginBottom: '16px' }}>
-                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '8px', color: 'var(--color-text-secondary)' }}>{t('sell.images_label') || 'Rasmlar (max 5)'}</span>
+                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '8px', color: 'var(--color-text-secondary)' }}>Rasmlar (max 5)</span>
                                 <div className="flex flex-wrap" style={{ gap: '8px' }}>
                                     {imageFiles.map((file, i) => (
                                         <div key={i} className="relative" style={{ width: '80px', height: '80px', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--color-border-default)' }}>
@@ -483,8 +515,8 @@ const RentPage = () => {
                             </div>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <button type="button" onClick={prevStep} className="btn btn-ghost btn-lg"><ArrowLeft className="w-4 h-4" /> {t('sell.back_btn') || 'Orqaga'}</button>
-                                <button type="button" onClick={nextStep} className="btn btn-lg" style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '12px 32px', fontWeight: 700 }}>{t('sell.next_btn') || 'Keyingi'}</button>
+                                <button type="button" onClick={prevStep} className="btn btn-ghost btn-lg"><ArrowLeft className="w-4 h-4" /> Orqaga</button>
+                                <button type="button" onClick={nextStep} className="btn btn-lg" style={{ background: '#a855f7', color: '#fff', border: 'none', padding: '12px 32px', fontWeight: 700 }}>Keyingi</button>
                             </div>
                         </div>
                     )}
@@ -493,7 +525,7 @@ const RentPage = () => {
                     {step === 3 && (
                         <div style={cardStyle}>
                             <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', marginBottom: '20px', color: 'var(--color-text-primary)' }}>
-                                {t('sell.step3_title') || 'Akkaunt ma\'lumotlari'}
+                                Akkaunt ma'lumotlari
                             </h2>
 
                             <div style={{
@@ -503,15 +535,15 @@ const RentPage = () => {
                             }}>
                                 <Shield className="w-5 h-5 shrink-0" style={{ color: 'var(--color-warning)', marginTop: '2px' }} />
                                 <div>
-                                    <p style={{ fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>{t('sell.safe_selling') || 'Xavfsiz berish'}</p>
+                                    <p style={{ fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>Xavfsiz berish</p>
                                     <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)' }}>
-                                        {t('sell.escrow_notice') || "Bu ma'lumotlar faqat ijara tasdiqlangandan keyin ijarachiga ko'rsatiladi."}
+                                        Bu ma'lumotlar faqat ijara tasdiqlangandan keyin ijarachiga ko'rsatiladi.
                                     </p>
                                 </div>
                             </div>
 
                             <label style={{ display: 'block', marginBottom: '16px' }}>
-                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>{t('sell.login_method') || 'Kirish usuli'}</span>
+                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>Kirish usuli</span>
                                 <select value={formData.loginMethod} onChange={e => setFormData({ ...formData, loginMethod: e.target.value })} className="select select-lg" style={{ width: '100%' }}>
                                     <option value="email">Email</option>
                                     <option value="social">Google / Facebook</option>
@@ -521,28 +553,28 @@ const RentPage = () => {
                             </label>
 
                             <label style={{ display: 'block', marginBottom: '16px' }}>
-                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>{t('sell.account_email_label') || 'Akkaunt email/login *'}</span>
+                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>Akkaunt email/login *</span>
                                 <input type="text" value={formData.accountEmail} onChange={e => setFormData({ ...formData, accountEmail: e.target.value })} className="input input-lg" style={{ width: '100%' }} />
                                 {errors.accountEmail && <p style={errorStyle}>{errors.accountEmail}</p>}
                             </label>
 
                             <label style={{ display: 'block', marginBottom: '16px' }}>
-                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>{t('sell.account_password_label') || 'Akkaunt paroli *'}</span>
+                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>Akkaunt paroli *</span>
                                 <input type="password" value={formData.accountPassword} onChange={e => setFormData({ ...formData, accountPassword: e.target.value })} className="input input-lg" style={{ width: '100%' }} />
                                 {errors.accountPassword && <p style={errorStyle}>{errors.accountPassword}</p>}
                             </label>
 
                             <label style={{ display: 'block', marginBottom: '24px' }}>
-                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>{t('sell.additional_info') || "Qo'shimcha ma'lumot"}</span>
+                                <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>Qo'shimcha ma'lumot</span>
                                 <textarea value={formData.additionalInfo} onChange={e => setFormData({ ...formData, additionalInfo: e.target.value })} className="input" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }} placeholder="2FA kodi, telefon raqami va hokazo..." />
                             </label>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <button type="button" onClick={prevStep} className="btn btn-ghost btn-lg"><ArrowLeft className="w-4 h-4" /> {t('sell.back_btn') || 'Orqaga'}</button>
+                                <button type="button" onClick={prevStep} className="btn btn-ghost btn-lg"><ArrowLeft className="w-4 h-4" /> Orqaga</button>
                                 <button type="button" onClick={handleSubmit} disabled={isSubmitting} className="btn btn-lg"
                                     style={{ background: isSubmitting ? 'var(--color-bg-tertiary)' : '#a855f7', color: '#fff', border: 'none', padding: '12px 32px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    {isSubmitting ? (t('sell.submitting') || 'Yuborilmoqda...') : (t('rent.submit_btn') || "Arenda e'lonini yuborish")}
+                                    {isSubmitting ? 'Yuborilmoqda...' : "Arenda e'lonini yuborish"}
                                 </button>
                             </div>
                         </div>
