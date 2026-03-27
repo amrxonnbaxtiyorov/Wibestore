@@ -3,12 +3,16 @@ WibeStore Backend - Marketplace Models
 Listing, ListingImage, Favorite, View models.
 """
 
+import logging
+
 from django.conf import settings
 from django.db import models
 
 from core.constants import LISTING_STATUS_CHOICES, LISTING_TYPE_CHOICES, LOGIN_METHOD_CHOICES
 from core.models import BaseModel, BaseSoftDeleteModel
 from core.utils import encrypt_sensitive_data, decrypt_sensitive_data
+
+logger = logging.getLogger("apps.marketplace")
 
 
 class Listing(BaseSoftDeleteModel):
@@ -165,30 +169,42 @@ class Listing(BaseSoftDeleteModel):
         return f"{prefix}{self.title} ({self.game.name})"
 
     def save(self, *args, **kwargs):
-        try:
-            if not self.listing_code:
+        if not self.listing_code:
+            try:
                 self.listing_code = self._generate_listing_code()
-        except Exception:
-            pass
+            except Exception as e:
+                logger.warning("Failed to generate listing_code: %s", e)
+                self.listing_code = ""
         super().save(*args, **kwargs)
 
     @staticmethod
     def _generate_listing_code() -> str:
         """Generate next sequential listing code like WB-1001, WB-1002, ..."""
-        from django.db.models.functions import Cast, Substr
-        from django.db.models import IntegerField
-
         try:
-            max_num = (
-                Listing.all_objects.filter(listing_code__startswith="WB-")
-                .annotate(code_num=Cast(Substr("listing_code", 4), IntegerField()))
-                .order_by("-code_num")
-                .values_list("code_num", flat=True)
-                .first()
-            )
-        except Exception:
-            max_num = None
-        return f"WB-{(max_num or 1000) + 1}"
+            # Simple approach: count existing listings + base offset
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT listing_code FROM listings "
+                    "WHERE listing_code LIKE 'WB-%%' "
+                    "ORDER BY length(listing_code) DESC, listing_code DESC LIMIT 1"
+                )
+                row = cursor.fetchone()
+            if row and row[0]:
+                try:
+                    max_num = int(row[0].replace("WB-", ""))
+                except (ValueError, TypeError):
+                    max_num = 1000
+            else:
+                max_num = 1000
+        except Exception as e:
+            logger.warning("listing_code query failed: %s", e)
+            # Fallback: use total count
+            try:
+                max_num = 1000 + Listing.all_objects.count()
+            except Exception:
+                max_num = 1000
+        return f"WB-{max_num + 1}"
 
     def set_account_credentials(self, email: str, password: str) -> None:
         """Encrypt and store account credentials."""

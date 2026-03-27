@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 
 class ListingFilter(django_filters.FilterSet):
     """FilterSet for advanced listing filtering."""
-    
+
     # Search filter
     search = django_filters.CharFilter(
         method='filter_search',
         label='Search'
     )
-    
+
     # Price range filters
     min_price = django_filters.NumberFilter(
         field_name='price',
@@ -32,30 +32,26 @@ class ListingFilter(django_filters.FilterSet):
         lookup_expr='lte',
         label='Max Price'
     )
-    
+
     # Game filter
     game = django_filters.CharFilter(
         field_name='game__slug',
         label='Game Slug'
     )
-    
-    # Category filter (via game slug — used as category proxy)
-    category = django_filters.CharFilter(
-        field_name='game__slug',
-        label='Category Slug'
-    )
-    
+
     # Status filter
     status = django_filters.ChoiceFilter(
         choices=[
             ('active', 'Active'),
             ('pending', 'Pending'),
             ('sold', 'Sold'),
-            ('reserved', 'Reserved'),
+            ('blocked', 'Blocked'),
+            ('archived', 'Archived'),
+            ('rejected', 'Rejected'),
         ],
         label='Status'
     )
-    
+
     # Listing type filter (sell / rent)
     listing_type = django_filters.ChoiceFilter(
         choices=[('sell', 'Sell'), ('rent', 'Rent')],
@@ -67,20 +63,20 @@ class ListingFilter(django_filters.FilterSet):
         field_name='is_premium',
         label='Premium Only'
     )
-    
+
     # Seller filter
     seller = django_filters.UUIDFilter(
         field_name='seller__id',
         label='Seller ID'
     )
-    
+
     # Level filter
     level = django_filters.CharFilter(
         field_name='level',
         lookup_expr='icontains',
         label='Level'
     )
-    
+
     # Rank filter
     rank = django_filters.CharFilter(
         field_name='rank',
@@ -113,7 +109,7 @@ class ListingFilter(django_filters.FilterSet):
     class Meta:
         model = Listing
         fields = [
-            'search', 'listing_type', 'min_price', 'max_price', 'game', 'category',
+            'search', 'listing_type', 'min_price', 'max_price', 'game',
             'status', 'is_premium', 'seller', 'level', 'rank', 'has_warranty', 'ordering',
         ]
 
@@ -121,7 +117,7 @@ class ListingFilter(django_filters.FilterSet):
         if value is True:
             return queryset.filter(warranty_days__gt=0)
         return queryset
-    
+
     def filter_search(self, queryset, name, value):
         """Filter by search term across multiple fields including listing_code and level."""
         if not value:
@@ -157,9 +153,3 @@ class ListingFilter(django_filters.FilterSet):
 
 # Alias for views that expect ListingFilterSet
 ListingFilterSet = ListingFilter
-
-
-class ListingBackend(django_filters.rest_framework.backends.DjangoFilterBackend):
-    """Custom filter backend for listings."""
-
-    filterset_class = ListingFilter

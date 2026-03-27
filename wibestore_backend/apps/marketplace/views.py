@@ -40,13 +40,20 @@ def _listing_code_exists() -> bool:
         return _listing_code_column_exists
     try:
         with connection.cursor() as cursor:
+            # Works on both PostgreSQL and SQLite
             cursor.execute(
                 "SELECT 1 FROM information_schema.columns "
                 "WHERE table_name = 'listings' AND column_name = 'listing_code' LIMIT 1"
             )
             _listing_code_column_exists = cursor.fetchone() is not None
-    except (OperationalError, ProgrammingError):
-        _listing_code_column_exists = False
+    except Exception:
+        # SQLite doesn't support information_schema; try direct query
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT listing_code FROM listings LIMIT 0")
+            _listing_code_column_exists = True
+        except Exception:
+            _listing_code_column_exists = False
     return _listing_code_column_exists
 
 
@@ -81,8 +88,10 @@ class ListingListCreateView(generics.ListCreateAPIView):
             return super().create(request, *args, **kwargs)
         except Exception as e:
             logger.error("Listing create failed: %s — %s", type(e).__name__, e, exc_info=True)
+            # Return JSON error instead of Django's HTML 500 page
+            error_msg = str(e) if settings.DEBUG else "E'lon yaratishda xatolik yuz berdi"
             return Response(
-                {"success": False, "error": {"message": f"E'lon yaratishda xatolik: {e}"}},
+                {"success": False, "error": {"message": error_msg, "type": type(e).__name__}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -91,8 +100,9 @@ class ListingListCreateView(generics.ListCreateAPIView):
             return super().list(request, *args, **kwargs)
         except Exception as e:
             logger.error("Listing list failed: %s — %s", type(e).__name__, e, exc_info=True)
+            error_msg = str(e) if settings.DEBUG else "E'lonlar ro'yxatida xatolik yuz berdi"
             return Response(
-                {"success": False, "error": {"message": f"E'lonlar ro'yxatida xatolik: {e}"}},
+                {"success": False, "error": {"message": error_msg, "type": type(e).__name__}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -783,9 +793,6 @@ class RentalBrowseView(generics.ListAPIView):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        from django.utils import timezone
-        now = timezone.now()
-
         qs = Listing.objects.filter(
             listing_type="rent",
             status="active",
@@ -805,21 +812,21 @@ class RentalBrowseView(generics.ListAPIView):
         if not _listing_code_exists():
             qs = qs.defer("listing_code")
 
-        # Annotate with active promotion status for ordering
-        from django.db.models import Exists, OuterRef, Subquery, BooleanField, Value
-        from django.db.models.functions import Coalesce
+        # Annotate with active promotion status for ordering (safe if table missing)
+        try:
+            from django.utils import timezone
+            from django.db.models import Exists, OuterRef
 
-        active_promo = ListingPromotion.objects.filter(
-            listing=OuterRef("pk"),
-            is_active=True,
-            expires_at__gt=now,
-        )
-        qs = qs.annotate(
-            has_active_promo=Exists(active_promo),
-        )
-
-        # Promoted listings first, then by creation date
-        qs = qs.order_by("-has_active_promo", "-created_at")
+            now = timezone.now()
+            active_promo = ListingPromotion.objects.filter(
+                listing=OuterRef("pk"),
+                is_active=True,
+                expires_at__gt=now,
+            )
+            qs = qs.annotate(has_active_promo=Exists(active_promo))
+            qs = qs.order_by("-has_active_promo", "-created_at")
+        except Exception:
+            qs = qs.order_by("-created_at")
 
         return qs.select_related("game", "seller").prefetch_related("images")
 

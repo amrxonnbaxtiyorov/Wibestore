@@ -30,9 +30,13 @@ if _raw_secret in ("", "django-insecure-change-me-in-production"):
 else:
     SECRET_KEY = _raw_secret
 
-# FERNET_KEY: logni toza qoldirish — ogohlantirish faqat hujjatda (RAILWAY_VARIABLES.md)
-if not os.environ.get("FERNET_KEY", "").strip() or FERNET_KEY == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=":  # noqa: F405
-    pass  # FERNET o'rnatish RAILWAY_VARIABLES.md da
+# FERNET_KEY: encryption uchun (account credentials)
+_fernet_raw = os.environ.get("FERNET_KEY", "").strip()
+if not _fernet_raw or _fernet_raw == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=":
+    logger.warning(
+        "FERNET_KEY not set in production! Account credentials will be stored without encryption. "
+        "Set it in Railway Variables. Generate: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+    )
 
 # Production da DB: Railway'da Postgres qo'shib, DATABASE_URL yoki DATABASE_PUBLIC_URL o'rnating
 _db_url = (os.environ.get("DATABASE_PUBLIC_URL") or os.environ.get("DATABASE_URL") or "").strip()
