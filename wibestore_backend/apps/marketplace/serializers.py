@@ -45,6 +45,7 @@ class ListingImageSerializer(serializers.ModelSerializer):
 class ListingSerializer(serializers.ModelSerializer):
     """Full listing serializer."""
 
+    listing_code = serializers.SerializerMethodField()
     seller = UserPublicSerializer(read_only=True)
     game = GameListSerializer(read_only=True)
     images = ListingImageSerializer(many=True, read_only=True)
@@ -94,6 +95,9 @@ class ListingSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+    def get_listing_code(self, obj) -> str:
+        return getattr(obj, "listing_code", "") or ""
 
     def get_is_favorited(self, obj) -> bool:
         request = self.context.get("request")
@@ -173,6 +177,7 @@ class ListingCreateSerializer(serializers.ModelSerializer):
 class ListingListSerializer(serializers.ModelSerializer):
     """Compact listing serializer for lists."""
 
+    listing_code = serializers.SerializerMethodField()
     seller = UserPublicSerializer(read_only=True)
     game_name = serializers.CharField(source="game.name", read_only=True)
     game_slug = serializers.CharField(source="game.slug", read_only=True)
@@ -207,6 +212,9 @@ class ListingListSerializer(serializers.ModelSerializer):
             "primary_image",
             "created_at",
         ]
+
+    def get_listing_code(self, obj) -> str:
+        return getattr(obj, "listing_code", "") or ""
 
     def get_is_favorited(self, obj) -> bool:
         request = self.context.get("request")

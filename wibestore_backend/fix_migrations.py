@@ -60,6 +60,35 @@ def main():
                 recorder.record_applied(*migration_key)
                 faked.append(migration_key)
 
+    # marketplace.0006: listing_code column on listings table
+    if "listings" in tables:
+        listing_cols = get_existing_columns("listings")
+        if "listing_code" not in listing_cols:
+            print("  [PREEMPTIVE] Adding listing_code column to listings table...")
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "ALTER TABLE listings ADD COLUMN listing_code VARCHAR(10) NOT NULL DEFAULT ''"
+                    )
+                    # Populate existing rows with sequential codes
+                    cursor.execute(
+                        """
+                        WITH numbered AS (
+                            SELECT id, ROW_NUMBER() OVER (ORDER BY created_at) + 1000 AS num
+                            FROM listings
+                            WHERE listing_code = '' OR listing_code IS NULL
+                        )
+                        UPDATE listings SET listing_code = 'WB-' || numbered.num
+                        FROM numbered WHERE listings.id = numbered.id
+                        """
+                    )
+                    cursor.execute(
+                        "CREATE UNIQUE INDEX IF NOT EXISTS listings_listing_code_uniq ON listings (listing_code)"
+                    )
+                print("  [PREEMPTIVE] listing_code column added and populated.")
+            except Exception as e:
+                print(f"  [PREEMPTIVE] listing_code creation failed: {e}")
+
     if faked:
         for app, name in faked:
             print(f"  [FAKED] {app}.{name}")

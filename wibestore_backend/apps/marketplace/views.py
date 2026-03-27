@@ -5,6 +5,7 @@ WibeStore Backend - Marketplace Views
 import logging
 
 from django.conf import settings
+from django.db import connection, OperationalError, ProgrammingError
 from django.db.models import F
 from django_filters.rest_framework.backends import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
@@ -25,6 +26,25 @@ from .serializers import (
 from .services import ListingService
 
 logger = logging.getLogger("apps.marketplace")
+
+_listing_code_column_exists = None
+
+
+def _listing_code_exists() -> bool:
+    """Check if listing_code column exists in DB (cached after first call)."""
+    global _listing_code_column_exists
+    if _listing_code_column_exists is not None:
+        return _listing_code_column_exists
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT 1 FROM information_schema.columns "
+                "WHERE table_name = 'listings' AND column_name = 'listing_code' LIMIT 1"
+            )
+            _listing_code_column_exists = cursor.fetchone() is not None
+    except (OperationalError, ProgrammingError):
+        _listing_code_column_exists = False
+    return _listing_code_column_exists
 
 
 @extend_schema(tags=["Listings"])
@@ -47,19 +67,24 @@ class ListingListCreateView(generics.ListCreateAPIView):
         return ListingListSerializer
 
     def get_queryset(self):
-        return (
-            Listing.objects.filter(status="active")
-            .select_related("game", "seller")
-            .prefetch_related("images")
-        )
+        qs = Listing.objects.filter(status="active")
+        # Defer listing_code if column not yet migrated
+        if not _listing_code_exists():
+            qs = qs.defer("listing_code")
+        return qs.select_related("game", "seller").prefetch_related("images")
 
 
 @extend_schema(tags=["Listings"])
 class ListingDetailView(generics.RetrieveUpdateDestroyAPIView):
     """GET/PUT/PATCH/DELETE /api/v1/listings/{id}/ — Listing detail."""
 
-    queryset = Listing.objects.filter(deleted_at__isnull=True).select_related("game", "seller").prefetch_related("images")
     permission_classes = [IsOwnerOrReadOnly]
+
+    def get_queryset(self):
+        qs = Listing.objects.filter(deleted_at__isnull=True)
+        if not _listing_code_exists():
+            qs = qs.defer("listing_code")
+        return qs.select_related("game", "seller").prefetch_related("images")
 
     def get_serializer_class(self):
         if self.request.method in ("PUT", "PATCH"):

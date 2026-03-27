@@ -2,9 +2,14 @@
 Marketplace App - Filters
 """
 
+import logging
+
 import django_filters
+from django.db import OperationalError, ProgrammingError
 from django.db.models import Q
 from apps.marketplace.models import Listing
+
+logger = logging.getLogger(__name__)
 
 
 class ListingFilter(django_filters.FilterSet):
@@ -113,25 +118,35 @@ class ListingFilter(django_filters.FilterSet):
     
     def filter_search(self, queryset, name, value):
         """Filter by search term across multiple fields including listing_code and level."""
-        if value:
-            query = (
-                Q(listing_code__iexact=value) |
-                Q(title__icontains=value) |
-                Q(description__icontains=value) |
-                Q(game__name__icontains=value) |
-                Q(seller__full_name__icontains=value) |
-                Q(level__icontains=value) |
-                Q(rank__icontains=value)
-            )
-            # Multi-word search: each word matches title independently
-            words = value.split()
-            if len(words) > 1:
-                multi_q = Q()
-                for word in words:
-                    multi_q &= Q(title__icontains=word)
-                query |= multi_q
-            return queryset.filter(query)
-        return queryset
+        if not value:
+            return queryset
+
+        query = (
+            Q(title__icontains=value) |
+            Q(description__icontains=value) |
+            Q(game__name__icontains=value) |
+            Q(seller__full_name__icontains=value) |
+            Q(level__icontains=value) |
+            Q(rank__icontains=value)
+        )
+
+        # Multi-word search: each word matches title independently
+        words = value.split()
+        if len(words) > 1:
+            multi_q = Q()
+            for word in words:
+                multi_q &= Q(title__icontains=word)
+            query |= multi_q
+
+        # listing_code search (safe if column not yet migrated)
+        try:
+            code_qs = queryset.filter(Q(listing_code__iexact=value))
+            if code_qs.exists():
+                return queryset.filter(Q(listing_code__iexact=value) | query)
+        except (OperationalError, ProgrammingError):
+            pass
+
+        return queryset.filter(query)
 
 
 # Alias for views that expect ListingFilterSet

@@ -131,11 +131,16 @@ class Listing(BaseSoftDeleteModel):
         ]
 
     def __str__(self) -> str:
-        return f"[{self.listing_code}] {self.title} ({self.game.name})"
+        code = getattr(self, "listing_code", "") or ""
+        prefix = f"[{code}] " if code else ""
+        return f"{prefix}{self.title} ({self.game.name})"
 
     def save(self, *args, **kwargs):
-        if not self.listing_code:
-            self.listing_code = self._generate_listing_code()
+        try:
+            if not self.listing_code:
+                self.listing_code = self._generate_listing_code()
+        except Exception:
+            pass
         super().save(*args, **kwargs)
 
     @staticmethod
@@ -144,13 +149,16 @@ class Listing(BaseSoftDeleteModel):
         from django.db.models.functions import Cast, Substr
         from django.db.models import IntegerField
 
-        max_num = (
-            Listing.all_objects.filter(listing_code__startswith="WB-")
-            .annotate(code_num=Cast(Substr("listing_code", 4), IntegerField()))
-            .order_by("-code_num")
-            .values_list("code_num", flat=True)
-            .first()
-        )
+        try:
+            max_num = (
+                Listing.all_objects.filter(listing_code__startswith="WB-")
+                .annotate(code_num=Cast(Substr("listing_code", 4), IntegerField()))
+                .order_by("-code_num")
+                .values_list("code_num", flat=True)
+                .first()
+            )
+        except Exception:
+            max_num = None
         return f"WB-{(max_num or 1000) + 1}"
 
     def set_account_credentials(self, email: str, password: str) -> None:
