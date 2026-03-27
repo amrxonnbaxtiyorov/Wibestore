@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '../../lib/apiClient'
 import { useLanguage } from '../../context/LanguageContext'
@@ -205,15 +206,21 @@ export default function AdminTradePanel() {
                           <code style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-accent)', whiteSpace: 'nowrap' }}>{tr.trade_code || '\u2014'}</code>
                         </td>
                         <td>
-                          <div style={{ fontWeight: 500 }}>{tr.listing_title || '\u2014'}</div>
+                          <Link to={`/account/${tr.listing_id}`} target="_blank" onClick={e => e.stopPropagation()} style={{ fontWeight: 500, color: 'var(--color-text-accent)', textDecoration: 'none' }} title="E'lonni saytda ko'rish">
+                            {tr.listing_title || '\u2014'}
+                          </Link>
                           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{tr.listing_game}</div>
                         </td>
                         <td>
-                          <div>{tr.buyer_username || tr.buyer_email}</div>
+                          <Link to={`/seller/${tr.buyer_id}`} target="_blank" onClick={e => e.stopPropagation()} style={{ color: 'var(--color-text-primary)', textDecoration: 'none' }} title="Xaridor profilini ko'rish">
+                            {tr.buyer_username || tr.buyer_email}
+                          </Link>
                           {tr.buyer_telegram && <div style={{ fontSize: 12, color: 'var(--color-accent-blue)' }}>@{tr.buyer_telegram}</div>}
                         </td>
                         <td>
-                          <div>{tr.seller_username || tr.seller_email}</div>
+                          <Link to={`/seller/${tr.seller_id}`} target="_blank" onClick={e => e.stopPropagation()} style={{ color: 'var(--color-text-primary)', textDecoration: 'none' }} title="Sotuvchi profilini ko'rish">
+                            {tr.seller_username || tr.seller_email}
+                          </Link>
                           {tr.seller_telegram && <div style={{ fontSize: 12, color: 'var(--color-accent-blue)' }}>@{tr.seller_telegram}</div>}
                         </td>
                         <td style={{ fontWeight: 600 }}>{Number(tr.amount).toLocaleString()} UZS</td>

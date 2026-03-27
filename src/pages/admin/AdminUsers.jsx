@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Search, Crown, Ban, Eye, UserCheck, Gem, Wallet } from 'lucide-react';
 import { getDisplayInitial } from '../../lib/displayUtils';
 import { useLanguage } from '../../context/LanguageContext';
@@ -189,9 +190,14 @@ const AdminUsers = () => {
                                             }}>
                                                 {getDisplayInitial(user.name, 'U')}
                                             </div>
-                                            <span style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
+                                            <Link
+                                                to={`/seller/${user.id}`}
+                                                target="_blank"
+                                                style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-accent)', fontSize: 'var(--font-size-sm)', textDecoration: 'none' }}
+                                                title="Saytda profilni ko'rish"
+                                            >
                                                 {user.name}
-                                            </span>
+                                            </Link>
                                         </div>
                                     </td>
                                     <td style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>{user.email}</td>
