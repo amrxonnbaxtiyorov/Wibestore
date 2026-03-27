@@ -231,6 +231,11 @@ function App() {
                             <AdminGuard><AdminLayout><AdminTradePanel /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
+                        <Route path="/admin/alerts" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <AdminGuard><AdminAlerts /></AdminGuard>
+                          </Suspense>
+                        } />
                         <Route path="/admin/audit" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminAuditLog /></AdminGuard>

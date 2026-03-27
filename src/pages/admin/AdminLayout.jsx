@@ -30,21 +30,21 @@ const AdminLayout = ({ children }) => {
         navigate('/admin/login');
     };
     const menuItems = [
-        { icon: LayoutDashboard, label: t('admin.menu_dashboard'), to: '/admin' },
-        { icon: Bell, label: 'Alerts', to: '/admin/alerts' },
-        { icon: Package, label: t('admin.menu_accounts'), to: '/admin/accounts' },
-        { icon: Users, label: t('admin.menu_users'), to: '/admin/users' },
-        { icon: DollarSign, label: t('admin.menu_finance'), to: '/admin/finance' },
-        { icon: ShoppingBag, label: 'Trades', to: '/admin/trades' },
-        { icon: MessageSquare, label: 'Trade Chats', to: '/admin/trade-chats' },
-        { icon: AlertTriangle, label: t('admin.menu_reports'), to: '/admin/reports' },
-        { icon: Star, label: t('admin.menu_premium'), to: '/admin/premium' },
-        { icon: Gamepad2, label: 'Games', to: '/admin/games' },
-        { icon: Tag, label: 'Promo Codes', to: '/admin/promo-codes' },
-        { icon: Send, label: 'Telegram', to: '/admin/telegram' },
-        { icon: ClipboardList, label: 'Audit Log', to: '/admin/audit' },
-        { icon: Download, label: 'Export', to: '/admin/export' },
-        { icon: Settings, label: t('admin.menu_settings'), to: '/admin/settings' },
+        { icon: LayoutDashboard, label: t('admin.menu_dashboard') || 'Dashboard', to: '/admin' },
+        { icon: Bell, label: t('admin.menu_alerts') || 'Alerts', to: '/admin/alerts' },
+        { icon: Package, label: t('admin.menu_accounts') || 'Accounts', to: '/admin/accounts' },
+        { icon: Users, label: t('admin.menu_users') || 'Users', to: '/admin/users' },
+        { icon: DollarSign, label: t('admin.menu_finance') || 'Finance', to: '/admin/finance' },
+        { icon: ShoppingBag, label: t('admin.menu_trades') || 'Trades', to: '/admin/trades' },
+        { icon: MessageSquare, label: t('admin.menu_trade_chats') || 'Trade Chats', to: '/admin/trade-chats' },
+        { icon: AlertTriangle, label: t('admin.menu_reports') || 'Reports', to: '/admin/reports' },
+        { icon: Star, label: t('admin.menu_premium') || 'Premium', to: '/admin/premium' },
+        { icon: Gamepad2, label: t('admin.menu_games') || 'Games', to: '/admin/games' },
+        { icon: Tag, label: t('admin.menu_promo_codes') || 'Promo Codes', to: '/admin/promo-codes' },
+        { icon: Send, label: t('admin.menu_telegram') || 'Telegram', to: '/admin/telegram' },
+        { icon: ClipboardList, label: t('admin.menu_audit') || 'Audit Log', to: '/admin/audit' },
+        { icon: Download, label: t('admin.menu_export') || 'Export', to: '/admin/export' },
+        { icon: Settings, label: t('admin.menu_settings') || 'Settings', to: '/admin/settings' },
     ];
 
     const getAdminName = () => {
@@ -191,10 +191,10 @@ const AdminLayout = ({ children }) => {
                             fontWeight: 'var(--font-weight-medium)',
                             justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                         }}
-                        title={sidebarCollapsed ? 'Chiqish' : undefined}
+                        title={sidebarCollapsed ? (t('admin.menu_logout') || 'Log out') : undefined}
                     >
                         <LogOut style={{ width: '18px', height: '18px', flexShrink: 0 }} />
-                        {!sidebarCollapsed && <span>Chiqish</span>}
+                        {!sidebarCollapsed && <span>{t('admin.menu_logout') || 'Chiqish'}</span>}
                     </button>
                 </div>
             </aside>

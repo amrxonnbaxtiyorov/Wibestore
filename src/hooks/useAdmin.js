@@ -620,7 +620,15 @@ export function useAdminExport() {
       if (dateTo) params.set('date_to', dateTo)
       const response = await apiClient.get(`${ADMIN_BASE}/export/${type}/?${params}`, {
         responseType: 'blob',
+        validateStatus: (status) => status < 500,
       })
+      // If server returned an error (non-blob), parse and throw
+      if (response.status >= 400) {
+        const text = await response.data.text()
+        let msg = 'Export failed'
+        try { msg = JSON.parse(text).error || msg } catch {}
+        throw new Error(msg)
+      }
       // Download file
       const blob = new Blob([response.data], { type: 'text/csv' })
       const url = window.URL.createObjectURL(blob)

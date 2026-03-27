@@ -71,7 +71,7 @@ export default function AdminPromoCodes() {
 
         {showForm && (
           <form onSubmit={handleSubmit} className="card" style={{ marginBottom: '20px', padding: '20px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
               <div className="form-group">
                 <label>Code</label>
                 <div style={{ display: 'flex', gap: '4px' }}>
