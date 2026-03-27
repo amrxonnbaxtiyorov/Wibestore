@@ -372,7 +372,7 @@ class AdminTradeSerializer(serializers.ModelSerializer):
     class Meta:
         model = EscrowTransaction
         fields = [
-            "id", "status", "amount", "commission_amount", "seller_earnings",
+            "id", "trade_code", "status", "amount", "commission_amount", "seller_earnings",
             "created_at", "updated_at", "buyer_confirmed_at", "seller_paid_at", "admin_released_at",
             "dispute_reason",
             "listing_id", "listing_title", "listing_game", "listing_game_icon",

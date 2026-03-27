@@ -187,6 +187,7 @@ export default function AdminTradePanel() {
                 <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
+                      <th>Kod</th>
                       <th>{t('admin_trades.table.account')}</th>
                       <th>{t('admin_trades.table.buyer')}</th>
                       <th>{t('admin_trades.table.seller')}</th>
@@ -200,6 +201,9 @@ export default function AdminTradePanel() {
                     {trades.map(tr => (
                       <tr key={tr.id} style={{ cursor: 'pointer', background: selectedTrade?.id === tr.id ? 'var(--color-info-bg)' : '' }}
                         onClick={() => setSelectedTrade(tr)}>
+                        <td>
+                          <code style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-accent)', whiteSpace: 'nowrap' }}>{tr.trade_code || '\u2014'}</code>
+                        </td>
                         <td>
                           <div style={{ fontWeight: 500 }}>{tr.listing_title || '\u2014'}</div>
                           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{tr.listing_game}</div>
@@ -245,9 +249,18 @@ export default function AdminTradePanel() {
                 <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', fontSize: 18 }} onClick={() => setSelectedTrade(null)}>{'\u2715'}</button>
               </div>
 
-              <div style={{ marginBottom: 12 }}>
+              <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <TradeBadge status={selectedTrade.status} statusLabels={statusLabels} />
-                <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--color-text-secondary)' }}>#{selectedTrade.id?.slice(0, 8)}</span>
+                {selectedTrade.trade_code && (
+                  <code style={{
+                    fontSize: 13, fontWeight: 700, color: 'var(--color-text-accent)',
+                    background: 'var(--color-info-bg)', padding: '3px 10px',
+                    borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border-accent)',
+                  }}>
+                    {selectedTrade.trade_code}
+                  </code>
+                )}
+                <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>#{selectedTrade.id?.slice(0, 8)}</span>
               </div>
 
               <div style={{ marginBottom: 16 }}>
@@ -432,11 +445,11 @@ export default function AdminTradePanel() {
               <div><b>{t('admin_trades.table.account')}:</b> {selectedVerif.listing_title}</div>
               <div><b>{t('admin_trades.table.earnings')}:</b> {selectedVerif.seller_earnings ? `${Number(selectedVerif.seller_earnings).toLocaleString()} UZS` : '\u2014'}</div>
               <div><b>{t('admin_trades.full_name')}:</b> {selectedVerif.full_name || '\u2014'}</div>
-              {selectedVerif.location_lat && (
+              {selectedVerif.location_latitude && (
                 <div>
                   <b>{t('admin_trades.location')}:</b>{' '}
-                  <a href={`https://maps.google.com/?q=${selectedVerif.location_lat},${selectedVerif.location_lng}`} target="_blank" rel="noreferrer" style={{ color: 'var(--color-accent-blue)' }}>
-                    {selectedVerif.location_lat}, {selectedVerif.location_lng}
+                  <a href={`https://maps.google.com/?q=${selectedVerif.location_latitude},${selectedVerif.location_longitude}`} target="_blank" rel="noreferrer" style={{ color: 'var(--color-accent-blue)' }}>
+                    {selectedVerif.location_latitude}, {selectedVerif.location_longitude}
                   </a>
                 </div>
               )}

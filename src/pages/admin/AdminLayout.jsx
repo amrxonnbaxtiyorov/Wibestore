@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, Package, AlertTriangle, Star,
-    DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft, MessageSquare, Send, ShoppingBag,
+    DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft, ChevronRight, MessageSquare, Send, ShoppingBag,
     ClipboardList, Tag, Download, FileText
 } from 'lucide-react';
 import { useAuth } from '../../hooks';
@@ -86,16 +86,9 @@ const AdminLayout = ({ children }) => {
                         justifyContent: sidebarCollapsed ? 'center' : 'space-between',
                     }}
                 >
-                    <Link
-                        to="/admin"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            textDecoration: 'none',
-                        }}
-                    >
-                        <div
+                    {sidebarCollapsed ? (
+                        <button
+                            onClick={() => setSidebarCollapsed(false)}
                             style={{
                                 width: '36px',
                                 height: '36px',
@@ -105,37 +98,64 @@ const AdminLayout = ({ children }) => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 flexShrink: 0,
-                            }}
-                        >
-                            <Gamepad2 style={{ width: '20px', height: '20px', color: '#ffffff' }} />
-                        </div>
-                        {!sidebarCollapsed && (
-                            <div>
-                                <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>
-                                    WibeStore
-                                </span>
-                                <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-                                    Admin Panel
-                                </span>
-                            </div>
-                        )}
-                    </Link>
-                    {!sidebarCollapsed && (
-                        <button
-                            onClick={() => setSidebarCollapsed(true)}
-                            className="hidden lg:flex items-center justify-center"
-                            style={{
-                                padding: '6px',
-                                borderRadius: 'var(--radius-md)',
-                                background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
-                                color: 'var(--color-text-muted)',
+                                position: 'relative',
                             }}
-                            aria-label="Collapse sidebar"
+                            title="Menyu ochish"
+                            aria-label="Expand sidebar"
                         >
-                            <ChevronLeft style={{ width: '16px', height: '16px' }} />
+                            <ChevronRight style={{ width: '18px', height: '18px', color: '#ffffff' }} />
                         </button>
+                    ) : (
+                        <>
+                            <Link
+                                to="/admin"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    textDecoration: 'none',
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: '36px',
+                                        height: '36px',
+                                        background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-blue-hover))',
+                                        borderRadius: 'var(--radius-lg)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Gamepad2 style={{ width: '20px', height: '20px', color: '#ffffff' }} />
+                                </div>
+                                <div>
+                                    <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>
+                                        WibeStore
+                                    </span>
+                                    <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                        Admin Panel
+                                    </span>
+                                </div>
+                            </Link>
+                            <button
+                                onClick={() => setSidebarCollapsed(true)}
+                                style={{
+                                    padding: '6px',
+                                    borderRadius: 'var(--radius-md)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--color-text-muted)',
+                                }}
+                                aria-label="Collapse sidebar"
+                            >
+                                <ChevronLeft style={{ width: '16px', height: '16px' }} />
+                            </button>
+                        </>
                     )}
                 </div>
 

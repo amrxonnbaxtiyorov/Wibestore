@@ -129,6 +129,12 @@ class EscrowTransaction(BaseModel):
     buyer_cancelled_at = models.DateTimeField(null=True, blank=True)
     buyer_cancel_reason = models.TextField(blank=True, default="")
 
+    # Savdo kodi — admin tekshiruvi uchun (WB-TRD-XXXXX)
+    trade_code = models.CharField(
+        max_length=20, unique=True, blank=True, null=True, db_index=True,
+        help_text="Unique trade verification code for admin tracking"
+    )
+
     # Telegram xabar IDlari (tugmalarni keyinchalik o'chirish uchun)
     seller_telegram_message_id = models.BigIntegerField(null=True, blank=True)
     buyer_telegram_message_id = models.BigIntegerField(null=True, blank=True)
@@ -139,8 +145,27 @@ class EscrowTransaction(BaseModel):
         verbose_name = "Escrow Transaction"
         verbose_name_plural = "Escrow Transactions"
 
+    def save(self, *args, **kwargs):
+        if not self.trade_code:
+            self.trade_code = self._generate_trade_code()
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def _generate_trade_code():
+        """Generate unique trade code like WB-TRD-10001."""
+        import random
+        for _ in range(10):
+            code = f"WB-TRD-{random.randint(10000, 99999)}"
+            if not EscrowTransaction.objects.filter(trade_code=code).exists():
+                return code
+        # Fallback: use timestamp
+        from django.utils import timezone
+        ts = int(timezone.now().timestamp()) % 100000
+        return f"WB-TRD-{ts}"
+
     def __str__(self) -> str:
-        return f"Escrow: {self.listing.title} ({self.status})"
+        code = self.trade_code or "N/A"
+        return f"Escrow {code}: {self.listing.title} ({self.status})"
 
 
 class SellerVerification(BaseModel):

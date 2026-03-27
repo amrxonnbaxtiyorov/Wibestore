@@ -976,7 +976,7 @@
             "approve": "Одобрить и зачислить",
             "reject": "Отклонить"
         },
-        "search_placeholder": "Поиск по аккаунту...",
+        "search_placeholder": "Поиск по коду, аккаунту или email...",
         "filter_all": "Все",
         "filter_paid": "Оплачено",
         "filter_delivered": "Передано",

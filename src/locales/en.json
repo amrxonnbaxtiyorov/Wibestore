@@ -976,7 +976,7 @@
             "approve": "Approve & Credit",
             "reject": "Reject"
         },
-        "search_placeholder": "Search by account...",
+        "search_placeholder": "Search by code, account or email...",
         "filter_all": "All",
         "filter_paid": "Paid",
         "filter_delivered": "Delivered",

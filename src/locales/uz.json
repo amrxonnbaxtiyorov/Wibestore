@@ -976,7 +976,7 @@
             "approve": "Tasdiqlash va hisoblash",
             "reject": "Rad etish"
         },
-        "search_placeholder": "Akkaunt bo'yicha qidirish...",
+        "search_placeholder": "Kod, akkaunt yoki email bo'yicha qidirish...",
         "filter_all": "Barchasi",
         "filter_paid": "To'langan",
         "filter_delivered": "Topshirilgan",

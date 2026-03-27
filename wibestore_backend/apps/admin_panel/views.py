@@ -708,6 +708,7 @@ class AdminTradesView(generics.ListAPIView):
             qs = qs.filter(status=status_filter)
         if search:
             qs = qs.filter(
+                models.Q(trade_code__icontains=search) |
                 models.Q(listing__title__icontains=search) |
                 models.Q(buyer__email__icontains=search) |
                 models.Q(seller__email__icontains=search)
