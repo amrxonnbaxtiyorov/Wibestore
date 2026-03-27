@@ -718,11 +718,33 @@ const AccountDetailPage = () => {
                         <div>
                             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
                                 <div style={{ flex: 1 }}>
-                                    {listing.is_premium && (
-                                        <span className="badge badge-premium" style={{ marginBottom: '8px', display: 'inline-flex' }}>
-                                            ★ Premium
-                                        </span>
-                                    )}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                                        {listing.listing_code && (
+                                            <span
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    padding: '3px 10px',
+                                                    borderRadius: 'var(--radius-md)',
+                                                    backgroundColor: 'var(--color-bg-tertiary)',
+                                                    border: '1px solid var(--color-border-default)',
+                                                    color: 'var(--color-text-accent)',
+                                                    fontSize: '12px',
+                                                    fontWeight: 600,
+                                                    fontFamily: 'monospace',
+                                                    letterSpacing: '0.5px',
+                                                }}
+                                            >
+                                                #{listing.listing_code}
+                                            </span>
+                                        )}
+                                        {listing.is_premium && (
+                                            <span className="badge badge-premium" style={{ display: 'inline-flex' }}>
+                                                ★ Premium
+                                            </span>
+                                        )}
+                                    </div>
                                     <h1 style={{
                                         fontSize: 'var(--font-size-2xl)',
                                         fontWeight: 'var(--font-weight-bold)',
@@ -1067,6 +1089,7 @@ const AccountDetailPage = () => {
                             {relatedListings.map((acc) => (
                                 <AccountCard key={acc.id} account={{
                                     id: acc.id,
+                                    listing_code: acc.listing_code,
                                     gameId: acc.game?.slug || acc.game?.id || acc.gameId,
                                     gameName: acc.game?.name || acc.gameName,
                                     title: acc.title,

@@ -195,6 +195,7 @@ const SellerProfilePage = () => {
                                     key={acc.id}
                                     account={{
                                         id: acc.id,
+                                        listing_code: acc.listing_code,
                                         gameId: acc.game?.slug || acc.game?.id || acc.gameId,
                                         gameName: acc.game?.name || acc.gameName,
                                         title: acc.title,

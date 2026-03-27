@@ -71,10 +71,13 @@ const ProductsPage = () => {
     }
 
     if (searchQuery) {
+        const q = searchQuery.toLowerCase();
         filteredListings = filteredListings.filter(l =>
             l && (
-                l.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                l.description?.toLowerCase().includes(searchQuery.toLowerCase())
+                l.listing_code?.toLowerCase().includes(q) ||
+                l.title?.toLowerCase().includes(q) ||
+                l.description?.toLowerCase().includes(q) ||
+                l.level?.toLowerCase().includes(q)
             )
         );
     }
@@ -131,7 +134,7 @@ const ProductsPage = () => {
                             />
                             <input
                                 type="text"
-                                placeholder={t('products.search_placeholder') || 'Akkauntlarni qidirish...'}
+                                placeholder={t('products.search_placeholder') || 'Kod, nom yoki level bo\'yicha qidirish...'}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="input input-md w-full"
@@ -291,6 +294,7 @@ const ProductsPage = () => {
                                     key={listing?.id ?? `listing-${index}`}
                                     account={{
                                         id: listing?.id,
+                                        listing_code: listing?.listing_code,
                                         gameId: listing?.game?.slug ?? listing?.game?.id,
                                         // List API qaytaradi: game_name (ListingListSerializer). Detail API qaytaradi: game{name}
                                         gameName: listing?.game?.name ?? listing?.game_name ?? (t('common.unknown_game') || "Noma'lum o'yin"),

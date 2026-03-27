@@ -72,6 +72,7 @@ const HomePage = () => {
     // Listing → AccountCard format
     const toAccountCard = (account) => ({
         id: account?.id,
+        listing_code: account?.listing_code,
         gameId: account?.game?.slug ?? account?.game_slug ?? account?.game?.id ?? account?.gameId,
         gameName: account?.game?.name ?? account?.game_name ?? account?.gameName,
         title: account?.title,

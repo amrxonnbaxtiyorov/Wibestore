@@ -57,6 +57,7 @@ class ListingSerializer(serializers.ModelSerializer):
         model = Listing
         fields = [
             "id",
+            "listing_code",
             "seller",
             "game",
             "title",
@@ -85,6 +86,7 @@ class ListingSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            "listing_code",
             "seller",
             "status",
             "views_count",
@@ -184,6 +186,7 @@ class ListingListSerializer(serializers.ModelSerializer):
         model = Listing
         fields = [
             "id",
+            "listing_code",
             "title",
             "price",
             "original_price",

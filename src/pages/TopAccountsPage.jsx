@@ -225,6 +225,7 @@ const TopAccountsPage = () => {
                                 <AccountCard
                                     account={{
                                         id: listing.id,
+                                        listing_code: listing.listing_code,
                                         gameId: listing.game?.slug ?? listing.game?.id,
                                         // List API qaytaradi: game_name (ListingListSerializer). Detail API qaytaradi: game{name}
                                         gameName: listing.game?.name ?? listing.game_name ?? (t('common.unknown_game') || "Noma'lum o'yin"),

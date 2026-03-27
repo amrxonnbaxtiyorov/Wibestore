@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Crown, Heart, Gem } from 'lucide-react';
+import { Star, Crown, Heart, Gem, Hash } from 'lucide-react';
 import { formatPrice } from '../data/mockData';
 import { resolveImageUrl } from '../lib/displayUtils';
 import { useAuth } from '../context/AuthContext';
@@ -45,6 +45,7 @@ const AccountCard = ({ account, featured = false }) => {
     const sellerPlan = seller.plan || (accountIsPro ? 'pro' : accountIsPremium ? 'premium' : 'free');
     const sellerRating = Number(seller.rating) || 5;
     const sellerSales = seller.total_sales ?? seller.sales_count ?? 0;
+    const listingCode = account.listing_code || '';
     const warrantyDays = account.warranty_days ?? 0;
     const salePercent = account.sale_percent ?? 0;
     const saleEndsAt = account.sale_ends_at ? new Date(account.sale_ends_at) : null;
@@ -184,6 +185,28 @@ const AccountCard = ({ account, featured = false }) => {
                 >
                     {accountGameName}
                 </div>
+
+                {/* Listing Code Badge */}
+                {listingCode && (
+                    <div
+                        className="absolute flex items-center gap-0.5 rounded-full text-xs"
+                        style={{
+                            bottom: '12px',
+                            right: '12px',
+                            padding: '3px 8px',
+                            backgroundColor: 'rgba(0,0,0,0.65)',
+                            backdropFilter: 'blur(4px)',
+                            color: 'var(--color-premium-gold-light)',
+                            fontWeight: 600,
+                            fontFamily: 'monospace',
+                            fontSize: '11px',
+                            letterSpacing: '0.5px',
+                        }}
+                    >
+                        <Hash className="w-3 h-3" />
+                        {listingCode}
+                    </div>
+                )}
             </div>
 
             {/* Content */}

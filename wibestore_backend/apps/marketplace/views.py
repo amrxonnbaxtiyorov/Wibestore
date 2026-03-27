@@ -31,9 +31,8 @@ logger = logging.getLogger("apps.marketplace")
 class ListingListCreateView(generics.ListCreateAPIView):
     """GET /api/v1/listings/ — List or create listings."""
 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = ListingFilterSet
-    search_fields = ["title", "description"]
     ordering_fields = ["created_at", "price", "views_count", "favorites_count"]
     ordering = ["-is_premium", "-created_at"]
 

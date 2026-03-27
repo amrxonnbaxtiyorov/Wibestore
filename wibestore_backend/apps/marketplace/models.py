@@ -14,6 +14,15 @@ from core.utils import encrypt_sensitive_data, decrypt_sensitive_data
 class Listing(BaseSoftDeleteModel):
     """Game account listing for sale."""
 
+    listing_code = models.CharField(
+        max_length=10,
+        unique=True,
+        db_index=True,
+        blank=True,
+        default="",
+        help_text="Auto-generated unique listing code (e.g. WB-1001)",
+    )
+
     seller = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -122,7 +131,27 @@ class Listing(BaseSoftDeleteModel):
         ]
 
     def __str__(self) -> str:
-        return f"{self.title} ({self.game.name})"
+        return f"[{self.listing_code}] {self.title} ({self.game.name})"
+
+    def save(self, *args, **kwargs):
+        if not self.listing_code:
+            self.listing_code = self._generate_listing_code()
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def _generate_listing_code() -> str:
+        """Generate next sequential listing code like WB-1001, WB-1002, ..."""
+        from django.db.models.functions import Cast, Substr
+        from django.db.models import IntegerField
+
+        max_num = (
+            Listing.all_objects.filter(listing_code__startswith="WB-")
+            .annotate(code_num=Cast(Substr("listing_code", 4), IntegerField()))
+            .order_by("-code_num")
+            .values_list("code_num", flat=True)
+            .first()
+        )
+        return f"WB-{(max_num or 1000) + 1}"
 
     def set_account_credentials(self, email: str, password: str) -> None:
         """Encrypt and store account credentials."""

@@ -176,6 +176,7 @@ const GamePage = () => {
                                     key={listing.id}
                                     account={{
                                         id: listing.id,
+                                        listing_code: listing.listing_code,
                                         gameId: game.slug || game.id,
                                         gameName: game.name,
                                         title: listing.title,

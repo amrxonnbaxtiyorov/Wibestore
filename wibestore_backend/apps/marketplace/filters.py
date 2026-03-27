@@ -112,14 +112,25 @@ class ListingFilter(django_filters.FilterSet):
         return queryset
     
     def filter_search(self, queryset, name, value):
-        """Filter by search term across multiple fields."""
+        """Filter by search term across multiple fields including listing_code and level."""
         if value:
-            return queryset.filter(
+            query = (
+                Q(listing_code__iexact=value) |
                 Q(title__icontains=value) |
                 Q(description__icontains=value) |
                 Q(game__name__icontains=value) |
-                Q(seller__full_name__icontains=value)
+                Q(seller__full_name__icontains=value) |
+                Q(level__icontains=value) |
+                Q(rank__icontains=value)
             )
+            # Multi-word search: each word matches title independently
+            words = value.split()
+            if len(words) > 1:
+                multi_q = Q()
+                for word in words:
+                    multi_q &= Q(title__icontains=word)
+                query |= multi_q
+            return queryset.filter(query)
         return queryset
 
 
