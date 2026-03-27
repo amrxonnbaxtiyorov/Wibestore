@@ -41,6 +41,16 @@ User = get_user_model()
 logger = logging.getLogger("apps.admin_panel")
 
 
+class SafeListMixin:
+    """Mixin: agar jadval mavjud bo'lmasa, bo'sh ro'yxat qaytaradi (500 o'rniga)."""
+    def list(self, request, *args, **kwargs):
+        try:
+            return super().list(request, *args, **kwargs)
+        except Exception as e:
+            logger.warning("SafeList: %s query failed: %s", self.__class__.__name__, e)
+            return Response({"results": [], "count": 0})
+
+
 @extend_schema(tags=["Admin"])
 class AdminDashboardView(APIView):
     """GET /api/v1/admin/dashboard/ — Admin dashboard statistics."""
@@ -217,7 +227,7 @@ class AdminDeleteListingView(APIView):
 
 
 @extend_schema(tags=["Admin"])
-class AdminDisputesView(generics.ListAPIView):
+class AdminDisputesView(SafeListMixin, generics.ListAPIView):
     """GET /api/v1/admin/disputes/ — Active disputes."""
 
     permission_classes = [IsAdminUser]
@@ -265,7 +275,7 @@ class AdminResolveDisputeView(APIView):
 
 
 @extend_schema(tags=["Admin"])
-class AdminReportsView(generics.ListAPIView):
+class AdminReportsView(SafeListMixin, generics.ListAPIView):
     """GET /api/v1/admin/reports/ — Pending reports."""
 
     serializer_class = ReportSerializer
@@ -406,7 +416,7 @@ class AdminGrantSubscriptionView(APIView):
 
 
 @extend_schema(tags=["Admin"])
-class AdminTransactionsView(generics.ListAPIView):
+class AdminTransactionsView(SafeListMixin, generics.ListAPIView):
     """GET /api/v1/admin-panel/transactions/ — All transactions."""
 
     permission_classes = [IsAdminUser]
@@ -446,7 +456,7 @@ class AdminTelegramStatsView(APIView):
         return Response(data)
 
 
-class AdminTelegramUsersView(generics.ListAPIView):
+class AdminTelegramUsersView(SafeListMixin, generics.ListAPIView):
     """GET /api/v1/admin-panel/telegram/users/"""
     permission_classes = [IsAdminUser]
     serializer_class = TelegramBotStatSerializer
@@ -515,7 +525,7 @@ class AdminTelegramRegistrationsByDateView(APIView):
 
 # ============= BLOCK 2: Deposit Management =============
 
-class AdminDepositsView(generics.ListAPIView):
+class AdminDepositsView(SafeListMixin, generics.ListAPIView):
     """GET /api/v1/admin-panel/deposits/"""
     permission_classes = [IsAdminUser]
     serializer_class = AdminDepositRequestSerializer
@@ -581,7 +591,7 @@ class AdminDepositStatsView(APIView):
 
 # ============= BLOCK 4: Seller Verifications =============
 
-class AdminSellerVerificationsView(generics.ListAPIView):
+class AdminSellerVerificationsView(SafeListMixin, generics.ListAPIView):
     """GET /api/v1/admin-panel/seller-verifications/"""
     permission_classes = [IsAdminUser]
     serializer_class = AdminSellerVerificationSerializer
@@ -699,7 +709,7 @@ class AdminRejectSellerVerificationView(APIView):
 
 # ============= BLOCK 5: Trade Management =============
 
-class AdminTradesView(generics.ListAPIView):
+class AdminTradesView(SafeListMixin, generics.ListAPIView):
     """GET /api/v1/admin-panel/trades/"""
     permission_classes = [IsAdminUser]
     serializer_class = AdminTradeSerializer
@@ -858,18 +868,27 @@ class AdminTradeStatsView(APIView):
 
     def get(self, request):
         from django.utils import timezone
-        from django.db.models import Sum, Avg
+        from django.db.models import Sum
         from apps.payments.models import EscrowTransaction
+
+        def safe_count(qs):
+            try:
+                return qs.count()
+            except Exception:
+                return 0
+
         today = timezone.now().date()
         qs = EscrowTransaction.objects.all()
+        try:
+            vol = qs.filter(status="confirmed", updated_at__date=today).aggregate(t=Sum("amount"))["t"] or 0
+        except Exception:
+            vol = 0
         data = {
-            "active_trades": qs.filter(status__in=["paid", "delivered"]).count(),
-            "pending_delivery": qs.filter(status="paid").count(),
-            "disputed": qs.filter(status="disputed").count(),
-            "completed_today": qs.filter(status="confirmed", updated_at__date=today).count(),
-            "total_volume_today": qs.filter(
-                status="confirmed", updated_at__date=today
-            ).aggregate(t=Sum("amount"))["t"] or 0,
+            "active_trades": safe_count(qs.filter(status__in=["paid", "delivered"])),
+            "pending_delivery": safe_count(qs.filter(status="paid")),
+            "disputed": safe_count(qs.filter(status="disputed")),
+            "completed_today": safe_count(qs.filter(status="confirmed", updated_at__date=today)),
+            "total_volume_today": vol,
         }
         return Response(data)
 
@@ -893,7 +912,7 @@ def _log_admin_action(request, action_type: str, target_type: str, target_id: st
 
 # ── BLOK 2.2: Audit Log API ──
 
-class AdminAuditLogView(generics.ListAPIView):
+class AdminAuditLogView(SafeListMixin, generics.ListAPIView):
     """GET /api/v1/admin-panel/audit-log/ — Admin audit log with filters."""
     permission_classes = [IsAdminUser]
     serializer_class = AdminActionSerializer
