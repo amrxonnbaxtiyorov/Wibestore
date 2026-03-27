@@ -168,6 +168,12 @@ class Listing(BaseSoftDeleteModel):
         prefix = f"[{code}] " if code else ""
         return f"{prefix}{self.title} ({self.game.name})"
 
+    @staticmethod
+    def _random_code():
+        """Generate a random unique fallback code (works even if column is NOT NULL)."""
+        import uuid
+        return f"WB-{uuid.uuid4().hex[:6].upper()}"
+
     def save(self, *args, **kwargs):
         from django.db import IntegrityError
 
@@ -177,27 +183,29 @@ class Listing(BaseSoftDeleteModel):
                 self.listing_code = self._generate_listing_code()
             except Exception as e:
                 logger.warning("Failed to generate listing_code: %s", e)
-                self.listing_code = None
+                self.listing_code = self._random_code()
 
-        # Save with robust IntegrityError handling
-        try:
-            super().save(*args, **kwargs)
-        except IntegrityError as e:
-            error_str = str(e).lower()
-            logger.warning("Listing save IntegrityError: %s (listing_code=%s)", e, self.listing_code)
+        # Save with retry on IntegrityError (handles both unique and NOT NULL issues)
+        for attempt in range(4):
+            try:
+                super().save(*args, **kwargs)
+                return  # Success
+            except IntegrityError as e:
+                error_str = str(e).lower()
+                if "listing_code" in error_str or "listings_listing_code" in error_str:
+                    # listing_code collision or constraint issue — try random code
+                    self.listing_code = self._random_code()
+                    logger.warning("Listing save attempt %d failed (listing_code), retrying with %s: %s",
+                                   attempt + 1, self.listing_code, e)
+                    continue
+                else:
+                    # Not a listing_code issue — raise immediately
+                    logger.error("Listing save IntegrityError (not listing_code): %s", e)
+                    raise
 
-            # Any IntegrityError related to listing_code — retry without code
-            if "listing_code" in error_str or "listings_listing_code" in error_str:
-                self.listing_code = None
-                try:
-                    super().save(*args, **kwargs)
-                    return
-                except IntegrityError:
-                    pass  # Fall through to final attempt
-
-            # Final attempt: strip listing_code and save
-            self.listing_code = None
-            super().save(*args, **kwargs)
+        # All retries exhausted — final attempt
+        self.listing_code = self._random_code()
+        super().save(*args, **kwargs)
 
     @staticmethod
     def _generate_listing_code() -> str:

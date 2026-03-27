@@ -88,23 +88,61 @@ def main():
             except Exception as e:
                 print(f"  [PREEMPTIVE] listing_code creation failed: {e}")
 
-        # Step 2: Fix empty strings → NULL (critical for unique constraint)
+        # Step 2: Fix listing_code constraints (critical!)
         if "listing_code" in listing_cols:
+            # 2a: Make column nullable
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("ALTER TABLE listings ALTER COLUMN listing_code DROP NOT NULL")
+                print("  [FIX] listing_code: DROP NOT NULL done")
+            except Exception as e:
+                print(f"  [FIX] listing_code DROP NOT NULL: {e}")
+
+            # 2b: Drop default
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("ALTER TABLE listings ALTER COLUMN listing_code DROP DEFAULT")
+                print("  [FIX] listing_code: DROP DEFAULT done")
+            except Exception as e:
+                print(f"  [FIX] listing_code DROP DEFAULT: {e}")
+
+            # 2c: Convert empty strings to NULL
             try:
                 with connection.cursor() as cursor:
                     cursor.execute("UPDATE listings SET listing_code = NULL WHERE listing_code = ''")
                     count = cursor.rowcount
                     if count:
                         print(f"  [FIX] Converted {count} empty listing_codes to NULL")
-                    # Make column nullable if it isn't already
-                    cursor.execute(
-                        "ALTER TABLE listings ALTER COLUMN listing_code DROP NOT NULL"
-                    )
-                    cursor.execute(
-                        "ALTER TABLE listings ALTER COLUMN listing_code DROP DEFAULT"
-                    )
             except Exception as e:
-                print(f"  [FIX] listing_code fix: {e}")
+                print(f"  [FIX] listing_code empty→NULL: {e}")
+
+            # 2d: Populate NULL listing_codes with sequential codes
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        WITH max_code AS (
+                            SELECT COALESCE(MAX(
+                                CASE WHEN listing_code ~ '^WB-[0-9]+$'
+                                     THEN CAST(REPLACE(listing_code, 'WB-', '') AS INTEGER)
+                                     ELSE 0 END
+                            ), 1000) AS max_num FROM listings
+                        ),
+                        to_update AS (
+                            SELECT id, ROW_NUMBER() OVER (ORDER BY created_at) AS rn
+                            FROM listings
+                            WHERE listing_code IS NULL OR listing_code = ''
+                        )
+                        UPDATE listings SET listing_code = 'WB-' || (max_code.max_num + to_update.rn)
+                        FROM to_update, max_code
+                        WHERE listings.id = to_update.id
+                        """
+                    )
+                    count = cursor.rowcount
+                    if count:
+                        print(f"  [FIX] Populated {count} NULL listing_codes with sequential codes")
+            except Exception as e:
+                print(f"  [FIX] listing_code populate: {e}")
 
         # Step 3: FAKE marketplace migrations if columns already exist
         # This is CRITICAL — without faking 0006, all subsequent migrations (0007-0011) won't run
