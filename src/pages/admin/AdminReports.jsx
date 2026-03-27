@@ -1,17 +1,15 @@
 import { useState } from 'react';
 import { AlertTriangle, FileText, Clock, CheckCircle, Eye, X } from 'lucide-react';
 import { useAdminReports, useAdminResolveReport } from '../../hooks/useAdmin';
-import { useLanguage } from '../../context/LanguageContext';
 
 const STATUS_CONFIG = {
-    pending: { badge: 'badge-orange', label_key: 'pending' },
-    investigating: { badge: 'badge-blue', label_key: 'investigating' },
-    resolved: { badge: 'badge-green', label_key: 'resolved' },
-    dismissed: { badge: 'badge-red', label_key: 'dismissed' },
+    pending: { badge: 'badge-orange', label: 'Kutilmoqda' },
+    investigating: { badge: 'badge-blue', label: "Ko'rib chiqilmoqda" },
+    resolved: { badge: 'badge-green', label: 'Hal qilingan' },
+    dismissed: { badge: 'badge-red', label: 'Rad etilgan' },
 };
 
 const AdminReports = () => {
-    const { t } = useLanguage();
     const { data: reportsList, isLoading } = useAdminReports();
     const resolveReport = useAdminResolveReport();
     const [selectedReport, setSelectedReport] = useState(null);
@@ -37,24 +35,16 @@ const AdminReports = () => {
         );
     };
 
-    const statusLabel = (status) => {
-        const labels = {
-            pending: t('admin.status_pending') || 'Kutilmoqda',
-            investigating: t('admin.status_investigating') || "Ko'rib chiqilmoqda",
-            resolved: t('admin.status_resolved') || 'Hal qilingan',
-            dismissed: t('admin.status_dismissed') || 'Rad etilgan',
-        };
-        return labels[status] || status;
-    };
+    const statusLabel = (status) => STATUS_CONFIG[status]?.label || status;
 
     return (
         <div className="admin-page">
             <div style={{ marginBottom: 24 }}>
                 <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', margin: 0 }}>
-                    {t('admin.menu_reports') || 'Shikoyatlar'}
+                    Shikoyatlar
                 </h1>
                 <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: 4 }}>
-                    {t('admin.reports_subtitle') || "Foydalanuvchi shikoyatlarini ko'rib chiqish"}
+                    Foydalanuvchi shikoyatlarini ko'rib chiqish
                 </p>
             </div>
 
@@ -83,13 +73,19 @@ const AdminReports = () => {
 
             {/* Filters */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-                {['all', 'pending', 'investigating', 'resolved', 'dismissed'].map(f => (
+                {[
+                    { key: 'all', label: 'Barchasi' },
+                    { key: 'pending', label: 'Kutilmoqda' },
+                    { key: 'investigating', label: "Ko'rib chiqilmoqda" },
+                    { key: 'resolved', label: 'Hal qilingan' },
+                    { key: 'dismissed', label: 'Rad etilgan' },
+                ].map(f => (
                     <button
-                        key={f}
-                        className={`btn btn-sm ${filter === f ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={() => setFilter(f)}
+                        key={f.key}
+                        className={`btn btn-sm ${filter === f.key ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setFilter(f.key)}
                     >
-                        {f === 'all' ? (t('admin.filter_all') || 'Barchasi') : statusLabel(f)}
+                        {f.label}
                     </button>
                 ))}
             </div>
