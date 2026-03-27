@@ -332,6 +332,43 @@ class PromoCodeUse(models.Model):
         return f"{self.promo.code} by {self.user.email}"
 
 
+class ListingPromotion(models.Model):
+    """Track paid promotions for rental listings (ad placement)."""
+
+    id = models.AutoField(primary_key=True)
+    listing = models.ForeignKey(
+        Listing, on_delete=models.CASCADE, related_name="promotions"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="promotions"
+    )
+    hours = models.PositiveIntegerField(help_text="Promotion duration in hours")
+    price_per_hour = models.DecimalField(
+        max_digits=15, decimal_places=2,
+        help_text="Price per hour at time of purchase",
+    )
+    discount_percent = models.PositiveSmallIntegerField(
+        default=0, help_text="Discount applied (e.g. 10, 20, 30)",
+    )
+    total_cost = models.DecimalField(
+        max_digits=15, decimal_places=2, help_text="Total amount charged",
+    )
+    starts_at = models.DateTimeField(help_text="When promotion starts")
+    expires_at = models.DateTimeField(db_index=True, help_text="When promotion expires")
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "listing_promotions"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["listing", "is_active", "expires_at"]),
+        ]
+
+    def __str__(self):
+        return f"Promo: {self.listing.title} — {self.hours}h ({self.total_cost} so'm)"
+
+
 class SavedSearch(models.Model):
     """User's saved search (alert when new listings match)."""
 

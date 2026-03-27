@@ -669,8 +669,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     _save_user(user.id)
 
     # /start topup — to'g'ridan to'g'ri hisobni to'ldirish oqimiga o'tish
+    # /start topup_AMOUNT — arenda reklama uchun avtomatik summa bilan to'ldirish
     args = context.args
-    if args and args[0] == "topup":
+    if args and (args[0] == "topup" or args[0].startswith("topup_")):
+        if args[0].startswith("topup_"):
+            try:
+                prefill_amount = int(args[0].split("_", 1)[1])
+                if prefill_amount > 0:
+                    context.user_data["topup_prefill_amount"] = prefill_amount
+            except (ValueError, IndexError):
+                pass
         return await _cmd_topup(update, context)
 
     # /start uploadvideo_{token} — e'lon uchun video yuklash
@@ -1455,6 +1463,20 @@ async def _cmd_topup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if result and result.get("success") and result.get("has_account"):
         balance = result.get("data", {}).get("balance", "0")
     card_line = f"\n💳 To'lov kartasi: <code>{ADMIN_CARD_NUMBER}</code>" if ADMIN_CARD_NUMBER else ""
+
+    # Arenda reklamadan kelgan prefill summa
+    prefill_amount = context.user_data.pop("topup_prefill_amount", None)
+    if prefill_amount and prefill_amount > 0:
+        context.user_data["topup_amount"] = prefill_amount
+        await update.message.reply_html(
+            f"💰 <b>Hisobni to'ldirish</b>\n\n"
+            f"Joriy balans: <b>{balance} UZS</b>\n"
+            f"🎯 Arenda reklama uchun kerakli summa: <b>{prefill_amount:,} UZS</b>{card_line}\n\n"
+            f"Kartaga <b>{prefill_amount:,} UZS</b> o'tkazgach, to'lov <b>skrinshot</b>ini yuboring. Admin tekshiradi.\n\n"
+            "❌ Bekor qilish: /cancel"
+        )
+        return WAITING_TOPUP_SCREENSHOT
+
     await update.message.reply_html(
         f"💰 <b>Hisobni to'ldirish</b>\n\n"
         f"Joriy balans: <b>{balance} UZS</b>{card_line}\n\n"

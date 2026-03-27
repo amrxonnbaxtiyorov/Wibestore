@@ -21,4 +21,9 @@ urlpatterns = [
     path("<uuid:pk>/video-view/", views.ListingVideoViewView.as_view(), name="listing-video-view"),
     path("video-webhook/", views.ListingVideoWebhookView.as_view(), name="listing-video-webhook"),
     path("video-moderate/", views.ListingVideoModerateView.as_view(), name="listing-video-moderate"),
+    # Rental promotions
+    path("rentals/", views.RentalBrowseView.as_view(), name="rental-browse"),
+    path("rentals/promotion/calculate/", views.RentalPromotionCalculateView.as_view(), name="rental-promo-calculate"),
+    path("rentals/promotion/create/", views.RentalPromotionCreateView.as_view(), name="rental-promo-create"),
+    path("rentals/my-promotions/", views.MyRentalPromotionsView.as_view(), name="rental-my-promotions"),
 ]

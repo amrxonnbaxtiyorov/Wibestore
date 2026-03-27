@@ -16,12 +16,15 @@ from rest_framework.views import APIView
 from core.permissions import IsOwnerOrReadOnly
 
 from .filters import ListingFilterSet
-from .models import Favorite, Listing, ListingImage, ListingView
+from .models import Favorite, Listing, ListingImage, ListingPromotion, ListingView
 from .serializers import (
     ListingCreateSerializer,
     ListingImageSerializer,
     ListingListSerializer,
+    ListingPromotionSerializer,
     ListingSerializer,
+    PromotionCalculateSerializer,
+    PromotionCreateSerializer,
 )
 from .services import ListingService
 
@@ -589,3 +592,262 @@ class ListingVideoModerateView(APIView):
             "seller_telegram_id": seller_telegram_id,
             "seller_name": getattr(listing.seller, 'full_name', '') or listing.seller.username or "",
         })
+
+
+# ============================================================
+# RENTAL PROMOTION VIEWS
+# ============================================================
+
+def _calculate_promotion_cost(hours: int) -> dict:
+    """Calculate promotion cost with tiered discounts.
+
+    Pricing: 5000 so'm/hour
+    Discount: 10% per every 10 hours (10h=10%, 20h=20%, 30h=30%, max 90%)
+    """
+    from core.constants import (
+        RENTAL_PROMOTION_PRICE_PER_HOUR,
+        RENTAL_PROMOTION_DISCOUNT_STEP,
+        RENTAL_PROMOTION_DISCOUNT_RATE,
+    )
+
+    price_per_hour = RENTAL_PROMOTION_PRICE_PER_HOUR
+    base_cost = price_per_hour * hours
+    discount_steps = hours // RENTAL_PROMOTION_DISCOUNT_STEP
+    discount_percent = min(int(discount_steps * RENTAL_PROMOTION_DISCOUNT_RATE * 100), 90)
+    discount_amount = int(base_cost * discount_percent / 100)
+    total_cost = base_cost - discount_amount
+
+    return {
+        "hours": hours,
+        "price_per_hour": price_per_hour,
+        "base_cost": base_cost,
+        "discount_percent": discount_percent,
+        "discount_amount": discount_amount,
+        "total_cost": total_cost,
+    }
+
+
+@extend_schema(tags=["Rental Promotions"])
+class RentalPromotionCalculateView(APIView):
+    """GET /api/v1/rentals/promotion/calculate/?hours=N — Calculate promotion cost."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        hours = request.query_params.get("hours")
+        if not hours:
+            return Response(
+                {"success": False, "error": {"message": "hours parametri kerak."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            hours = int(hours)
+            if hours < 1 or hours > 720:
+                raise ValueError
+        except (ValueError, TypeError):
+            return Response(
+                {"success": False, "error": {"message": "hours 1 dan 720 gacha bo'lishi kerak."}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        cost_info = _calculate_promotion_cost(hours)
+        cost_info["user_balance"] = float(request.user.balance)
+        cost_info["balance_sufficient"] = request.user.balance >= cost_info["total_cost"]
+        cost_info["deficit"] = max(0, cost_info["total_cost"] - float(request.user.balance))
+        cost_info["success"] = True
+
+        return Response(cost_info)
+
+
+@extend_schema(tags=["Rental Promotions"])
+class RentalPromotionCreateView(APIView):
+    """POST /api/v1/rentals/promotion/create/ — Create promotion (deduct balance)."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = PromotionCreateSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        listing = serializer.listing
+        hours = serializer.validated_data["hours"]
+        cost_info = _calculate_promotion_cost(hours)
+        total_cost = cost_info["total_cost"]
+
+        user = request.user
+        if user.balance < total_cost:
+            deficit = total_cost - float(user.balance)
+            bot_username = getattr(settings, "TELEGRAM_BOT_USERNAME", "wibestorebot")
+            topup_link = f"https://t.me/{bot_username}?start=topup_{int(deficit)}"
+            return Response({
+                "success": False,
+                "error": {
+                    "code": "insufficient_balance",
+                    "message": f"Balansingizda mablag' yetarli emas. Kamomad: {int(deficit):,} so'm",
+                    "deficit": int(deficit),
+                    "balance": float(user.balance),
+                    "required": total_cost,
+                    "topup_link": topup_link,
+                },
+            }, status=status.HTTP_402_PAYMENT_REQUIRED)
+
+        # Deduct balance
+        from django.utils import timezone
+        from django.db import transaction as db_transaction
+        from apps.payments.models import Transaction
+
+        now = timezone.now()
+        expires = now + timezone.timedelta(hours=hours)
+
+        with db_transaction.atomic():
+            # Check and extend existing active promotion
+            existing = ListingPromotion.objects.filter(
+                listing=listing, is_active=True, expires_at__gt=now
+            ).order_by("-expires_at").first()
+
+            if existing:
+                # Extend existing promotion
+                existing.expires_at = existing.expires_at + timezone.timedelta(hours=hours)
+                existing.hours += hours
+                existing.total_cost += total_cost
+                existing.save(update_fields=["expires_at", "hours", "total_cost"])
+                promotion = existing
+            else:
+                promotion = ListingPromotion.objects.create(
+                    listing=listing,
+                    user=user,
+                    hours=hours,
+                    price_per_hour=cost_info["price_per_hour"],
+                    discount_percent=cost_info["discount_percent"],
+                    total_cost=total_cost,
+                    starts_at=now,
+                    expires_at=expires,
+                    is_active=True,
+                )
+
+            # Deduct user balance
+            user.balance = F("balance") - total_cost
+            user.save(update_fields=["balance"])
+            user.refresh_from_db()
+
+            # Create transaction record
+            Transaction.objects.create(
+                user=user,
+                amount=total_cost,
+                type="promotion",
+                status="completed",
+                description=f"Arenda e'lon reklamasi: {listing.title} — {hours} soat",
+                metadata={
+                    "listing_id": str(listing.id),
+                    "hours": hours,
+                    "discount_percent": cost_info["discount_percent"],
+                },
+            )
+
+        return Response({
+            "success": True,
+            "message": f"E'lon {hours} soatga reklama qilindi!",
+            "promotion": ListingPromotionSerializer(promotion).data,
+            "new_balance": float(user.balance),
+        }, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=["Rental Promotions"])
+class RentalBrowseView(generics.ListAPIView):
+    """GET /api/v1/rentals/ — Browse promoted rental listings grouped by game."""
+
+    serializer_class = ListingListSerializer
+    permission_classes = [permissions.AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    ordering_fields = ["created_at", "price"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        from django.utils import timezone
+        now = timezone.now()
+
+        qs = Listing.objects.filter(
+            listing_type="rent",
+            status="active",
+            deleted_at__isnull=True,
+        )
+
+        # Filter by game
+        game_slug = self.request.query_params.get("game")
+        if game_slug:
+            qs = qs.filter(game__slug=game_slug)
+
+        # Search
+        search = self.request.query_params.get("search")
+        if search:
+            qs = qs.filter(title__icontains=search)
+
+        if not _listing_code_exists():
+            qs = qs.defer("listing_code")
+
+        # Annotate with active promotion status for ordering
+        from django.db.models import Exists, OuterRef, Subquery, BooleanField, Value
+        from django.db.models.functions import Coalesce
+
+        active_promo = ListingPromotion.objects.filter(
+            listing=OuterRef("pk"),
+            is_active=True,
+            expires_at__gt=now,
+        )
+        qs = qs.annotate(
+            has_active_promo=Exists(active_promo),
+        )
+
+        # Promoted listings first, then by creation date
+        qs = qs.order_by("-has_active_promo", "-created_at")
+
+        return qs.select_related("game", "seller").prefetch_related("images")
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Paginate
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "success": True,
+            "results": serializer.data,
+            "count": queryset.count(),
+        })
+
+
+@extend_schema(tags=["Rental Promotions"])
+class MyRentalPromotionsView(APIView):
+    """GET /api/v1/rentals/my-promotions/ — User's active promotions."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from django.utils import timezone
+        now = timezone.now()
+
+        promotions = ListingPromotion.objects.filter(
+            user=request.user,
+            is_active=True,
+            expires_at__gt=now,
+        ).select_related("listing", "listing__game")
+
+        data = []
+        for p in promotions:
+            data.append({
+                "id": p.id,
+                "listing_id": str(p.listing_id),
+                "listing_title": p.listing.title,
+                "game_name": p.listing.game.name if p.listing.game else "",
+                "hours": p.hours,
+                "total_cost": float(p.total_cost),
+                "starts_at": p.starts_at.isoformat(),
+                "expires_at": p.expires_at.isoformat(),
+                "remaining_hours": max(0, int((p.expires_at - now).total_seconds() / 3600)),
+            })
+
+        return Response({"success": True, "promotions": data})

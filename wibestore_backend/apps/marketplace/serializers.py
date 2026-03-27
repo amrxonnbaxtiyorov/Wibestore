@@ -11,7 +11,7 @@ from apps.accounts.serializers import UserPublicSerializer
 from apps.games.models import Game
 from apps.games.serializers import GameListSerializer
 
-from .models import Favorite, Listing, ListingImage, ListingView, SavedSearch
+from .models import Favorite, Listing, ListingImage, ListingPromotion, ListingView, SavedSearch
 
 User = get_user_model()
 
@@ -266,3 +266,47 @@ class FavoriteListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ["id", "listing", "created_at"]
+
+
+class PromotionCalculateSerializer(serializers.Serializer):
+    """Calculate promotion cost with discounts."""
+
+    hours = serializers.IntegerField(min_value=1, max_value=720)
+
+    def validate_hours(self, value):
+        if value < 1:
+            raise serializers.ValidationError("Kamida 1 soat bo'lishi kerak.")
+        return value
+
+
+class PromotionCreateSerializer(serializers.Serializer):
+    """Create a promotion for a rental listing."""
+
+    listing_id = serializers.UUIDField()
+    hours = serializers.IntegerField(min_value=1, max_value=720)
+
+    def validate_listing_id(self, value):
+        try:
+            listing = Listing.objects.get(pk=value, listing_type="rent", status="active")
+        except Listing.DoesNotExist:
+            raise serializers.ValidationError("Arenda e'loni topilmadi.")
+        self.listing = listing
+        return value
+
+    def validate(self, data):
+        request = self.context.get("request")
+        if request and self.listing.seller != request.user:
+            raise serializers.ValidationError(
+                {"listing_id": "Faqat o'zingizning e'loningizni reklama qilishingiz mumkin."}
+            )
+        return data
+
+
+class ListingPromotionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ListingPromotion
+        fields = [
+            "id", "listing_id", "hours", "price_per_hour",
+            "discount_percent", "total_cost", "starts_at", "expires_at",
+            "is_active", "created_at",
+        ]

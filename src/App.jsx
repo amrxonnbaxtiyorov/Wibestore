@@ -32,6 +32,7 @@ const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage'));
 const TermsPage = lazyWithRetry(() => import('./pages/TermsPage'));
 const SellPage = lazyWithRetry(() => import('./pages/SellPage'));
 const RentPage = lazyWithRetry(() => import('./pages/RentPage'));
+const RentalBrowsePage = lazyWithRetry(() => import('./pages/RentalBrowsePage'));
 const FAQPage = lazyWithRetry(() => import('./pages/FAQPage'));
 const ResetPasswordPage = lazyWithRetry(() => import('./pages/ResetPasswordPage'));
 const ForgotPasswordPage = lazyWithRetry(() => import('./pages/ForgotPasswordPage'));
@@ -321,6 +322,11 @@ function App() {
                           </Suspense>
                         } />
                         <Route path="/rent" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <PublicLayout><RentalBrowsePage /></PublicLayout>
+                          </Suspense>
+                        } />
+                        <Route path="/rent/create" element={
                           <Suspense fallback={<PageLoader />}>
                             <PublicLayout><AuthGuard><RentPage /></AuthGuard></PublicLayout>
                           </Suspense>
