@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, X, Sun, Moon, User, LogOut, Settings, ShoppingBag, ChevronDown, TrendingUp, BarChart3, Zap } from 'lucide-react';
+import { Search, Menu, X, Sun, Moon, User, LogOut, Settings, ShoppingBag, ChevronDown, TrendingUp, BarChart3, Zap, Key } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
@@ -119,9 +119,10 @@ const Navbar = () => {
 
     const navLinks = [
         { to: '/products', label: t('nav.products') || 'Boshqa mahsulotlar', icon: ShoppingBag },
+        { to: '/rent', label: t('nav.rent') || 'Arenda', icon: Key, badge: 'NEW' },
         { to: '/top', label: t('nav.top') || 'Top akkauntlar', icon: TrendingUp },
         { to: '/statistics', label: t('nav.statistics') || 'Statistika', icon: BarChart3 },
-        { to: '/premium', label: t('nav.premium') || 'Obunalar', icon: Zap, badge: 'NEW' },
+        { to: '/premium', label: t('nav.premium') || 'Obunalar', icon: Zap },
     ];
 
     const isAdmin = user?.is_staff || false;

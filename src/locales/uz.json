@@ -9,6 +9,7 @@
         "login": "Kirish",
         "signup": "Ro'yxatdan o'tish",
         "sell": "Sotish",
+        "rent": "Arenda",
         "profile": "Mening profilim",
         "settings": "Sozlamalar",
         "logout": "Chiqish",
@@ -562,6 +563,27 @@
         "video_upload_btn": "Telegram orqali video yuklash",
         "video_upload_error": "Video yuklash linkini olishda xatolik."
     },
+    "rent": {
+        "page_title": "Akkauntni ijaraga berish",
+        "page_subtitle": "O'yin akkauntingizni ijarada qo'ying va daromad oling",
+        "badge": "Arenda",
+        "period_label": "Ijara muddati *",
+        "period_1": "1 kun",
+        "period_3": "3 kun",
+        "period_7": "1 hafta",
+        "period_14": "2 hafta",
+        "period_30": "1 oy",
+        "price_per_day_label": "Kunlik narx (so'm) *",
+        "total_price_label": "Umumiy narx",
+        "deposit_label": "Kafolat depozit (so'm)",
+        "deposit_hint": "Akkaunt qaytarilmasa ushlanadigan summa",
+        "submit_btn": "Arenda e'lonini yuborish",
+        "success": "Arenda e'loningiz yuborildi! Moderatsiyadan keyin ko'rinadi.",
+        "per_day": "kun",
+        "deposit": "Depozit",
+        "err_select_period": "Ijara muddatini tanlang",
+        "err_enter_price_per_day": "Kunlik narxni kiriting"
+    },
     "terms": {
         "title": "Foydalanish shartlari",
         "badge": "Huquqiy hujjatlar",
@@ -846,6 +868,15 @@
         "menu_premium": "Premium",
         "menu_finance": "Moliya",
         "menu_settings": "Sozlamalar",
+        "menu_alerts": "Ogohlantirishlar",
+        "menu_trades": "Savdolar",
+        "menu_trade_chats": "Savdo chatlari",
+        "menu_games": "O'yinlar",
+        "menu_promo_codes": "Promo kodlar",
+        "menu_telegram": "Telegram",
+        "menu_audit": "Audit jurnali",
+        "menu_export": "Eksport",
+        "menu_logout": "Chiqish",
         "saved": "Saqlandi!",
         "save": "Saqlash",
         "auto_approve_desc": "Yangi e'lonlar avtomatik tasdiqlansin"
@@ -1119,5 +1150,46 @@
         "delete_confirm": "Bu e'lonni o'chirishni xohlaysizmi?",
         "deleted_success": "E'lon muvaffaqiyatli o'chirildi",
         "delete_error": "E'lonni o'chirishda xatolik"
+    },
+    "not_found": {
+        "title": "Sahifa topilmadi",
+        "description": "Kechirasiz, siz qidirgan sahifa mavjud emas yoki ko'chirilgan.",
+        "home": "Bosh sahifa",
+        "back": "Orqaga",
+        "suggestions": "Quyidagilarni ko'rishingiz mumkin:"
+    },
+    "server_error": {
+        "title": "Server xatosi",
+        "description": "Serverda xatolik yuz berdi. Keyinroq qayta urinib ko'ring."
+    },
+    "admin_alerts": {
+        "title": "Ogohlantirishlar",
+        "subtitle": "Tizim ogohlantirishlari va bildirishnomalar",
+        "no_alerts": "Hozircha ogohlantirish yo'q",
+        "no_alerts_desc": "Hammasi yaxshi ishlayapti. Muhim muammolar aniqlanmadi.",
+        "critical": "Muhim",
+        "warning": "Ogohlantirish",
+        "info": "Ma'lumot",
+        "total_critical": "Muhim ogohlantirishlar",
+        "total_warning": "Ogohlantirishlar",
+        "last_updated": "Oxirgi yangilanish",
+        "refresh": "Yangilash",
+        "old_disputes": "Eski nizolar",
+        "old_withdrawals": "Kutilayotgan yechimlar",
+        "suspicious_activity": "Shubhali faoliyat",
+        "pending_listings": "Kutilayotgan e'lonlar"
+    },
+    "admin_export": {
+        "title": "Ma'lumot eksporti",
+        "subtitle": "Ma'lumotlarni CSV fayl sifatida yuklab olish",
+        "date_range": "Sana oralig'i (ixtiyoriy)",
+        "from": "Dan",
+        "to": "Gacha",
+        "download_csv": "CSV yuklab olish",
+        "exporting": "Eksport qilinmoqda...",
+        "users": "Foydalanuvchilar",
+        "transactions": "Tranzaksiyalar",
+        "listings": "E'lonlar",
+        "trades": "Savdolar"
     }
 }

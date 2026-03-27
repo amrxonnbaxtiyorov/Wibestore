@@ -23,6 +23,11 @@ LISTING_STATUS_CHOICES = [
     ("rejected", "Rejected"),
 ]
 
+LISTING_TYPE_CHOICES = [
+    ("sell", "Sell"),
+    ("rent", "Rent"),
+]
+
 LOGIN_METHOD_CHOICES = [
     ("email", "Email"),
     ("phone", "Phone"),

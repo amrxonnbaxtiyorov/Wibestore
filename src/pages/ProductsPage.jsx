@@ -295,11 +295,14 @@ const ProductsPage = () => {
                                     account={{
                                         id: listing?.id,
                                         listing_code: listing?.listing_code,
+                                        listing_type: listing?.listing_type,
                                         gameId: listing?.game?.slug ?? listing?.game?.id,
-                                        // List API qaytaradi: game_name (ListingListSerializer). Detail API qaytaradi: game{name}
                                         gameName: listing?.game?.name ?? listing?.game_name ?? (t('common.unknown_game') || "Noma'lum o'yin"),
                                         title: listing?.title ?? '',
                                         price: Number(listing?.price) || 0,
+                                        rental_price_per_day: listing?.rental_price_per_day,
+                                        rental_period_days: listing?.rental_period_days,
+                                        rental_deposit: listing?.rental_deposit,
                                         seller: listing?.seller,
                                         image: listing?.images?.[0]?.image ?? listing?.image ?? listing?.primary_image ?? '',
                                         isLiked: listing?.is_favorited ?? false,

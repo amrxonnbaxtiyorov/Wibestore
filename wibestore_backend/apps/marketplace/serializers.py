@@ -59,6 +59,7 @@ class ListingSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "listing_code",
+            "listing_type",
             "seller",
             "game",
             "title",
@@ -73,6 +74,9 @@ class ListingSerializer(serializers.ModelSerializer):
             "warranty_days",
             "sale_percent",
             "sale_ends_at",
+            "rental_period_days",
+            "rental_price_per_day",
+            "rental_deposit",
             "login_method",
             "level",
             "rank",
@@ -120,6 +124,7 @@ class ListingCreateSerializer(serializers.ModelSerializer):
         model = Listing
         fields = [
             "id",
+            "listing_type",
             "game_id",
             "title",
             "description",
@@ -128,6 +133,9 @@ class ListingCreateSerializer(serializers.ModelSerializer):
             "warranty_days",
             "sale_percent",
             "sale_ends_at",
+            "rental_period_days",
+            "rental_price_per_day",
+            "rental_deposit",
             "login_method",
             "account_email",
             "account_password",
@@ -138,6 +146,15 @@ class ListingCreateSerializer(serializers.ModelSerializer):
             "features",
         ]
         read_only_fields = ["id"]
+
+    def validate(self, data):
+        listing_type = data.get("listing_type", "sell")
+        if listing_type == "rent":
+            if not data.get("rental_period_days"):
+                raise serializers.ValidationError({"rental_period_days": "Ijara muddatini kiriting."})
+            if not data.get("rental_price_per_day") and not data.get("price"):
+                raise serializers.ValidationError({"price": "Narxni kiriting."})
+        return data
 
     def validate_game_id(self, value):
         if not value or not str(value).strip():
@@ -192,6 +209,7 @@ class ListingListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "listing_code",
+            "listing_type",
             "title",
             "price",
             "original_price",
@@ -208,6 +226,9 @@ class ListingListSerializer(serializers.ModelSerializer):
             "warranty_days",
             "sale_percent",
             "sale_ends_at",
+            "rental_period_days",
+            "rental_price_per_day",
+            "rental_deposit",
             "status",
             "primary_image",
             "created_at",

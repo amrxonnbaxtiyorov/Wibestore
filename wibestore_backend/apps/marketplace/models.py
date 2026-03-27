@@ -6,13 +6,21 @@ Listing, ListingImage, Favorite, View models.
 from django.conf import settings
 from django.db import models
 
-from core.constants import LISTING_STATUS_CHOICES, LOGIN_METHOD_CHOICES
+from core.constants import LISTING_STATUS_CHOICES, LISTING_TYPE_CHOICES, LOGIN_METHOD_CHOICES
 from core.models import BaseModel, BaseSoftDeleteModel
 from core.utils import encrypt_sensitive_data, decrypt_sensitive_data
 
 
 class Listing(BaseSoftDeleteModel):
-    """Game account listing for sale."""
+    """Game account listing for sale or rent."""
+
+    listing_type = models.CharField(
+        max_length=10,
+        choices=LISTING_TYPE_CHOICES,
+        default="sell",
+        db_index=True,
+        help_text="sell = sotish, rent = ijarada berish",
+    )
 
     listing_code = models.CharField(
         max_length=10,
@@ -63,6 +71,21 @@ class Listing(BaseSoftDeleteModel):
         null=True,
         blank=True,
         help_text="Aksiya tugash vaqti",
+    )
+
+    # Rental (arenda) fields
+    rental_period_days = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="Ijara muddati (kun): 1, 3, 7, 14, 30",
+    )
+    rental_price_per_day = models.DecimalField(
+        max_digits=15, decimal_places=2, null=True, blank=True,
+        help_text="Kunlik ijara narxi",
+    )
+    rental_deposit = models.DecimalField(
+        max_digits=15, decimal_places=2, null=True, blank=True,
+        help_text="Kafolat depozit summasi (akkaunt qaytarilmasa ushlanadi)",
     )
 
     # Account details
@@ -127,6 +150,7 @@ class Listing(BaseSoftDeleteModel):
             models.Index(fields=["seller", "status"]),
             models.Index(fields=["game", "status", "created_at"]),
             models.Index(fields=["status", "is_premium"]),
+            models.Index(fields=["listing_type", "status"]),
             models.Index(fields=["price"]),
         ]
 

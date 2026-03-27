@@ -739,6 +739,16 @@ const AccountDetailPage = () => {
                                                 #{listing.listing_code}
                                             </span>
                                         )}
+                                        {listing.listing_type === 'rent' && (
+                                            <span style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                padding: '3px 10px', borderRadius: 'var(--radius-md)',
+                                                background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+                                                color: '#fff', fontSize: '12px', fontWeight: 700,
+                                            }}>
+                                                Arenda
+                                            </span>
+                                        )}
                                         {listing.is_premium && (
                                             <span className="badge badge-premium" style={{ display: 'inline-flex' }}>
                                                 ★ Premium
@@ -1090,6 +1100,10 @@ const AccountDetailPage = () => {
                                 <AccountCard key={acc.id} account={{
                                     id: acc.id,
                                     listing_code: acc.listing_code,
+                                    listing_type: acc.listing_type,
+                                    rental_price_per_day: acc.rental_price_per_day,
+                                    rental_period_days: acc.rental_period_days,
+                                    rental_deposit: acc.rental_deposit,
                                     gameId: acc.game?.slug || acc.game?.id || acc.gameId,
                                     gameName: acc.game?.name || acc.gameName,
                                     title: acc.title,

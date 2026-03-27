@@ -73,6 +73,10 @@ const HomePage = () => {
     const toAccountCard = (account) => ({
         id: account?.id,
         listing_code: account?.listing_code,
+        listing_type: account?.listing_type,
+        rental_price_per_day: account?.rental_price_per_day,
+        rental_period_days: account?.rental_period_days,
+        rental_deposit: account?.rental_deposit,
         gameId: account?.game?.slug ?? account?.game_slug ?? account?.game?.id ?? account?.gameId,
         gameName: account?.game?.name ?? account?.game_name ?? account?.gameName,
         title: account?.title,

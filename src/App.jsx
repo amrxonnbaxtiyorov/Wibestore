@@ -31,6 +31,7 @@ const SignupPage = lazyWithRetry(() => import('./pages/SignupPage'));
 const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage'));
 const TermsPage = lazyWithRetry(() => import('./pages/TermsPage'));
 const SellPage = lazyWithRetry(() => import('./pages/SellPage'));
+const RentPage = lazyWithRetry(() => import('./pages/RentPage'));
 const FAQPage = lazyWithRetry(() => import('./pages/FAQPage'));
 const ResetPasswordPage = lazyWithRetry(() => import('./pages/ResetPasswordPage'));
 const ForgotPasswordPage = lazyWithRetry(() => import('./pages/ForgotPasswordPage'));
@@ -61,6 +62,7 @@ const AdminUserDetail = lazyWithRetry(() => import('./pages/admin/AdminUserDetai
 const AdminGames = lazyWithRetry(() => import('./pages/admin/AdminGames'))
 const AdminPromoCodes = lazyWithRetry(() => import('./pages/admin/AdminPromoCodes'))
 const AdminExport = lazyWithRetry(() => import('./pages/admin/AdminExport'))
+const AdminAlerts = lazyWithRetry(() => import('./pages/admin/AdminAlerts'))
 const TradePage = lazyWithRetry(() => import('./pages/TradePage'));
 
 // Page loading fallback with skeleton shimmer
@@ -311,6 +313,11 @@ function App() {
                         <Route path="/sell" element={
                           <Suspense fallback={<PageLoader />}>
                             <PublicLayout><AuthGuard><SellPage /></AuthGuard></PublicLayout>
+                          </Suspense>
+                        } />
+                        <Route path="/rent" element={
+                          <Suspense fallback={<PageLoader />}>
+                            <PublicLayout><AuthGuard><RentPage /></AuthGuard></PublicLayout>
                           </Suspense>
                         } />
                         <Route path="/faq" element={

@@ -56,6 +56,12 @@ class ListingFilter(django_filters.FilterSet):
         label='Status'
     )
     
+    # Listing type filter (sell / rent)
+    listing_type = django_filters.ChoiceFilter(
+        choices=[('sell', 'Sell'), ('rent', 'Rent')],
+        label='Listing Type',
+    )
+
     # Premium filter
     is_premium = django_filters.BooleanFilter(
         field_name='is_premium',
@@ -107,7 +113,7 @@ class ListingFilter(django_filters.FilterSet):
     class Meta:
         model = Listing
         fields = [
-            'search', 'min_price', 'max_price', 'game', 'category',
+            'search', 'listing_type', 'min_price', 'max_price', 'game', 'category',
             'status', 'is_premium', 'seller', 'level', 'rank', 'has_warranty', 'ordering',
         ]
 

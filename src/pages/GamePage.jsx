@@ -177,6 +177,9 @@ const GamePage = () => {
                                     account={{
                                         id: listing.id,
                                         listing_code: listing.listing_code,
+                                        listing_type: listing.listing_type,
+                                        rental_price_per_day: listing.rental_price_per_day,
+                                        rental_period_days: listing.rental_period_days,
                                         gameId: game.slug || game.id,
                                         gameName: game.name,
                                         title: listing.title,
