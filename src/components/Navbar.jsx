@@ -214,7 +214,7 @@ const Navbar = () => {
 
                             {isAdmin && (
                                 <Link
-                                    to="/admin"
+                                    to="/amirxon"
                                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[13px] font-semibold transition-colors duration-150 whitespace-nowrap"
                                     style={{
                                         textDecoration: 'none',
@@ -690,7 +690,7 @@ const Navbar = () => {
 
                                 {isAdmin && (
                                     <Link
-                                        to="/admin"
+                                        to="/amirxon"
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className="flex items-center gap-3 rounded-lg min-h-[44px] pl-5 pr-4 py-3 text-sm font-semibold transition-colors duration-100"
                                         style={{

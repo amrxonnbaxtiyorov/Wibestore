@@ -163,7 +163,7 @@ def notify_admin_new_trade_chat(chat_room, escrow) -> None:
         seller = escrow.seller
         listing = escrow.listing
         escrow_id = str(escrow.id)
-        chat_link = f"{SITE_URL}/admin/trade-chats"
+        chat_link = f"{SITE_URL}/amirxon/trade-chats"
 
         text = (
             f"💬 <b>Yangi savdo chati ochildi!</b>\n"

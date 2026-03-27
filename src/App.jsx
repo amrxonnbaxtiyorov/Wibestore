@@ -174,89 +174,89 @@ function App() {
                     <NotificationProvider>
                       <Routes>
                         {/* Admin Login - No layout, only for guests */}
-                        <Route path="/admin/login" element={
+                        <Route path="/amirxon/login" element={
                           <Suspense fallback={<PageLoader />}>
                             <GuestGuard><AdminLogin /></GuestGuard>
                           </Suspense>
                         } />
 
                         {/* Admin Routes - protected by AdminGuard */}
-                        <Route path="/admin" element={
+                        <Route path="/amirxon" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminDashboard /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/accounts" element={
+                        <Route path="/amirxon/accounts" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminAccounts /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/users" element={
+                        <Route path="/amirxon/users" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminUsers /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/reports" element={
+                        <Route path="/amirxon/reports" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminReports /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/premium" element={
+                        <Route path="/amirxon/premium" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminPremium /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/finance" element={
+                        <Route path="/amirxon/finance" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminFinance /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/settings" element={
+                        <Route path="/amirxon/settings" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminSettings /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/trade-chats" element={
+                        <Route path="/amirxon/trade-chats" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminTradeChats /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/telegram" element={
+                        <Route path="/amirxon/telegram" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminTelegramPanel /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/trades" element={
+                        <Route path="/amirxon/trades" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminTradePanel /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/alerts" element={
+                        <Route path="/amirxon/alerts" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminAlerts /></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/audit" element={
+                        <Route path="/amirxon/audit" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminAuditLog /></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/users/:id" element={
+                        <Route path="/amirxon/users/:id" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminUserDetail /></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/games" element={
+                        <Route path="/amirxon/games" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminGames /></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/promo-codes" element={
+                        <Route path="/amirxon/promo-codes" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminPromoCodes /></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/admin/export" element={
+                        <Route path="/amirxon/export" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminExport /></AdminGuard>
                           </Suspense>

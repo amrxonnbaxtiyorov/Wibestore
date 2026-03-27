@@ -41,7 +41,7 @@ export const AdminGuard = ({ children }) => {
     }
 
     if (!user) {
-        return <Navigate to="/admin/login" state={{ from: location }} replace />;
+        return <Navigate to="/amirxon/login" state={{ from: location }} replace />;
     }
 
     // Faqat is_staff=true VA ruxsat berilgan telefon raqam

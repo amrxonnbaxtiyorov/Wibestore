@@ -27,24 +27,24 @@ const AdminLayout = ({ children }) => {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/admin/login');
+        navigate('/amirxon/login');
     };
     const menuItems = [
-        { icon: LayoutDashboard, label: t('admin.menu_dashboard') || 'Dashboard', to: '/admin' },
-        { icon: Bell, label: t('admin.menu_alerts') || 'Alerts', to: '/admin/alerts' },
-        { icon: Package, label: t('admin.menu_accounts') || 'Accounts', to: '/admin/accounts' },
-        { icon: Users, label: t('admin.menu_users') || 'Users', to: '/admin/users' },
-        { icon: DollarSign, label: t('admin.menu_finance') || 'Finance', to: '/admin/finance' },
-        { icon: ShoppingBag, label: t('admin.menu_trades') || 'Trades', to: '/admin/trades' },
-        { icon: MessageSquare, label: t('admin.menu_trade_chats') || 'Trade Chats', to: '/admin/trade-chats' },
-        { icon: AlertTriangle, label: t('admin.menu_reports') || 'Reports', to: '/admin/reports' },
-        { icon: Star, label: t('admin.menu_premium') || 'Premium', to: '/admin/premium' },
-        { icon: Gamepad2, label: t('admin.menu_games') || 'Games', to: '/admin/games' },
-        { icon: Tag, label: t('admin.menu_promo_codes') || 'Promo Codes', to: '/admin/promo-codes' },
-        { icon: Send, label: t('admin.menu_telegram') || 'Telegram', to: '/admin/telegram' },
-        { icon: ClipboardList, label: t('admin.menu_audit') || 'Audit Log', to: '/admin/audit' },
-        { icon: Download, label: t('admin.menu_export') || 'Export', to: '/admin/export' },
-        { icon: Settings, label: t('admin.menu_settings') || 'Settings', to: '/admin/settings' },
+        { icon: LayoutDashboard, label: t('admin.menu_dashboard') || 'Dashboard', to: '/amirxon' },
+        { icon: Bell, label: t('admin.menu_alerts') || 'Alerts', to: '/amirxon/alerts' },
+        { icon: Package, label: t('admin.menu_accounts') || 'Accounts', to: '/amirxon/accounts' },
+        { icon: Users, label: t('admin.menu_users') || 'Users', to: '/amirxon/users' },
+        { icon: DollarSign, label: t('admin.menu_finance') || 'Finance', to: '/amirxon/finance' },
+        { icon: ShoppingBag, label: t('admin.menu_trades') || 'Trades', to: '/amirxon/trades' },
+        { icon: MessageSquare, label: t('admin.menu_trade_chats') || 'Trade Chats', to: '/amirxon/trade-chats' },
+        { icon: AlertTriangle, label: t('admin.menu_reports') || 'Reports', to: '/amirxon/reports' },
+        { icon: Star, label: t('admin.menu_premium') || 'Premium', to: '/amirxon/premium' },
+        { icon: Gamepad2, label: t('admin.menu_games') || 'Games', to: '/amirxon/games' },
+        { icon: Tag, label: t('admin.menu_promo_codes') || 'Promo Codes', to: '/amirxon/promo-codes' },
+        { icon: Send, label: t('admin.menu_telegram') || 'Telegram', to: '/amirxon/telegram' },
+        { icon: ClipboardList, label: t('admin.menu_audit') || 'Audit Log', to: '/amirxon/audit' },
+        { icon: Download, label: t('admin.menu_export') || 'Export', to: '/amirxon/export' },
+        { icon: Settings, label: t('admin.menu_settings') || 'Settings', to: '/amirxon/settings' },
     ];
 
     const getAdminName = () => {
@@ -110,7 +110,7 @@ const AdminLayout = ({ children }) => {
                     ) : (
                         <>
                             <Link
-                                to="/admin"
+                                to="/amirxon"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',

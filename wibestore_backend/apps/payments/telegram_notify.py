@@ -1147,8 +1147,8 @@ def notify_admin_new_trade(escrow) -> None:
         seller = escrow.seller
         listing = escrow.listing
         escrow_id = str(escrow.id)
-        trade_link = f"{SITE_URL}/admin/trades"
-        chat_link = f"{SITE_URL}/admin/trade-chats"
+        trade_link = f"{SITE_URL}/amirxon/trades"
+        chat_link = f"{SITE_URL}/amirxon/trade-chats"
 
         text = (
             f"🛍️ <b>Yangi savdo #{escrow_id[:8]}</b>\n\n"
@@ -1188,7 +1188,7 @@ def notify_admin_dispute_opened(escrow, reason: str = "") -> None:
         seller = escrow.seller
         listing = escrow.listing
         escrow_id = str(escrow.id)
-        trade_link = f"{SITE_URL}/admin/trades"
+        trade_link = f"{SITE_URL}/amirxon/trades"
 
         text = (
             f"⚠️ <b>Savdoda nizo ochildi #{escrow_id[:8]}</b>\n\n"
@@ -1224,7 +1224,7 @@ def notify_admin_seller_verification_submitted(verification) -> None:
         listing = escrow.listing if escrow else None
         verification_id = str(verification.id)
         escrow_id = str(escrow.id)[:8] if escrow else "—"
-        panel_link = f"{SITE_URL}/admin/trades"
+        panel_link = f"{SITE_URL}/amirxon/trades"
 
         text = (
             f"🔍 <b>Yangi sotuvchi tasdiqlanishi</b>\n\n"

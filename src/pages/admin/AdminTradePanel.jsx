@@ -304,7 +304,7 @@ export default function AdminTradePanel() {
                 <div style={{ fontSize: 13 }}>{selectedTrade.updated_at ? new Date(selectedTrade.updated_at).toLocaleString() : '\u2014'}</div>
                 {selectedTrade.chat_room_id && (
                   <div style={{ fontSize: 13, marginTop: 4 }}>
-                    <a href="/admin/trade-chats" style={{ color: 'var(--color-accent-blue)' }}>{t('admin_trades.open_chat')}</a>
+                    <a href="/amirxon/trade-chats" style={{ color: 'var(--color-accent-blue)' }}>{t('admin_trades.open_chat')}</a>
                   </div>
                 )}
               </div>
