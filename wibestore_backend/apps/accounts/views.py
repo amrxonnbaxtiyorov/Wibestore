@@ -4,6 +4,7 @@ WibeStore Backend - Accounts Views (API)
 
 import logging
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -759,15 +760,13 @@ class TelegramRegisterView(APIView):
         )
 
         # JWT ni httpOnly cookie'da berish (XSS himoya)
-        from django.conf import settings as django_settings
-
         max_age_access = 60 * 15  # 15 min (SIMPLE_JWT default)
         response.set_cookie(
             key="access_token",
             value=access,
             max_age=max_age_access,
             httponly=True,
-            secure=not django_settings.DEBUG,
+            secure=not settings.DEBUG,
             samesite="Lax",
             path="/",
         )
@@ -776,7 +775,7 @@ class TelegramRegisterView(APIView):
             value=refresh,
             max_age=60 * 60 * 24 * 7,  # 7 kun
             httponly=True,
-            secure=not django_settings.DEBUG,
+            secure=not settings.DEBUG,
             samesite="Lax",
             path="/api/v1/auth/refresh/",
         )
