@@ -5,16 +5,17 @@ import { formatPrice } from '../data/mockData';
 import { resolveImageUrl } from '../lib/displayUtils';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useToast } from './ToastProvider';
 import { useAddToFavorites, useRemoveFromFavorites } from '../hooks/useListings';
 
 const AccountCard = ({ account, featured = false }) => {
     const { user, isAuthenticated } = useAuth();
     const { t } = useLanguage();
+    const { addToast } = useToast();
     const addToFavorites = useAddToFavorites();
     const removeFromFavorites = useRemoveFromFavorites();
-    // API dan kelgan is_favorited ustun; optimistik o'zgarish uchun faqat local isLiked
+    // Optimistic local state — API response bilan sinxronlashadi
     const [isLiked, setIsLiked] = useState(() => !!account.is_favorited);
-    const isLikedState = typeof account.is_favorited === 'boolean' ? account.is_favorited : isLiked;
 
     const handleLike = (e) => {
         e.preventDefault();
@@ -22,15 +23,22 @@ const AccountCard = ({ account, featured = false }) => {
         if (!isAuthenticated || !user) return;
         if (addToFavorites.isPending || removeFromFavorites.isPending) return;
 
-        if (isLikedState) {
-            removeFromFavorites.mutate(account.id, { onSettled: () => setIsLiked(false) });
-        } else {
-            addToFavorites.mutate(account.id, { onSettled: () => setIsLiked(true) });
-        }
+        const prevLiked = isLiked;
+        // Optimistic update — darhol UI ni o'zgartir
+        setIsLiked(!prevLiked);
+
+        const mutate = prevLiked ? removeFromFavorites.mutate : addToFavorites.mutate;
+        mutate(account.id, {
+            onError: () => {
+                // Xato bo'lsa oldingi holatga qaytarish
+                setIsLiked(prevLiked);
+                addToast({ type: 'error', title: 'Xatolik', message: "Sevimlilarga qo'shishda xatolik yuz berdi." });
+            },
+        });
     };
 
     // Fallback for missing data
-    const accountId = account.id || crypto.randomUUID();
+    const accountId = account.id || (typeof crypto !== 'undefined' && crypto.randomUUID?.()) || Math.random().toString(36).slice(2);
     const accountTitle = account.title || t('common.untitled_account');
     const accountPrice = account.price || 0;
     const accountGameName = account.gameName || account.game?.name || account.game_name || t('common.unknown_game');
@@ -158,15 +166,15 @@ const AccountCard = ({ account, featured = false }) => {
                             left: '12px',
                             width: '32px',
                             height: '32px',
-                            backgroundColor: isLikedState ? 'var(--color-accent-red)' : 'rgba(0,0,0,0.5)',
+                            backgroundColor: isLiked ? 'var(--color-accent-red)' : 'rgba(0,0,0,0.5)',
                             backdropFilter: 'blur(4px)',
                             color: '#fff',
                             border: 'none',
                             cursor: 'pointer',
                         }}
-                        aria-label={isLikedState ? 'Unlike' : 'Like'}
+                        aria-label={isLiked ? 'Unlike' : 'Like'}
                     >
-                        <Heart className={`w-3.5 h-3.5 ${isLikedState ? 'fill-current' : ''}`} />
+                        <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
                     </button>
                 )}
 

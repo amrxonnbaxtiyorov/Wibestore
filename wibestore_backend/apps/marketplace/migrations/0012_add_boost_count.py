@@ -13,6 +13,39 @@ We use SeparateDatabaseAndState to:
 from django.db import migrations, models
 
 
+def add_boost_count_if_missing(apps, schema_editor):
+    """Add boost_count column if it doesn't already exist (cross-DB compatible)."""
+    db_vendor = schema_editor.connection.vendor
+    if db_vendor == "postgresql":
+        schema_editor.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name = 'listings'
+                      AND column_name = 'boost_count'
+                ) THEN
+                    ALTER TABLE listings
+                        ADD COLUMN boost_count integer NOT NULL DEFAULT 0;
+                END IF;
+            END $$;
+        """)
+    else:
+        # SQLite / other: check via PRAGMA
+        with schema_editor.connection.cursor() as cursor:
+            cursor.execute("PRAGMA table_info(listings);")
+            columns = [row[1] for row in cursor.fetchall()]
+        if "boost_count" not in columns:
+            schema_editor.execute(
+                "ALTER TABLE listings ADD COLUMN boost_count integer NOT NULL DEFAULT 0;"
+            )
+
+
+def noop(apps, schema_editor):
+    pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -29,23 +62,7 @@ class Migration(migrations.Migration):
                 ),
             ],
             database_operations=[
-                migrations.RunSQL(
-                    sql="""
-                        DO $$
-                        BEGIN
-                            IF NOT EXISTS (
-                                SELECT 1
-                                FROM information_schema.columns
-                                WHERE table_name = 'listings'
-                                  AND column_name = 'boost_count'
-                            ) THEN
-                                ALTER TABLE listings
-                                    ADD COLUMN boost_count integer NOT NULL DEFAULT 0;
-                            END IF;
-                        END $$;
-                    """,
-                    reverse_sql="ALTER TABLE listings DROP COLUMN IF EXISTS boost_count;",
-                ),
+                migrations.RunPython(add_boost_count_if_missing, reverse_code=noop),
             ],
         ),
     ]

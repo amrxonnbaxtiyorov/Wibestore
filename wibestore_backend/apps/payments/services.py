@@ -44,6 +44,10 @@ class PaymentService:
     @db_transaction.atomic
     def create_withdrawal(user, amount: Decimal, payment_method_code: str) -> Transaction:
         """Create a withdrawal transaction."""
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        # Lock user row to prevent race condition (concurrent withdrawals)
+        user = User.objects.select_for_update().get(pk=user.pk)
         if user.balance < amount:
             raise InsufficientFundsError("Insufficient balance for withdrawal.")
 
@@ -99,6 +103,15 @@ class EscrowService:
         Chat yaratish, Telegram xabarlar va Celery tasklari
         PurchaseListingView tomonidan chaqiriladi (atomic tashqarida).
         """
+        from django.contrib.auth import get_user_model
+        from apps.marketplace.models import Listing as ListingModel
+
+        User = get_user_model()
+
+        # Lock buyer row and listing row to prevent race condition (double-spend / double-purchase)
+        buyer = User.objects.select_for_update().get(pk=buyer.pk)
+        listing = ListingModel.objects.select_for_update().get(pk=listing.pk)
+
         if listing.status != "active":
             raise BusinessLogicError("Listing is not available for purchase.")
 

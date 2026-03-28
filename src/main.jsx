@@ -19,6 +19,16 @@ try {
   // Intentionally ignore: localStorage may be unavailable (e.g. private mode)
 }
 
+// Warn about missing env vars in development
+if (import.meta.env.DEV) {
+  const requiredEnvs = ['VITE_API_BASE_URL', 'VITE_WS_BASE_URL'];
+  for (const key of requiredEnvs) {
+    if (!import.meta.env[key]) {
+      console.warn(`[WibeStore] Missing env var: ${key}. Check your .env file.`);
+    }
+  }
+}
+
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 const hasGoogleAuth = CLIENT_ID.length > 0
 

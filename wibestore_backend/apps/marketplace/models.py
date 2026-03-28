@@ -4,8 +4,10 @@ Listing, ListingImage, Favorite, View models.
 """
 
 import logging
+from decimal import Decimal
 
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 
 from core.constants import LISTING_STATUS_CHOICES, LISTING_TYPE_CHOICES, LOGIN_METHOD_CHOICES
@@ -47,9 +49,13 @@ class Listing(BaseSoftDeleteModel):
     )
     title = models.CharField(max_length=200)
     description = models.TextField()
-    price = models.DecimalField(max_digits=15, decimal_places=2)
+    price = models.DecimalField(
+        max_digits=15, decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.01"))],
+    )
     original_price = models.DecimalField(
         max_digits=15, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0.01"))],
         help_text="Original price before discount",
     )
     status = models.CharField(
@@ -89,10 +95,12 @@ class Listing(BaseSoftDeleteModel):
     )
     rental_price_per_day = models.DecimalField(
         max_digits=15, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0.01"))],
         help_text="Kunlik ijara narxi",
     )
     rental_deposit = models.DecimalField(
         max_digits=15, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0"))],
         help_text="Kafolat depozit summasi (akkaunt qaytarilmasa ushlanadi)",
     )
     # Custom time slots: [{"label": "1 soat", "price": 10000}, {"label": "Kechdan tongacha", "price": 50000}]

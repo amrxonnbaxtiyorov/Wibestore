@@ -12,7 +12,7 @@ from core.constants import (
     TRANSACTION_STATUS_CHOICES,
     TRANSACTION_TYPE_CHOICES,
 )
-from core.models import BaseModel
+from core.models import BaseModel, BaseSoftDeleteModel
 
 
 class PaymentMethod(BaseModel):
@@ -34,7 +34,7 @@ class PaymentMethod(BaseModel):
         return self.name
 
 
-class Transaction(BaseModel):
+class Transaction(BaseSoftDeleteModel):
     """Financial transaction record."""
 
     user = models.ForeignKey(

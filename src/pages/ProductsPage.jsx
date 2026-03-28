@@ -175,7 +175,10 @@ const ProductsPage = () => {
                                 min={0}
                                 placeholder={t('products.min_price') || 'Min narx'}
                                 value={priceRange.min || ''}
-                                onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) || 0 }))}
+                                onChange={(e) => {
+                                    const val = Math.max(0, Number(e.target.value) || 0);
+                                    setPriceRange(prev => ({ ...prev, min: val }));
+                                }}
                                 className="input input-md"
                                 style={{ width: '120px' }}
                             />
@@ -183,9 +186,13 @@ const ProductsPage = () => {
                             <input
                                 type="number"
                                 min={0}
+                                max={100000000}
                                 placeholder={t('products.max_price') || 'Max narx'}
                                 value={priceRange.max >= 10000000 ? '' : priceRange.max || ''}
-                                onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) || 10000000 }))}
+                                onChange={(e) => {
+                                    const val = Math.max(0, Math.min(100000000, Number(e.target.value) || 10000000));
+                                    setPriceRange(prev => ({ ...prev, max: val }));
+                                }}
                                 className="input input-md"
                                 style={{ width: '120px' }}
                             />

@@ -11,7 +11,13 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
+
+
+class PaymentActionThrottle(UserRateThrottle):
+    """Strict throttle for financial operations: deposit, withdraw, purchase."""
+    scope = "payment_action"
 
 from .models import DepositRequest, EscrowTransaction, SellerVerification, Transaction, WithdrawalRequest
 from .serializers import (
@@ -34,6 +40,7 @@ class DepositView(APIView):
     """POST /api/v1/payments/deposit/ — Create deposit."""
 
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [PaymentActionThrottle]
     serializer_class = DepositSerializer
 
     def post(self, request):
@@ -61,6 +68,7 @@ class WithdrawView(APIView):
     """POST /api/v1/payments/withdraw/ — Create withdrawal."""
 
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [PaymentActionThrottle]
     serializer_class = WithdrawSerializer
 
     def post(self, request):
@@ -112,6 +120,7 @@ class PurchaseListingView(APIView):
     """POST /api/v1/payments/purchase/ — Purchase a listing via escrow."""
 
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [PaymentActionThrottle]
     serializer_class = PurchaseListingSerializer
 
     def post(self, request):

@@ -44,10 +44,11 @@ const RentPage = () => {
     const [imageFiles, setImageFiles] = useState([]);
 
     const { mutate: createListing } = useCreateListing();
-    const { data: gamesData, isLoading: gamesLoading } = useGames();
+    const { data: gamesData, isLoading: gamesLoading, isError: gamesError } = useGames();
 
     const apiGamesList = Array.isArray(gamesData?.results) ? gamesData.results : (Array.isArray(gamesData) ? gamesData : []);
     const hasApiGames = apiGamesList.length > 0;
+    const gamesFailed = !gamesLoading && !hasApiGames && (gamesError || gamesData !== undefined);
     const topGamesForRent = hasApiGames ? getTopGamesForRent(apiGamesList).slice(0, 8) : [];
     const allGames = hasApiGames
         ? apiGamesList.map((g) => ({ id: g.id, slug: g.slug, name: g.name, image: resolveImageUrl(g.logo || g.image || g.banner) || null }))
@@ -322,8 +323,30 @@ const RentPage = () => {
                         ))}
                     </div>
 
+                    {/* Games loading / error state */}
+                    {gamesLoading && step === 1 && (
+                        <div style={{ ...cardStyle, textAlign: 'center', padding: '48px 24px' }}>
+                            <p style={{ color: 'var(--color-text-muted)', marginBottom: '12px' }}>O'yinlar yuklanmoqda...</p>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                {[1, 2, 3, 4].map((i) => (
+                                    <div key={i} style={{ width: '64px', height: '64px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-tertiary)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {gamesFailed && step === 1 && (
+                        <div style={{ ...cardStyle, textAlign: 'center', padding: '48px 24px' }}>
+                            <AlertCircle style={{ width: '48px', height: '48px', color: 'var(--color-accent-orange)', margin: '0 auto 16px' }} />
+                            <p style={{ color: 'var(--color-text-primary)', marginBottom: '8px' }}>O'yinlar ro'yxati yuklanmadi.</p>
+                            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)', marginBottom: '16px' }}>Sahifani yangilang yoki keyinroq qayta urinib ko'ring.</p>
+                            <button type="button" className="btn btn-primary btn-md" onClick={() => window.location.reload()}>
+                                Sahifani yangilash
+                            </button>
+                        </div>
+                    )}
+
                     {/* Step 1: Game + Time Slots */}
-                    {step === 1 && (
+                    {step === 1 && !gamesLoading && !gamesFailed && (
                         <div style={cardStyle}>
                             <h2 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', marginBottom: '20px', color: 'var(--color-text-primary)' }}>
                                 Asosiy ma'lumotlar

@@ -100,8 +100,8 @@ class ListingSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def get_listing_code(self, obj) -> str:
-        return getattr(obj, "listing_code", "") or ""
+    def get_listing_code(self, obj):
+        return getattr(obj, "listing_code", None) or None
 
     def get_is_favorited(self, obj) -> bool:
         request = self.context.get("request")
@@ -147,11 +147,18 @@ class ListingCreateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id"]
 
+    ALLOWED_RENTAL_PERIOD_DAYS = {1, 3, 7, 14, 30}
+
     def validate(self, data):
         listing_type = data.get("listing_type", "sell")
         if listing_type == "rent":
-            if not data.get("rental_period_days"):
+            rental_days = data.get("rental_period_days")
+            if not rental_days:
                 raise serializers.ValidationError({"rental_period_days": "Ijara muddatini kiriting."})
+            if rental_days not in self.ALLOWED_RENTAL_PERIOD_DAYS:
+                raise serializers.ValidationError({
+                    "rental_period_days": f"Ijara muddati faqat {sorted(self.ALLOWED_RENTAL_PERIOD_DAYS)} kunlardan biri bo'lishi mumkin."
+                })
             if not data.get("rental_price_per_day") and not data.get("price"):
                 raise serializers.ValidationError({"price": "Narxni kiriting."})
 
@@ -163,15 +170,16 @@ class ListingCreateSerializer(serializers.ModelSerializer):
         raw = str(value).strip()
         try:
             uuid.UUID(raw)
-            if not Game.objects.filter(pk=raw).exists():
-                raise serializers.ValidationError("Bunday o'yin topilmadi.")
+            game = Game.objects.filter(pk=raw, is_active=True).first()
+            if not game:
+                raise serializers.ValidationError("Bunday o'yin topilmadi yoki faol emas.")
             return raw
         except (ValueError, TypeError):
-            game = Game.objects.filter(slug=raw).first()
+            game = Game.objects.filter(slug=raw, is_active=True).first()
             if not game:
-                game = Game.objects.filter(slug__iexact=raw).first()
+                game = Game.objects.filter(slug__iexact=raw, is_active=True).first()
             if not game:
-                raise serializers.ValidationError("Bunday o'yin topilmadi.")
+                raise serializers.ValidationError("Bunday o'yin topilmadi yoki faol emas.")
             return str(game.pk)
 
     def create(self, validated_data):
@@ -268,8 +276,8 @@ class ListingListSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-    def get_listing_code(self, obj) -> str:
-        return getattr(obj, "listing_code", "") or ""
+    def get_listing_code(self, obj):
+        return getattr(obj, "listing_code", None) or None
 
     def get_is_favorited(self, obj) -> bool:
         request = self.context.get("request")

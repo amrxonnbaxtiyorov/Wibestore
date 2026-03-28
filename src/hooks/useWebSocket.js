@@ -20,8 +20,8 @@ export const useWebSocket = (url, options = {}) => {
         onMessage,
         onClose,
         onError,
-        reconnectInterval = 3000,
-        maxReconnectAttempts = 5,
+        reconnectInterval = 1000,
+        maxReconnectAttempts = 6,
         protocols = [],
     } = options;
 
@@ -92,10 +92,11 @@ export const useWebSocket = (url, options = {}) => {
                 if (onCloseRef.current) onCloseRef.current(event);
                 if (import.meta.env.DEV) console.log('[WebSocket] Disconnected:', url);
 
-                // Attempt to reconnect
+                // Attempt to reconnect with exponential backoff (1s, 2s, 4s, 8s, 16s, capped at 30s)
                 if (retryCountRef.current < maxReconnectAttempts && mountedRef.current) {
                     const currentRetry = retryCountRef.current;
-                    if (import.meta.env.DEV) console.log(`[WebSocket] Reconnecting in ${reconnectInterval}ms... (attempt ${currentRetry + 1}/${maxReconnectAttempts})`);
+                    const delay = Math.min(reconnectInterval * Math.pow(2, currentRetry), 30000);
+                    if (import.meta.env.DEV) console.log(`[WebSocket] Reconnecting in ${delay}ms... (attempt ${currentRetry + 1}/${maxReconnectAttempts})`);
                     reconnectTimeoutRef.current = setTimeout(() => {
                         if (mountedRef.current && connectRef.current) {
                             const nextRetry = currentRetry + 1;
@@ -103,7 +104,7 @@ export const useWebSocket = (url, options = {}) => {
                             setRetryCount(nextRetry);
                             connectRef.current();
                         }
-                    }, reconnectInterval);
+                    }, delay);
                 } else {
                     if (import.meta.env.DEV) console.error('[WebSocket] Max reconnect attempts reached');
                 }

@@ -282,7 +282,9 @@ class AdminReportsView(SafeListMixin, generics.ListAPIView):
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
-        return Report.objects.filter(status="pending").order_by("created_at")
+        return Report.objects.filter(status="pending").select_related(
+            "reporter", "reported_user", "reported_listing", "resolved_by"
+        ).order_by("created_at")
 
 
 @extend_schema(tags=["Admin"])
@@ -321,7 +323,6 @@ class AdminUsersView(generics.ListAPIView):
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
-        from apps.accounts.serializers import UserSerializer
         return User.objects.all().order_by("-created_at")
 
     def get_serializer_class(self):

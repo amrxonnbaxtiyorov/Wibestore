@@ -227,6 +227,7 @@ REST_FRAMEWORK = {
         "anon": "30/minute",
         "user": "100/minute",
         "auth": "10/minute",
+        "payment_action": "10/minute",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_RENDERER_CLASSES": [
