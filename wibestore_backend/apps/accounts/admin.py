@@ -186,22 +186,14 @@ class ReferralAdmin(admin.ModelAdmin):
 @admin.register(TelegramBotStat)
 class TelegramBotStatAdmin(admin.ModelAdmin):
     list_display = [
-        "telegram_id", "telegram_username", "total_commands",
-        "last_command", "last_active_at", "created_at",
+        "telegram_id", "telegram_username", "telegram_first_name",
+        "total_commands_sent", "registration_completed",
+        "is_blocked", "last_interaction_at",
     ]
-    list_filter = ["created_at"]
-    search_fields = ["telegram_id", "telegram_username"]
-    readonly_fields = ["telegram_id", "telegram_username", "created_at", "updated_at"]
-    ordering = ["-created_at"]
-
-    def total_commands(self, obj):
-        return getattr(obj, "commands_count", "—")
-    total_commands.short_description = "Buyruqlar"
-
-    def last_command(self, obj):
-        return getattr(obj, "last_command", "—")
-    last_command.short_description = "Oxirgi buyruq"
-
-    def last_active_at(self, obj):
-        return getattr(obj, "last_active_at", None) or obj.updated_at
-    last_active_at.short_description = "Oxirgi faollik"
+    list_filter = ["registration_completed", "is_blocked", "created_at"]
+    search_fields = ["telegram_id", "telegram_username", "telegram_first_name"]
+    readonly_fields = [
+        "telegram_id", "telegram_username", "telegram_first_name", "telegram_last_name",
+        "first_interaction_at", "last_interaction_at", "created_at", "updated_at",
+    ]
+    ordering = ["-last_interaction_at"]

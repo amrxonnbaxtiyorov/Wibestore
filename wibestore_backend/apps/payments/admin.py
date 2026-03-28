@@ -4,7 +4,7 @@ WibeStore Backend - Payments Admin
 
 from decimal import Decimal
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils import timezone
 from django.utils.html import format_html
 
@@ -243,7 +243,7 @@ class DepositRequestAdmin(admin.ModelAdmin):
                     self.message_user(
                         request,
                         f"#{str(dr.id)[:8]}: Telegram xabar yuborilmadi — {e}",
-                        level="WARNING",
+                        level=messages.WARNING,
                     )
 
             except DepositRequest.DoesNotExist:
@@ -257,7 +257,7 @@ class DepositRequestAdmin(admin.ModelAdmin):
                 f"✅ {approved} ta so'rov tasdiqlandi. Balanslar yangilandi va Telegram xabarlar yuborildi.",
             )
         for w in warnings:
-            self.message_user(request, f"⚠️ {w}", level="WARNING")
+            self.message_user(request, f"⚠️ {w}", level=messages.WARNING)
 
     action_approve.short_description = "✅ Tasdiqlash (balans qo'shish + Telegram xabar)"
 
@@ -278,7 +278,7 @@ class DepositRequestAdmin(admin.ModelAdmin):
                 self.message_user(
                     request,
                     f"#{str(dr.id)[:8]}: Telegram xabar yuborilmadi — {e}",
-                    level="WARNING",
+                    level=messages.WARNING,
                 )
 
         self.message_user(request, f"❌ {rejected} ta so'rov rad etildi. Foydalanuvchilarga Telegram xabar yuborildi.")
