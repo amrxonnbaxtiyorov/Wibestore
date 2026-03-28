@@ -290,12 +290,12 @@ CORS_ALLOW_CREDENTIALS = True
 TELEGRAM_BOT_SECRET = os.environ.get("TELEGRAM_BOT_SECRET") or os.environ.get("BOT_SECRET_KEY", "")
 TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "wibestorebot")
 
-# Admin raqam — faqat shu raqam egasi admin panelga kira oladi
-ADMIN_PHONE_NUMBERS = [s.strip() for s in os.environ.get("ADMIN_PHONE_NUMBERS", "+998942014300").split(",") if s.strip()]
+# Admin raqamlar — ADMIN_PHONE_NUMBERS env var orqali o'rnating (vergul bilan ajratilgan)
+ADMIN_PHONE_NUMBERS = [s.strip() for s in os.environ.get("ADMIN_PHONE_NUMBERS", "").split(",") if s.strip()]
 
-# Premium/Pro tarif narxlari (UZS) — bot va backend bir xil qiymatni ishlatsin
-PREMIUM_PRICE_UZS = os.environ.get("PREMIUM_PRICE_UZS", "50000")
-PRO_PRICE_UZS = os.environ.get("PRO_PRICE_UZS", "30000")
+# Premium/Pro tarif narxlari (UZS) — int sifatida saqlash (env var string bo'lishi mumkin)
+PREMIUM_PRICE_UZS = int(os.environ.get("PREMIUM_PRICE_UZS", "50000"))
+PRO_PRICE_UZS = int(os.environ.get("PRO_PRICE_UZS", "30000"))
 
 CORS_ALLOW_HEADERS = [
     "accept",

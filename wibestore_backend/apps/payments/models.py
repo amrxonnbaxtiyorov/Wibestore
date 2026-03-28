@@ -153,15 +153,13 @@ class EscrowTransaction(BaseModel):
     @staticmethod
     def _generate_trade_code():
         """Generate unique trade code like WB-TRD-10001."""
-        import random
+        import secrets
         for _ in range(10):
-            code = f"WB-TRD-{random.randint(10000, 99999)}"
+            code = f"WB-TRD-{secrets.randbelow(90000) + 10000}"
             if not EscrowTransaction.objects.filter(trade_code=code).exists():
                 return code
-        # Fallback: use timestamp
-        from django.utils import timezone
-        ts = int(timezone.now().timestamp()) % 100000
-        return f"WB-TRD-{ts}"
+        # Fallback: use hex token (collision-proof)
+        return f"WB-TRD-{secrets.token_hex(3).upper()}"
 
     def __str__(self) -> str:
         code = self.trade_code or "N/A"

@@ -7,19 +7,36 @@ import os
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.urls import include, path, re_path
 from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 
+def _rate_limit(request, key_prefix: str, limit: int = 30, window: int = 60) -> bool:
+    """Simple cache-based rate limiter. Returns True if request is allowed."""
+    ip = request.META.get("HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "unknown"))
+    ip = ip.split(",")[0].strip()
+    cache_key = f"rl:{key_prefix}:{ip}"
+    count = cache.get(cache_key, 0)
+    if count >= limit:
+        return False
+    cache.set(cache_key, count + 1, window)
+    return True
+
+
 def health_check(request):
-    """Basic health check — returns 200 OK."""
+    """Basic health check — returns 200 OK. Rate limited: 60/min per IP."""
+    if not _rate_limit(request, "health", limit=60, window=60):
+        return JsonResponse({"error": "Too many requests"}, status=429)
     return JsonResponse({"status": "ok"})
 
 
 def storage_check(request):
-    """Storage diagnostics — shows which file storage backend is active."""
+    """Storage diagnostics — shows which file storage backend is active. Rate limited: 10/min per IP."""
+    if not _rate_limit(request, "storage", limit=10, window=60):
+        return JsonResponse({"error": "Too many requests"}, status=429)
     from django.conf import settings as s
     storage_backend = getattr(s, "DEFAULT_FILE_STORAGE", "django.core.files.storage.FileSystemStorage")
     is_s3 = "s3" in storage_backend.lower() or "S3Boto3" in storage_backend
@@ -51,7 +68,9 @@ def storage_check(request):
 
 
 def health_check_detailed(request):
-    """Detailed health check — tests DB, cache, and Celery connectivity."""
+    """Detailed health check — tests DB, cache, and Celery connectivity. Rate limited: 10/min per IP."""
+    if not _rate_limit(request, "health_detailed", limit=10, window=60):
+        return JsonResponse({"error": "Too many requests"}, status=429)
     checks = {"database": "ok", "cache": "ok", "celery": "ok"}
     status_code = 200
 

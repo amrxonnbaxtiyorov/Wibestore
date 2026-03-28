@@ -48,7 +48,7 @@ const ProductsPage = () => {
 
     // API hooks — faqat aniq filterlar yuboriladi (undefined yo'q, tez cache)
     const { data: gamesData } = useGames();
-    const { data, isLoading, isFetching, fetchNextPage, hasNextPage } = useListings({
+    const { data, isLoading, isError, isFetching, fetchNextPage, hasNextPage } = useListings({
         ...(selectedGame !== 'all' && { game: selectedGame }),
         ...(searchQuery.trim() && { search: searchQuery.trim() }),
         ...(priceRange.min > 0 && { min_price: priceRange.min }),
@@ -280,6 +280,11 @@ const ProductsPage = () => {
                 {/* Results */}
                 {isLoading ? (
                     <SkeletonGrid count={12} />
+                ) : isError ? (
+                    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-error)' }}>
+                        <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Server xatosi</p>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>E'lonlarni yuklashda muammo. Sahifani yangilang.</p>
+                    </div>
                 ) : filteredAccounts.length > 0 ? (
                     <>
                         <div

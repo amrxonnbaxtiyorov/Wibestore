@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.db.models import Sum
 
-from apps.accounts.models import PasswordHistory, Referral, TelegramRegistrationCode
+from apps.accounts.models import PasswordHistory, Referral, TelegramBotStat, TelegramRegistrationCode
 from apps.subscriptions.models import UserSubscription
 
 User = get_user_model()
@@ -181,3 +181,27 @@ class ReferralAdmin(admin.ModelAdmin):
     list_display = ["referrer", "referred", "referral_code_used", "bonus_given_to_referrer", "created_at"]
     list_filter = ["bonus_given_to_referrer"]
     search_fields = ["referrer__email", "referred__email"]
+
+
+@admin.register(TelegramBotStat)
+class TelegramBotStatAdmin(admin.ModelAdmin):
+    list_display = [
+        "telegram_id", "telegram_username", "total_commands",
+        "last_command", "last_active_at", "created_at",
+    ]
+    list_filter = ["created_at"]
+    search_fields = ["telegram_id", "telegram_username"]
+    readonly_fields = ["telegram_id", "telegram_username", "created_at", "updated_at"]
+    ordering = ["-created_at"]
+
+    def total_commands(self, obj):
+        return getattr(obj, "commands_count", "—")
+    total_commands.short_description = "Buyruqlar"
+
+    def last_command(self, obj):
+        return getattr(obj, "last_command", "—")
+    last_command.short_description = "Oxirgi buyruq"
+
+    def last_active_at(self, obj):
+        return getattr(obj, "last_active_at", None) or obj.updated_at
+    last_active_at.short_description = "Oxirgi faollik"

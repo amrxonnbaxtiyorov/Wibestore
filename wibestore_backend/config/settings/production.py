@@ -20,15 +20,13 @@ DEBUG = False
 # PRODUCTION SECURITY CHECKS
 # ============================================================
 _raw_secret = os.environ.get("SECRET_KEY", "").strip()
-if _raw_secret in ("", "django-insecure-change-me-in-production"):
-    from django.core.management.utils import get_random_secret_key
-    SECRET_KEY = get_random_secret_key()
-    logger.debug(
-        "SECRET_KEY o'rnatilmagan; vaqtincha random. Railway: Variables → SECRET_KEY. "
-        "Kalit: python -c \"from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())\""
+if not _raw_secret or _raw_secret == "django-insecure-change-me-in-production":
+    raise ValueError(
+        "SECRET_KEY must be set in production. "
+        "Railway: Variables → Add → SECRET_KEY. "
+        "Generate: python -c \"from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())\""
     )
-else:
-    SECRET_KEY = _raw_secret
+SECRET_KEY = _raw_secret
 
 # FERNET_KEY: encryption uchun (account credentials)
 _fernet_raw = os.environ.get("FERNET_KEY", "").strip()

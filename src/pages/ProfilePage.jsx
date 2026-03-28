@@ -23,7 +23,7 @@ const ProfilePage = () => {
     const [showAvatarModal, setShowAvatarModal] = useState(false);
 
     // API hooks
-    const { isLoading: profileLoading } = useProfile();
+    const { isLoading: profileLoading, isError: profileError } = useProfile();
     const { data: listingsData, isLoading: listingsLoading } = useProfileListings();
     const { data: favoritesData } = useProfileFavorites();
     const { data: purchasesData } = useProfilePurchases();
@@ -112,6 +112,16 @@ const ProfilePage = () => {
     ];
 
     if (!user) return null;
+
+    // Error state
+    if (profileError) {
+        return (
+            <div className="page-enter" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px' }}>
+                <p style={{ fontSize: '18px', fontWeight: '600', color: 'var(--color-error)' }}>Profil yuklanmadi</p>
+                <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>Server bilan bog'liq muammo. Sahifani yangilang.</p>
+            </div>
+        );
+    }
 
     // Loading state
     if (profileLoading) {

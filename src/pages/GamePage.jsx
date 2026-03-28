@@ -14,8 +14,8 @@ const GamePage = () => {
     const [searchQuery, setSearchQuery] = useState('');
 
     // API hooks
-    const { data: apiGame, isLoading: gameLoading } = useGame(gameId);
-    const { data, isLoading, fetchNextPage, hasNextPage } = useGameListings(gameId, {
+    const { data: apiGame, isLoading: gameLoading, isError: gameError } = useGame(gameId);
+    const { data, isLoading, isError: listingsError, fetchNextPage, hasNextPage } = useGameListings(gameId, {
         ordering: sortBy === 'price-low' ? 'price' : sortBy === 'price-high' ? '-price' : '-created_at',
     });
 
@@ -162,7 +162,12 @@ const GamePage = () => {
                 </div>
 
                 {/* Results */}
-                {isLoading ? (
+                {(gameError || listingsError) ? (
+                    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-error)' }}>
+                        <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Server xatosi</p>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>Ma'lumotlarni yuklashda muammo. Sahifani yangilang.</p>
+                    </div>
+                ) : isLoading ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
                         {[...Array(8)].map((_, i) => (
                             <SkeletonLoader key={i} />
