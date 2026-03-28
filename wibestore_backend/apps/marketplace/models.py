@@ -56,9 +56,12 @@ class Listing(BaseSoftDeleteModel):
         max_length=20, choices=LISTING_STATUS_CHOICES, default="pending", db_index=True
     )
     is_premium = models.BooleanField(default=False, db_index=True)
+    is_boosted = models.BooleanField(default=False, db_index=True)
+    boost_count = models.PositiveIntegerField(default=0)
+    boost_until = models.DateTimeField(null=True, blank=True)
     views_count = models.PositiveIntegerField(default=0)
     favorites_count = models.PositiveIntegerField(default=0)
-    boost_count = models.PositiveIntegerField(default=0)
+    seller_ip = models.GenericIPAddressField(null=True, blank=True)
 
     # Warranty (kafolat) — days seller guarantees account
     warranty_days = models.PositiveSmallIntegerField(
@@ -445,3 +448,64 @@ class SavedSearch(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.user.email})"
+
+
+class SpamFilter(models.Model):
+    """Taqiqlangan so'z yoki regex pattern filtri."""
+
+    FILTER_TYPE_CHOICES = [
+        ("word", "Word"),
+        ("regex", "Regex"),
+    ]
+    ACTION_CHOICES = [
+        ("reject", "Reject"),
+        ("flag", "Flag"),
+    ]
+
+    filter_type = models.CharField(max_length=20, choices=FILTER_TYPE_CHOICES, default="word")
+    word = models.CharField(max_length=255, blank=True, default="")
+    pattern = models.CharField(
+        max_length=500, blank=True, default="",
+        help_text="Taqiqlangan so'z yoki regex pattern",
+    )
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES, default="reject")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "spam_filters"
+        ordering = ["-created_at"]
+        verbose_name = "Spam Filter"
+        verbose_name_plural = "Spam Filters"
+
+    def __str__(self) -> str:
+        return f"{self.filter_type}: {self.word or self.pattern}"
+
+
+class PriceWatch(models.Model):
+    """Foydalanuvchi belgilagan narx diapazoni uchun ogohlantirish."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="price_watches",
+    )
+    game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        related_name="price_watches",
+    )
+    min_price = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    max_price = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    last_notified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "price_watches"
+        ordering = ["-created_at"]
+        verbose_name = "Price Watch"
+        verbose_name_plural = "Price Watches"
+
+    def __str__(self) -> str:
+        return f"{self.user.email} watching {self.game.name}"
