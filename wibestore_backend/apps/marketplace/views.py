@@ -10,6 +10,7 @@ from django.db.models import F
 from django_filters.rest_framework.backends import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, parsers, permissions, status
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -86,6 +87,8 @@ class ListingListCreateView(generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         try:
             return super().create(request, *args, **kwargs)
+        except DRFValidationError:
+            raise  # Let DRF handle validation errors as 400
         except Exception as e:
             logger.error("Listing create failed: %s — %s", type(e).__name__, e, exc_info=True)
             detail = str(e)[:300]

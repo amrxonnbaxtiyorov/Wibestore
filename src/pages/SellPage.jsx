@@ -144,7 +144,20 @@ const SellPage = () => {
     };
 
     const handleSubmit = async () => {
-        if (!validateStep(3)) return;
+        // Validate all steps before submitting
+        const allErrors = {};
+        if (!formData.gameId) allErrors.gameId = t('sell.err_select_game') || "O'yinni tanlang";
+        if (!formData.title?.trim()) allErrors.title = t('sell.err_enter_title') || 'Sarlavha kiriting';
+        if (!formData.price || formData.price <= 0) allErrors.price = t('sell.err_enter_price') || 'Narxni kiriting';
+        if (!formData.description?.trim()) allErrors.description = t('sell.err_enter_description') || 'Tavsif kiriting';
+        if (!formData.accountEmail?.trim()) allErrors.accountEmail = t('sell.err_enter_account_email') || 'Akkaunt emailini kiriting';
+        if (!formData.accountPassword?.trim()) allErrors.accountPassword = t('sell.err_enter_account_password') || 'Akkaunt parolini kiriting';
+        if (Object.keys(allErrors).length > 0) {
+            setErrors(allErrors);
+            if (allErrors.gameId || allErrors.title || allErrors.price) setStep(1);
+            else if (allErrors.description) setStep(2);
+            return;
+        }
 
         // gameId UUID bo'lishi kerak — mock game tanlangan bo'lsa (API yuklanmagan), xabar beramiz
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -211,13 +224,10 @@ const SellPage = () => {
                         // Backend custom format: { success: false, error: { code, message, details } }
                         if (data.error) {
                             const errObj = data.error;
-                            if (errObj.details && Object.keys(errObj.details).length > 0) {
-                                // Show first field-level error message
-                                const firstKey = Object.keys(errObj.details)[0];
-                                const val = errObj.details[firstKey];
-                                message = Array.isArray(val) ? val[0] : String(val);
-                            } else if (errObj.message && errObj.message !== 'An error occurred.') {
+                            if (errObj.message && errObj.message !== 'An error occurred.') {
                                 message = errObj.message;
+                            } else if (errObj.details?.detail) {
+                                message = String(errObj.details.detail);
                             }
                         } else if (typeof data === 'string') {
                             message = data;
