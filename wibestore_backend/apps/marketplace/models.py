@@ -58,6 +58,7 @@ class Listing(BaseSoftDeleteModel):
     is_premium = models.BooleanField(default=False, db_index=True)
     views_count = models.PositiveIntegerField(default=0)
     favorites_count = models.PositiveIntegerField(default=0)
+    boost_count = models.PositiveIntegerField(default=0)
 
     # Warranty (kafolat) — days seller guarantees account
     warranty_days = models.PositiveSmallIntegerField(
