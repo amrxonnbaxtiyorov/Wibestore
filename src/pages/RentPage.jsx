@@ -61,6 +61,7 @@ const RentPage = () => {
         deposit: '', level: '', rank: '', skins: '', features: [],
         loginMethod: 'email', accountEmail: '', accountPassword: '', additionalInfo: '',
         timeSlots: [{ label: '', price: '' }],
+        rentalPeriodDays: '',
     });
     const [errors, setErrors] = useState({});
 
@@ -124,6 +125,7 @@ const RentPage = () => {
                 if (slot.label.trim() && !slot.price) newErrors[`slot_price_${i}`] = 'Narxni kiriting';
                 if (!slot.label.trim() && slot.price) newErrors[`slot_label_${i}`] = 'Vaqtni kiriting';
             });
+            if (!formData.rentalPeriodDays) newErrors.rentalPeriodDays = 'Ijara muddatini tanlang';
         }
         if (stepNum === 2) {
             if (!formData.description.trim()) newErrors.description = 'Tavsif kiriting';
@@ -162,6 +164,7 @@ const RentPage = () => {
                 title: formData.title.trim(),
                 description: formData.description.trim(),
                 price: minPrice,
+                rental_period_days: parseInt(formData.rentalPeriodDays, 10),
                 rental_time_slots: validSlots.map(s => ({ label: s.label.trim(), price: Number(s.price) })),
                 rental_deposit: formData.deposit ? Number(formData.deposit) : null,
                 level: (formData.level || '').toString(),
@@ -229,7 +232,7 @@ const RentPage = () => {
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         <button onClick={() => navigate('/profile')} className="btn btn-primary btn-lg" style={{ width: '100%' }}>Profilga o'tish</button>
-                        <button onClick={() => { setSubmitted(false); setStep(1); setFormData({ gameId: '', gameSlug: '', title: '', description: '', deposit: '', level: '', rank: '', skins: '', features: [], loginMethod: 'email', accountEmail: '', accountPassword: '', additionalInfo: '', timeSlots: [{ label: '', price: '' }] }); setImageFiles([]); }} className="btn btn-secondary btn-lg" style={{ width: '100%' }}>
+                        <button onClick={() => { setSubmitted(false); setStep(1); setFormData({ gameId: '', gameSlug: '', title: '', description: '', deposit: '', level: '', rank: '', skins: '', features: [], loginMethod: 'email', accountEmail: '', accountPassword: '', additionalInfo: '', timeSlots: [{ label: '', price: '' }], rentalPeriodDays: '' }); setImageFiles([]); }} className="btn btn-secondary btn-lg" style={{ width: '100%' }}>
                             Yana e'lon berish
                         </button>
                     </div>
@@ -434,6 +437,30 @@ const RentPage = () => {
                                     placeholder="100 000" className="input input-lg" style={{ width: '100%' }} />
                                 <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
                                     Akkaunt qaytarilmasa ushlanadigan summa
+                                </p>
+                            </label>
+
+                            {/* Rental Period */}
+                            <label style={{ display: 'block', marginBottom: '16px' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>
+                                    <Clock className="w-4 h-4" /> Ijara muddati (max) *
+                                </span>
+                                <select
+                                    value={formData.rentalPeriodDays}
+                                    onChange={e => setFormData({ ...formData, rentalPeriodDays: e.target.value })}
+                                    className="input input-lg"
+                                    style={{ width: '100%' }}
+                                >
+                                    <option value="">Tanlang...</option>
+                                    <option value="1">1 kun</option>
+                                    <option value="3">3 kun</option>
+                                    <option value="7">7 kun (1 hafta)</option>
+                                    <option value="14">14 kun (2 hafta)</option>
+                                    <option value="30">30 kun (1 oy)</option>
+                                </select>
+                                {errors.rentalPeriodDays && <p style={errorStyle}>{errors.rentalPeriodDays}</p>}
+                                <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                                    Akkaunt qancha muddat ijaraga berilishi mumkin
                                 </p>
                             </label>
 
