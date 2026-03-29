@@ -23,7 +23,7 @@ export const useCreateReview = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ escrow_id, listing_id, rating, comment }) => {
+        mutationFn: async ({ escrow_id, rating, comment }) => {
             const { data } = await apiClient.post('/reviews/', { escrow_id, rating, comment });
             return data;
         },

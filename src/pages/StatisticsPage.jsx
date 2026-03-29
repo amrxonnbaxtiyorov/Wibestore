@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Trophy, TrendingUp, Users, ShoppingBag, Star, Medal, Crown, Award } from 'lucide-react';
+import { Trophy, TrendingUp, Users, ShoppingBag, Star } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useListings, useGames } from '../hooks';
 
@@ -14,13 +14,6 @@ const StatisticsPage = () => {
     const totalListings = listingsData?.pages?.[0]?.count ?? 0;
     const rawGames = gamesData?.results ?? gamesData ?? [];
     const gamesCount = Array.isArray(rawGames) ? rawGames.length : 0;
-
-    const getRankIcon = (index) => {
-        if (index === 0) return <Crown className="w-5 h-5" style={{ color: 'var(--color-premium-gold-light)' }} />;
-        if (index === 1) return <Medal className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />;
-        if (index === 2) return <Award className="w-5 h-5" style={{ color: 'var(--color-accent-orange)' }} />;
-        return <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-muted)' }}>{index + 1}</span>;
-    };
 
     const stats = [
         { icon: ShoppingBag, label: t('stats.total_listings') || 'Total Listings', value: totalListings > 0 ? `${totalListings}+` : '—', color: 'var(--color-accent-blue)' },

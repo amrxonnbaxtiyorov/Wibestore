@@ -17,7 +17,7 @@ const ChatWidget = () => {
         : 0;
     const prevUnreadRef = useRef(unreadCount);
 
-    const isAdminPage = pathname.includes('/admin');
+    const isAdminPage = pathname.includes('/amirxon');
     const isChatPage = pathname === '/chat' || pathname.startsWith('/chat/');
 
     useEffect(() => {

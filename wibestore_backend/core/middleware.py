@@ -34,7 +34,7 @@ class RequestLoggingMiddleware:
 
 
 class ContentSecurityPolicyMiddleware:
-    """Add security headers to all responses."""
+    """Add security headers to all responses including CSP."""
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -45,4 +45,19 @@ class ContentSecurityPolicyMiddleware:
         response["X-Frame-Options"] = "DENY"
         response["X-XSS-Protection"] = "1; mode=block"
         response["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+        # CSP headers (production)
+        from django.conf import settings
+        if not settings.DEBUG:
+            csp_parts = [
+                "default-src 'self'",
+                "script-src 'self' https://accounts.google.com",
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+                "img-src 'self' data: https: blob:",
+                "connect-src 'self' https://api.wibestore.net wss://api.wibestore.net https://exemplary-fascination-production-9514.up.railway.app wss://exemplary-fascination-production-9514.up.railway.app",
+                "font-src 'self' https://fonts.gstatic.com",
+                "frame-src 'self' https://accounts.google.com",
+            ]
+            response["Content-Security-Policy"] = "; ".join(csp_parts)
+
         return response

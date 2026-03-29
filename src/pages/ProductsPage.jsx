@@ -48,7 +48,7 @@ const ProductsPage = () => {
 
     // API hooks — faqat aniq filterlar yuboriladi (undefined yo'q, tez cache)
     const { data: gamesData } = useGames();
-    const { data, isLoading, isFetching, fetchNextPage, hasNextPage } = useListings({
+    const { data, isLoading, isError, isFetching, fetchNextPage, hasNextPage } = useListings({
         ...(selectedGame !== 'all' && { game: selectedGame }),
         ...(searchQuery.trim() && { search: searchQuery.trim() }),
         ...(priceRange.min > 0 && { min_price: priceRange.min }),
@@ -71,10 +71,13 @@ const ProductsPage = () => {
     }
 
     if (searchQuery) {
+        const q = searchQuery.toLowerCase();
         filteredListings = filteredListings.filter(l =>
             l && (
-                l.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                l.description?.toLowerCase().includes(searchQuery.toLowerCase())
+                l.listing_code?.toLowerCase().includes(q) ||
+                l.title?.toLowerCase().includes(q) ||
+                l.description?.toLowerCase().includes(q) ||
+                l.level?.toLowerCase().includes(q)
             )
         );
     }
@@ -131,7 +134,7 @@ const ProductsPage = () => {
                             />
                             <input
                                 type="text"
-                                placeholder={t('products.search_placeholder') || 'Akkauntlarni qidirish...'}
+                                placeholder={t('products.search_placeholder') || 'Kod, nom yoki level bo\'yicha qidirish...'}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="input input-md w-full"
@@ -277,6 +280,11 @@ const ProductsPage = () => {
                 {/* Results */}
                 {isLoading ? (
                     <SkeletonGrid count={12} />
+                ) : isError ? (
+                    <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-error)' }}>
+                        <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Server xatosi</p>
+                        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>E'lonlarni yuklashda muammo. Sahifani yangilang.</p>
+                    </div>
                 ) : filteredAccounts.length > 0 ? (
                     <>
                         <div
@@ -291,11 +299,15 @@ const ProductsPage = () => {
                                     key={listing?.id ?? `listing-${index}`}
                                     account={{
                                         id: listing?.id,
+                                        listing_code: listing?.listing_code,
+                                        listing_type: listing?.listing_type,
                                         gameId: listing?.game?.slug ?? listing?.game?.id,
-                                        // List API qaytaradi: game_name (ListingListSerializer). Detail API qaytaradi: game{name}
                                         gameName: listing?.game?.name ?? listing?.game_name ?? (t('common.unknown_game') || "Noma'lum o'yin"),
                                         title: listing?.title ?? '',
                                         price: Number(listing?.price) || 0,
+                                        rental_price_per_day: listing?.rental_price_per_day,
+                                        rental_period_days: listing?.rental_period_days,
+                                        rental_deposit: listing?.rental_deposit,
                                         seller: listing?.seller,
                                         image: listing?.images?.[0]?.image ?? listing?.image ?? listing?.primary_image ?? '',
                                         isLiked: listing?.is_favorited ?? false,

@@ -216,4 +216,47 @@ export default {
     useRemoveFromFavorites,
     useTrackView,
     useApplyPromo,
+    useRequestVideoUpload,
+    useVideoStatus,
+    useRequestVideoView,
+};
+
+
+/**
+ * Video yuklash uchun Telegram deep link olish
+ */
+export const useRequestVideoUpload = () => {
+    return useMutation({
+        mutationFn: async (listingId) => {
+            const { data } = await apiClient.post(`/listings/${listingId}/video-upload/`);
+            return data;
+        },
+    });
+};
+
+/**
+ * Video holati (yuklangan yoki yo'q)
+ */
+export const useVideoStatus = (listingId) => {
+    return useQuery({
+        queryKey: ['video-status', listingId],
+        queryFn: async () => {
+            const { data } = await apiClient.get(`/listings/${listingId}/video-upload/`);
+            return data;
+        },
+        enabled: !!listingId,
+        refetchInterval: 5000, // Poll every 5s while on page
+    });
+};
+
+/**
+ * Video ko'rish uchun Telegram deep link olish
+ */
+export const useRequestVideoView = () => {
+    return useMutation({
+        mutationFn: async (listingId) => {
+            const { data } = await apiClient.post(`/listings/${listingId}/video-view/`);
+            return data;
+        },
+    });
 };

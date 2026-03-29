@@ -72,6 +72,11 @@ const HomePage = () => {
     // Listing → AccountCard format
     const toAccountCard = (account) => ({
         id: account?.id,
+        listing_code: account?.listing_code,
+        listing_type: account?.listing_type,
+        rental_price_per_day: account?.rental_price_per_day,
+        rental_period_days: account?.rental_period_days,
+        rental_deposit: account?.rental_deposit,
         gameId: account?.game?.slug ?? account?.game_slug ?? account?.game?.id ?? account?.gameId,
         gameName: account?.game?.name ?? account?.game_name ?? account?.gameName,
         title: account?.title,
@@ -81,7 +86,7 @@ const HomePage = () => {
         image: account?.images?.[0]?.image ?? account?.primary_image ?? account?.image ?? '',
         isLiked: account?.is_favorited ?? account?.isLiked ?? false,
         isPremium: account?.is_premium ?? account?.isPremium ?? account?.seller?.is_premium ?? false,
-        is_pro: account?.seller?.is_pro ?? (account?.seller?.plan === 'pro') ?? false,
+        is_pro: account?.seller?.is_pro || account?.seller?.plan === 'pro' || false,
     });
 
     // Akkauntlarni obuna bo'yicha tartiblash:

@@ -3,6 +3,20 @@
    WibeStore Admin Dashboard
    ================================ */
 
+/* ── Page & Layout ── */
+.admin-page {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.admin-page-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0 0 24px 0;
+    line-height: 1.3;
+}
+
 /* Admin-specific responsive adjustments */
 @media (max-width: 1023px) {
     .admin-main {
@@ -14,9 +28,21 @@
     .admin-main {
         padding: 16px !important;
     }
+    .admin-page-title {
+        font-size: var(--font-size-xl);
+    }
 }
 
-/* Admin sidebar active link indicator */
+/* ── Sidebar ── */
+.admin-sidebar-link {
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.admin-sidebar-link:hover {
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}
+
 .admin-sidebar-link-active {
     position: relative;
 }
@@ -33,12 +59,23 @@
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
-/* Smooth scrolling in admin tables */
+.admin-logout-btn {
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.admin-logout-btn:hover {
+    background-color: var(--color-error-bg, rgba(248, 81, 73, 0.1));
+    color: var(--color-accent-red);
+}
+
+/* ── Tables ── */
 .admin-table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-default);
 }
 
 .admin-table-wrapper::-webkit-scrollbar {
@@ -54,18 +91,226 @@
     border-radius: 3px;
 }
 
-/* Admin header search focus state */
-.admin-search-input:focus-within {
-    box-shadow: 0 0 0 3px var(--color-focus-ring);
-    border-color: var(--color-border-accent);
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
 }
 
-/* Admin card hover animation */
+.admin-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+    background-color: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border-default);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.admin-table td {
+    padding: 12px 16px;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border-muted, var(--color-border-default));
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+
+.admin-table tbody tr {
+    transition: background-color 0.1s ease;
+}
+
+.admin-table tbody tr:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ── Cards ── */
 .admin-card-hover {
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
 .admin-card-hover:hover {
     border-color: var(--color-border-accent);
     box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+
+/* ── Header Search ── */
+.admin-search-input:focus-within {
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+    border-color: var(--color-border-accent);
+}
+
+/* ── Notification Button ── */
+.admin-notification-btn {
+    transition: background-color 0.15s ease;
+}
+
+.admin-notification-btn:hover {
+    background-color: var(--color-bg-tertiary);
+}
+
+/* ── Stats Cards ── */
+.admin-stat-card {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.admin-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.admin-stat-value {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.admin-stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Filters bar ── */
+.admin-filters {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.admin-filters .input {
+    max-width: 260px;
+}
+
+/* ── Badges in admin ── */
+.admin-table .badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    white-space: nowrap;
+}
+
+/* ── Text helpers ── */
+.admin-text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.admin-text-wrap {
+    word-break: break-word;
+    white-space: normal;
+}
+
+/* ── Responsive grid ── */
+@media (max-width: 768px) {
+    .admin-table {
+        font-size: var(--font-size-xs);
+    }
+
+    .admin-table th,
+    .admin-table td {
+        padding: 8px 10px;
+    }
+
+    .admin-stat-value {
+        font-size: var(--font-size-xl);
+    }
+
+    .admin-stat-icon {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* ── Loading spinner for admin ── */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ── Tabs in admin ── */
+.admin-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background-color: var(--color-bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-default);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.admin-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.admin-tab {
+    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.admin-tab:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-tertiary);
+}
+
+.admin-tab-active {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ── Empty state ── */
+.admin-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.admin-empty-state h3 {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: 8px;
+}
+
+.admin-empty-state p {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
 }

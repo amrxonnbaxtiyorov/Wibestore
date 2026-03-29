@@ -160,7 +160,7 @@ export default function TradePage() {
   })
 
   // Akkauntni topshirdim (mavjud)
-  const deliverAccount = useMutation({
+  const _deliverAccount = useMutation({
     mutationFn: () => apiClient.post(`/payments/escrow/${escrowId}/seller-confirm/`).then(r => r.data),
     onSuccess: invalidate,
     onError: handleMutationError,

@@ -378,7 +378,7 @@ export default function AdminTradeChats() {
                             </div>
 
                             {/* Credentials auto-send hint */}
-                            {!activeChat?.credentials_sent && activeChat?.escrow_status === 'paid' && (
+                            {activeChat?.escrow_status === 'paid' && (
                                 <div style={{
                                     padding: '8px 20px',
                                     backgroundColor: 'var(--color-warning-bg)',

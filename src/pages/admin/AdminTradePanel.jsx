@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '../../lib/apiClient'
 import { useLanguage } from '../../context/LanguageContext'
@@ -13,6 +14,14 @@ const STATUS_COLORS = {
 }
 
 const TABS = ['trades', 'verifications']
+
+function TradeBadge({ status, statusLabels }) {
+  return (
+    <span className={`badge ${STATUS_COLORS[status] || 'badge-blue'}`}>
+      {statusLabels[status] || status}
+    </span>
+  )
+}
 
 export default function AdminTradePanel() {
   const { t } = useLanguage()
@@ -36,14 +45,6 @@ export default function AdminTradePanel() {
     disputed: t('admin_trades.filter_disputed'),
     refunded: t('admin_trades.filter_refunded'),
     cancelled: t('trade.status_cancelled'),
-  }
-
-  function TradeBadge({ status }) {
-    return (
-      <span className={`badge ${STATUS_COLORS[status] || 'badge-blue'}`}>
-        {statusLabels[status] || status}
-      </span>
-    )
   }
 
   const { data: tradeStats } = useQuery({
@@ -187,6 +188,7 @@ export default function AdminTradePanel() {
                 <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
+                      <th>Kod</th>
                       <th>{t('admin_trades.table.account')}</th>
                       <th>{t('admin_trades.table.buyer')}</th>
                       <th>{t('admin_trades.table.seller')}</th>
@@ -201,19 +203,28 @@ export default function AdminTradePanel() {
                       <tr key={tr.id} style={{ cursor: 'pointer', background: selectedTrade?.id === tr.id ? 'var(--color-info-bg)' : '' }}
                         onClick={() => setSelectedTrade(tr)}>
                         <td>
-                          <div style={{ fontWeight: 500 }}>{tr.listing_title || '\u2014'}</div>
+                          <code style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-accent)', whiteSpace: 'nowrap' }}>{tr.trade_code || '\u2014'}</code>
+                        </td>
+                        <td>
+                          <Link to={`/account/${tr.listing_id}`} target="_blank" onClick={e => e.stopPropagation()} style={{ fontWeight: 500, color: 'var(--color-text-accent)', textDecoration: 'none' }} title="E'lonni saytda ko'rish">
+                            {tr.listing_title || '\u2014'}
+                          </Link>
                           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{tr.listing_game}</div>
                         </td>
                         <td>
-                          <div>{tr.buyer_username || tr.buyer_email}</div>
+                          <Link to={`/seller/${tr.buyer_id}`} target="_blank" onClick={e => e.stopPropagation()} style={{ color: 'var(--color-text-primary)', textDecoration: 'none' }} title="Xaridor profilini ko'rish">
+                            {tr.buyer_username || tr.buyer_email}
+                          </Link>
                           {tr.buyer_telegram && <div style={{ fontSize: 12, color: 'var(--color-accent-blue)' }}>@{tr.buyer_telegram}</div>}
                         </td>
                         <td>
-                          <div>{tr.seller_username || tr.seller_email}</div>
+                          <Link to={`/seller/${tr.seller_id}`} target="_blank" onClick={e => e.stopPropagation()} style={{ color: 'var(--color-text-primary)', textDecoration: 'none' }} title="Sotuvchi profilini ko'rish">
+                            {tr.seller_username || tr.seller_email}
+                          </Link>
                           {tr.seller_telegram && <div style={{ fontSize: 12, color: 'var(--color-accent-blue)' }}>@{tr.seller_telegram}</div>}
                         </td>
                         <td style={{ fontWeight: 600 }}>{Number(tr.amount).toLocaleString()} UZS</td>
-                        <td><TradeBadge status={tr.status} /></td>
+                        <td><TradeBadge status={tr.status} statusLabels={statusLabels} /></td>
                         <td style={{ fontSize: 12 }}>{tr.created_at ? new Date(tr.created_at).toLocaleString() : '\u2014'}</td>
                         <td>
                           <button className="btn btn-sm btn-secondary" onClick={e => { e.stopPropagation(); setSelectedTrade(tr) }}>
@@ -245,9 +256,18 @@ export default function AdminTradePanel() {
                 <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)', fontSize: 18 }} onClick={() => setSelectedTrade(null)}>{'\u2715'}</button>
               </div>
 
-              <div style={{ marginBottom: 12 }}>
-                <TradeBadge status={selectedTrade.status} />
-                <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--color-text-secondary)' }}>#{selectedTrade.id?.slice(0, 8)}</span>
+              <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <TradeBadge status={selectedTrade.status} statusLabels={statusLabels} />
+                {selectedTrade.trade_code && (
+                  <code style={{
+                    fontSize: 13, fontWeight: 700, color: 'var(--color-text-accent)',
+                    background: 'var(--color-info-bg)', padding: '3px 10px',
+                    borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border-accent)',
+                  }}>
+                    {selectedTrade.trade_code}
+                  </code>
+                )}
+                <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>#{selectedTrade.id?.slice(0, 8)}</span>
               </div>
 
               <div style={{ marginBottom: 16 }}>
@@ -284,7 +304,7 @@ export default function AdminTradePanel() {
                 <div style={{ fontSize: 13 }}>{selectedTrade.updated_at ? new Date(selectedTrade.updated_at).toLocaleString() : '\u2014'}</div>
                 {selectedTrade.chat_room_id && (
                   <div style={{ fontSize: 13, marginTop: 4 }}>
-                    <a href="/admin/trade-chats" style={{ color: 'var(--color-accent-blue)' }}>{t('admin_trades.open_chat')}</a>
+                    <a href="/amirxon/trade-chats" style={{ color: 'var(--color-accent-blue)' }}>{t('admin_trades.open_chat')}</a>
                   </div>
                 )}
               </div>
@@ -432,11 +452,11 @@ export default function AdminTradePanel() {
               <div><b>{t('admin_trades.table.account')}:</b> {selectedVerif.listing_title}</div>
               <div><b>{t('admin_trades.table.earnings')}:</b> {selectedVerif.seller_earnings ? `${Number(selectedVerif.seller_earnings).toLocaleString()} UZS` : '\u2014'}</div>
               <div><b>{t('admin_trades.full_name')}:</b> {selectedVerif.full_name || '\u2014'}</div>
-              {selectedVerif.location_lat && (
+              {selectedVerif.location_latitude && (
                 <div>
                   <b>{t('admin_trades.location')}:</b>{' '}
-                  <a href={`https://maps.google.com/?q=${selectedVerif.location_lat},${selectedVerif.location_lng}`} target="_blank" rel="noreferrer" style={{ color: 'var(--color-accent-blue)' }}>
-                    {selectedVerif.location_lat}, {selectedVerif.location_lng}
+                  <a href={`https://maps.google.com/?q=${selectedVerif.location_latitude},${selectedVerif.location_longitude}`} target="_blank" rel="noreferrer" style={{ color: 'var(--color-accent-blue)' }}>
+                    {selectedVerif.location_latitude}, {selectedVerif.location_longitude}
                   </a>
                 </div>
               )}

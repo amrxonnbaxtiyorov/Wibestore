@@ -52,7 +52,7 @@ export default function AvatarEditModal({ onClose }) {
                         onSuccess: async () => {
                             try {
                                 await refreshUser();
-                            } catch (_) {
+                            } catch {
                                 // Profile updated; refresh may use different endpoint
                             }
                             addToast({

@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.db.models import Sum
 
-from apps.accounts.models import PasswordHistory, Referral, TelegramRegistrationCode
+from apps.accounts.models import PasswordHistory, Referral, TelegramBotStat, TelegramRegistrationCode
 from apps.subscriptions.models import UserSubscription
 
 User = get_user_model()
@@ -181,3 +181,19 @@ class ReferralAdmin(admin.ModelAdmin):
     list_display = ["referrer", "referred", "referral_code_used", "bonus_given_to_referrer", "created_at"]
     list_filter = ["bonus_given_to_referrer"]
     search_fields = ["referrer__email", "referred__email"]
+
+
+@admin.register(TelegramBotStat)
+class TelegramBotStatAdmin(admin.ModelAdmin):
+    list_display = [
+        "telegram_id", "telegram_username", "telegram_first_name",
+        "total_commands_sent", "registration_completed",
+        "is_blocked", "last_interaction_at",
+    ]
+    list_filter = ["registration_completed", "is_blocked", "created_at"]
+    search_fields = ["telegram_id", "telegram_username", "telegram_first_name"]
+    readonly_fields = [
+        "telegram_id", "telegram_username", "telegram_first_name", "telegram_last_name",
+        "first_interaction_at", "last_interaction_at", "created_at", "updated_at",
+    ]
+    ordering = ["-last_interaction_at"]

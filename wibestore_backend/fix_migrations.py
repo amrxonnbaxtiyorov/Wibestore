@@ -34,24 +34,21 @@ def get_existing_columns(table_name):
 
 def main():
     recorder = MigrationRecorder(connection)
-
-    # Ensure migration recorder table exists
     recorder.ensure_schema()
 
-    # applied_migrations() returns (app_label, migration_name) tuples, not named objects
     applied = {(r[0], r[1]) for r in recorder.applied_migrations()}
     tables = get_existing_tables()
 
     faked = []
 
-    # accounts.0003: telegram_registration_codes table + user.telegram_id
+    # ── accounts.0003: telegram_registration_codes ──
     migration_key = ("accounts", "0003_telegram_registration")
     if migration_key not in applied:
         if "telegram_registration_codes" in tables:
             recorder.record_applied(*migration_key)
             faked.append(migration_key)
 
-    # accounts.0004: full_name column on telegram_registration_codes
+    # ── accounts.0004: full_name column ──
     migration_key = ("accounts", "0004_telegramregistrationcode_full_name_and_code_length")
     if migration_key not in applied:
         if "telegram_registration_codes" in tables:
@@ -59,6 +56,114 @@ def main():
             if "full_name" in cols:
                 recorder.record_applied(*migration_key)
                 faked.append(migration_key)
+
+    # ── marketplace migrations: listing_code and rental fields ──
+    if "listings" in tables:
+        listing_cols = get_existing_columns("listings")
+
+        # Step 1: Ensure listing_code column exists
+        if "listing_code" not in listing_cols:
+            print("  [PREEMPTIVE] Adding listing_code column to listings table...")
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "ALTER TABLE listings ADD COLUMN listing_code VARCHAR(10) NULL"
+                    )
+                    cursor.execute(
+                        """
+                        WITH numbered AS (
+                            SELECT id, ROW_NUMBER() OVER (ORDER BY created_at) + 1000 AS num
+                            FROM listings
+                            WHERE listing_code = '' OR listing_code IS NULL
+                        )
+                        UPDATE listings SET listing_code = 'WB-' || numbered.num
+                        FROM numbered WHERE listings.id = numbered.id
+                        """
+                    )
+                    cursor.execute(
+                        "CREATE UNIQUE INDEX IF NOT EXISTS listings_listing_code_uniq ON listings (listing_code)"
+                    )
+                print("  [PREEMPTIVE] listing_code column added and populated.")
+                listing_cols.add("listing_code")
+            except Exception as e:
+                print(f"  [PREEMPTIVE] listing_code creation failed: {e}")
+
+        # Step 2: Fix listing_code constraints (critical!)
+        if "listing_code" in listing_cols:
+            # 2a: Make column nullable
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("ALTER TABLE listings ALTER COLUMN listing_code DROP NOT NULL")
+                print("  [FIX] listing_code: DROP NOT NULL done")
+            except Exception as e:
+                print(f"  [FIX] listing_code DROP NOT NULL: {e}")
+
+            # 2b: Drop default
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("ALTER TABLE listings ALTER COLUMN listing_code DROP DEFAULT")
+                print("  [FIX] listing_code: DROP DEFAULT done")
+            except Exception as e:
+                print(f"  [FIX] listing_code DROP DEFAULT: {e}")
+
+            # 2c: Convert empty strings to NULL
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute("UPDATE listings SET listing_code = NULL WHERE listing_code = ''")
+                    count = cursor.rowcount
+                    if count:
+                        print(f"  [FIX] Converted {count} empty listing_codes to NULL")
+            except Exception as e:
+                print(f"  [FIX] listing_code empty→NULL: {e}")
+
+            # 2d: Populate NULL listing_codes with sequential codes
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        WITH max_code AS (
+                            SELECT COALESCE(MAX(
+                                CASE WHEN listing_code ~ '^WB-[0-9]+$'
+                                     THEN CAST(REPLACE(listing_code, 'WB-', '') AS INTEGER)
+                                     ELSE 0 END
+                            ), 1000) AS max_num FROM listings
+                        ),
+                        to_update AS (
+                            SELECT id, ROW_NUMBER() OVER (ORDER BY created_at) AS rn
+                            FROM listings
+                            WHERE listing_code IS NULL OR listing_code = ''
+                        )
+                        UPDATE listings SET listing_code = 'WB-' || (max_code.max_num + to_update.rn)
+                        FROM to_update, max_code
+                        WHERE listings.id = to_update.id
+                        """
+                    )
+                    count = cursor.rowcount
+                    if count:
+                        print(f"  [FIX] Populated {count} NULL listing_codes with sequential codes")
+            except Exception as e:
+                print(f"  [FIX] listing_code populate: {e}")
+
+        # Step 3: FAKE marketplace migrations if columns already exist
+        # This is CRITICAL — without faking 0006, all subsequent migrations (0007-0011) won't run
+        marketplace_migrations_to_fake = [
+            ("marketplace", "0006_add_listing_code", ["listing_code"]),
+            ("marketplace", "0007_add_rental_fields", ["rental_period_days", "rental_price_per_day", "rental_deposit"]),
+            ("marketplace", "0008_add_rental_time_slots", ["rental_time_slots"]),
+        ]
+
+        for app, name, required_cols in marketplace_migrations_to_fake:
+            mkey = (app, name)
+            if mkey not in applied:
+                if all(c in listing_cols for c in required_cols):
+                    recorder.record_applied(*mkey)
+                    faked.append(mkey)
+
+        # 0009 adds ListingPromotion table
+        mkey = ("marketplace", "0009_add_listing_promotion")
+        if mkey not in applied and "listing_promotions" in tables:
+            recorder.record_applied(*mkey)
+            faked.append(mkey)
 
     if faked:
         for app, name in faked:

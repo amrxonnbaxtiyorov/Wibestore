@@ -151,7 +151,10 @@ class PurchaseListingView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        # Open chat between buyer, seller and site admin(s) after payment
+        # ── Side-effectlar: atomic tashqarida (Telegram, chat, Celery) ──
+        # Bular xato bo'lsa ham xarid bekor qilinmaydi.
+
+        # 1. Chat yaratish
         chat_room_id = None
         try:
             from apps.messaging.services import create_order_chat_for_escrow
@@ -160,14 +163,18 @@ class PurchaseListingView(APIView):
         except Exception as chat_err:
             logger.warning("Could not create order chat for escrow %s: %s", escrow.id, chat_err)
 
-        # Notify buyer, seller and admins via Telegram (after chat room is known — link is correct)
+        # 2. Telegram bildirishnomalar
         try:
-            from .telegram_notify import notify_purchase_created
+            from .telegram_notify import (
+                notify_purchase_created, notify_admin_new_trade, notify_trade_confirmation_request,
+            )
             notify_purchase_created(escrow, chat_room_id=chat_room_id)
+            notify_admin_new_trade(escrow)
+            notify_trade_confirmation_request(escrow, chat_link=chat_room_id or "")
         except Exception as tg_err:
-            logger.warning("Telegram purchase notification failed: %s", tg_err)
+            logger.warning("Telegram purchase notifications failed: %s", tg_err)
 
-        # Sotuvchiga web (in-app) notification
+        # 3. In-app notification
         try:
             from apps.notifications.services import NotificationService
             chat_link = f"/chat/{chat_room_id}" if chat_room_id else "/chat"
@@ -179,15 +186,19 @@ class PurchaseListingView(APIView):
                 data={"escrow_id": str(escrow.id), "listing_id": str(escrow.listing.id)},
                 link=chat_link,
             )
+            NotificationService.notify_trade_status_change(escrow, "paid")
         except Exception as notif_err:
             logger.warning("In-app notification for seller failed: %s", notif_err)
 
-        # Sotuvchi va haridorga tasdiqlash so'rovi (ikkala tomonga tugmalar bilan)
+        # 4. Celery auto-release task
         try:
-            from .telegram_notify import notify_trade_confirmation_request
-            notify_trade_confirmation_request(escrow, chat_link=chat_room_id or "")
-        except Exception as tg_err2:
-            logger.warning("Telegram trade confirmation request failed: %s", tg_err2)
+            from .tasks import release_escrow_payment
+            release_escrow_payment.apply_async(
+                args=[str(escrow.id)],
+                countdown=getattr(settings, "ESCROW_AUTO_RELEASE_HOURS", 24) * 3600,
+            )
+        except Exception as celery_err:
+            logger.warning("Could not schedule auto-release for escrow %s: %s", escrow.id, celery_err)
 
         escrow_data = EscrowTransactionSerializer(escrow).data
         if chat_room_id:
@@ -584,6 +595,8 @@ class TelegramCallbackView(APIView):
                 else:
                     post_system_message_to_order_chat(escrow,
                         "Sotuvchi akkauntni topshirganini tasdiqladi. Haridor tasdiqlashi kutilmoqda.")
+                    from .telegram_notify import notify_trade_party_confirmed
+                    notify_trade_party_confirmed(escrow, confirmed_by="seller")
             except Exception as e:
                 logger.warning("Chat/Telegram notify (trade_seller_ok) failed: %s", e)
             if both_confirmed:
@@ -611,6 +624,8 @@ class TelegramCallbackView(APIView):
                 else:
                     post_system_message_to_order_chat(escrow,
                         "Haridor akkauntni qabul qilganini tasdiqladi. Sotuvchi tasdiqlashi kutilmoqda.")
+                    from .telegram_notify import notify_trade_party_confirmed
+                    notify_trade_party_confirmed(escrow, confirmed_by="buyer")
             except Exception as e:
                 logger.warning("Chat/Telegram notify (trade_buyer_ok) failed: %s", e)
             if both_confirmed:
@@ -718,20 +733,48 @@ class SellerVerificationSubmitView(APIView):
 
         verification_id = request.data.get("verification_id")
         step = request.data.get("step")
+        telegram_id = request.data.get("telegram_id")
 
-        if not verification_id or not step:
+        if not step:
             return Response(
-                {"success": False, "error": "verification_id va step majburiy"},
+                {"success": False, "error": "step majburiy"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            verification = SellerVerification.objects.select_related(
-                "escrow", "escrow__listing", "seller"
-            ).get(pk=verification_id)
-        except SellerVerification.DoesNotExist:
+        verification = None
+
+        # 1. verification_id orqali topish
+        if verification_id:
+            try:
+                verification = SellerVerification.objects.select_related(
+                    "escrow", "escrow__listing", "seller"
+                ).get(pk=verification_id)
+            except (SellerVerification.DoesNotExist, Exception):
+                verification = None
+
+        # 2. Topilmasa — telegram_id orqali aktiv verifikatsiyani topish
+        if not verification and telegram_id:
+            active_statuses = [
+                SellerVerification.STATUS_PENDING,
+                SellerVerification.STATUS_PASSPORT_FRONT,
+                SellerVerification.STATUS_PASSPORT_BACK,
+                SellerVerification.STATUS_VIDEO,
+                SellerVerification.STATUS_REJECTED,
+            ]
+            verification = (
+                SellerVerification.objects
+                .select_related("escrow", "escrow__listing", "seller")
+                .filter(
+                    seller__telegram_id=telegram_id,
+                    status__in=active_statuses,
+                )
+                .order_by("-created_at")
+                .first()
+            )
+
+        if not verification:
             return Response(
-                {"success": False, "error": "Tekshiruv topilmadi"},
+                {"success": False, "error": "Tekshiruv topilmadi. Avval savdoni tasdiqlang."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -1019,10 +1062,22 @@ class WithdrawalListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        qs = WithdrawalRequest.objects.filter(user=self.request.user)
+        # Admin ko'rish rejimi: barcha withdrawallarni ko'rsatish
+        if self.request.user.is_staff and self.request.query_params.get("admin") == "true":
+            qs = WithdrawalRequest.objects.select_related("user").all()
+        else:
+            qs = WithdrawalRequest.objects.filter(user=self.request.user)
         status_filter = self.request.query_params.get("status")
         if status_filter:
             qs = qs.filter(status=status_filter)
+        search = self.request.query_params.get("search")
+        if search and self.request.user.is_staff:
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(user__email__icontains=search) |
+                Q(user__username__icontains=search) |
+                Q(card_number__icontains=search)
+            )
         return qs
 
 

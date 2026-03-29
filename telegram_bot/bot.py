@@ -123,6 +123,9 @@ WAITING_PHONE, CONFIRMING = range(2)
     VERIFY_LOCATION,
 ) = range(30, 34)
 
+# E'lon video yuklash
+WAITING_LISTING_VIDEO = 40
+
 # Yangi keyboard tugmalar matni
 BTN_MY_ACCOUNT = "Mening saytdagi akkauntim"
 BTN_PREMIUM = "Premium olish"
@@ -151,6 +154,80 @@ USERS_FILE = Path(__file__).resolve().parent / "users.json"
 
 # Sayt URL — foydalanuvchilarga yuboriladi
 SITE_URL = os.getenv('SITE_URL', os.getenv('REGISTER_URL', 'http://localhost:5173')).rstrip('/')
+
+
+# ===== ANTI-SPAM RATE LIMITING =====
+
+from collections import defaultdict
+
+_user_last_action: dict[int, float] = defaultdict(float)
+_user_action_count: dict[int, int] = defaultdict(int)
+
+
+def _rate_limit(user_id: int, max_actions: int = 10, window: int = 60) -> bool:
+    """
+    Rate limit: max_actions per window seconds.
+    Returns True if limit exceeded.
+    """
+    now = _time.time()
+    if now - _user_last_action[user_id] > window:
+        _user_action_count[user_id] = 0
+    _user_action_count[user_id] += 1
+    _user_last_action[user_id] = now
+    return _user_action_count[user_id] > max_actions
+
+
+def _is_admin(user_id: int) -> bool:
+    """Check if user is admin."""
+    return user_id in ADMIN_IDS
+
+
+# ===== BOT API CALL WITH RETRY =====
+
+async def _safe_api_call(method: str, path: str, data: dict | None = None) -> dict | None:
+    """Safe API call with timeout, retry, and error handling."""
+    url = f"{WEBSITE_URL}{path}"
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Bot-Secret': BOT_SECRET_KEY,
+        'X-Bot-Timestamp': str(int(_time.time())),
+    }
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            if _AIOHTTP_AVAILABLE:
+                timeout = _aiohttp.ClientTimeout(total=15)
+                async with _aiohttp.ClientSession(timeout=timeout) as session:
+                    if method.upper() == 'GET':
+                        async with session.get(url, headers=headers) as resp:
+                            if resp.status == 200:
+                                return await resp.json()
+                            elif resp.status == 429:
+                                await asyncio.sleep(2 ** attempt)
+                                continue
+                            else:
+                                logger.warning("API %s %s returned %s", method, path, resp.status)
+                                return None
+                    else:
+                        async with session.post(url, json=data or {}, headers=headers) as resp:
+                            if resp.status in (200, 201):
+                                return await resp.json()
+                            elif resp.status == 429:
+                                await asyncio.sleep(2 ** attempt)
+                                continue
+                            else:
+                                logger.warning("API %s %s returned %s", method, path, resp.status)
+                                return None
+            else:
+                return None
+        except asyncio.TimeoutError:
+            logger.warning("API timeout: %s %s, attempt %d", method, path, attempt + 1)
+            if attempt < max_retries - 1:
+                await asyncio.sleep(1)
+        except Exception as e:
+            logger.error("API error: %s %s: %s", method, path, e)
+            return None
+    return None
 
 
 # ===== USER TRACKING =====
@@ -592,9 +669,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     _save_user(user.id)
 
     # /start topup — to'g'ridan to'g'ri hisobni to'ldirish oqimiga o'tish
+    # /start topup_AMOUNT — arenda reklama uchun avtomatik summa bilan to'ldirish
     args = context.args
-    if args and args[0] == "topup":
+    if args and (args[0] == "topup" or args[0].startswith("topup_")):
+        if args[0].startswith("topup_"):
+            try:
+                prefill_amount = int(args[0].split("_", 1)[1])
+                if prefill_amount > 0:
+                    context.user_data["topup_prefill_amount"] = prefill_amount
+            except (ValueError, IndexError):
+                pass
         return await _cmd_topup(update, context)
+
+    # /start uploadvideo_{token} — e'lon uchun video yuklash
+    if args and args[0].startswith("uploadvideo_"):
+        token = args[0][len("uploadvideo_"):]
+        return await _cmd_upload_video(update, context, token)
+
+    # /start viewvideo_{listing_id} — e'lon videosini ko'rish
+    if args and args[0].startswith("viewvideo_"):
+        listing_id = args[0][len("viewvideo_"):]
+        return await _cmd_view_video(update, context, listing_id)
 
     try:
         reply_markup = _get_main_keyboard()
@@ -621,6 +716,421 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         f"❌ Bekor qilish: /cancel"
     )
     await update.message.reply_html(welcome_text, reply_markup=reply_markup)
+    return WAITING_PHONE
+
+
+# ===== E'LON VIDEO YUKLASH / KO'RISH =====
+
+async def _cmd_upload_video(update: Update, context: ContextTypes.DEFAULT_TYPE, token: str) -> int:
+    """Sotuvchi video yuklash oqimini boshlaydi."""
+    import aiohttp
+
+    # Token orqali listingni tekshirish
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"{WEBSITE_URL}/api/v1/listings/video-webhook/"
+            # Token mavjudligini tekshiramiz — oddiy GET emas, tokenni context'ga saqlaymiz
+            pass
+    except Exception:
+        pass
+
+    context.user_data['video_upload_token'] = token
+
+    await update.message.reply_html(
+        "🎬 <b>E'lon uchun video yuklash</b>\n\n"
+        "Akkauntingiz haqida video yuboring.\n\n"
+        "📋 <b>Talablar:</b>\n"
+        "• Hajmi: <b>10 MB — 300 MB</b>\n"
+        "• Format: MP4, MOV, AVI\n"
+        "• Akkaunt ichidagi o'yinlar, skinlar, darajani ko'rsating\n\n"
+        "📤 <b>Videoni hozir yuboring</b> yoki /cancel bosing.",
+        reply_markup=ReplyKeyboardMarkup(
+            [[KeyboardButton("❌ Bekor qilish")]],
+            resize_keyboard=True,
+        ),
+    )
+    return WAITING_LISTING_VIDEO
+
+
+async def _handle_listing_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Sotuvchi video yuborganda — file_id ni backend'ga saqlash."""
+    import aiohttp
+
+    video = update.message.video or update.message.document
+    if not video:
+        await update.message.reply_html(
+            "❌ Iltimos, <b>video fayl</b> yuboring.\n"
+            "Matn yoki rasm emas, video kerak."
+        )
+        return WAITING_LISTING_VIDEO
+
+    # Hajm tekshirish (10MB - 300MB)
+    file_size = video.file_size or 0
+    min_size = 10 * 1024 * 1024   # 10 MB
+    max_size = 300 * 1024 * 1024  # 300 MB
+
+    if file_size < min_size:
+        size_mb = round(file_size / (1024 * 1024), 1)
+        await update.message.reply_html(
+            f"⚠️ Video hajmi juda kichik: <b>{size_mb} MB</b>\n"
+            f"Minimal hajm: <b>10 MB</b>\n\n"
+            f"Boshqa video yuboring yoki /cancel bosing."
+        )
+        return WAITING_LISTING_VIDEO
+
+    if file_size > max_size:
+        size_mb = round(file_size / (1024 * 1024), 1)
+        await update.message.reply_html(
+            f"⚠️ Video hajmi juda katta: <b>{size_mb} MB</b>\n"
+            f"Maksimal hajm: <b>300 MB</b>\n\n"
+            f"Kichikroq video yuboring yoki /cancel bosing."
+        )
+        return WAITING_LISTING_VIDEO
+
+    token = context.user_data.get('video_upload_token', '')
+    if not token:
+        await update.message.reply_html("❌ Video yuklash sessiyasi tugagan. Saytdan qayta boshlang.")
+        return WAITING_PHONE
+
+    file_id = video.file_id
+    size_mb = round(file_size / (1024 * 1024), 1)
+
+    # Backend'ga file_id yuborish
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"{WEBSITE_URL}/api/v1/listings/video-webhook/"
+            payload = {
+                "secret": BOT_SECRET_KEY,
+                "token": token,
+                "file_id": file_id,
+            }
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                data = await resp.json()
+                if resp.status == 200 and data.get("success"):
+                    listing_title = data.get("listing_title", "")
+                    listing_id = data.get("listing_id", "")
+                    seller_name = data.get("seller_name", "")
+                    game_name = data.get("game_name", "")
+                    price = data.get("price", "0")
+                    context.user_data.pop('video_upload_token', None)
+
+                    reply_markup = _get_main_keyboard()
+                    await update.message.reply_html(
+                        f"✅ <b>Video muvaffaqiyatli yuklandi!</b>\n\n"
+                        f"📦 E'lon: <b>{listing_title}</b>\n"
+                        f"📁 Hajmi: <b>{size_mb} MB</b>\n\n"
+                        f"⏳ Video admin tekshiruviga yuborildi.\n"
+                        f"Tasdiqlangandan keyin haridorlarga ko'rinadi.",
+                        reply_markup=reply_markup,
+                    )
+
+                    # Admin ga video + tugmalar yuborish
+                    await _notify_admin_new_video(
+                        context, file_id, listing_id, listing_title,
+                        seller_name, game_name, price, size_mb,
+                        update.effective_user.id,
+                    )
+
+                    return WAITING_PHONE
+                else:
+                    error_msg = data.get("error", "Noma'lum xato")
+                    await update.message.reply_html(
+                        f"❌ Xatolik: {error_msg}\n\n"
+                        f"Qayta urinib ko'ring yoki saytdan yangi token oling."
+                    )
+                    return WAITING_PHONE
+    except Exception as e:
+        logger.error("Video webhook xatosi: %s", e)
+        await update.message.reply_html(
+            "❌ Serverga ulanib bo'lmadi. Keyinroq urinib ko'ring."
+        )
+        return WAITING_PHONE
+
+
+async def _notify_admin_new_video(context, file_id, listing_id, title, seller_name, game_name, price, size_mb, seller_tg_id):
+    """Yangi video yuklanganda admin/guruhga xabar + tasdiqlash tugmalari."""
+    caption = (
+        f"🎬 <b>Yangi video yuklandi!</b>\n\n"
+        f"📦 <b>E'lon:</b> {title}\n"
+        f"🎮 <b>O'yin:</b> {game_name}\n"
+        f"💰 <b>Narxi:</b> {int(float(price)):,} UZS\n"
+        f"👤 <b>Sotuvchi:</b> {seller_name} (TG: {seller_tg_id})\n"
+        f"📁 <b>Hajmi:</b> {size_mb} MB\n\n"
+        f"⏳ <b>Status:</b> Tekshiruvda\n"
+        f"🔗 <a href='https://wibestore.net/account/{listing_id}'>E'lonni ko'rish</a>"
+    )
+
+    buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"vidmod_approve:{listing_id}"),
+            InlineKeyboardButton("❌ Rad etish", callback_data=f"vidmod_reject:{listing_id}"),
+        ],
+        [
+            InlineKeyboardButton("💬 Sotuvchiga yozish", callback_data=f"vidmod_msg:{listing_id}:{seller_tg_id}"),
+        ],
+    ])
+
+    targets = []
+    if ADMIN_CHAT_ID:
+        targets.append(ADMIN_CHAT_ID)
+    else:
+        targets.extend(ADMIN_IDS)
+
+    for chat_id in targets:
+        try:
+            await context.bot.send_video(
+                chat_id=chat_id,
+                video=file_id,
+                caption=caption,
+                parse_mode='HTML',
+                reply_markup=buttons,
+                supports_streaming=True,
+            )
+        except Exception as e:
+            logger.error("Admin video notification xatosi (chat=%s): %s", chat_id, e)
+
+
+async def _cb_video_moderate_approve(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin video tasdiqlash callback."""
+    import aiohttp
+
+    query = update.callback_query
+    await query.answer()
+
+    listing_id = query.data.split(":")[1]
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"{WEBSITE_URL}/api/v1/listings/video-moderate/"
+            payload = {"secret": BOT_SECRET_KEY, "listing_id": listing_id, "action": "approve"}
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                data = await resp.json()
+
+        if data.get("success"):
+            listing_title = data.get("listing_title", "")
+            seller_tg_id = data.get("seller_telegram_id")
+
+            # Admin xabarini yangilash
+            await query.edit_message_caption(
+                caption=(
+                    query.message.caption + "\n\n"
+                    f"✅ <b>TASDIQLANDI</b> — {update.effective_user.first_name}"
+                ),
+                parse_mode='HTML',
+            )
+
+            # Sotuvchiga xabar
+            if seller_tg_id:
+                try:
+                    await context.bot.send_message(
+                        chat_id=seller_tg_id,
+                        text=(
+                            f"✅ <b>Videongiz tasdiqlandi!</b>\n\n"
+                            f"📦 E'lon: <b>{listing_title}</b>\n\n"
+                            f"Endi haridorlar videoni ko'rishlari mumkin."
+                        ),
+                        parse_mode='HTML',
+                    )
+                except Exception as e:
+                    logger.error("Seller notify error: %s", e)
+        else:
+            await query.edit_message_caption(
+                caption=query.message.caption + f"\n\n❌ Xatolik: {data.get('error', '?')}",
+                parse_mode='HTML',
+            )
+    except Exception as e:
+        logger.error("Video approve xatosi: %s", e)
+        await query.answer("Xatolik yuz berdi", show_alert=True)
+
+
+async def _cb_video_moderate_reject(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin video rad etish callback — sabab so'raydi."""
+    query = update.callback_query
+    await query.answer()
+
+    listing_id = query.data.split(":")[1]
+    context.user_data['video_reject_listing_id'] = listing_id
+    context.user_data['video_reject_msg_id'] = query.message.message_id
+    context.user_data['video_reject_caption'] = query.message.caption or ""
+
+    await query.message.reply_html(
+        f"📝 <b>Rad etish sababi:</b>\n\n"
+        f"Listing ID: <code>{listing_id[:8]}...</code>\n\n"
+        f"Sababni yozing (masalan: sifatsiz video, noto'g'ri akkaunt, spam...):"
+    )
+
+
+async def _handle_video_reject_reason(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin rad etish sababini yozgandan keyin — backendga yuborish."""
+    import aiohttp
+
+    listing_id = context.user_data.pop('video_reject_listing_id', '')
+    reject_msg_id = context.user_data.pop('video_reject_msg_id', None)
+    original_caption = context.user_data.pop('video_reject_caption', '')
+
+    if not listing_id:
+        return  # Skip if not in reject flow
+
+    reason = update.message.text.strip()
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"{WEBSITE_URL}/api/v1/listings/video-moderate/"
+            payload = {"secret": BOT_SECRET_KEY, "listing_id": listing_id, "action": "reject", "reason": reason}
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                data = await resp.json()
+
+        if data.get("success"):
+            listing_title = data.get("listing_title", "")
+            seller_tg_id = data.get("seller_telegram_id")
+
+            await update.message.reply_html(
+                f"❌ <b>Video rad etildi</b>\n\n"
+                f"📦 E'lon: {listing_title}\n"
+                f"📝 Sabab: {reason}"
+            )
+
+            # Original admin xabarini yangilash
+            if reject_msg_id:
+                try:
+                    await context.bot.edit_message_caption(
+                        chat_id=update.effective_chat.id,
+                        message_id=reject_msg_id,
+                        caption=(
+                            original_caption + "\n\n"
+                            f"❌ <b>RAD ETILDI</b> — {update.effective_user.first_name}\n"
+                            f"📝 Sabab: {reason}"
+                        ),
+                        parse_mode='HTML',
+                    )
+                except Exception:
+                    pass
+
+            # Sotuvchiga xabar
+            if seller_tg_id:
+                try:
+                    await context.bot.send_message(
+                        chat_id=seller_tg_id,
+                        text=(
+                            f"❌ <b>Videongiz rad etildi</b>\n\n"
+                            f"📦 E'lon: <b>{listing_title}</b>\n"
+                            f"📝 Sabab: {reason}\n\n"
+                            f"Yangi video yuklash uchun saytda e'lonni tahrirlang."
+                        ),
+                        parse_mode='HTML',
+                    )
+                except Exception as e:
+                    logger.error("Seller reject notify error: %s", e)
+        else:
+            await update.message.reply_html(f"❌ Xatolik: {data.get('error', '?')}")
+    except Exception as e:
+        logger.error("Video reject xatosi: %s", e)
+        await update.message.reply_html("❌ Serverga ulanib bo'lmadi.")
+
+
+async def _cb_video_moderate_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin sotuvchiga xabar yozish callback."""
+    query = update.callback_query
+    await query.answer()
+
+    parts = query.data.split(":")
+    listing_id = parts[1]
+    seller_tg_id = parts[2] if len(parts) > 2 else ""
+
+    context.user_data['video_msg_seller_tg_id'] = seller_tg_id
+    context.user_data['video_msg_listing_id'] = listing_id
+
+    await query.message.reply_html(
+        f"💬 <b>Sotuvchiga xabar yuborish</b>\n\n"
+        f"Listing: <code>{listing_id[:8]}...</code>\n"
+        f"Seller TG: <code>{seller_tg_id}</code>\n\n"
+        f"Xabaringizni yozing:"
+    )
+
+
+async def _handle_video_msg_to_seller(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Admin sotuvchiga xabar yuborganda."""
+    seller_tg_id = context.user_data.pop('video_msg_seller_tg_id', '')
+    listing_id = context.user_data.pop('video_msg_listing_id', '')
+
+    if not seller_tg_id:
+        return
+
+    msg_text = update.message.text.strip()
+
+    try:
+        await context.bot.send_message(
+            chat_id=int(seller_tg_id),
+            text=(
+                f"📩 <b>Admin xabari</b>\n\n"
+                f"E'loningiz videosi haqida:\n"
+                f"🔗 <a href='https://wibestore.net/account/{listing_id}'>E'lonni ko'rish</a>\n\n"
+                f"💬 {msg_text}"
+            ),
+            parse_mode='HTML',
+        )
+        await update.message.reply_html("✅ Xabar sotuvchiga yuborildi!")
+    except Exception as e:
+        logger.error("Admin msg to seller error: %s", e)
+        await update.message.reply_html(f"❌ Xabar yuborib bo'lmadi: {e}")
+
+
+async def _cmd_view_video(update: Update, context: ContextTypes.DEFAULT_TYPE, listing_id: str) -> int:
+    """Haridor e'lon videosini ko'radi — bot video yuboradi."""
+    import aiohttp
+
+    # Listing ma'lumotlarini va video_file_id ni backend API orqali olish
+    try:
+        async with aiohttp.ClientSession() as session:
+            # video-view endpointdan video_file_id olamiz
+            url = f"{WEBSITE_URL}/api/v1/listings/{listing_id}/video-view/"
+            headers = {"X-Bot-Secret": BOT_SECRET_KEY}
+            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                if resp.status != 200:
+                    await update.message.reply_html("❌ E'lon topilmadi yoki video mavjud emas.")
+                    return WAITING_PHONE
+                video_data = await resp.json()
+
+            # Listing tafsilotlarini olish
+            listing_url = f"{WEBSITE_URL}/api/v1/listings/{listing_id}/"
+            async with session.get(listing_url, timeout=aiohttp.ClientTimeout(total=15)) as resp2:
+                listing_data = await resp2.json() if resp2.status == 200 else {}
+    except Exception as e:
+        logger.error("Video view xatosi: %s", e)
+        await update.message.reply_html("❌ Serverga ulanib bo'lmadi.")
+        return WAITING_PHONE
+
+    file_id = video_data.get("file_id", "")
+    if not file_id:
+        await update.message.reply_html("❌ Bu e'lon uchun video mavjud emas.")
+        return WAITING_PHONE
+
+    # E'lon ma'lumotlari
+    title = listing_data.get('title', '')
+    description = listing_data.get('description', '')
+    price = listing_data.get('price', 0)
+
+    # Tavsifni qisqartirish (max 800 belgi)
+    short_desc = description[:800] + ('...' if len(description) > 800 else '')
+
+    caption = (
+        f"🎬 <b>{title}</b>\n\n"
+        f"💰 Narxi: <b>{int(float(price)):,} UZS</b>\n\n"
+        f"📝 {short_desc}\n\n"
+        f"🌐 <a href='https://wibestore.net/account/{listing_id}'>E'lonni ko'rish</a>"
+    )
+
+    try:
+        await update.message.reply_video(
+            video=file_id,
+            caption=caption,
+            parse_mode='HTML',
+            supports_streaming=True,
+        )
+    except Exception as e:
+        logger.error("Video yuborishda xato: %s", e)
+        await update.message.reply_html("❌ Videoni yuborishda xatolik yuz berdi.")
+
     return WAITING_PHONE
 
 
@@ -953,6 +1463,20 @@ async def _cmd_topup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if result and result.get("success") and result.get("has_account"):
         balance = result.get("data", {}).get("balance", "0")
     card_line = f"\n💳 To'lov kartasi: <code>{ADMIN_CARD_NUMBER}</code>" if ADMIN_CARD_NUMBER else ""
+
+    # Arenda reklamadan kelgan prefill summa
+    prefill_amount = context.user_data.pop("topup_prefill_amount", None)
+    if prefill_amount and prefill_amount > 0:
+        context.user_data["topup_amount"] = prefill_amount
+        await update.message.reply_html(
+            f"💰 <b>Hisobni to'ldirish</b>\n\n"
+            f"Joriy balans: <b>{balance} UZS</b>\n"
+            f"🎯 Arenda reklama uchun kerakli summa: <b>{prefill_amount:,} UZS</b>{card_line}\n\n"
+            f"Kartaga <b>{prefill_amount:,} UZS</b> o'tkazgach, to'lov <b>skrinshot</b>ini yuboring. Admin tekshiradi.\n\n"
+            "❌ Bekor qilish: /cancel"
+        )
+        return WAITING_TOPUP_SCREENSHOT
+
     await update.message.reply_html(
         f"💰 <b>Hisobni to'ldirish</b>\n\n"
         f"Joriy balans: <b>{balance} UZS</b>{card_line}\n\n"
@@ -1880,24 +2404,542 @@ async def cb_reject(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             logger.warning("Foydalanuvchi %s ga xabar yuborib bo'lmadi: %s", user_id, e)
 
 
+async def _admin_panel_text_and_kb():
+    """Admin panel uchun matn va klaviatura tayyorlash."""
+    import django
+    try:
+        django.setup()
+    except Exception:
+        pass
+    from django.contrib.auth import get_user_model
+    from apps.payments.models import EscrowTransaction, WithdrawalRequest, SellerVerification
+    User = get_user_model()
+
+    total_users = User.objects.filter(is_active=True).count()
+    tg_users = User.objects.filter(telegram_id__isnull=False, is_active=True).count()
+    active_trades = EscrowTransaction.objects.filter(status__in=['paid', 'delivered']).count()
+    pending_withdrawals = WithdrawalRequest.objects.filter(status='pending').count()
+    pending_verifications = SellerVerification.objects.filter(
+        status__in=['submitted', 'pending', 'passport_front_received', 'passport_back_received', 'video_received']
+    ).count()
+    completed_trades = EscrowTransaction.objects.filter(status='confirmed').count()
+    bot_users = len(_load_users())
+
+    # Bugungi start
+    from django.utils import timezone
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_new = User.objects.filter(date_joined__gte=today_start).count()
+
+    text = (
+        "🛠 <b>ADMIN PANEL</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👥 Jami foydalanuvchilar: <b>{total_users}</b>\n"
+        f"📱 Telegram ulangan: <b>{tg_users}</b>\n"
+        f"🤖 Bot foydalanuvchilari: <b>{bot_users}</b>\n"
+        f"🆕 Bugungi yangi: <b>{today_new}</b>\n\n"
+        f"📦 Aktiv savdolar: <b>{active_trades}</b>\n"
+        f"✅ Yakunlangan savdolar: <b>{completed_trades}</b>\n"
+        f"💳 Pul yechish so'rovlari: <b>{pending_withdrawals}</b>\n"
+        f"🔐 Verifikatsiya so'rovlari: <b>{pending_verifications}</b>\n"
+    )
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": f"📦 Savdolar ({active_trades})", "callback_data": "admpanel:trades"},
+                {"text": f"💳 Pul yechish ({pending_withdrawals})", "callback_data": "admpanel:withdrawals"},
+            ],
+            [
+                {"text": f"🔐 Verifikatsiya ({pending_verifications})", "callback_data": "admpanel:verifications"},
+                {"text": "👤 Foydalanuvchi qidirish", "callback_data": "admpanel:usersearch"},
+            ],
+            [
+                {"text": "📊 Statistika", "callback_data": "admpanel:stats"},
+                {"text": "🤖 Bot statistikasi", "callback_data": "admpanel:botstats"},
+            ],
+            [
+                {"text": "📢 Broadcast xabar", "callback_data": "admpanel:broadcast"},
+            ],
+        ]
+    }
+    return text, keyboard
+
+
 async def cmd_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Admin: umumiy panel (/admin)."""
+    """Admin: interaktiv panel (/admin)."""
     if not _is_admin(update.effective_user.id):
         return
-    _, data = await _payment_api("GET", "/transactions?status=PENDING&limit=100")
-    count = len(data.get("data", [])) if data.get("success") else "?"
-    users_count = len(_load_users())
-    await update.message.reply_html(
-        "🛠 <b>Admin Panel</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━\n\n"
-        f"📋 Kutilayotgan to'lovlar: <b>{count}</b>\n"
-        f"👥 Bot foydalanuvchilari: <b>{users_count}</b>\n\n"
-        "<b>Buyruqlar:</b>\n"
-        "/pending — kutilayotgan to'lovlar ro'yxati\n"
-        "/stats — to'lov statistikasi\n"
-        "/balance &lt;telegram_id&gt; — foydalanuvchi balansi\n"
-        "/broadcast &lt;matn&gt; — barcha userlarga xabar\n"
-        "/notify — soatlik xabarni hozir yuborish",
+    text, keyboard = await _admin_panel_text_and_kb()
+    await update.message.reply_html(text, reply_markup=InlineKeyboardMarkup(
+        keyboard["inline_keyboard"]
+    ))
+
+
+async def _cb_admin_panel_back(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin panelga qaytish."""
+    query = update.callback_query
+    await query.answer()
+    text, keyboard = await _admin_panel_text_and_kb()
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(
+        keyboard["inline_keyboard"]
+    ))
+
+
+async def _cb_admin_trades(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Aktiv savdolar ro'yxati."""
+    query = update.callback_query
+    await query.answer()
+    from apps.payments.models import EscrowTransaction
+    trades = (
+        EscrowTransaction.objects
+        .filter(status__in=['paid', 'delivered', 'disputed'])
+        .select_related('listing', 'buyer', 'seller')
+        .order_by('-created_at')[:10]
+    )
+    if not trades:
+        text = "📦 <b>Aktiv savdolar</b>\n\n✅ Hozircha aktiv savdo yo'q."
+    else:
+        lines = ["📦 <b>Aktiv savdolar</b> (oxirgi 10 ta)\n━━━━━━━━━━━━━━━━━━━━\n"]
+        status_emoji = {'paid': '💰', 'delivered': '📬', 'disputed': '⚠️'}
+        for t in trades:
+            emoji = status_emoji.get(t.status, '❓')
+            buyer_name = t.buyer.display_name if t.buyer else '?'
+            seller_name = t.seller.display_name if t.seller else '?'
+            title = t.listing.title[:25] if t.listing else '?'
+            amount = f"{int(t.amount):,}".replace(",", " ")
+            lines.append(
+                f"{emoji} <b>{title}</b>\n"
+                f"   💰 {amount} | {t.status}\n"
+                f"   👤 {buyer_name} → {seller_name}\n"
+            )
+        text = "\n".join(lines)
+    kb = InlineKeyboardMarkup([[
+        {"text": "🔙 Orqaga", "callback_data": "admpanel:back"},
+    ]])
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_withdrawals(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Pul yechish so'rovlari."""
+    query = update.callback_query
+    await query.answer()
+    from apps.payments.models import WithdrawalRequest
+    pending = (
+        WithdrawalRequest.objects
+        .filter(status='pending')
+        .select_related('user')
+        .order_by('-created_at')[:10]
+    )
+    if not pending:
+        text = "💳 <b>Pul yechish so'rovlari</b>\n\n✅ Kutilayotgan so'rov yo'q."
+        kb = InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}]])
+    else:
+        lines = [f"💳 <b>Pul yechish so'rovlari</b> ({pending.count()} ta)\n━━━━━━━━━━━━━━━━━━━━\n"]
+        buttons = []
+        for w in pending:
+            uname = w.user.display_name if w.user else '?'
+            amount = f"{int(w.amount):,}".replace(",", " ")
+            card = w.card_number[-4:] if w.card_number else '****'
+            tg_id = w.user.telegram_id if w.user else '?'
+            lines.append(
+                f"👤 <b>{uname}</b> (TG: <code>{tg_id}</code>)\n"
+                f"   💰 {amount} so'm → {w.card_type} ****{card}\n"
+                f"   📛 {w.card_holder_name}\n"
+            )
+            wid = str(w.id)[:8]
+            buttons.append([
+                {"text": f"✅ {uname} — {amount}", "callback_data": f"adm_w_detail:{w.id}"},
+            ])
+        text = "\n".join(lines)
+        buttons.append([{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}])
+        kb = InlineKeyboardMarkup(buttons)
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_withdrawal_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Bitta pul yechish so'rovi tafsilotlari."""
+    query = update.callback_query
+    await query.answer()
+    wid = query.data.split(":", 1)[1]
+    from apps.payments.models import WithdrawalRequest
+    from apps.payments.models import EscrowTransaction
+    try:
+        w = WithdrawalRequest.objects.select_related('user').get(pk=wid)
+    except WithdrawalRequest.DoesNotExist:
+        await query.edit_message_text("❌ So'rov topilmadi.", reply_markup=InlineKeyboardMarkup(
+            [[{"text": "🔙 Orqaga", "callback_data": "admpanel:withdrawals"}]]
+        ))
+        return
+
+    user = w.user
+    total_sales = EscrowTransaction.objects.filter(seller=user, status='confirmed').count()
+    total_earned = EscrowTransaction.objects.filter(seller=user, status='confirmed').aggregate(
+        total=__import__('django').db.models.Sum('seller_earnings')
+    )['total'] or 0
+    balance = f"{int(user.balance):,}".replace(",", " ") if hasattr(user, 'balance') else '?'
+    amount = f"{int(w.amount):,}".replace(",", " ")
+
+    text = (
+        f"💳 <b>Pul yechish so'rovi</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 <b>{user.display_name}</b>\n"
+        f"🆔 Telegram: <code>{user.telegram_id or '—'}</code>\n"
+        f"📧 Email: {user.email}\n"
+        f"📱 Telefon: {user.phone_number or '—'}\n\n"
+        f"💰 So'rov: <b>{amount} so'm</b>\n"
+        f"💳 Karta: {w.card_type} <code>{w.card_number}</code>\n"
+        f"📛 Karta egasi: {w.card_holder_name}\n\n"
+        f"📊 <b>Foydalanuvchi statistikasi:</b>\n"
+        f"   💼 Joriy balans: {balance} so'm\n"
+        f"   📦 Sotilgan akkauntlar: {total_sales} ta\n"
+        f"   💵 Jami daromad: {int(total_earned):,} so'm\n".replace(",", " ")
+    )
+    kb = InlineKeyboardMarkup([
+        [
+            {"text": "✅ Tasdiqlash", "callback_data": f"withdraw_paid:{w.id}"},
+            {"text": "❌ Rad etish", "callback_data": f"withdraw_reject:{w.id}"},
+        ],
+        [{"text": "🔙 So'rovlar ro'yxati", "callback_data": "admpanel:withdrawals"}],
+    ])
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_verifications(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Verifikatsiya so'rovlari."""
+    query = update.callback_query
+    await query.answer()
+    from apps.payments.models import SellerVerification
+    pending = (
+        SellerVerification.objects
+        .filter(status__in=['submitted', 'pending', 'passport_front_received', 'passport_back_received', 'video_received'])
+        .select_related('seller', 'escrow', 'escrow__listing')
+        .order_by('-created_at')[:10]
+    )
+    if not pending:
+        text = "🔐 <b>Verifikatsiya so'rovlari</b>\n\n✅ Kutilayotgan so'rov yo'q."
+        kb = InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}]])
+    else:
+        lines = [f"🔐 <b>Verifikatsiya so'rovlari</b> ({pending.count()} ta)\n━━━━━━━━━━━━━━━━━━━━\n"]
+        buttons = []
+        for v in pending:
+            sname = v.seller.display_name if v.seller else '?'
+            listing_title = v.escrow.listing.title[:20] if v.escrow and v.escrow.listing else '?'
+            status_label = {
+                'submitted': '📨 Yuborildi',
+                'pending': '⏳ Kutilmoqda',
+                'passport_front_received': '📸 Old qism',
+                'passport_back_received': '📸 Orqa qism',
+                'video_received': '🎥 Video',
+            }.get(v.status, v.status)
+            lines.append(
+                f"👤 <b>{sname}</b> — {listing_title}\n"
+                f"   {status_label} | F.I.SH: {v.full_name or '—'}\n"
+            )
+            buttons.append([
+                {"text": f"📋 {sname} — {listing_title}", "callback_data": f"adm_v_detail:{v.id}"},
+            ])
+        text = "\n".join(lines)
+        buttons.append([{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}])
+        kb = InlineKeyboardMarkup(buttons)
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_verification_detail(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Bitta verifikatsiya tafsilotlari — hujjatlarni ko'rish."""
+    query = update.callback_query
+    await query.answer()
+    vid = query.data.split(":", 1)[1]
+    from apps.payments.models import SellerVerification
+    try:
+        v = SellerVerification.objects.select_related('seller', 'escrow', 'escrow__listing').get(pk=vid)
+    except SellerVerification.DoesNotExist:
+        await query.edit_message_text("❌ Topilmadi.", reply_markup=InlineKeyboardMarkup(
+            [[{"text": "🔙 Orqaga", "callback_data": "admpanel:verifications"}]]
+        ))
+        return
+
+    seller = v.seller
+    listing = v.escrow.listing if v.escrow else None
+    lat = v.location_latitude
+    lng = v.location_longitude
+    loc_str = f"{lat:.5f}, {lng:.5f}" if lat and lng else "—"
+    maps_url = f"https://maps.google.com/?q={lat},{lng}" if lat and lng else ""
+
+    text = (
+        f"🔐 <b>Verifikatsiya tafsilotlari</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👤 Sotuvchi: <b>{seller.display_name}</b>\n"
+        f"📝 F.I.SH: <b>{v.full_name or '—'}</b>\n"
+        f"🆔 Telegram: <code>{seller.telegram_id or '—'}</code>\n"
+        f"📧 Email: {seller.email}\n\n"
+        f"📦 Akkaunt: <b>{listing.title if listing else '—'}</b>\n"
+        f"📍 Joylashuv: {loc_str}\n"
+    )
+    if maps_url:
+        text += f"🗺 <a href='{maps_url}'>Xaritada ko'rish</a>\n"
+    text += (
+        f"\n📸 Pasport old: {'✅ bor' if v.passport_front_file_id else '❌ yo`q'}\n"
+        f"📸 Pasport orqa: {'✅ bor' if v.passport_back_file_id else '❌ yo`q'}\n"
+        f"🎥 Video: {'✅ bor' if v.circle_video_file_id else '❌ yo`q'}\n"
+        f"📍 Joylashuv: {'✅ bor' if lat else '❌ yo`q'}\n"
+    )
+    buttons = []
+    if v.passport_front_file_id:
+        buttons.append([{"text": "📸 Pasport old tomonini ko'rish", "callback_data": f"adm_v_doc:front:{v.id}"}])
+    if v.passport_back_file_id:
+        buttons.append([{"text": "📸 Pasport orqa tomonini ko'rish", "callback_data": f"adm_v_doc:back:{v.id}"}])
+    if v.circle_video_file_id:
+        buttons.append([{"text": "🎥 Videoni ko'rish", "callback_data": f"adm_v_doc:video:{v.id}"}])
+    buttons.append([
+        {"text": "✅ Tasdiqlash", "callback_data": f"verify_approve:{v.id}"},
+        {"text": "❌ Rad etish", "callback_data": f"verify_reject:{v.id}"},
+    ])
+    buttons.append([{"text": "🔙 Verifikatsiyalar", "callback_data": "admpanel:verifications"}])
+    kb = InlineKeyboardMarkup(buttons)
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb, disable_web_page_preview=True)
+
+
+async def _cb_admin_view_doc(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Verifikatsiya hujjatini ko'rsatish (rasm/video)."""
+    query = update.callback_query
+    await query.answer()
+    parts = query.data.split(":")  # adm_v_doc:front:uuid
+    if len(parts) < 3:
+        return
+    doc_type = parts[1]
+    vid = parts[2]
+    from apps.payments.models import SellerVerification
+    try:
+        v = SellerVerification.objects.get(pk=vid)
+    except SellerVerification.DoesNotExist:
+        return
+
+    back_kb = InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": f"adm_v_detail:{vid}"}]])
+    bot = context.bot
+    chat_id = query.message.chat_id
+
+    if doc_type == "front" and v.passport_front_file_id:
+        await bot.send_photo(chat_id, v.passport_front_file_id, caption=f"📸 Pasport OLD tomoni\n👤 {v.full_name or '—'}", reply_markup=back_kb)
+    elif doc_type == "back" and v.passport_back_file_id:
+        await bot.send_photo(chat_id, v.passport_back_file_id, caption="📸 Pasport ORQA tomoni", reply_markup=back_kb)
+    elif doc_type == "video" and v.circle_video_file_id:
+        try:
+            await bot.send_video_note(chat_id, v.circle_video_file_id)
+        except Exception:
+            await bot.send_video(chat_id, v.circle_video_file_id, caption="🎥 Verifikatsiya video")
+        await bot.send_message(chat_id, "🔙 Orqaga qaytish:", reply_markup=back_kb)
+    else:
+        await bot.send_message(chat_id, "❌ Fayl topilmadi.", reply_markup=back_kb)
+
+
+async def _cb_admin_usersearch(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Foydalanuvchi qidirish — telegram_id so'rash."""
+    query = update.callback_query
+    await query.answer()
+    context.user_data["admin_awaiting_user_search"] = True
+    await query.edit_message_text(
+        "👤 <b>Foydalanuvchi qidirish</b>\n\n"
+        "Foydalanuvchining <b>Telegram ID</b> raqamini yuboring:\n\n"
+        "Misol: <code>7947969825</code>",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}]]),
+    )
+
+
+async def _admin_user_search_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin foydalanuvchi qidirish — matn orqali telegram_id qabul qilish."""
+    if not _is_admin(update.effective_user.id):
+        return
+    if not context.user_data.get("admin_awaiting_user_search"):
+        return
+    context.user_data["admin_awaiting_user_search"] = False
+
+    text_input = (update.message.text or "").strip()
+    if not text_input.isdigit():
+        await update.message.reply_html(
+            "⚠️ Faqat raqam kiriting (Telegram ID).\n\nQayta urinib ko'ring yoki /admin bosing."
+        )
+        return
+
+    tg_id = int(text_input)
+    await _show_user_profile(update.message, tg_id)
+
+
+async def _show_user_profile(message, tg_id: int) -> None:
+    """Foydalanuvchi profilini ko'rsatish."""
+    from django.contrib.auth import get_user_model
+    from apps.payments.models import EscrowTransaction, WithdrawalRequest, SellerVerification
+    from django.db.models import Sum
+
+    User = get_user_model()
+    try:
+        user = User.objects.get(telegram_id=tg_id)
+    except User.DoesNotExist:
+        await message.reply_html(
+            f"❌ Telegram ID <code>{tg_id}</code> bilan foydalanuvchi topilmadi.",
+            reply_markup=InlineKeyboardMarkup([[{"text": "🔙 Admin panel", "callback_data": "admpanel:back"}]]),
+        )
+        return
+
+    # Statistikalar
+    total_purchases = EscrowTransaction.objects.filter(buyer=user, status='confirmed').count()
+    total_sales = EscrowTransaction.objects.filter(seller=user, status='confirmed').count()
+    total_earned = EscrowTransaction.objects.filter(seller=user, status='confirmed').aggregate(
+        t=Sum('seller_earnings'))['t'] or 0
+    total_spent = EscrowTransaction.objects.filter(buyer=user, status='confirmed').aggregate(
+        t=Sum('amount'))['t'] or 0
+    active_trades = EscrowTransaction.objects.filter(
+        seller=user, status__in=['paid', 'delivered']
+    ).count() + EscrowTransaction.objects.filter(
+        buyer=user, status__in=['paid', 'delivered']
+    ).count()
+    withdrawals = WithdrawalRequest.objects.filter(user=user).count()
+    pending_withdrawals = WithdrawalRequest.objects.filter(user=user, status='pending').count()
+    verifications = SellerVerification.objects.filter(seller=user).count()
+    balance = f"{int(user.balance):,}".replace(",", " ") if hasattr(user, 'balance') else '?'
+    earned_str = f"{int(total_earned):,}".replace(",", " ")
+    spent_str = f"{int(total_spent):,}".replace(",", " ")
+
+    text = (
+        f"👤 <b>Foydalanuvchi profili</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"📛 Ism: <b>{user.display_name}</b>\n"
+        f"📧 Email: {user.email}\n"
+        f"📱 Telefon: {user.phone_number or '—'}\n"
+        f"🆔 Telegram: <code>{tg_id}</code>\n"
+        f"📅 Ro'yxatdan o'tgan: {user.date_joined.strftime('%d.%m.%Y')}\n"
+        f"{'🟢' if user.is_active else '🔴'} Status: {'Aktiv' if user.is_active else 'Bloklangan'}\n"
+        f"{'👑' if user.is_staff else '👤'} Rol: {'Admin' if user.is_staff else 'Foydalanuvchi'}\n\n"
+        f"━━━ <b>Moliyaviy</b> ━━━\n"
+        f"💼 Balans: <b>{balance} so'm</b>\n"
+        f"💵 Jami daromad: {earned_str} so'm\n"
+        f"🛒 Jami xarajat: {spent_str} so'm\n\n"
+        f"━━━ <b>Savdo tarixi</b> ━━━\n"
+        f"📦 Sotilgan: <b>{total_sales}</b> ta akkaunt\n"
+        f"🛒 Sotib olingan: <b>{total_purchases}</b> ta\n"
+        f"⏳ Aktiv savdolar: {active_trades} ta\n\n"
+        f"━━━ <b>Boshqa</b> ━━━\n"
+        f"💳 Pul yechish so'rovlari: {withdrawals} ta ({pending_withdrawals} kutilmoqda)\n"
+        f"🔐 Verifikatsiyalar: {verifications} ta\n"
+    )
+    kb = InlineKeyboardMarkup([
+        [{"text": "🔙 Admin panel", "callback_data": "admpanel:back"}],
+    ])
+    await message.reply_html(text, reply_markup=kb)
+
+
+async def _cb_admin_stats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Moliyaviy statistika."""
+    query = update.callback_query
+    await query.answer()
+    from apps.payments.models import EscrowTransaction, Transaction, WithdrawalRequest
+    from django.db.models import Sum, Count
+    from django.utils import timezone
+
+    total_volume = EscrowTransaction.objects.filter(status='confirmed').aggregate(t=Sum('amount'))['t'] or 0
+    total_commission = EscrowTransaction.objects.filter(status='confirmed').aggregate(t=Sum('commission_amount'))['t'] or 0
+    total_trades = EscrowTransaction.objects.count()
+    confirmed_trades = EscrowTransaction.objects.filter(status='confirmed').count()
+    disputed_trades = EscrowTransaction.objects.filter(status='disputed').count()
+    refunded_trades = EscrowTransaction.objects.filter(status='refunded').count()
+    total_withdrawn = WithdrawalRequest.objects.filter(status='completed').aggregate(t=Sum('amount'))['t'] or 0
+    pending_withdrawn = WithdrawalRequest.objects.filter(status='pending').aggregate(t=Sum('amount'))['t'] or 0
+
+    # Bugungi
+    today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_trades = EscrowTransaction.objects.filter(created_at__gte=today).count()
+    today_volume = EscrowTransaction.objects.filter(created_at__gte=today, status='confirmed').aggregate(t=Sum('amount'))['t'] or 0
+
+    def fmt(n):
+        return f"{int(n):,}".replace(",", " ")
+
+    text = (
+        f"📊 <b>MOLIYAVIY STATISTIKA</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"💰 Jami savdo hajmi: <b>{fmt(total_volume)} so'm</b>\n"
+        f"🏦 Jami komissiya: <b>{fmt(total_commission)} so'm</b>\n\n"
+        f"📦 Jami savdolar: {total_trades}\n"
+        f"   ✅ Yakunlangan: {confirmed_trades}\n"
+        f"   ⚠️ Nizoli: {disputed_trades}\n"
+        f"   ↩️ Qaytarilgan: {refunded_trades}\n\n"
+        f"💳 Yechilgan: {fmt(total_withdrawn)} so'm\n"
+        f"⏳ Kutilmoqda: {fmt(pending_withdrawn)} so'm\n\n"
+        f"━━━ <b>Bugun</b> ━━━\n"
+        f"📦 Savdolar: {today_trades}\n"
+        f"💰 Hajm: {fmt(today_volume)} so'm\n"
+    )
+    kb = InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}]])
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_botstats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Bot statistikasi — kunlik start, OTP kodlari."""
+    query = update.callback_query
+    await query.answer()
+    from django.contrib.auth import get_user_model
+    from django.utils import timezone
+    User = get_user_model()
+
+    today = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    week_ago = timezone.now() - __import__('datetime').timedelta(days=7)
+    month_ago = timezone.now() - __import__('datetime').timedelta(days=30)
+
+    bot_users = _load_users()
+    total_bot = len(bot_users)
+    today_new = User.objects.filter(date_joined__gte=today).count()
+    week_new = User.objects.filter(date_joined__gte=week_ago).count()
+    month_new = User.objects.filter(date_joined__gte=month_ago).count()
+
+    # OTP kodlari (verification_codes.json dan)
+    codes_file = Path(__file__).parent / "verification_codes.json"
+    total_codes = 0
+    today_codes = 0
+    if codes_file.exists():
+        try:
+            codes_data = json.loads(codes_file.read_text())
+            total_codes = len(codes_data)
+            # Bugungilarni sanash
+            for _k, v in codes_data.items():
+                if isinstance(v, dict) and v.get("created"):
+                    try:
+                        from datetime import datetime
+                        ct = datetime.fromisoformat(v["created"])
+                        if ct.date() == timezone.now().date():
+                            today_codes += 1
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    tg_linked = User.objects.filter(telegram_id__isnull=False, is_active=True).count()
+
+    text = (
+        f"🤖 <b>BOT STATISTIKASI</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"👥 Bot foydalanuvchilari: <b>{total_bot}</b>\n"
+        f"📱 Telegram ulangan: <b>{tg_linked}</b>\n\n"
+        f"━━━ <b>Yangi foydalanuvchilar</b> ━━━\n"
+        f"🆕 Bugun: <b>{today_new}</b>\n"
+        f"📅 Shu hafta: <b>{week_new}</b>\n"
+        f"📆 Shu oy: <b>{month_new}</b>\n\n"
+        f"━━━ <b>OTP kodlari</b> ━━━\n"
+        f"🔑 Jami kodlar: <b>{total_codes}</b>\n"
+        f"📅 Bugungi kodlar: <b>{today_codes}</b>\n"
+    )
+    kb = InlineKeyboardMarkup([[{"text": "🔙 Orqaga", "callback_data": "admpanel:back"}]])
+    await query.edit_message_text(text, parse_mode="HTML", reply_markup=kb)
+
+
+async def _cb_admin_broadcast_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Broadcast xabar yuborish — matn so'rash."""
+    query = update.callback_query
+    await query.answer()
+    context.user_data["admin_awaiting_broadcast"] = True
+    await query.edit_message_text(
+        "📢 <b>Broadcast xabar</b>\n\n"
+        "Barcha bot foydalanuvchilariga yuboriladigan xabarni yozing:\n\n"
+        "⚠️ Xabar HTML formatida yuboriladi.",
+        parse_mode="HTML",
+        reply_markup=InlineKeyboardMarkup([[{"text": "🔙 Bekor qilish", "callback_data": "admpanel:back"}]]),
     )
 
 
@@ -2459,12 +3501,14 @@ async def _cb_escrow_buyer_no(update: Update, context: ContextTypes.DEFAULT_TYPE
 # ===== SOTUVCHI SHAXS TASDIQLASH OQIMI =======================
 # ============================================================
 
-async def _verification_submit_api(verification_id: str, step: str, **kwargs) -> tuple[bool, str]:
+async def _verification_submit_api(verification_id: str, step: str, telegram_id: int = None, **kwargs) -> tuple[bool, str]:
     """Backend API ga tasdiqlash qadamini yuborish."""
     if not BOT_SECRET_KEY or not _AIOHTTP_AVAILABLE:
         return False, "Konfiguratsiya xatosi"
     url = f"{WEBSITE_URL}/api/v1/payments/telegram/seller-verification/submit/"
     payload = {"secret_key": BOT_SECRET_KEY, "verification_id": verification_id, "step": step}
+    if telegram_id:
+        payload["telegram_id"] = telegram_id
     payload.update(kwargs)
     try:
         async with _aiohttp.ClientSession() as session:
@@ -2529,10 +3573,11 @@ async def _verify_receive_passport_front(update: Update, context: ContextTypes.D
         return VERIFY_PASSPORT_FRONT
 
     file_id = update.message.photo[-1].file_id
-    verification_id = context.user_data.get("verification_id")
+    verification_id = context.user_data.get("verification_id", "")
+    tg_id = update.effective_user.id
 
     ok, err = await _verification_submit_api(
-        verification_id, "passport_front", file_id=file_id, full_name=caption
+        verification_id, "passport_front", telegram_id=tg_id, file_id=file_id, full_name=caption
     )
     if not ok:
         await update.message.reply_html(
@@ -2563,9 +3608,10 @@ async def _verify_receive_passport_back(update: Update, context: ContextTypes.DE
         return VERIFY_PASSPORT_BACK
 
     file_id = update.message.photo[-1].file_id
-    verification_id = context.user_data.get("verification_id")
+    verification_id = context.user_data.get("verification_id", "")
+    tg_id = update.effective_user.id
 
-    ok, err = await _verification_submit_api(verification_id, "passport_back", file_id=file_id)
+    ok, err = await _verification_submit_api(verification_id, "passport_back", telegram_id=tg_id, file_id=file_id)
     if not ok:
         await update.message.reply_html(f"❌ Xatolik: {err}\n\nQayta urinib ko'ring.")
         return VERIFY_PASSPORT_BACK
@@ -2610,10 +3656,10 @@ async def _verify_receive_video(update: Update, context: ContextTypes.DEFAULT_TY
         )
         return VERIFY_VIDEO
 
-    file_id = file_id
-    verification_id = context.user_data.get("verification_id")
+    verification_id = context.user_data.get("verification_id", "")
+    tg_id = update.effective_user.id
 
-    ok, err = await _verification_submit_api(verification_id, "video", file_id=file_id)
+    ok, err = await _verification_submit_api(verification_id, "video", telegram_id=tg_id, file_id=file_id)
     if not ok:
         await update.message.reply_html(f"❌ Xatolik: {err}\n\nQayta urinib ko'ring.")
         return VERIFY_VIDEO
@@ -2648,10 +3694,11 @@ async def _verify_receive_location(update: Update, context: ContextTypes.DEFAULT
     location = update.message.location
     lat = location.latitude
     lng = location.longitude
-    verification_id = context.user_data.get("verification_id")
+    verification_id = context.user_data.get("verification_id", "")
+    tg_id = update.effective_user.id
 
     ok, err = await _verification_submit_api(
-        verification_id, "location", latitude=lat, longitude=lng
+        verification_id, "location", telegram_id=tg_id, latitude=lat, longitude=lng
     )
     if not ok:
         await update.message.reply_html(f"❌ Xatolik: {err}\n\nQayta urinib ko'ring.")
@@ -3053,44 +4100,168 @@ async def cmd_user_support(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 async def trade_confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Savdo tasdiqlash: trade_seller_ok / trade_buyer_ok / trade_cancel."""
+    """Savdo tasdiqlash: trade_seller_ok / trade_buyer_ok / trade_cancel.
+
+    Ikki tomon ham tasdiqlagandan so'ng avtomatik verifikatsiyaga o'tadi.
+    Kim birinchi tasdiqlashi muhim emas — ikkalasi ham tasdiqlashi kerak.
+    """
     query = update.callback_query
     await query.answer()
+
+    if await is_callback_already_processed(query.id):
+        return
 
     try:
         action, escrow_id = query.data.split(":", 1)
     except ValueError:
         return
 
-    api_url = f"{WEBSITE_URL}/api/v1/escrow/{escrow_id}/"
-    headers = {"Authorization": f"Bot {BOT_SECRET_KEY}"}
+    telegram_id = query.from_user.id
 
-    if action == "trade_seller_ok":
-        try:
-            if _AIOHTTP_AVAILABLE:
-                async with _aiohttp.ClientSession() as session:
-                    await session.patch(api_url, json={"seller_confirmed": True}, headers=headers)
-        except Exception as e:
-            logger.warning("trade_seller_ok API: %s", e)
-        await query.message.edit_text("✅ Siz tasdiqladingiz. Xaridor tasdiqini kutmoqda...")
+    try:
+        from apps.payments.models import EscrowTransaction
+        from apps.payments.services import EscrowService
 
-    elif action == "trade_buyer_ok":
-        try:
-            if _AIOHTTP_AVAILABLE:
-                async with _aiohttp.ClientSession() as session:
-                    await session.patch(api_url, json={"buyer_confirmed": True}, headers=headers)
-        except Exception as e:
-            logger.warning("trade_buyer_ok API: %s", e)
-        await query.message.edit_text("✅ Siz tasdiqladingiz. To'lov chiqarilmoqda...")
+        escrow = EscrowTransaction.objects.select_related(
+            "buyer", "seller", "listing"
+        ).filter(id=escrow_id).first()
 
-    elif action == "trade_cancel":
-        try:
-            if _AIOHTTP_AVAILABLE:
-                async with _aiohttp.ClientSession() as session:
-                    await session.post(f"{WEBSITE_URL}/api/v1/escrow/{escrow_id}/dispute/", headers=headers)
-        except Exception as e:
-            logger.warning("trade_cancel API: %s", e)
-        await query.message.edit_text("⚠️ Nizo ochildi. Moderator tez orada hal qiladi.")
+        if not escrow:
+            await query.edit_message_text("❌ Savdo topilmadi.")
+            return
+
+        if escrow.status not in ("paid", "delivered"):
+            await query.edit_message_text("ℹ️ Bu savdo allaqachon yakunlangan yoki bekor qilingan.")
+            return
+
+        listing_title = escrow.listing.title if escrow.listing else "—"
+
+        if action == "trade_seller_ok":
+            # Sotuvchi faqat o'z savdosini tasdiqlay oladi
+            if escrow.seller.telegram_id != telegram_id:
+                await query.answer("❌ Siz bu savdoning sotuvchisi emassiz!", show_alert=True)
+                return
+            if escrow.seller_confirmed:
+                await query.answer("ℹ️ Siz allaqachon tasdiqlagansiz.", show_alert=True)
+                return
+
+            escrow_obj, both = EscrowService.process_trade_confirmation(escrow, "seller")
+
+            if both:
+                await query.edit_message_text(
+                    f"🎉 <b>Savdo tasdiqlandi!</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"✅ Ikkala tomon ham tasdiqladi!\n"
+                    f"📋 Keyingi qadam: Verifikatsiya — hujjatlaringizni taqdim eting.\n\n"
+                    f"Bot sizga verifikatsiya so'rovini yuboradi.",
+                    parse_mode="HTML",
+                )
+                # Ikkinchi tomonga xabar
+                try:
+                    from apps.payments.telegram_notify import notify_trade_both_confirmed
+                    notify_trade_both_confirmed(escrow_obj)
+                except Exception as e:
+                    logger.warning("notify_trade_both_confirmed: %s", e)
+            else:
+                await query.edit_message_text(
+                    f"✅ <b>Siz savdoni tasdiqladingiz!</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"⏳ Haridor tasdiqini kutmoqda...\n"
+                    f"Haridor ham tasdiqlagandan so'ng keyingi bosqichga o'tiladi.",
+                    parse_mode="HTML",
+                )
+                # Haridorga xabar
+                try:
+                    from apps.payments.telegram_notify import notify_trade_party_confirmed
+                    notify_trade_party_confirmed(escrow_obj, confirmed_by="seller")
+                except Exception as e:
+                    logger.warning("notify_trade_party_confirmed: %s", e)
+
+        elif action == "trade_buyer_ok":
+            # Haridor faqat o'z savdosini tasdiqlay oladi
+            if escrow.buyer.telegram_id != telegram_id:
+                await query.answer("❌ Siz bu savdoning haridori emassiz!", show_alert=True)
+                return
+            if escrow.buyer_confirmed:
+                await query.answer("ℹ️ Siz allaqachon tasdiqlagansiz.", show_alert=True)
+                return
+
+            escrow_obj, both = EscrowService.process_trade_confirmation(escrow, "buyer")
+
+            if both:
+                await query.edit_message_text(
+                    f"🎉 <b>Savdo tasdiqlandi!</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"✅ Ikkala tomon ham tasdiqladi!\n"
+                    f"📋 Sotuvchi verifikatsiyadan o'tishi kerak.\n"
+                    f"Tasdiqlangandan so'ng pul sotuvchiga o'tkaziladi.",
+                    parse_mode="HTML",
+                )
+                try:
+                    from apps.payments.telegram_notify import notify_trade_both_confirmed
+                    notify_trade_both_confirmed(escrow_obj)
+                except Exception as e:
+                    logger.warning("notify_trade_both_confirmed: %s", e)
+            else:
+                await query.edit_message_text(
+                    f"✅ <b>Siz savdoni tasdiqladingiz!</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"⏳ Sotuvchi tasdiqini kutmoqda...\n"
+                    f"Sotuvchi ham tasdiqlagandan so'ng keyingi bosqichga o'tiladi.",
+                    parse_mode="HTML",
+                )
+                try:
+                    from apps.payments.telegram_notify import notify_trade_party_confirmed
+                    notify_trade_party_confirmed(escrow_obj, confirmed_by="buyer")
+                except Exception as e:
+                    logger.warning("notify_trade_party_confirmed: %s", e)
+
+        elif action == "trade_cancel":
+            # Kim bosganligi aniqlanadi
+            if escrow.seller.telegram_id == telegram_id:
+                side = "seller"
+            elif escrow.buyer.telegram_id == telegram_id:
+                side = "buyer"
+            else:
+                await query.answer("❌ Siz bu savdoning ishtirokchisi emassiz!", show_alert=True)
+                return
+
+            escrow_obj = EscrowService.cancel_trade_by_party(escrow, side, reason="Telegram orqali bekor qilindi")
+
+            if escrow_obj.status == "refunded":
+                await query.edit_message_text(
+                    f"❌ <b>Savdo bekor qilindi</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"Ikkala tomon ham bekor qildi.\n"
+                    f"💰 Pul haridorga qaytarildi.",
+                    parse_mode="HTML",
+                )
+            elif escrow_obj.status == "disputed":
+                await query.edit_message_text(
+                    f"⚠️ <b>Nizo ochildi</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"Bir tomon tasdiqladi, biri bekor qildi.\n"
+                    f"Admin tez orada hal qiladi.",
+                    parse_mode="HTML",
+                )
+            else:
+                other = "haridor" if side == "seller" else "sotuvchi"
+                await query.edit_message_text(
+                    f"❌ <b>Siz savdoni bekor qildingiz</b>\n\n"
+                    f"📦 {listing_title}\n\n"
+                    f"⏳ {other.capitalize()} javobini kutmoqda...",
+                    parse_mode="HTML",
+                )
+
+            try:
+                from apps.payments.telegram_notify import notify_trade_cancelled
+                notify_trade_cancelled(escrow_obj, cancelled_by=side)
+            except Exception as e:
+                logger.warning("notify_trade_cancelled: %s", e)
+
+    except Exception as e:
+        logger.error("trade_confirm_callback error: %s", e, exc_info=True)
+        await query.edit_message_text(f"❌ Xatolik yuz berdi. Qayta urinib ko'ring.")
 
 
 # =================== BLOCK 2.3: Trade callback handlers ===================
@@ -3416,6 +4587,58 @@ async def admin_reject_verification_callback(update: Update, context: ContextTyp
     )
 
 
+# ===== /status COMMAND (ADMIN ONLY) =====
+
+async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """/status — Check all system health (admin only)."""
+    if not update.effective_user or not _is_admin(update.effective_user.id):
+        return
+
+    status_text = "🔍 Tizim tekshiruvi...\n\n"
+    checks = []
+
+    # 1. Backend API
+    try:
+        result = await _safe_api_call('GET', '/health/')
+        if result and result.get('status') == 'ok':
+            checks.append("✅ Backend API: ishlayapti")
+        else:
+            checks.append("❌ Backend API: xatolik")
+    except Exception:
+        checks.append("❌ Backend API: ulanib bo'lmadi")
+
+    # 2. Detailed health
+    try:
+        result = await _safe_api_call('GET', '/health/detailed/')
+        if result:
+            db_ok = '✅' if result.get('checks', {}).get('database') == 'ok' else '❌'
+            cache_ok = '✅' if result.get('checks', {}).get('cache') == 'ok' else '❌'
+            celery_ok = '✅' if 'ok' in str(result.get('checks', {}).get('celery', '')) else '⚠️'
+            checks.append(f"{db_ok} Database: {result.get('checks', {}).get('database', 'unknown')}")
+            checks.append(f"{cache_ok} Redis/Cache: {result.get('checks', {}).get('cache', 'unknown')}")
+            checks.append(f"{celery_ok} Celery: {result.get('checks', {}).get('celery', 'unknown')}")
+        else:
+            checks.append("❌ Batafsil tekshiruv: ulanib bo'lmadi")
+    except Exception:
+        checks.append("❌ Batafsil tekshiruv: ulanib bo'lmadi")
+
+    # 3. Storage
+    try:
+        result = await _safe_api_call('GET', '/health/storage/')
+        if result and result.get('is_s3_active'):
+            checks.append("✅ S3/R2 saqlash: ishlayapti")
+        else:
+            checks.append("⚠️ S3/R2 saqlash: faol emas")
+    except Exception:
+        checks.append("⚠️ Saqlash: tekshirilmadi")
+
+    from datetime import datetime
+    status_text += "\n".join(checks)
+    status_text += f"\n\n🕐 Tekshirildi: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+
+    await update.message.reply_text(status_text)
+
+
 def main():
     """Botni ishga tushirish"""
     if BOT_TOKEN == 'YOUR_BOT_TOKEN_HERE':
@@ -3524,6 +4747,12 @@ def main():
                 CallbackQueryHandler(support_send_cb, pattern="^support_send$"),
                 CallbackQueryHandler(support_cancel_cb, pattern="^support_cancel$"),
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
+            WAITING_LISTING_VIDEO: [
+                MessageHandler(filters.VIDEO | filters.Document.VIDEO, _handle_listing_video),
+                MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, lambda u, c: u.message.reply_html("📹 Iltimos, <b>video fayl</b> yuboring.")),
                 CommandHandler('cancel', _cancel_to_menu),
             ],
         },
@@ -3648,7 +4877,25 @@ def main():
     app.add_handler(CallbackQueryHandler(admin_approve_verification_callback, pattern=r"^admin_approve_verification_"))
     app.add_handler(CallbackQueryHandler(admin_reject_verification_callback, pattern=r"^admin_reject_verification_"))
 
-    # Admin buyruqlari (faqat adminlar uchun, lekin global — conversation tashqarida)
+    # ---- Video moderatsiya callback handlerlari ----
+    app.add_handler(CallbackQueryHandler(_cb_video_moderate_approve, pattern=r"^vidmod_approve:"))
+    app.add_handler(CallbackQueryHandler(_cb_video_moderate_reject, pattern=r"^vidmod_reject:"))
+    app.add_handler(CallbackQueryHandler(_cb_video_moderate_msg, pattern=r"^vidmod_msg:"))
+
+    # ---- Admin panel interaktiv handlerlari ----
+    app.add_handler(CallbackQueryHandler(_cb_admin_panel_back, pattern=r"^admpanel:back$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_trades, pattern=r"^admpanel:trades$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_withdrawals, pattern=r"^admpanel:withdrawals$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_withdrawal_detail, pattern=r"^adm_w_detail:"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_verifications, pattern=r"^admpanel:verifications$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_verification_detail, pattern=r"^adm_v_detail:"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_view_doc, pattern=r"^adm_v_doc:"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_usersearch, pattern=r"^admpanel:usersearch$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_stats, pattern=r"^admpanel:stats$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_botstats, pattern=r"^admpanel:botstats$"))
+    app.add_handler(CallbackQueryHandler(_cb_admin_broadcast_prompt, pattern=r"^admpanel:broadcast$"))
+
+    # Admin buyruqlari
     app.add_handler(CommandHandler('admin', cmd_admin_panel))
     app.add_handler(CommandHandler('pending', cmd_pending))
     app.add_handler(CommandHandler('stats', cmd_stats))
@@ -3656,11 +4903,33 @@ def main():
     app.add_handler(CommandHandler('broadcast', cmd_broadcast))
     app.add_handler(CommandHandler('user_support', cmd_user_support))
 
+    # Video moderatsiya: admin reject sababi yoki sotuvchiga xabar
+    async def _admin_video_text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Admin video reject sababi yoki sotuvchiga xabar yozganda."""
+        if context.user_data.get('video_reject_listing_id'):
+            await _handle_video_reject_reason(update, context)
+            return
+        if context.user_data.get('video_msg_seller_tg_id'):
+            await _handle_video_msg_to_seller(update, context)
+            return
+        # Boshqa matn — admin user search ga o'tkazish
+        await _admin_user_search_handler(update, context)
+
+    # Admin matn handler (video moderate + user search) — boshqa handlerlardan KEYIN
+    app.add_handler(MessageHandler(
+        filters.TEXT & ~filters.COMMAND,
+        _admin_video_text_handler,
+    ), group=1)
+
     # ---- Umumiy buyruqlar ----
     app.add_handler(CommandHandler('help', help_command))
+    app.add_handler(CommandHandler('status', cmd_status))
     app.add_handler(MessageHandler(filters.COMMAND, unknown))
 
     async def error_handler(_update, context):
+        import traceback
+        from telegram.error import NetworkError, TimedOut, RetryAfter
+
         if isinstance(context.error, TelegramConflict):
             logger.warning(
                 "Conflict (409): Boshqa instance mavjud. "
@@ -3668,7 +4937,40 @@ def main():
             )
             await asyncio.sleep(15)
             return
+
+        # Network/timeout xatolarini admin ga yubormaslik (deploy, internet uzilishi — normal holat)
+        if isinstance(context.error, (NetworkError, TimedOut, ConnectionError, OSError)):
+            logger.warning("Vaqtinchalik tarmoq xatosi (admin ga yuborilmaydi): %s", context.error)
+            return
+
+        if isinstance(context.error, RetryAfter):
+            logger.warning("Rate limit: %s soniya kutish kerak", context.error.retry_after)
+            await asyncio.sleep(context.error.retry_after)
+            return
+
         logger.exception("Kutilmagan xato: %s", context.error)
+
+        # Admin ga xabar berish (faqat haqiqiy buglar)
+        error_text = (
+            f"⚠️ Bot xatolik:\n\n"
+            f"```\n{traceback.format_exception_only(type(context.error), context.error)[-1][:500]}```\n"
+            f"Update: {_update.update_id if _update else 'N/A'}\n"
+            f"User: {_update.effective_user.id if _update and _update.effective_user else 'N/A'}"
+        )
+        for admin_id in ADMIN_IDS:
+            try:
+                await context.bot.send_message(admin_id, error_text, parse_mode='Markdown')
+            except Exception:
+                pass
+
+        # Foydalanuvchiga xabar
+        if _update and _update.effective_message:
+            try:
+                await _update.effective_message.reply_text(
+                    "😔 Xatolik yuz berdi. Keyinroq urinib ko'ring yoki adminlarga murojaat qiling."
+                )
+            except Exception:
+                pass
 
     app.add_error_handler(error_handler)
 
