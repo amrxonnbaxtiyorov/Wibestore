@@ -14,7 +14,7 @@ logger = logging.getLogger("apps.payments")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "") or os.getenv("TELEGRAM_BOT_TOKEN", "")
 SITE_URL = os.getenv("SITE_URL", "https://wibestore.net").rstrip("/")
-TELEGRAM_BOT_LINK = os.getenv("TELEGRAM_BOT_LINK", "https://t.me/wibestorebot")
+TELEGRAM_BOT_LINK = os.getenv("TELEGRAM_BOT_LINK", "https://t.me/wibestoreuz_bot")
 
 
 def _fmt_price(amount) -> str:
@@ -27,11 +27,7 @@ def _fmt_price(amount) -> str:
 
 def _send_message(chat_id: int, text: str, reply_markup: dict = None) -> bool:
     """Telegram Bot API orqali xabar yuborish (sinxron)."""
-    if not BOT_TOKEN:
-        logger.warning("Telegram BOT_TOKEN sozlanmagan — xabar yuborilmadi (chat_id=%s)", chat_id)
-        return False
-    if not chat_id:
-        logger.debug("Telegram chat_id bo'sh — xabar yuborilmadi")
+    if not BOT_TOKEN or not chat_id:
         return False
 
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -116,10 +112,12 @@ def notify_purchase_created(escrow, chat_room_id: str = None) -> None:
             f"🌐 <a href='{chat_link}'>Chatga o'tish →</a>"
         )
         seller_keyboard = {
-            "inline_keyboard": [
-                [{"text": "📨 Chatga o'tish", "url": chat_link}],
-                [{"text": "✅ Akkauntni topshirdim", "callback_data": f"escrow_seller_ok:{escrow_id}"}],
-            ]
+            "inline_keyboard": [[
+                {
+                    "text": "✅ Akkauntni topshirdim",
+                    "callback_data": f"escrow_seller_ok:{escrow_id}",
+                },
+            ]]
         }
         _send_message(seller.telegram_id, seller_text, reply_markup=seller_keyboard)
 
@@ -160,10 +158,10 @@ def notify_seller_confirmed(escrow) -> None:
             f"⚠️ Tasdiqlashdan oldin akkauntni sinab ko'ring!"
         )
         buyer_keyboard = {
-            "inline_keyboard": [
-                [{"text": "✅ Akkauntni to'liq oldim", "callback_data": f"escrow_buyer_ok:{escrow_id}"}],
-                [{"text": "❌ Muammo bor", "callback_data": f"escrow_buyer_no:{escrow_id}"}],
-            ]
+            "inline_keyboard": [[
+                {"text": "✅ Akkauntni to'liq oldim", "callback_data": f"escrow_buyer_ok:{escrow_id}"},
+                {"text": "❌ Muammo bor", "callback_data": f"escrow_buyer_no:{escrow_id}"},
+            ]]
         }
         _send_message(buyer.telegram_id, buyer_text, reply_markup=buyer_keyboard)
 
@@ -521,10 +519,9 @@ def notify_verification_rejected(verification) -> None:
     if not seller.telegram_id:
         return
 
-    reason = note or "Ko`rsatilmagan"
     text = (
         f"❌ <b>Hujjatlaringiz rad etildi</b>\n\n"
-        f"📝 Sabab: {reason}\n\n"
+        f"📝 Sabab: {note or 'Ko'rsatilmagan'}\n\n"
         f"Hujjatlaringiz soxta yoki noto'g'ri topildi.\n"
         f"Iltimos, haqiqiy hujjatlar bilan qayta yuboring.\n\n"
         f"⬇️ Qayta yuborish uchun quyidagi tugmani bosing:"
@@ -649,13 +646,10 @@ def notify_trade_confirmation_request(escrow, chat_link: str = "") -> None:
             f"🌐 <a href='{chat_url}'>Chatga o'tish →</a>"
         )
         seller_keyboard = {
-            "inline_keyboard": [
-                [{"text": "💬 Chatga o'tish", "url": chat_url}],
-                [
-                    {"text": "✅ Savdoni tasdiqlash", "callback_data": f"trade_seller_ok:{escrow_id}"},
-                    {"text": "❌ Bekor qilish", "callback_data": f"trade_cancel:{escrow_id}"},
-                ],
-            ]
+            "inline_keyboard": [[
+                {"text": "✅ Tasdiqlash", "callback_data": f"trade_seller_ok:{escrow_id}"},
+                {"text": "❌ Savdoni bekor qilish", "callback_data": f"trade_cancel:{escrow_id}"},
+            ]]
         }
         _send_message(seller.telegram_id, seller_text, reply_markup=seller_keyboard)
 
@@ -667,16 +661,13 @@ def notify_trade_confirmation_request(escrow, chat_link: str = "") -> None:
             f"💰 To'langan summa: <b>{price_str}</b>\n\n"
             f"Admin chatga kirganidan so'ng akkaunt ma'lumotlarini tekshiring.\n"
             f"Hammasi yaxshi bo'lsa — <b>Tasdiqlash</b> tugmasini bosing.\n\n"
-            f"🌐 <a href='{chat_url}'>Chatga o'tish</a>"
+            f"🌐 <a href='{chat_url}'>Chatga o'tish →</a>"
         )
         buyer_keyboard = {
-            "inline_keyboard": [
-                [{"text": "💬 Chatga o'tish", "url": chat_url}],
-                [
-                    {"text": "✅ Savdoni tasdiqlash", "callback_data": f"trade_buyer_ok:{escrow_id}"},
-                    {"text": "❌ Bekor qilish", "callback_data": f"trade_cancel:{escrow_id}"},
-                ],
-            ]
+            "inline_keyboard": [[
+                {"text": "✅ Tasdiqlash", "callback_data": f"trade_buyer_ok:{escrow_id}"},
+                {"text": "❌ Savdoni bekor qilish", "callback_data": f"trade_cancel:{escrow_id}"},
+            ]]
         }
         _send_message(buyer.telegram_id, buyer_text, reply_markup=buyer_keyboard)
 
@@ -857,99 +848,46 @@ def notify_withdrawal_processed(user, amount, status: str) -> None:
 
 def notify_new_chat_message_sync(message_id: str) -> None:
     """
-    Yangi chat xabarida qabul qiluvchiga Telegram xabarnoma yuborish.
-    Faqat o'qilmagan (user chatda online bo'lmagan) xabarlar uchun.
-    Antispam: bir xabar yuboruvchidan faqat birinchi o'qilmagan xabar uchun.
+    Yangi chat xabarida qabul qiluvchiga Telegram xabarnoma yuborish (sinxron, Celery task dan chaqiriladi).
+    Faqat birinchi o'qilmagan xabar uchun (antispam).
     """
     try:
         from apps.messaging.models import Message
         from django.conf import settings as _settings
 
-        msg = (
-            Message.objects
-            .select_related("sender", "room", "room__listing")
-            .get(id=message_id)
-        )
-
-        # Agar xabar allaqachon o'qilgan bo'lsa — user chatda online edi, notification kerak emas
-        if msg.is_read:
-            logger.debug("Chat notification skipped (already read): msg=%s", message_id)
-            return
-
+        msg = Message.objects.select_related("sender", "room").get(id=message_id)
         room = msg.room
         sender = msg.sender
 
-        # Antispam: faqat birinchi o'qilmagan xabar uchun (loop tashqarisida — barcha recipient uchun bir xil)
-        unread_from_sender = Message.objects.filter(
-            room=room,
-            sender=sender,
-            is_read=False,
-        ).count()
-        if unread_from_sender > 1:
-            logger.debug(
-                "Chat notification skipped (antispam, %d unread): msg=%s",
-                unread_from_sender, message_id,
-            )
-            return
-
-        recipients = list(room.participants.exclude(id=sender.id))
-        if not recipients:
-            return
-
+        recipients = room.participants.exclude(id=sender.id)
         frontend_url = getattr(_settings, "FRONTEND_URL", SITE_URL).rstrip("/")
 
-        sender_name = (
-            getattr(sender, "display_name", None)
-            or getattr(sender, "full_name", None)
-            or getattr(sender, "username", None)
-            or "Foydalanuvchi"
-        )
-        preview = msg.content[:80] + ("..." if len(msg.content) > 80 else "")
-        chat_url = f"{frontend_url}/chat/{room.id}"
-
-        # Listing nomi (agar savdo chati bo'lsa)
-        listing_info = ""
-        if room.listing_id and room.listing:
-            listing_info = f"📦 {room.listing.title}\n"
-
-        text = (
-            f"💬 <b>Yangi xabar!</b>\n\n"
-            f"👤 <b>{sender_name}</b> sizga xabar yozdi:\n"
-            f"{listing_info}"
-            f"<i>{preview}</i>\n\n"
-            f"<a href='{chat_url}'>💬 Chatga o'tish →</a>"
-        )
-
-        sent_count = 0
         for recipient in recipients:
-            tg_id = getattr(recipient, "telegram_id", None)
-            if not tg_id:
-                logger.debug(
-                    "Chat notification skipped (no telegram_id): user=%s",
-                    recipient.id,
-                )
+            if not getattr(recipient, "telegram_id", None):
                 continue
 
-            ok = _send_message(tg_id, text)
-            if ok:
-                sent_count += 1
-                logger.info(
-                    "Chat notification sent: msg=%s → telegram_id=%s (user=%s)",
-                    message_id, tg_id, recipient.id,
-                )
-            else:
-                logger.warning(
-                    "Chat notification FAILED: msg=%s → telegram_id=%s (user=%s)",
-                    message_id, tg_id, recipient.id,
-                )
+            # Antispam: faqat birinchi o'qilmagan xabar uchun yuborish
+            unread_count = Message.objects.filter(
+                room=room,
+                sender=sender,
+                is_read=False,
+            ).count()
+            if unread_count > 1:
+                continue
 
-        if sent_count == 0 and recipients:
-            logger.debug(
-                "Chat notification: no recipients with telegram_id for msg=%s",
-                message_id,
+            sender_name = getattr(sender, "display_name", None) or getattr(sender, "username", None) or "Foydalanuvchi"
+            preview = msg.content[:80] + ("..." if len(msg.content) > 80 else "")
+            chat_url = f"{frontend_url}/chat/{room.id}"
+
+            text = (
+                f"💬 <b>Yangi xabar!</b>\n\n"
+                f"👤 <b>{sender_name}</b> sizga xabar yozdi:\n"
+                f"<i>{preview}</i>\n\n"
+                f"<a href='{chat_url}'>💬 Xabarni ko'rish →</a>"
             )
+            _send_message(recipient.telegram_id, text)
     except Exception as e:
-        logger.error("Failed to send chat notification: %s", e, exc_info=True)
+        logger.error("Failed to send chat notification: %s", e)
 
 
 def notify_listing_approved(listing) -> None:
@@ -1147,8 +1085,8 @@ def notify_admin_new_trade(escrow) -> None:
         seller = escrow.seller
         listing = escrow.listing
         escrow_id = str(escrow.id)
-        trade_link = f"{SITE_URL}/amirxon/trades"
-        chat_link = f"{SITE_URL}/amirxon/trade-chats"
+        trade_link = f"{SITE_URL}/admin/trades"
+        chat_link = f"{SITE_URL}/admin/trade-chats"
 
         text = (
             f"🛍️ <b>Yangi savdo #{escrow_id[:8]}</b>\n\n"
@@ -1188,7 +1126,7 @@ def notify_admin_dispute_opened(escrow, reason: str = "") -> None:
         seller = escrow.seller
         listing = escrow.listing
         escrow_id = str(escrow.id)
-        trade_link = f"{SITE_URL}/amirxon/trades"
+        trade_link = f"{SITE_URL}/admin/trades"
 
         text = (
             f"⚠️ <b>Savdoda nizo ochildi #{escrow_id[:8]}</b>\n\n"
@@ -1224,7 +1162,7 @@ def notify_admin_seller_verification_submitted(verification) -> None:
         listing = escrow.listing if escrow else None
         verification_id = str(verification.id)
         escrow_id = str(escrow.id)[:8] if escrow else "—"
-        panel_link = f"{SITE_URL}/amirxon/trades"
+        panel_link = f"{SITE_URL}/admin/trades"
 
         text = (
             f"🔍 <b>Yangi sotuvchi tasdiqlanishi</b>\n\n"

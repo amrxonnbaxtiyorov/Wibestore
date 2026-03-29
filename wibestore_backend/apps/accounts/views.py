@@ -4,7 +4,6 @@ WibeStore Backend - Accounts Views (API)
 
 import logging
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -32,8 +31,6 @@ from .serializers import (
     UserSerializer,
 )
 from core.exceptions import BusinessLogicError
-from core.permissions import IsTelegramBot
-from core.throttles import AuthRateThrottle, OTPRateThrottle, PasswordResetThrottle
 from .services import AuthService
 
 logger = logging.getLogger("apps.accounts")
@@ -46,7 +43,7 @@ class RegisterView(generics.CreateAPIView):
 
     permission_classes = [permissions.AllowAny]
     serializer_class = UserRegisterSerializer
-    throttle_classes = [AuthRateThrottle]
+    throttle_scope = "auth"
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -76,7 +73,7 @@ class LoginView(TokenObtainPairView):
     """POST /api/v1/auth/login/ — Login and get JWT tokens."""
 
     serializer_class = CustomTokenObtainPairSerializer
-    throttle_classes = [AuthRateThrottle]
+    throttle_scope = "auth"
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
@@ -169,7 +166,7 @@ class PasswordResetRequestView(APIView):
 
     permission_classes = [permissions.AllowAny]
     serializer_class = PasswordResetRequestSerializer
-    throttle_classes = [PasswordResetThrottle]
+    throttle_scope = "auth"
 
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
@@ -289,12 +286,26 @@ class TelegramBotProfileView(APIView):
     Body: { "secret_key": "...", "telegram_id": 123456789 }
     """
 
-    permission_classes = [IsTelegramBot]
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
 
     def post(self, request):
+        from django.conf import settings
+
         serializer = TelegramBotProfileRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or data["secret_key"] != secret:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Unauthorized",
+                    "detail": "TELEGRAM_BOT_SECRET noto'g'ri yoki backend'da o'rnatilmagan.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         user = User.objects.filter(
             telegram_id=data["telegram_id"],
@@ -359,12 +370,24 @@ class TelegramBotAddBalanceView(APIView):
     Body: { "secret_key": "...", "telegram_id": 123456789, "amount": 50000 }
     """
 
-    permission_classes = [IsTelegramBot]
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
 
     def post(self, request):
         from decimal import Decimal, InvalidOperation
 
+        from django.conf import settings
+
         data = request.data
+
+        # Secret key tekshirish
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or data.get("secret_key") != secret:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         telegram_id = data.get("telegram_id")
         amount_raw = data.get("amount")
 
@@ -430,14 +453,24 @@ class TelegramBotDeductBalanceView(APIView):
     Body: { "secret_key": "...", "telegram_id": 123456789, "amount": 50000 }
     """
 
-    permission_classes = [IsTelegramBot]
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
 
     def post(self, request):
         from decimal import Decimal, InvalidOperation
 
+        from django.conf import settings
         from django.db.models import F
 
         data = request.data
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or data.get("secret_key") != secret:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         telegram_id = data.get("telegram_id")
         amount_raw = data.get("amount")
 
@@ -507,10 +540,17 @@ class TelegramBotPlansView(APIView):
     Response: { "plans": { "premium": {"price": "50000", "name": "Premium"}, "pro": {...} } }
     """
 
-    permission_classes = [IsTelegramBot]
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
 
     def post(self, request):
+        from django.conf import settings
+
         from apps.subscriptions.models import SubscriptionPlan
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or request.data.get("secret_key") != secret:
+            return Response({"success": False, "error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
 
         plans = SubscriptionPlan.objects.filter(slug__in=("premium", "pro"), is_active=True).values(
             "slug", "name", "price_monthly"
@@ -534,11 +574,13 @@ class TelegramBotPremiumPurchaseView(APIView):
     use_balance=False: faqat premium beradi (admin tasdiqlagan to'lov uchun)
     """
 
-    permission_classes = [IsTelegramBot]
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
 
     def post(self, request):
         from decimal import Decimal
 
+        from django.conf import settings
         from django.db import transaction
         from django.db.models import F
         from django.utils import timezone
@@ -546,6 +588,14 @@ class TelegramBotPremiumPurchaseView(APIView):
         from apps.subscriptions.models import SubscriptionPlan, UserSubscription
 
         data = request.data
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or data.get("secret_key") != secret:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         telegram_id = data.get("telegram_id")
         plan_slug = str(data.get("plan", "")).lower().strip()
         use_balance = bool(data.get("use_balance", False))
@@ -676,13 +726,26 @@ class BotCreateOTPView(APIView):
     Body: { "secret_key": "...", "telegram_id": 123, "phone_number": "+998901234567" }
     """
 
-    permission_classes = [IsTelegramBot]
-    throttle_classes = [OTPRateThrottle]
+    permission_classes = [permissions.AllowAny]
+    throttle_scope = "auth"
 
     def post(self, request):
+        from django.conf import settings
+
         serializer = TelegramOTPCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        if not secret or data["secret_key"] != secret:
+            return Response(
+                {
+                    "success": False,
+                    "error": "Unauthorized",
+                    "detail": "TELEGRAM_BOT_SECRET noto'g'ri yoki backend'da o'rnatilmagan.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         try:
             otp_record = AuthService.create_telegram_otp(
@@ -760,13 +823,15 @@ class TelegramRegisterView(APIView):
         )
 
         # JWT ni httpOnly cookie'da berish (XSS himoya)
+        from django.conf import settings as django_settings
+
         max_age_access = 60 * 15  # 15 min (SIMPLE_JWT default)
         response.set_cookie(
             key="access_token",
             value=access,
             max_age=max_age_access,
             httponly=True,
-            secure=not settings.DEBUG,
+            secure=not django_settings.DEBUG,
             samesite="Lax",
             path="/",
         )
@@ -775,7 +840,7 @@ class TelegramRegisterView(APIView):
             value=refresh,
             max_age=60 * 60 * 24 * 7,  # 7 kun
             httponly=True,
-            secure=not settings.DEBUG,
+            secure=not django_settings.DEBUG,
             samesite="Lax",
             path="/api/v1/auth/refresh/",
         )
@@ -860,12 +925,21 @@ class TelegramEscrowActionView(APIView):
     }
     """
 
-    permission_classes = [IsTelegramBot]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        from django.conf import settings
         from apps.payments.models import EscrowTransaction
         from apps.payments.services import EscrowService
         from core.exceptions import BusinessLogicError
+
+        secret = getattr(settings, "TELEGRAM_BOT_SECRET", "") or ""
+        provided_key = request.data.get("secret_key", "")
+        if not secret or provided_key != secret:
+            return Response(
+                {"success": False, "error": "Unauthorized"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         telegram_id = request.data.get("telegram_id")
         escrow_id = request.data.get("escrow_id")

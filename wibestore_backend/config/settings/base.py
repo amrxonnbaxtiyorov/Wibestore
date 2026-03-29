@@ -288,14 +288,10 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Telegram bot: bot create-otp endpoint uchun maxfiy kalit (env da TELEGRAM_BOT_SECRET yoki BOT_SECRET_KEY)
 TELEGRAM_BOT_SECRET = os.environ.get("TELEGRAM_BOT_SECRET") or os.environ.get("BOT_SECRET_KEY", "")
-TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "wibestorebot")
 
-# Admin raqamlar — ADMIN_PHONE_NUMBERS env var orqali o'rnating (vergul bilan ajratilgan)
-ADMIN_PHONE_NUMBERS = [s.strip() for s in os.environ.get("ADMIN_PHONE_NUMBERS", "").split(",") if s.strip()]
-
-# Premium/Pro tarif narxlari (UZS) — int sifatida saqlash (env var string bo'lishi mumkin)
-PREMIUM_PRICE_UZS = int(os.environ.get("PREMIUM_PRICE_UZS", "50000"))
-PRO_PRICE_UZS = int(os.environ.get("PRO_PRICE_UZS", "30000"))
+# Premium/Pro tarif narxlari (UZS) — bot va backend bir xil qiymatni ishlatsin
+PREMIUM_PRICE_UZS = os.environ.get("PREMIUM_PRICE_UZS", "50000")
+PRO_PRICE_UZS = os.environ.get("PRO_PRICE_UZS", "30000")
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -482,22 +478,7 @@ LOGGING = {
             "level": "ERROR",
             "propagate": False,
         },
-        "django.security": {
-            "handlers": ["console", "error_file"],
-            "level": "WARNING",
-            "propagate": False,
-        },
         "apps": {
-            "handlers": ["console", "file", "error_file"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "apps.payments": {
-            "handlers": ["console", "file", "error_file"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "apps.admin_panel": {
             "handlers": ["console", "file", "error_file"],
             "level": "INFO",
             "propagate": False,

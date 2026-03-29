@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Crown, Heart, Gem, Hash } from 'lucide-react';
+import { Star, Crown, Heart, Gem } from 'lucide-react';
 import { formatPrice } from '../data/mockData';
 import { resolveImageUrl } from '../lib/displayUtils';
 import { useAuth } from '../context/AuthContext';
@@ -45,12 +45,6 @@ const AccountCard = ({ account, featured = false }) => {
     const sellerPlan = seller.plan || (accountIsPro ? 'pro' : accountIsPremium ? 'premium' : 'free');
     const sellerRating = Number(seller.rating) || 5;
     const sellerSales = seller.total_sales ?? seller.sales_count ?? 0;
-    const listingCode = account.listing_code || '';
-    const listingType = account.listing_type || 'sell';
-    const isRental = listingType === 'rent';
-    const rentalPricePerDay = account.rental_price_per_day ? Number(account.rental_price_per_day) : null;
-    const rentalPeriodDays = account.rental_period_days ?? null;
-    const rentalDeposit = account.rental_deposit ? Number(account.rental_deposit) : null;
     const warrantyDays = account.warranty_days ?? 0;
     const salePercent = account.sale_percent ?? 0;
     const saleEndsAt = account.sale_ends_at ? new Date(account.sale_ends_at) : null;
@@ -84,22 +78,8 @@ const AccountCard = ({ account, featured = false }) => {
                 />
             )}
 
-            {/* Rental / Sale / Warranty badges */}
+            {/* Sale & Warranty badges */}
             <div className="absolute top-2 right-2 flex flex-col gap-1" style={{ zIndex: 2 }}>
-                {isRental && (
-                    <span
-                        className="badge"
-                        style={{
-                            background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
-                            color: 'white',
-                            fontSize: '11px',
-                            padding: '2px 8px',
-                            fontWeight: 700,
-                        }}
-                    >
-                        {t('rent.badge') || 'Arenda'}
-                    </span>
-                )}
                 {isOnSale && (
                     <span
                         className="badge"
@@ -204,28 +184,6 @@ const AccountCard = ({ account, featured = false }) => {
                 >
                     {accountGameName}
                 </div>
-
-                {/* Listing Code Badge */}
-                {listingCode && (
-                    <div
-                        className="absolute flex items-center gap-0.5 rounded-full text-xs"
-                        style={{
-                            bottom: '12px',
-                            right: '12px',
-                            padding: '3px 8px',
-                            backgroundColor: 'rgba(0,0,0,0.65)',
-                            backdropFilter: 'blur(4px)',
-                            color: 'var(--color-premium-gold-light)',
-                            fontWeight: 600,
-                            fontFamily: 'monospace',
-                            fontSize: '11px',
-                            letterSpacing: '0.5px',
-                        }}
-                    >
-                        <Hash className="w-3 h-3" />
-                        {listingCode}
-                    </div>
-                )}
             </div>
 
             {/* Content */}
@@ -265,25 +223,15 @@ const AccountCard = ({ account, featured = false }) => {
                     }}
                 >
                     {/* Price */}
-                    <div>
-                        <span
-                            className="font-bold"
-                            style={{
-                                fontSize: 'var(--font-size-lg)',
-                                color: isRental ? '#a855f7' : 'var(--color-text-accent)',
-                            }}
-                        >
-                            {isRental && rentalPricePerDay
-                                ? formatPrice(rentalPricePerDay)
-                                : formatPrice(accountPrice)
-                            }
-                        </span>
-                        {isRental && rentalPricePerDay && (
-                            <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginLeft: '2px' }}>
-                                /{t('rent.per_day') || 'kun'}
-                            </span>
-                        )}
-                    </div>
+                    <span
+                        className="font-bold"
+                        style={{
+                            fontSize: 'var(--font-size-lg)',
+                            color: 'var(--color-text-accent)',
+                        }}
+                    >
+                        {formatPrice(accountPrice)}
+                    </span>
 
                     {/* Seller: yulduzcha reyting + sotuvlar soni */}
                     <div className="flex items-center gap-2">

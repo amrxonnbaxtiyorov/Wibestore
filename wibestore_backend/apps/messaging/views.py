@@ -36,13 +36,6 @@ class ChatRoomListView(generics.ListAPIView):
             participants=self.request.user, is_active=True
         ).select_related("listing", "listing__game").prefetch_related("participants", "listing__images")
 
-    def list(self, request, *args, **kwargs):
-        try:
-            return super().list(request, *args, **kwargs)
-        except Exception as e:
-            logger.error("ChatRoomListView error: %s", e, exc_info=True)
-            return Response({"results": []}, status=status.HTTP_200_OK)
-
 
 @extend_schema(tags=["Messaging"])
 class ChatRoomCreateView(APIView):
@@ -179,17 +172,12 @@ class SendMessageView(APIView):
         # If admin writes first message to an order chat — auto-send credentials
         _maybe_send_credentials(room, request.user)
 
-        # Notify recipient(s) via Telegram — delay 15s so user can read in chat first
+        # Notify recipient(s) via Telegram for incoming messages (sync, no Celery dependency)
         try:
-            from apps.payments.telegram_notify import notify_new_chat_message
-            notify_new_chat_message.apply_async(args=[str(message.id)], countdown=15)
-        except Exception:
-            # Celery unavailable — fallback: sync with no delay (still checks is_read)
-            try:
-                from apps.payments.telegram_notify import notify_new_chat_message_sync
-                notify_new_chat_message_sync(str(message.id))
-            except Exception as _tg_err:
-                logger.warning("notify_new_chat_message skipped: %s", _tg_err)
+            from apps.payments.telegram_notify import notify_new_chat_message_sync
+            notify_new_chat_message_sync(str(message.id))
+        except Exception as _tg_err:
+            logger.warning("notify_new_chat_message skipped: %s", _tg_err)
 
         return Response(
             {

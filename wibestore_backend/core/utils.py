@@ -20,46 +20,20 @@ def generate_token(length: int = 64) -> str:
     return secrets.token_urlsafe(length)
 
 
-_DUMMY_FERNET_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
-
-
-def _get_fernet():
-    """Get a valid Fernet instance, or None if key is missing/dummy."""
-    key = getattr(settings, "FERNET_KEY", None)
-    if not key or key == _DUMMY_FERNET_KEY:
-        return None
-    try:
-        return Fernet(key.encode())
-    except Exception:
-        return None
-
-
 def encrypt_sensitive_data(data: str) -> str:
-    """Encrypt sensitive data using Fernet encryption.
-    Returns data as-is if FERNET_KEY is not configured (safe fallback)."""
-    if not data:
+    """Encrypt sensitive data using Fernet encryption."""
+    if not settings.FERNET_KEY:
         return data
-    fernet = _get_fernet()
-    if not fernet:
-        return data
-    try:
-        return fernet.encrypt(data.encode()).decode()
-    except Exception:
-        return data
+    fernet = Fernet(settings.FERNET_KEY.encode())
+    return fernet.encrypt(data.encode()).decode()
 
 
 def decrypt_sensitive_data(encrypted_data: str) -> str:
-    """Decrypt sensitive data using Fernet encryption.
-    Returns encrypted_data as-is if FERNET_KEY is not configured or decryption fails."""
-    if not encrypted_data:
+    """Decrypt sensitive data using Fernet encryption."""
+    if not settings.FERNET_KEY:
         return encrypted_data
-    fernet = _get_fernet()
-    if not fernet:
-        return encrypted_data
-    try:
-        return fernet.decrypt(encrypted_data.encode()).decode()
-    except Exception:
-        return encrypted_data
+    fernet = Fernet(settings.FERNET_KEY.encode())
+    return fernet.decrypt(encrypted_data.encode()).decode()
 
 
 def calculate_commission(amount: Decimal, plan_type: str = "free") -> Decimal:

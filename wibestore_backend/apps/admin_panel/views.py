@@ -17,38 +17,20 @@ from rest_framework.views import APIView
 from apps.marketplace.models import Listing
 from apps.marketplace.serializers import ListingSerializer
 from apps.marketplace.services import ListingService
-from apps.payments.models import EscrowTransaction, Transaction, WithdrawalRequest
-from apps.payments.serializers import WithdrawalRequestSerializer
-from apps.payments.services import EscrowService, WithdrawalService
+from apps.payments.models import EscrowTransaction, Transaction
+from apps.payments.services import EscrowService
 from apps.reports.models import Report, SuspiciousActivity
 from apps.reports.serializers import ReportSerializer
 from core.permissions import IsAdminUser
-from .audit import log_admin_action, get_client_ip
 from .serializers import (
     TelegramBotStatSerializer,
     AdminDepositRequestSerializer,
     AdminSellerVerificationSerializer,
     AdminTradeSerializer,
-    AdminActionSerializer,
-    AdminUserDetailSerializer,
-    AdminListingDetailSerializer,
-    AdminTransactionDetailSerializer,
-    AdminPromoCodeSerializer,
-    AdminGameSerializer,
 )
 
 User = get_user_model()
 logger = logging.getLogger("apps.admin_panel")
-
-
-class SafeListMixin:
-    """Mixin: agar jadval mavjud bo'lmasa, bo'sh ro'yxat qaytaradi (500 o'rniga)."""
-    def list(self, request, *args, **kwargs):
-        try:
-            return super().list(request, *args, **kwargs)
-        except Exception as e:
-            logger.warning("SafeList: %s query failed: %s", self.__class__.__name__, e)
-            return Response({"results": [], "count": 0})
 
 
 @extend_schema(tags=["Admin"])
@@ -62,46 +44,41 @@ class AdminDashboardView(APIView):
         thirty_days_ago = now - timedelta(days=30)
         seven_days_ago = now - timedelta(days=7)
 
-        def safe_count(qs):
-            try:
-                return qs.count()
-            except Exception as e:
-                logger.warning("Dashboard query failed: %s", e)
-                return 0
-
-        def safe_aggregate(qs, field="amount"):
-            try:
-                return qs.aggregate(total=Sum(field))["total"] or 0
-            except Exception as e:
-                logger.warning("Dashboard aggregate failed: %s", e)
-                return 0
-
         stats = {
             "users": {
-                "total": safe_count(User.objects.filter(is_active=True)),
-                "new_this_month": safe_count(User.objects.filter(created_at__gte=thirty_days_ago)),
-                "new_this_week": safe_count(User.objects.filter(created_at__gte=seven_days_ago)),
-                "verified": safe_count(User.objects.filter(is_verified=True)),
+                "total": User.objects.filter(is_active=True).count(),
+                "new_this_month": User.objects.filter(created_at__gte=thirty_days_ago).count(),
+                "new_this_week": User.objects.filter(created_at__gte=seven_days_ago).count(),
+                "verified": User.objects.filter(is_verified=True).count(),
             },
             "listings": {
-                "total": safe_count(Listing.objects.all()),
-                "active": safe_count(Listing.objects.filter(status="active")),
-                "pending": safe_count(Listing.objects.filter(status="pending")),
-                "sold": safe_count(Listing.objects.filter(status="sold")),
+                "total": Listing.objects.count(),
+                "active": Listing.objects.filter(status="active").count(),
+                "pending": Listing.objects.filter(status="pending").count(),
+                "sold": Listing.objects.filter(status="sold").count(),
             },
             "transactions": {
-                "total_volume": safe_aggregate(Transaction.objects.filter(status="completed")),
-                "month_volume": safe_aggregate(Transaction.objects.filter(status="completed", created_at__gte=thirty_days_ago)),
+                "total_volume": Transaction.objects.filter(
+                    status="completed"
+                ).aggregate(total=Sum("amount"))["total"] or 0,
+                "month_volume": Transaction.objects.filter(
+                    status="completed",
+                    created_at__gte=thirty_days_ago,
+                ).aggregate(total=Sum("amount"))["total"] or 0,
             },
             "escrow": {
-                "active": safe_count(EscrowTransaction.objects.filter(status__in=["pending_payment", "paid", "delivered"])),
-                "disputed": safe_count(EscrowTransaction.objects.filter(status="disputed")),
-                "completed": safe_count(EscrowTransaction.objects.filter(status="confirmed")),
-                "total_commission": safe_aggregate(EscrowTransaction.objects.filter(status="confirmed"), "commission_amount"),
+                "active": EscrowTransaction.objects.filter(
+                    status__in=["pending_payment", "paid", "delivered"]
+                ).count(),
+                "disputed": EscrowTransaction.objects.filter(status="disputed").count(),
+                "completed": EscrowTransaction.objects.filter(status="confirmed").count(),
+                "total_commission": EscrowTransaction.objects.filter(
+                    status="confirmed"
+                ).aggregate(total=Sum("commission_amount"))["total"] or 0,
             },
             "reports": {
-                "pending": safe_count(Report.objects.filter(status="pending")),
-                "total": safe_count(Report.objects.all()),
+                "pending": Report.objects.filter(status="pending").count(),
+                "total": Report.objects.count(),
             },
         }
 
@@ -117,21 +94,19 @@ class AdminFraudStatsView(APIView):
     def get(self, request):
         now = timezone.now()
         seven_days_ago = now - timedelta(days=7)
-
-        def safe_count(qs):
-            try:
-                return qs.count()
-            except Exception as e:
-                logger.warning("FraudStats query failed: %s", e)
-                return 0
-
+        suspicious_unresolved = SuspiciousActivity.objects.filter(resolved=False).count()
+        suspicious_resolved_week = SuspiciousActivity.objects.filter(
+            resolved=True, resolved_at__gte=seven_days_ago
+        ).count()
+        disputed = EscrowTransaction.objects.filter(status="disputed").count()
+        reports_pending = Report.objects.filter(status="pending").count()
         return Response({
             "success": True,
             "data": {
-                "suspicious_activities_unresolved": safe_count(SuspiciousActivity.objects.filter(resolved=False)),
-                "suspicious_resolved_this_week": safe_count(SuspiciousActivity.objects.filter(resolved=True, resolved_at__gte=seven_days_ago)),
-                "escrow_disputed": safe_count(EscrowTransaction.objects.filter(status="disputed")),
-                "reports_pending": safe_count(Report.objects.filter(status="pending")),
+                "suspicious_activities_unresolved": suspicious_unresolved,
+                "suspicious_resolved_this_week": suspicious_resolved_week,
+                "escrow_disputed": disputed,
+                "reports_pending": reports_pending,
             },
         })
 
@@ -172,7 +147,6 @@ class AdminApproveListingView(APIView):
 
     permission_classes = [IsAdminUser]
 
-    @log_admin_action('approve_listing', 'Listing')
     def post(self, request, pk):
         try:
             listing = Listing.objects.get(pk=pk)
@@ -192,7 +166,6 @@ class AdminRejectListingView(APIView):
 
     permission_classes = [IsAdminUser]
 
-    @log_admin_action('reject_listing', 'Listing')
     def post(self, request, pk):
         try:
             listing = Listing.objects.get(pk=pk)
@@ -213,7 +186,6 @@ class AdminDeleteListingView(APIView):
 
     permission_classes = [IsAdminUser]
 
-    @log_admin_action('delete_listing', 'Listing')
     def delete(self, request, pk):
         try:
             listing = Listing.objects.get(pk=pk, deleted_at__isnull=True)
@@ -227,7 +199,7 @@ class AdminDeleteListingView(APIView):
 
 
 @extend_schema(tags=["Admin"])
-class AdminDisputesView(SafeListMixin, generics.ListAPIView):
+class AdminDisputesView(generics.ListAPIView):
     """GET /api/v1/admin/disputes/ — Active disputes."""
 
     permission_classes = [IsAdminUser]
@@ -275,7 +247,7 @@ class AdminResolveDisputeView(APIView):
 
 
 @extend_schema(tags=["Admin"])
-class AdminReportsView(SafeListMixin, generics.ListAPIView):
+class AdminReportsView(generics.ListAPIView):
     """GET /api/v1/admin/reports/ — Pending reports."""
 
     serializer_class = ReportSerializer
@@ -335,7 +307,6 @@ class AdminUserBanView(APIView):
 
     permission_classes = [IsAdminUser]
 
-    @log_admin_action('ban_user', 'User')
     def post(self, request, pk):
         try:
             user = User.objects.get(pk=pk)
@@ -416,7 +387,7 @@ class AdminGrantSubscriptionView(APIView):
 
 
 @extend_schema(tags=["Admin"])
-class AdminTransactionsView(SafeListMixin, generics.ListAPIView):
+class AdminTransactionsView(generics.ListAPIView):
     """GET /api/v1/admin-panel/transactions/ — All transactions."""
 
     permission_classes = [IsAdminUser]
@@ -456,7 +427,7 @@ class AdminTelegramStatsView(APIView):
         return Response(data)
 
 
-class AdminTelegramUsersView(SafeListMixin, generics.ListAPIView):
+class AdminTelegramUsersView(generics.ListAPIView):
     """GET /api/v1/admin-panel/telegram/users/"""
     permission_classes = [IsAdminUser]
     serializer_class = TelegramBotStatSerializer
@@ -525,7 +496,7 @@ class AdminTelegramRegistrationsByDateView(APIView):
 
 # ============= BLOCK 2: Deposit Management =============
 
-class AdminDepositsView(SafeListMixin, generics.ListAPIView):
+class AdminDepositsView(generics.ListAPIView):
     """GET /api/v1/admin-panel/deposits/"""
     permission_classes = [IsAdminUser]
     serializer_class = AdminDepositRequestSerializer
@@ -591,7 +562,7 @@ class AdminDepositStatsView(APIView):
 
 # ============= BLOCK 4: Seller Verifications =============
 
-class AdminSellerVerificationsView(SafeListMixin, generics.ListAPIView):
+class AdminSellerVerificationsView(generics.ListAPIView):
     """GET /api/v1/admin-panel/seller-verifications/"""
     permission_classes = [IsAdminUser]
     serializer_class = AdminSellerVerificationSerializer
@@ -709,7 +680,7 @@ class AdminRejectSellerVerificationView(APIView):
 
 # ============= BLOCK 5: Trade Management =============
 
-class AdminTradesView(SafeListMixin, generics.ListAPIView):
+class AdminTradesView(generics.ListAPIView):
     """GET /api/v1/admin-panel/trades/"""
     permission_classes = [IsAdminUser]
     serializer_class = AdminTradeSerializer
@@ -725,7 +696,6 @@ class AdminTradesView(SafeListMixin, generics.ListAPIView):
             qs = qs.filter(status=status_filter)
         if search:
             qs = qs.filter(
-                models.Q(trade_code__icontains=search) |
                 models.Q(listing__title__icontains=search) |
                 models.Q(buyer__email__icontains=search) |
                 models.Q(seller__email__icontains=search)
@@ -868,27 +838,18 @@ class AdminTradeStatsView(APIView):
 
     def get(self, request):
         from django.utils import timezone
-        from django.db.models import Sum
+        from django.db.models import Sum, Avg
         from apps.payments.models import EscrowTransaction
-
-        def safe_count(qs):
-            try:
-                return qs.count()
-            except Exception:
-                return 0
-
         today = timezone.now().date()
         qs = EscrowTransaction.objects.all()
-        try:
-            vol = qs.filter(status="confirmed", updated_at__date=today).aggregate(t=Sum("amount"))["t"] or 0
-        except Exception:
-            vol = 0
         data = {
-            "active_trades": safe_count(qs.filter(status__in=["paid", "delivered"])),
-            "pending_delivery": safe_count(qs.filter(status="paid")),
-            "disputed": safe_count(qs.filter(status="disputed")),
-            "completed_today": safe_count(qs.filter(status="confirmed", updated_at__date=today)),
-            "total_volume_today": vol,
+            "active_trades": qs.filter(status__in=["paid", "delivered"]).count(),
+            "pending_delivery": qs.filter(status="paid").count(),
+            "disputed": qs.filter(status="disputed").count(),
+            "completed_today": qs.filter(status="confirmed", updated_at__date=today).count(),
+            "total_volume_today": qs.filter(
+                status="confirmed", updated_at__date=today
+            ).aggregate(t=Sum("amount"))["t"] or 0,
         }
         return Response(data)
 
@@ -908,548 +869,3 @@ def _log_admin_action(request, action_type: str, target_type: str, target_id: st
         )
     except Exception as e:
         logger.warning("Could not log admin action: %s", e)
-
-
-# ── BLOK 2.2: Audit Log API ──
-
-class AdminAuditLogView(SafeListMixin, generics.ListAPIView):
-    """GET /api/v1/admin-panel/audit-log/ — Admin audit log with filters."""
-    permission_classes = [IsAdminUser]
-    serializer_class = AdminActionSerializer
-
-    def get_queryset(self):
-        from .models import AdminAction
-        qs = AdminAction.objects.select_related('admin').order_by('-created_at')
-
-        admin_id = self.request.query_params.get('admin_id')
-        if admin_id:
-            qs = qs.filter(admin_id=admin_id)
-
-        action_type = self.request.query_params.get('action_type')
-        if action_type:
-            qs = qs.filter(action_type=action_type)
-
-        target_type = self.request.query_params.get('target_type')
-        if target_type:
-            qs = qs.filter(target_type=target_type)
-
-        date_from = self.request.query_params.get('date_from')
-        if date_from:
-            qs = qs.filter(created_at__date__gte=date_from)
-
-        date_to = self.request.query_params.get('date_to')
-        if date_to:
-            qs = qs.filter(created_at__date__lte=date_to)
-
-        search = self.request.query_params.get('search')
-        if search:
-            qs = qs.filter(
-                Q(target_id__icontains=search) |
-                Q(action_type__icontains=search) |
-                Q(admin__email__icontains=search)
-            )
-        return qs
-
-
-# ── BLOK 2.3: User Detail/Edit ──
-
-class AdminUserDetailView(generics.RetrieveUpdateAPIView):
-    """GET/PATCH /api/v1/admin-panel/users/<uuid>/ — View/edit user details."""
-    permission_classes = [IsAdminUser]
-    serializer_class = AdminUserDetailSerializer
-    lookup_field = 'pk'
-
-    def get_queryset(self):
-        return User.objects.all()
-
-    @log_admin_action('edit_user', 'User')
-    def patch(self, request, *args, **kwargs):
-        return super().patch(request, *args, **kwargs)
-
-
-# ── BLOK 2.4: Listing Detail/Edit ──
-
-class AdminListingDetailView(generics.RetrieveUpdateAPIView):
-    """GET/PATCH /api/v1/admin-panel/listings/<uuid>/detail/ — View/edit listing."""
-    permission_classes = [IsAdminUser]
-    serializer_class = AdminListingDetailSerializer
-    lookup_field = 'pk'
-
-    def get_queryset(self):
-        return Listing.objects.select_related('seller', 'game').prefetch_related('images')
-
-    @log_admin_action('edit_listing', 'Listing')
-    def patch(self, request, *args, **kwargs):
-        return super().patch(request, *args, **kwargs)
-
-
-# ── BLOK 2.5: Transaction Detail/Edit ──
-
-class AdminTransactionDetailView(generics.RetrieveUpdateAPIView):
-    """GET/PATCH /api/v1/admin-panel/transactions/<uuid>/ — View/edit transaction."""
-    permission_classes = [IsAdminUser]
-    serializer_class = AdminTransactionDetailSerializer
-    lookup_field = 'pk'
-
-    def get_queryset(self):
-        return Transaction.objects.select_related('user', 'payment_method')
-
-    @log_admin_action('edit_transaction', 'Transaction')
-    def patch(self, request, *args, **kwargs):
-        instance = self.get_object()
-        old_status = instance.status
-        response = super().patch(request, *args, **kwargs)
-
-        # If status changed — update user balance accordingly
-        new_status = request.data.get('status')
-        if new_status and new_status != old_status:
-            instance.refresh_from_db()
-            if new_status == 'completed' and instance.type == 'deposit':
-                from django.db.models import F
-                User.objects.filter(pk=instance.user_id).update(balance=F('balance') + instance.amount)
-            elif new_status == 'failed' and old_status == 'completed' and instance.type == 'deposit':
-                from django.db.models import F
-                User.objects.filter(pk=instance.user_id).update(balance=F('balance') - instance.amount)
-
-        return response
-
-
-# ── BLOK 2.7: Admin Alerts ──
-
-class AdminAlertsView(APIView):
-    """GET /api/v1/admin-panel/alerts/ — Critical admin alerts."""
-    permission_classes = [IsAdminUser]
-
-    def get(self, request):
-        from datetime import timedelta
-        now = timezone.now()
-        alerts = []
-
-        def safe_count(qs):
-            try:
-                return qs.count()
-            except Exception:
-                return 0
-
-        # Old disputes > 24 hours
-        old_disputes = safe_count(EscrowTransaction.objects.filter(
-            status='disputed', updated_at__lt=now - timedelta(hours=24)
-        ))
-        if old_disputes:
-            alerts.append({
-                'level': 'critical', 'type': 'old_disputes',
-                'message': f'{old_disputes} dispute(s) pending over 24 hours',
-                'count': old_disputes,
-            })
-
-        # Old withdrawals > 48 hours
-        old_withdrawals = safe_count(WithdrawalRequest.objects.filter(
-            status='pending', created_at__lt=now - timedelta(hours=48)
-        ))
-        if old_withdrawals:
-            alerts.append({
-                'level': 'warning', 'type': 'old_withdrawals',
-                'message': f'{old_withdrawals} withdrawal(s) pending over 48 hours',
-                'count': old_withdrawals,
-            })
-
-        # Suspicious activity
-        suspicious = safe_count(SuspiciousActivity.objects.filter(resolved=False))
-        if suspicious:
-            alerts.append({
-                'level': 'critical', 'type': 'suspicious_activity',
-                'message': f'{suspicious} suspicious activities need attention',
-                'count': suspicious,
-            })
-
-        # Pending listings > 10
-        pending_listings = safe_count(Listing.objects.filter(status='pending'))
-        if pending_listings > 10:
-            alerts.append({
-                'level': 'info', 'type': 'pending_listings',
-                'message': f'{pending_listings} listings awaiting moderation',
-                'count': pending_listings,
-            })
-
-        return Response({
-            'alerts': alerts,
-            'total_critical': len([a for a in alerts if a['level'] == 'critical']),
-            'total_warning': len([a for a in alerts if a['level'] == 'warning']),
-            'timestamp': now.isoformat(),
-        })
-
-
-# ── BLOK 2.8: PromoCode CRUD ──
-
-class AdminPromoCodeListCreateView(generics.ListCreateAPIView):
-    """GET/POST /api/v1/admin-panel/promo-codes/"""
-    permission_classes = [IsAdminUser]
-    serializer_class = AdminPromoCodeSerializer
-
-    def get_queryset(self):
-        from apps.marketplace.models import PromoCode
-        qs = PromoCode.objects.all().order_by('-created_at')
-        is_active = self.request.query_params.get('is_active')
-        if is_active is not None:
-            qs = qs.filter(is_active=is_active.lower() == 'true')
-        return qs
-
-    @log_admin_action('create_promo', 'PromoCode')
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
-
-
-class AdminPromoCodeDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """GET/PATCH/DELETE /api/v1/admin-panel/promo-codes/<id>/"""
-    permission_classes = [IsAdminUser]
-    serializer_class = AdminPromoCodeSerializer
-    lookup_field = 'pk'
-
-    def get_queryset(self):
-        from apps.marketplace.models import PromoCode
-        return PromoCode.objects.all()
-
-    @log_admin_action('edit_promo', 'PromoCode')
-    def patch(self, request, *args, **kwargs):
-        return super().patch(request, *args, **kwargs)
-
-    @log_admin_action('delete_promo', 'PromoCode')
-    def delete(self, request, *args, **kwargs):
-        return super().delete(request, *args, **kwargs)
-
-
-# ── BLOK 2.9: Game CRUD ──
-
-class AdminGameListCreateView(generics.ListCreateAPIView):
-    """GET/POST /api/v1/admin-panel/games/"""
-    permission_classes = [IsAdminUser]
-    serializer_class = AdminGameSerializer
-
-    def get_queryset(self):
-        from apps.games.models import Game
-        return Game.objects.all().order_by('sort_order')
-
-    @log_admin_action('create_game', 'Game')
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
-
-
-class AdminGameDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """GET/PATCH/DELETE /api/v1/admin-panel/games/<slug>/"""
-    permission_classes = [IsAdminUser]
-    serializer_class = AdminGameSerializer
-    lookup_field = 'slug'
-
-    def get_queryset(self):
-        from apps.games.models import Game
-        return Game.objects.all()
-
-    @log_admin_action('edit_game', 'Game')
-    def patch(self, request, *args, **kwargs):
-        return super().patch(request, *args, **kwargs)
-
-    @log_admin_action('delete_game', 'Game')
-    def delete(self, request, *args, **kwargs):
-        return super().delete(request, *args, **kwargs)
-
-
-# ── BLOK 2.10: CSV Export ──
-
-class AdminExportView(APIView):
-    """GET /api/v1/admin-panel/export/<type>/ — Export data as CSV."""
-    permission_classes = [IsAdminUser]
-
-    @log_admin_action('export_data', 'Export')
-    def get(self, request, export_type):
-        import csv
-        from django.http import HttpResponse
-
-        date_from = request.query_params.get('date_from')
-        date_to = request.query_params.get('date_to')
-
-        try:
-            if export_type == 'users':
-                return self._export_users(date_from, date_to)
-            elif export_type == 'transactions':
-                return self._export_transactions(date_from, date_to)
-            elif export_type == 'listings':
-                return self._export_listings(date_from, date_to)
-            elif export_type == 'trades':
-                return self._export_trades(date_from, date_to)
-            else:
-                return Response({'error': 'Unknown export type'}, status=400)
-        except Exception as e:
-            logger.error("Export failed for type=%s: %s", export_type, e, exc_info=True)
-            return Response({'error': f'Export failed: {str(e)}'}, status=500)
-
-    def _export_users(self, date_from, date_to):
-        import csv
-        from django.http import HttpResponse
-        response = HttpResponse(content_type='text/csv; charset=utf-8')
-        response['Content-Disposition'] = 'attachment; filename="users_export.csv"'
-        response.write('\ufeff')
-
-        writer = csv.writer(response)
-        writer.writerow(['ID', 'Email', 'Name', 'Phone', 'Telegram ID',
-                         'Balance', 'Rating', 'Verified', 'Active', 'Registered'])
-
-        qs = User.objects.all().order_by('-created_at')
-        if date_from:
-            qs = qs.filter(created_at__date__gte=date_from)
-        if date_to:
-            qs = qs.filter(created_at__date__lte=date_to)
-
-        for user in qs.iterator(chunk_size=1000):
-            writer.writerow([
-                str(user.id), user.email, user.full_name, user.phone_number,
-                user.telegram_id, str(user.balance), str(user.rating),
-                'Yes' if user.is_verified else 'No',
-                'Yes' if user.is_active else 'No',
-                user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '',
-            ])
-        return response
-
-    def _export_transactions(self, date_from, date_to):
-        import csv
-        from django.http import HttpResponse
-        response = HttpResponse(content_type='text/csv; charset=utf-8')
-        response['Content-Disposition'] = 'attachment; filename="transactions_export.csv"'
-        response.write('\ufeff')
-
-        writer = csv.writer(response)
-        writer.writerow(['ID', 'User Email', 'Amount', 'Currency', 'Type', 'Status', 'Created'])
-
-        qs = Transaction.objects.select_related('user').order_by('-created_at')
-        if date_from:
-            qs = qs.filter(created_at__date__gte=date_from)
-        if date_to:
-            qs = qs.filter(created_at__date__lte=date_to)
-
-        for tx in qs.iterator(chunk_size=1000):
-            writer.writerow([
-                str(tx.id), tx.user.email if tx.user else '', str(tx.amount),
-                tx.currency, tx.type, tx.status,
-                tx.created_at.strftime('%Y-%m-%d %H:%M') if tx.created_at else '',
-            ])
-        return response
-
-    def _export_listings(self, date_from, date_to):
-        import csv
-        from django.http import HttpResponse
-        response = HttpResponse(content_type='text/csv; charset=utf-8')
-        response['Content-Disposition'] = 'attachment; filename="listings_export.csv"'
-        response.write('\ufeff')
-
-        writer = csv.writer(response)
-        writer.writerow(['ID', 'Title', 'Price', 'Game', 'Seller', 'Status', 'Created'])
-
-        qs = Listing.objects.select_related('seller', 'game').order_by('-created_at')
-        if date_from:
-            qs = qs.filter(created_at__date__gte=date_from)
-        if date_to:
-            qs = qs.filter(created_at__date__lte=date_to)
-
-        for l in qs.iterator(chunk_size=1000):
-            writer.writerow([
-                str(l.id), l.title, str(l.price),
-                l.game.name if l.game else '', l.seller.email if l.seller else '',
-                l.status,
-                l.created_at.strftime('%Y-%m-%d %H:%M') if l.created_at else '',
-            ])
-        return response
-
-    def _export_trades(self, date_from, date_to):
-        import csv
-        from django.http import HttpResponse
-        response = HttpResponse(content_type='text/csv; charset=utf-8')
-        response['Content-Disposition'] = 'attachment; filename="trades_export.csv"'
-        response.write('\ufeff')
-
-        writer = csv.writer(response)
-        writer.writerow(['ID', 'Listing', 'Buyer', 'Seller', 'Amount', 'Commission', 'Status', 'Created'])
-
-        qs = EscrowTransaction.objects.select_related('buyer', 'seller', 'listing').order_by('-created_at')
-        if date_from:
-            qs = qs.filter(created_at__date__gte=date_from)
-        if date_to:
-            qs = qs.filter(created_at__date__lte=date_to)
-
-        for t in qs.iterator(chunk_size=1000):
-            writer.writerow([
-                str(t.id), t.listing.title if t.listing else '',
-                t.buyer.email if t.buyer else '', t.seller.email if t.seller else '',
-                str(t.amount), str(t.commission_amount),
-                t.status,
-                t.created_at.strftime('%Y-%m-%d %H:%M') if t.created_at else '',
-            ])
-        return response
-
-
-# ── BLOK 2.6: Enhanced Dashboard ──
-
-class AdminEnhancedDashboardView(APIView):
-    """GET /api/v1/admin-panel/dashboard/enhanced/ — Full admin dashboard."""
-    permission_classes = [IsAdminUser]
-
-    def get(self, request):
-        now = timezone.now()
-        today = now.date()
-        seven_days_ago = now - timedelta(days=7)
-        thirty_days_ago = now - timedelta(days=30)
-
-        # Overview
-        overview = {
-            'total_users': User.objects.filter(is_active=True).count(),
-            'new_users_today': User.objects.filter(created_at__date=today).count(),
-            'new_users_this_week': User.objects.filter(created_at__gte=seven_days_ago).count(),
-            'new_users_this_month': User.objects.filter(created_at__gte=thirty_days_ago).count(),
-            'active_users_today': User.objects.filter(last_login__date=today).count(),
-            'total_listings': Listing.objects.filter(deleted_at__isnull=True).count(),
-            'active_listings': Listing.objects.filter(status='active', deleted_at__isnull=True).count(),
-            'pending_listings': Listing.objects.filter(status='pending').count(),
-        }
-
-        # Finance
-        finance = {
-            'total_revenue': str(
-                EscrowTransaction.objects.filter(status='confirmed')
-                .aggregate(total=Sum('commission_amount'))['total'] or 0
-            ),
-            'revenue_today': str(
-                EscrowTransaction.objects.filter(status='confirmed', updated_at__date=today)
-                .aggregate(total=Sum('commission_amount'))['total'] or 0
-            ),
-            'revenue_this_month': str(
-                EscrowTransaction.objects.filter(status='confirmed', updated_at__gte=thirty_days_ago)
-                .aggregate(total=Sum('commission_amount'))['total'] or 0
-            ),
-            'total_transactions': Transaction.objects.count(),
-            'pending_withdrawals': WithdrawalRequest.objects.filter(status='pending').count(),
-            'active_escrows': EscrowTransaction.objects.filter(
-                status__in=['pending_payment', 'paid', 'delivered']
-            ).count(),
-            'disputed_escrows': EscrowTransaction.objects.filter(status='disputed').count(),
-        }
-
-        # Moderation
-        moderation = {
-            'pending_listings': Listing.objects.filter(status='pending').count(),
-            'pending_reports': Report.objects.filter(status='pending').count(),
-            'unresolved_disputes': EscrowTransaction.objects.filter(status='disputed').count(),
-        }
-
-        # Subscriptions
-        try:
-            from apps.subscriptions.models import UserSubscription
-            sub_qs = UserSubscription.objects.filter(status='active')
-            subscriptions = {
-                'total_active': sub_qs.count(),
-                'expiring_this_week': sub_qs.filter(
-                    end_date__lte=now + timedelta(days=7),
-                    end_date__gt=now
-                ).count(),
-            }
-        except Exception:
-            subscriptions = {'total_active': 0, 'expiring_this_week': 0}
-
-        return Response({
-            'success': True,
-            'data': {
-                'overview': overview,
-                'finance': finance,
-                'moderation': moderation,
-                'subscriptions': subscriptions,
-            }
-        })
-
-
-# ── Admin WebSocket Consumer ──
-
-# WebSocket consumer will be added in consumers.py
-
-
-# ── Withdrawal Admin Views (BLOK 5 / BLOK 10) ──
-
-
-@extend_schema(tags=["Admin - Withdrawals"])
-class AdminWithdrawalsView(generics.ListAPIView):
-    """GET /api/v1/admin-panel/withdrawals/ — Barcha pul yechish so'rovlari."""
-
-    serializer_class = WithdrawalRequestSerializer
-    permission_classes = [IsAdminUser]
-
-    def get_queryset(self):
-        qs = WithdrawalRequest.objects.select_related("user", "reviewed_by").all()
-        status_filter = self.request.query_params.get("status")
-        if status_filter:
-            qs = qs.filter(status=status_filter)
-        search = self.request.query_params.get("search")
-        if search:
-            qs = qs.filter(
-                Q(user__email__icontains=search)
-                | Q(user__username__icontains=search)
-                | Q(card_number__icontains=search)
-            )
-        date_from = self.request.query_params.get("date_from")
-        if date_from:
-            qs = qs.filter(created_at__date__gte=date_from)
-        date_to = self.request.query_params.get("date_to")
-        if date_to:
-            qs = qs.filter(created_at__date__lte=date_to)
-        return qs
-
-
-@extend_schema(tags=["Admin - Withdrawals"])
-class AdminWithdrawalApproveView(APIView):
-    """POST /api/v1/admin-panel/withdrawals/{id}/approve/ — Pul yechishni tasdiqlash."""
-
-    permission_classes = [IsAdminUser]
-
-    def post(self, request, pk):
-        from core.exceptions import BusinessLogicError
-
-        try:
-            withdrawal = WithdrawalService.approve_withdrawal(pk, request.user)
-        except WithdrawalRequest.DoesNotExist:
-            return Response(
-                {"success": False, "error": {"message": "So'rov topilmadi."}},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        except BusinessLogicError as e:
-            return Response(
-                {"success": False, "error": {"message": str(e)}},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        _log_admin_action(request, "withdrawal_approve", "withdrawal", str(pk))
-        return Response({"success": True, "data": {"status": "completed"}})
-
-
-@extend_schema(tags=["Admin - Withdrawals"])
-class AdminWithdrawalRejectView(APIView):
-    """POST /api/v1/admin-panel/withdrawals/{id}/reject/ — Pul yechishni rad etish."""
-
-    permission_classes = [IsAdminUser]
-
-    def post(self, request, pk):
-        from core.exceptions import BusinessLogicError
-
-        reason = request.data.get("reason", "")
-        try:
-            withdrawal = WithdrawalService.reject_withdrawal(pk, request.user, reason)
-        except WithdrawalRequest.DoesNotExist:
-            return Response(
-                {"success": False, "error": {"message": "So'rov topilmadi."}},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        except BusinessLogicError as e:
-            return Response(
-                {"success": False, "error": {"message": str(e)}},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        _log_admin_action(
-            request, "withdrawal_reject", "withdrawal", str(pk),
-            details={"reason": reason},
-        )
-        return Response({"success": True, "data": {"status": "rejected"}})

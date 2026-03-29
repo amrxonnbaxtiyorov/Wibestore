@@ -34,10 +34,8 @@ export const useChats = () => {
             const { data } = await apiClient.get('/chats/');
             return data;
         },
-        staleTime: 1 * 60 * 1000,
-        refetchInterval: 30 * 1000,
-        retry: false,
-        meta: { silent: true },
+        staleTime: 1 * 60 * 1000, // 1 minute
+        refetchInterval: 30 * 1000, // Refetch every 30 seconds
     });
 };
 

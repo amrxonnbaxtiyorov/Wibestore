@@ -30,19 +30,17 @@ python fix_migrations.py || true
 
 echo "==> Applying migrations..."
 if ! python manage.py migrate --noinput 2>&1; then
-    echo "WARNING: migrate failed. Retrying once..."
-    sleep 2
+    echo "==> migrate failed, syncing migration state with --fake..."
+    python manage.py migrate --fake --noinput 2>&1 || true
+    echo "==> Re-applying migrations after fake..."
     if ! python manage.py migrate --noinput 2>&1; then
-        echo "FATAL: migrate failed twice. Check DATABASE_URL, DB state, and migration files."
-        echo "==> Trying to start anyway (some features may not work)..."
+        echo "FATAL: migrate still failed after --fake. Check DATABASE_URL and DB state."
+        exit 1
     fi
 fi
 
 echo "==> Creating superuser..."
 python create_superuser.py 2>/dev/null || true
-
-echo "==> Setting up admin users..."
-python manage.py setup_admin 2>/dev/null || true
 
 echo "==> Collecting static files..."
 python manage.py collectstatic --noinput --no-color 2>/dev/null || true

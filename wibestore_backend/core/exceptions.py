@@ -5,7 +5,6 @@ WibeStore Backend - Custom Exception Handler
 import logging
 
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import IntegrityError, OperationalError, ProgrammingError
 from django.http import Http404
 from rest_framework import status
 from rest_framework.exceptions import APIException
@@ -15,10 +14,19 @@ from rest_framework.views import exception_handler
 logger = logging.getLogger("apps")
 
 
-def custom_exception_handler(exc, context) -> Response:
+def custom_exception_handler(exc, context) -> Response | None:
     """
-    Custom exception handler that returns consistent JSON error responses.
-    NEVER returns None — always returns a Response to prevent Django's HTML 500 page.
+    Custom exception handler that returns consistent error responses.
+
+    Response format:
+    {
+        "success": false,
+        "error": {
+            "code": "ERROR_CODE",
+            "message": "Human-readable message",
+            "details": {}  // optional
+        }
+    }
     """
     response = exception_handler(exc, context)
 
@@ -74,47 +82,9 @@ def custom_exception_handler(exc, context) -> Response:
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    if isinstance(exc, IntegrityError):
-        logger.error("IntegrityError: %s", exc)
-        return Response(
-            {
-                "success": False,
-                "error": {
-                    "code": "INTEGRITY_ERROR",
-                    "message": "Ma'lumotlar bazasida ziddiyat yuz berdi.",
-                    "details": {"exception": type(exc).__name__, "detail": str(exc)[:200]},
-                },
-            },
-            status=status.HTTP_409_CONFLICT,
-        )
-
-    if isinstance(exc, (OperationalError, ProgrammingError)):
-        logger.error("Database error: %s — %s", type(exc).__name__, exc)
-        return Response(
-            {
-                "success": False,
-                "error": {
-                    "code": "DATABASE_ERROR",
-                    "message": "Ma'lumotlar bazasida xatolik yuz berdi.",
-                    "details": {"exception": type(exc).__name__, "detail": str(exc)[:200]},
-                },
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
-
-    # Catch-all: NEVER return None — always return JSON to prevent Django's HTML 500 page
-    logger.exception("Unhandled exception: %s — %s", type(exc).__name__, exc, exc_info=exc)
-    return Response(
-        {
-            "success": False,
-            "error": {
-                "code": "INTERNAL_ERROR",
-                "message": "Serverda kutilmagan xatolik yuz berdi.",
-                "details": {"exception": type(exc).__name__, "detail": str(exc)[:300]},
-            },
-        },
-        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    )
+    # Log unhandled exceptions
+    logger.exception("Unhandled exception", exc_info=exc)
+    return None
 
 
 def _get_error_code(exc) -> str:

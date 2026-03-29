@@ -110,7 +110,7 @@ export default function AdminTelegramPanel() {
     },
   })
 
-  const _updateUser = useMutation({
+  const updateUser = useMutation({
     mutationFn: ({ telegram_id, data }) => apiClient.patch(`/api/v1/admin-panel/telegram/users/${telegram_id}/`, data).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries(['admin-telegram-users'])

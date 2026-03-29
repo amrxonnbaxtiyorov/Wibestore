@@ -8,13 +8,11 @@ const LOCALES = { uz, en, ru };
 /** Tarjima kalitini joriy tilga o'giradi (toast va ErrorBoundary uchun) */
 function t(key) {
   const lang = (typeof window !== 'undefined' && localStorage.getItem('wibeLanguage')) || 'uz';
-  const resolve = (locale) => {
-    const parts = key.split('.');
-    let v = LOCALES[locale];
-    for (const p of parts) v = v?.[p];
-    return typeof v === 'string' ? v : undefined;
-  };
-  return resolve(lang) ?? resolve('uz') ?? resolve('en') ?? key;
+  const L = LOCALES[lang] || LOCALES.uz;
+  const parts = key.split('.');
+  let v = L;
+  for (const p of parts) v = v?.[p];
+  return typeof v === 'string' ? v : key;
 }
 
 /**
@@ -28,9 +26,7 @@ function t(key) {
  */
 
 // Глобальный обработчик ошибок
-const globalErrorHandler = (error, query) => {
-  // Skip toast for silent queries (background polling like chats)
-  if (query?.meta?.silent) return;
+const globalErrorHandler = (error) => {
   console.error('[React Query] Global error:', error);
 
   // Логирование в Sentry (если настроен)

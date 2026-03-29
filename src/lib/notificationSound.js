@@ -40,7 +40,6 @@ export function getChatSoundChangedEventName() {
 }
 
 function getAudioContext() {
-  if (!unlocked) return null; // Block until user has interacted
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return null;
   return new Ctx();

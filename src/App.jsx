@@ -31,8 +31,6 @@ const SignupPage = lazyWithRetry(() => import('./pages/SignupPage'));
 const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage'));
 const TermsPage = lazyWithRetry(() => import('./pages/TermsPage'));
 const SellPage = lazyWithRetry(() => import('./pages/SellPage'));
-const RentPage = lazyWithRetry(() => import('./pages/RentPage'));
-const RentalBrowsePage = lazyWithRetry(() => import('./pages/RentalBrowsePage'));
 const FAQPage = lazyWithRetry(() => import('./pages/FAQPage'));
 const ResetPasswordPage = lazyWithRetry(() => import('./pages/ResetPasswordPage'));
 const ForgotPasswordPage = lazyWithRetry(() => import('./pages/ForgotPasswordPage'));
@@ -58,12 +56,6 @@ const AdminSettings = lazyWithRetry(() => import('./pages/admin/AdminSettings'))
 const AdminTradeChats = lazyWithRetry(() => import('./pages/admin/AdminTradeChats'))
 const AdminTelegramPanel = lazyWithRetry(() => import('./pages/admin/AdminTelegramPanel'))
 const AdminTradePanel = lazyWithRetry(() => import('./pages/admin/AdminTradePanel'))
-const AdminAuditLog = lazyWithRetry(() => import('./pages/admin/AdminAuditLog'))
-const AdminUserDetail = lazyWithRetry(() => import('./pages/admin/AdminUserDetail'))
-const AdminGames = lazyWithRetry(() => import('./pages/admin/AdminGames'))
-const AdminPromoCodes = lazyWithRetry(() => import('./pages/admin/AdminPromoCodes'))
-const AdminExport = lazyWithRetry(() => import('./pages/admin/AdminExport'))
-const AdminAlerts = lazyWithRetry(() => import('./pages/admin/AdminAlerts'))
 const TradePage = lazyWithRetry(() => import('./pages/TradePage'));
 
 // Page loading fallback with skeleton shimmer
@@ -175,91 +167,61 @@ function App() {
                     <NotificationProvider>
                       <Routes>
                         {/* Admin Login - No layout, only for guests */}
-                        <Route path="/amirxon/login" element={
+                        <Route path="/admin/login" element={
                           <Suspense fallback={<PageLoader />}>
                             <GuestGuard><AdminLogin /></GuestGuard>
                           </Suspense>
                         } />
 
                         {/* Admin Routes - protected by AdminGuard */}
-                        <Route path="/amirxon" element={
+                        <Route path="/admin" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminDashboard /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/amirxon/accounts" element={
+                        <Route path="/admin/accounts" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminAccounts /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/amirxon/users" element={
+                        <Route path="/admin/users" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminUsers /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/amirxon/reports" element={
+                        <Route path="/admin/reports" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminReports /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/amirxon/premium" element={
+                        <Route path="/admin/premium" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminPremium /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/amirxon/finance" element={
+                        <Route path="/admin/finance" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminFinance /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/amirxon/settings" element={
+                        <Route path="/admin/settings" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminSettings /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/amirxon/trade-chats" element={
+                        <Route path="/admin/trade-chats" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminTradeChats /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/amirxon/telegram" element={
+                        <Route path="/admin/telegram" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminTelegramPanel /></AdminLayout></AdminGuard>
                           </Suspense>
                         } />
-                        <Route path="/amirxon/trades" element={
+                        <Route path="/admin/trades" element={
                           <Suspense fallback={<PageLoader />}>
                             <AdminGuard><AdminLayout><AdminTradePanel /></AdminLayout></AdminGuard>
-                          </Suspense>
-                        } />
-                        <Route path="/amirxon/alerts" element={
-                          <Suspense fallback={<PageLoader />}>
-                            <AdminGuard><AdminAlerts /></AdminGuard>
-                          </Suspense>
-                        } />
-                        <Route path="/amirxon/audit" element={
-                          <Suspense fallback={<PageLoader />}>
-                            <AdminGuard><AdminAuditLog /></AdminGuard>
-                          </Suspense>
-                        } />
-                        <Route path="/amirxon/users/:id" element={
-                          <Suspense fallback={<PageLoader />}>
-                            <AdminGuard><AdminUserDetail /></AdminGuard>
-                          </Suspense>
-                        } />
-                        <Route path="/amirxon/games" element={
-                          <Suspense fallback={<PageLoader />}>
-                            <AdminGuard><AdminGames /></AdminGuard>
-                          </Suspense>
-                        } />
-                        <Route path="/amirxon/promo-codes" element={
-                          <Suspense fallback={<PageLoader />}>
-                            <AdminGuard><AdminPromoCodes /></AdminGuard>
-                          </Suspense>
-                        } />
-                        <Route path="/amirxon/export" element={
-                          <Suspense fallback={<PageLoader />}>
-                            <AdminGuard><AdminExport /></AdminGuard>
                           </Suspense>
                         } />
 
@@ -319,16 +281,6 @@ function App() {
                         <Route path="/sell" element={
                           <Suspense fallback={<PageLoader />}>
                             <PublicLayout><AuthGuard><SellPage /></AuthGuard></PublicLayout>
-                          </Suspense>
-                        } />
-                        <Route path="/rent" element={
-                          <Suspense fallback={<PageLoader />}>
-                            <PublicLayout><RentalBrowsePage /></PublicLayout>
-                          </Suspense>
-                        } />
-                        <Route path="/rent/create" element={
-                          <Suspense fallback={<PageLoader />}>
-                            <PublicLayout><AuthGuard><RentPage /></AuthGuard></PublicLayout>
                           </Suspense>
                         } />
                         <Route path="/faq" element={

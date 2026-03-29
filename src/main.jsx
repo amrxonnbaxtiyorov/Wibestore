@@ -15,7 +15,7 @@ try {
     localStorage.removeItem('wibeReviews')
     localStorage.removeItem('wibeSellerRatings')
   }
-} catch {
+} catch (_) {
   // Intentionally ignore: localStorage may be unavailable (e.g. private mode)
 }
 

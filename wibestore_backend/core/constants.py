@@ -23,18 +23,11 @@ LISTING_STATUS_CHOICES = [
     ("rejected", "Rejected"),
 ]
 
-LISTING_TYPE_CHOICES = [
-    ("sell", "Sell"),
-    ("rent", "Rent"),
-]
-
 LOGIN_METHOD_CHOICES = [
     ("email", "Email"),
     ("phone", "Phone"),
     ("username", "Username"),
     ("social", "Social Media"),
-    ("google", "Google"),
-    ("facebook", "Facebook"),
 ]
 
 # ============================================================
@@ -47,15 +40,7 @@ TRANSACTION_TYPE_CHOICES = [
     ("refund", "Refund"),
     ("commission", "Commission"),
     ("subscription", "Subscription"),
-    ("promotion", "Promotion"),
 ]
-
-# ============================================================
-# RENTAL PROMOTION PRICING
-# ============================================================
-RENTAL_PROMOTION_PRICE_PER_HOUR = 5000  # 5000 so'm per hour
-RENTAL_PROMOTION_DISCOUNT_STEP = 10     # every 10 hours
-RENTAL_PROMOTION_DISCOUNT_RATE = 0.10   # 10% discount per step
 
 TRANSACTION_STATUS_CHOICES = [
     ("pending", "Pending"),

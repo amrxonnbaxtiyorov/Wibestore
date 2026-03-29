@@ -36,17 +36,14 @@ class ListingMinimalSerializer(serializers.Serializer):
     game_name = serializers.SerializerMethodField()
 
     def get_primary_image(self, obj):
-        try:
-            request = self.context.get("request")
-            image = None
-            first_img = obj.images.first() if hasattr(obj, 'images') else None
-            if first_img:
-                image = first_img.image
-            if image and request:
-                return request.build_absolute_uri(image.url) if hasattr(image, 'url') else str(image)
-            return str(image) if image else None
-        except Exception:
-            return None
+        request = self.context.get("request")
+        image = None
+        first_img = obj.images.first() if hasattr(obj, 'images') else None
+        if first_img:
+            image = first_img.image
+        if image and request:
+            return request.build_absolute_uri(image.url) if hasattr(image, 'url') else str(image)
+        return str(image) if image else None
 
     def get_game_name(self, obj):
         if obj.game:

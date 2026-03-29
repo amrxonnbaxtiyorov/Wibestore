@@ -52,7 +52,7 @@ class ListingService:
                 f"🎮 O'yin: {listing.game.name}\n"
                 f"💰 Narx: {int(listing.price):,} so'm\n"
                 f"👤 Sotuvchi: {seller.display_name or seller.email}\n\n"
-                f"🌐 <a href='https://wibestore.net/amirxon'>Admin panelga o'tish →</a>"
+                f"🌐 <a href='https://wibestore.net/admin'>Admin panelga o'tish →</a>"
             )
             for admin_tg_id in _get_admin_telegram_ids():
                 _send_message(admin_tg_id, admin_text)

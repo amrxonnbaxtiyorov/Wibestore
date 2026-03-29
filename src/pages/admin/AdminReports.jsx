@@ -1,224 +1,160 @@
-import { useState } from 'react';
-import { AlertTriangle, FileText, Clock, CheckCircle, Eye, X } from 'lucide-react';
-import { useAdminReports, useAdminResolveReport } from '../../hooks/useAdmin';
-
-const STATUS_CONFIG = {
-    pending: { badge: 'badge-orange', label: 'Kutilmoqda' },
-    investigating: { badge: 'badge-blue', label: "Ko'rib chiqilmoqda" },
-    resolved: { badge: 'badge-green', label: 'Hal qilingan' },
-    dismissed: { badge: 'badge-red', label: 'Rad etilgan' },
-};
+import { BarChart3, AlertTriangle, FileText, Clock } from 'lucide-react';
 
 const AdminReports = () => {
-    const { data: reportsList, isLoading } = useAdminReports();
-    const resolveReport = useAdminResolveReport();
-    const [selectedReport, setSelectedReport] = useState(null);
-    const [resolveAction, setResolveAction] = useState('resolved');
-    const [resolveNote, setResolveNote] = useState('');
-    const [filter, setFilter] = useState('all');
+    const reports = [
+        {
+            id: 1,
+            type: 'fraud',
+            reporter: 'Sardor',
+            target: 'ProGamer_UZ',
+            reason: "Noto'g'ri akkaunt ma'lumoti",
+            status: 'pending',
+            date: '2026-02-18',
+        },
+        {
+            id: 2,
+            type: 'scam',
+            reporter: 'Jasur',
+            target: 'GameSeller99',
+            reason: "To'lov qabul qilingan, lekin akkaunt berilmagan",
+            status: 'reviewing',
+            date: '2026-02-17',
+        },
+        {
+            id: 3,
+            type: 'inappropriate',
+            reporter: 'Anvar',
+            target: 'DarkTrader',
+            reason: "Noqonuniy kontent joylashtirilgan",
+            status: 'resolved',
+            date: '2026-02-15',
+        },
+    ];
 
-    const reports = Array.isArray(reportsList) ? reportsList : (reportsList?.results ?? []);
-    const filtered = filter === 'all' ? reports : reports.filter(r => r.status === filter);
-
-    const totalPending = reports.filter(r => r.status === 'pending').length;
-    const totalResolved = reports.filter(r => r.status === 'resolved').length;
-
-    const handleResolve = (reportId) => {
-        resolveReport.mutate(
-            { reportId, action: resolveAction, note: resolveNote },
-            {
-                onSuccess: () => {
-                    setSelectedReport(null);
-                    setResolveNote('');
-                },
-            }
-        );
+    const statusColors = {
+        pending: { bg: 'var(--color-warning-bg)', text: 'var(--color-warning-text)', label: 'Kutilmoqda' },
+        reviewing: { bg: 'var(--color-info-bg)', text: 'var(--color-info-text)', label: "Ko'rib chiqilmoqda" },
+        resolved: { bg: 'var(--color-success-bg)', text: 'var(--color-success-text)', label: 'Hal qilingan' },
     };
 
-    const statusLabel = (status) => STATUS_CONFIG[status]?.label || status;
-
     return (
-        <div className="admin-page">
-            <div style={{ marginBottom: 24 }}>
-                <h1 style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', margin: 0 }}>
-                    Shikoyatlar
-                </h1>
-                <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: 4 }}>
-                    Foydalanuvchi shikoyatlarini ko'rib chiqish
-                </p>
-            </div>
+        <div>
+            <h1 style={{
+                fontSize: 'var(--font-size-2xl)',
+                fontWeight: 'var(--font-weight-bold)',
+                color: 'var(--color-text-primary)',
+                marginBottom: '24px',
+            }}>
+                Hisobotlar
+            </h1>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap: 16, marginBottom: 24 }}>
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3" style={{ gap: '16px', marginBottom: '24px' }}>
                 {[
                     { label: 'Jami shikoyatlar', value: reports.length, icon: FileText, color: 'var(--color-accent-blue)' },
-                    { label: 'Kutilmoqda', value: totalPending, icon: Clock, color: 'var(--color-accent-orange)' },
-                    { label: 'Hal qilingan', value: totalResolved, icon: CheckCircle, color: 'var(--color-accent-green, #3fb950)' },
+                    { label: 'Kutilmoqda', value: reports.filter(r => r.status === 'pending').length, icon: Clock, color: 'var(--color-accent-orange)' },
+                    { label: 'Hal qilingan', value: reports.filter(r => r.status === 'resolved').length, icon: BarChart3, color: 'var(--color-accent-green)' },
                 ].map((stat, i) => (
-                    <div key={i} className="card" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <div style={{
-                            width: 48, height: 48, borderRadius: 'var(--radius-lg)',
-                            backgroundColor: 'var(--color-bg-tertiary)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    <div key={i} style={{
+                        padding: '20px',
+                        borderRadius: 'var(--radius-xl)',
+                        backgroundColor: 'var(--color-bg-secondary)',
+                        border: '1px solid var(--color-border-default)',
+                    }}>
+                        <div className="flex items-center gap-3">
+                            <div style={{
+                                width: '40px', height: '40px',
+                                borderRadius: 'var(--radius-lg)',
+                                backgroundColor: stat.color + '1a',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <stat.icon style={{ width: '20px', height: '20px', color: stat.color }} />
+                            </div>
+                            <div>
+                                <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>{stat.label}</p>
+                                <p style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>{stat.value}</p>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Reports List */}
+            <div style={{
+                borderRadius: 'var(--radius-xl)',
+                backgroundColor: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border-default)',
+                overflow: 'hidden',
+            }}>
+                <div style={{
+                    padding: '16px 20px',
+                    borderBottom: '1px solid var(--color-border-muted)',
+                }}>
+                    <h2 style={{
+                        fontWeight: 'var(--font-weight-semibold)',
+                        color: 'var(--color-text-primary)',
+                    }}>
+                        Shikoyatlar ro'yxati
+                    </h2>
+                </div>
+                {reports.map((report) => {
+                    const status = statusColors[report.status];
+                    return (
+                        <div key={report.id} style={{
+                            padding: '16px 20px',
+                            borderBottom: '1px solid var(--color-border-muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '12px',
                         }}>
-                            <stat.icon style={{ width: 24, height: 24, color: stat.color }} />
+                            <div className="flex items-center gap-3" style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{
+                                    width: '40px', height: '40px',
+                                    borderRadius: 'var(--radius-lg)',
+                                    backgroundColor: 'var(--color-accent-red)' + '1a',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0,
+                                }}>
+                                    <AlertTriangle style={{ width: '20px', height: '20px', color: 'var(--color-accent-red)' }} />
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                    <p className="truncate" style={{
+                                        fontWeight: 'var(--font-weight-medium)',
+                                        color: 'var(--color-text-primary)',
+                                    }}>
+                                        {report.reporter} → {report.target}
+                                    </p>
+                                    <p className="truncate" style={{
+                                        fontSize: 'var(--font-size-sm)',
+                                        color: 'var(--color-text-muted)',
+                                    }}>
+                                        {report.reason}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3" style={{ flexShrink: 0 }}>
+                                <span style={{
+                                    fontSize: 'var(--font-size-xs)',
+                                    color: 'var(--color-text-muted)',
+                                }}>
+                                    {report.date}
+                                </span>
+                                <span style={{
+                                    padding: '4px 12px',
+                                    borderRadius: 'var(--radius-full)',
+                                    fontSize: 'var(--font-size-xs)',
+                                    fontWeight: 'var(--font-weight-medium)',
+                                    backgroundColor: status.bg,
+                                    color: status.text,
+                                }}>
+                                    {status.label}
+                                </span>
+                            </div>
                         </div>
-                        <div>
-                            <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>{stat.value}</div>
-                            <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>{stat.label}</div>
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
-
-            {/* Filters */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-                {[
-                    { key: 'all', label: 'Barchasi' },
-                    { key: 'pending', label: 'Kutilmoqda' },
-                    { key: 'investigating', label: "Ko'rib chiqilmoqda" },
-                    { key: 'resolved', label: 'Hal qilingan' },
-                    { key: 'dismissed', label: 'Rad etilgan' },
-                ].map(f => (
-                    <button
-                        key={f.key}
-                        className={`btn btn-sm ${filter === f.key ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={() => setFilter(f.key)}
-                    >
-                        {f.label}
-                    </button>
-                ))}
-            </div>
-
-            {/* Reports table */}
-            {isLoading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-                    <div className="loading-spinner" />
-                </div>
-            ) : (
-                <div className="admin-table-wrapper">
-                    <table className="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Shikoyatchi</th>
-                                <th>Sabab</th>
-                                <th>E'lon</th>
-                                <th>Status</th>
-                                <th>Sana</th>
-                                <th>Amallar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map(report => {
-                                const cfg = STATUS_CONFIG[report.status] || STATUS_CONFIG.pending;
-                                return (
-                                    <tr key={report.id}>
-                                        <td>
-                                            <div style={{ fontWeight: 500 }}>{report.reporter?.email || report.reporter?.username || '\u2014'}</div>
-                                        </td>
-                                        <td style={{ maxWidth: 250 }}>
-                                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {report.reason || report.description || '\u2014'}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>
-                                                {report.reported_listing?.title || '\u2014'}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className={`badge ${cfg.badge}`}>{statusLabel(report.status)}</span>
-                                        </td>
-                                        <td style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                                            {report.created_at ? new Date(report.created_at).toLocaleDateString() : '\u2014'}
-                                        </td>
-                                        <td>
-                                            <div style={{ display: 'flex', gap: 6 }}>
-                                                <button
-                                                    className="btn btn-sm btn-secondary"
-                                                    onClick={() => setSelectedReport(report)}
-                                                    title="Batafsil"
-                                                >
-                                                    <Eye style={{ width: 14, height: 14 }} />
-                                                </button>
-                                                {report.status === 'pending' && (
-                                                    <button
-                                                        className="btn btn-sm btn-primary"
-                                                        onClick={() => { setSelectedReport(report); setResolveAction('resolved'); }}
-                                                    >
-                                                        Hal qilish
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                            {filtered.length === 0 && (
-                                <tr><td colSpan="6" style={{ textAlign: 'center', padding: 40, color: 'var(--color-text-muted)' }}>Shikoyatlar topilmadi</td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            {/* Detail / Resolve Modal */}
-            {selectedReport && (
-                <div className="modal-overlay" onClick={() => setSelectedReport(null)}>
-                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 500 }}>
-                        <div className="modal-header">
-                            <h3>Shikoyat #{selectedReport.id?.toString().slice(0, 8)}</h3>
-                            <button className="modal-close" onClick={() => setSelectedReport(null)}>
-                                <X style={{ width: 18, height: 18 }} />
-                            </button>
-                        </div>
-                        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            <div><b>Shikoyatchi:</b> {selectedReport.reporter?.email || '\u2014'}</div>
-                            <div><b>E'lon:</b> {selectedReport.reported_listing?.title || '\u2014'}</div>
-                            <div><b>Sabab:</b> {selectedReport.reason || '\u2014'}</div>
-                            <div><b>Tavsif:</b> {selectedReport.description || '\u2014'}</div>
-                            <div><b>Status:</b> <span className={`badge ${(STATUS_CONFIG[selectedReport.status] || STATUS_CONFIG.pending).badge}`}>{statusLabel(selectedReport.status)}</span></div>
-                            <div><b>Sana:</b> {selectedReport.created_at ? new Date(selectedReport.created_at).toLocaleString() : '\u2014'}</div>
-
-                            {selectedReport.status === 'pending' && (
-                                <>
-                                    <hr style={{ border: 'none', borderTop: '1px solid var(--color-border-default)', margin: '8px 0' }} />
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: 'var(--font-size-sm)', marginBottom: 6, color: 'var(--color-text-secondary)' }}>
-                                            Qaror:
-                                        </label>
-                                        <select className="input" value={resolveAction} onChange={e => setResolveAction(e.target.value)} style={{ width: '100%' }}>
-                                            <option value="resolved">Hal qilish</option>
-                                            <option value="dismissed">Rad etish</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'block', fontSize: 'var(--font-size-sm)', marginBottom: 6, color: 'var(--color-text-secondary)' }}>
-                                            Izoh:
-                                        </label>
-                                        <textarea
-                                            className="input"
-                                            rows={3}
-                                            value={resolveNote}
-                                            onChange={e => setResolveNote(e.target.value)}
-                                            placeholder="Izoh qo'shing..."
-                                            style={{ width: '100%', resize: 'vertical' }}
-                                        />
-                                    </div>
-                                    <button
-                                        className="btn btn-primary"
-                                        onClick={() => handleResolve(selectedReport.id)}
-                                        disabled={resolveReport.isPending}
-                                        style={{ width: '100%' }}
-                                    >
-                                        {resolveReport.isPending ? 'Yuborilmoqda...' : 'Tasdiqlash'}
-                                    </button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

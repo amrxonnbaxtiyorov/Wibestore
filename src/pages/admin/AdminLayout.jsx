@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard, Users, Package, AlertTriangle, Star,
-    DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft, ChevronRight, MessageSquare, Send, ShoppingBag,
-    ClipboardList, Tag, Download, FileText
+    DollarSign, Settings, LogOut, Menu, X, Gamepad2, Bell, Search, ChevronLeft, MessageSquare, Send, ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '../../hooks';
 import { useLanguage } from '../../context/LanguageContext';
@@ -15,36 +14,30 @@ const AdminLayout = ({ children }) => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    const { t } = useLanguage();
 
-    // Admin panel faqat ruxsat berilgan raqam uchun; AdminGuard allaqachon tekshiradi
-    const userPhone = (user?.phone_number || '').replace(/[\s\-+()]/g, '');
-    const isAdmin = user?.is_staff && userPhone.includes('998942014300');
-    if (user && !isAdmin) {
+    // Admin panel faqat staff foydalanuvchilar uchun; AdminGuard allaqachon tekshiradi
+    if (user && !user.is_staff) {
         navigate('/');
         return null;
     }
 
     const handleLogout = async () => {
         await logout();
-        navigate('/amirxon/login');
+        navigate('/admin/login');
     };
+
+    const { t } = useLanguage();
     const menuItems = [
-        { icon: LayoutDashboard, label: t('admin.menu_dashboard') || 'Dashboard', to: '/amirxon' },
-        { icon: Bell, label: t('admin.menu_alerts') || 'Alerts', to: '/amirxon/alerts' },
-        { icon: Package, label: t('admin.menu_accounts') || 'Accounts', to: '/amirxon/accounts' },
-        { icon: Users, label: t('admin.menu_users') || 'Users', to: '/amirxon/users' },
-        { icon: DollarSign, label: t('admin.menu_finance') || 'Finance', to: '/amirxon/finance' },
-        { icon: ShoppingBag, label: t('admin.menu_trades') || 'Trades', to: '/amirxon/trades' },
-        { icon: MessageSquare, label: t('admin.menu_trade_chats') || 'Trade Chats', to: '/amirxon/trade-chats' },
-        { icon: AlertTriangle, label: t('admin.menu_reports') || 'Reports', to: '/amirxon/reports' },
-        { icon: Star, label: t('admin.menu_premium') || 'Premium', to: '/amirxon/premium' },
-        { icon: Gamepad2, label: t('admin.menu_games') || 'Games', to: '/amirxon/games' },
-        { icon: Tag, label: t('admin.menu_promo_codes') || 'Promo Codes', to: '/amirxon/promo-codes' },
-        { icon: Send, label: t('admin.menu_telegram') || 'Telegram', to: '/amirxon/telegram' },
-        { icon: ClipboardList, label: t('admin.menu_audit') || 'Audit Log', to: '/amirxon/audit' },
-        { icon: Download, label: t('admin.menu_export') || 'Export', to: '/amirxon/export' },
-        { icon: Settings, label: t('admin.menu_settings') || 'Settings', to: '/amirxon/settings' },
+        { icon: LayoutDashboard, label: t('admin.menu_dashboard'), to: '/admin' },
+        { icon: Users, label: t('admin.menu_users'), to: '/admin/users' },
+        { icon: Package, label: t('admin.menu_accounts'), to: '/admin/accounts' },
+        { icon: AlertTriangle, label: t('admin.menu_reports'), to: '/admin/reports' },
+        { icon: Star, label: t('admin.menu_premium'), to: '/admin/premium' },
+        { icon: DollarSign, label: t('admin.menu_finance'), to: '/admin/finance' },
+        { icon: MessageSquare, label: 'Savdo chatlari', to: '/admin/trade-chats' },
+        { icon: Send, label: 'Telegram Бот', to: '/admin/telegram' },
+        { icon: ShoppingBag, label: 'Сделки', to: '/admin/trades' },
+        { icon: Settings, label: t('admin.menu_settings'), to: '/admin/settings' },
     ];
 
     const getAdminName = () => {
@@ -86,9 +79,16 @@ const AdminLayout = ({ children }) => {
                         justifyContent: sidebarCollapsed ? 'center' : 'space-between',
                     }}
                 >
-                    {sidebarCollapsed ? (
-                        <button
-                            onClick={() => setSidebarCollapsed(false)}
+                    <Link
+                        to="/admin"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            textDecoration: 'none',
+                        }}
+                    >
+                        <div
                             style={{
                                 width: '36px',
                                 height: '36px',
@@ -98,64 +98,37 @@ const AdminLayout = ({ children }) => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 flexShrink: 0,
+                            }}
+                        >
+                            <Gamepad2 style={{ width: '20px', height: '20px', color: '#ffffff' }} />
+                        </div>
+                        {!sidebarCollapsed && (
+                            <div>
+                                <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>
+                                    WibeStore
+                                </span>
+                                <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                    Admin Panel
+                                </span>
+                            </div>
+                        )}
+                    </Link>
+                    {!sidebarCollapsed && (
+                        <button
+                            onClick={() => setSidebarCollapsed(true)}
+                            className="hidden lg:flex items-center justify-center"
+                            style={{
+                                padding: '6px',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'none',
                                 border: 'none',
                                 cursor: 'pointer',
-                                position: 'relative',
+                                color: 'var(--color-text-muted)',
                             }}
-                            title="Menyu ochish"
-                            aria-label="Expand sidebar"
+                            aria-label="Collapse sidebar"
                         >
-                            <ChevronRight style={{ width: '18px', height: '18px', color: '#ffffff' }} />
+                            <ChevronLeft style={{ width: '16px', height: '16px' }} />
                         </button>
-                    ) : (
-                        <>
-                            <Link
-                                to="/amirxon"
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    textDecoration: 'none',
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        width: '36px',
-                                        height: '36px',
-                                        background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-blue-hover))',
-                                        borderRadius: 'var(--radius-lg)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0,
-                                    }}
-                                >
-                                    <Gamepad2 style={{ width: '20px', height: '20px', color: '#ffffff' }} />
-                                </div>
-                                <div>
-                                    <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)' }}>
-                                        WibeStore
-                                    </span>
-                                    <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
-                                        Admin Panel
-                                    </span>
-                                </div>
-                            </Link>
-                            <button
-                                onClick={() => setSidebarCollapsed(true)}
-                                style={{
-                                    padding: '6px',
-                                    borderRadius: 'var(--radius-md)',
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    color: 'var(--color-text-muted)',
-                                }}
-                                aria-label="Collapse sidebar"
-                            >
-                                <ChevronLeft style={{ width: '16px', height: '16px' }} />
-                            </button>
-                        </>
                     )}
                 </div>
 
@@ -211,10 +184,10 @@ const AdminLayout = ({ children }) => {
                             fontWeight: 'var(--font-weight-medium)',
                             justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                         }}
-                        title={sidebarCollapsed ? (t('admin.menu_logout') || 'Log out') : undefined}
+                        title={sidebarCollapsed ? 'Chiqish' : undefined}
                     >
                         <LogOut style={{ width: '18px', height: '18px', flexShrink: 0 }} />
-                        {!sidebarCollapsed && <span>{t('admin.menu_logout') || 'Chiqish'}</span>}
+                        {!sidebarCollapsed && <span>Chiqish</span>}
                     </button>
                 </div>
             </aside>

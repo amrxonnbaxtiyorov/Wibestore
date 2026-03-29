@@ -10,7 +10,7 @@ import { useLanguage } from '../../context/LanguageContext';
 const AdminLogin = () => {
     const { t } = useLanguage();
     const location = useLocation();
-    const redirectTo = '/amirxon';
+    const redirectTo = '/admin';
     const loginPath = `/login?redirect=${encodeURIComponent(redirectTo)}`;
 
     return (

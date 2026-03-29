@@ -147,7 +147,7 @@ export const useAdminAuth = () => {
         clearAdminSession();
         setSession(null);
         setIsAuthenticated(false);
-        navigate('/amirxon/login');
+        navigate('/admin/login');
     }, [navigate]);
 
     // Check if session is about to expire (within 30 minutes)

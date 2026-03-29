@@ -39,21 +39,26 @@ export const LanguageProvider = ({ children }) => {
     }, []);
 
     // Helper function to get nested translation by dot-path
-    // Returns undefined (not the key) when not found, so `t('x') || 'fallback'` works
     const t = useCallback((key) => {
-        const resolve = (lang) => {
-            const keys = key.split('.');
-            let result = translations[lang];
-            for (const k of keys) {
-                if (result && typeof result === 'object' && k in result) {
-                    result = result[k];
-                } else {
-                    return undefined;
+        const keys = key.split('.');
+        let result = translations[language];
+        for (const k of keys) {
+            if (result && typeof result === 'object' && k in result) {
+                result = result[k];
+            } else {
+                // Fallback to Uzbek, then return key
+                let fallback = translations['uz'];
+                for (const fk of keys) {
+                    if (fallback && typeof fallback === 'object' && fk in fallback) {
+                        fallback = fallback[fk];
+                    } else {
+                        return key; // Return key if not found
+                    }
                 }
+                return fallback;
             }
-            return typeof result === 'string' ? result : undefined;
-        };
-        return resolve(language) ?? resolve('uz') ?? resolve('en');
+        }
+        return result;
     }, [language]);
 
     return (

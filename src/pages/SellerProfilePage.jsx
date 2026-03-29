@@ -195,10 +195,6 @@ const SellerProfilePage = () => {
                                     key={acc.id}
                                     account={{
                                         id: acc.id,
-                                        listing_code: acc.listing_code,
-                                        listing_type: acc.listing_type,
-                                        rental_price_per_day: acc.rental_price_per_day,
-                                        rental_period_days: acc.rental_period_days,
                                         gameId: acc.game?.slug || acc.game?.id || acc.gameId,
                                         gameName: acc.game?.name || acc.gameName,
                                         title: acc.title,
