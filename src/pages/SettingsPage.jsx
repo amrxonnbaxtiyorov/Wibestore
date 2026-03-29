@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Settings, User, Lock, Bell, Globe, CreditCard, ArrowDownCircle, ArrowUpCircle, Trash2, Camera, Save, AlertCircle, CheckCircle, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getDisplayInitial } from '../lib/displayUtils';
 import UserAvatar from '../components/UserAvatar';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
 
@@ -219,9 +218,9 @@ const SettingsPage = () => {
 
                 <div className="flex flex-col lg:flex-row gap-5">
                     {/* Sidebar */}
-                    <div className="settings-sidebar-wrap" style={{ width: '240px', flexShrink: 0 }}>
+                    <div className="settings-sidebar-wrap" style={{ flexShrink: 0 }}>
                         <div className="settings-sidebar" style={{ ...cardStyle, padding: '8px' }}>
-                            <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <nav className="settings-nav" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                 {tabs.map((tab) => (
                                     <button
                                         key={tab.id}

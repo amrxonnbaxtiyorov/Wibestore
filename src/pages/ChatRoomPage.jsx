@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Send, MessageCircle, AlertTriangle, X, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useChats, useChatMessages, useMarkChatRead, useSendMessage, useChatSoundEnabled } from '../hooks/useChat';
 import { useLanguage } from '../context/LanguageContext';
 import { resolveImageUrl, getDisplayInitial } from '../lib/displayUtils';
@@ -15,8 +16,20 @@ export default function ChatRoomPage() {
     const { roomId } = useParams();
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth();
+    const { isDark } = useTheme();
     const userId = user?.id ?? null;
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
+
+    // Theme-aware chat colors for maximum readability
+    const chatColors = {
+        msgText: isDark ? '#f1f5f9' : '#1e293b',
+        senderName: isDark ? '#60a5fa' : '#2563eb',
+        timestamp: isDark ? '#94a3b8' : '#64748b',
+        incomingBg: isDark ? 'rgba(255,255,255,0.08)' : '#ffffff',
+        incomingBorder: isDark ? 'rgba(255,255,255,0.12)' : '#e2e8f0',
+        dateSep: isDark ? '#cbd5e1' : '#475569',
+        systemMsg: isDark ? '#cbd5e1' : '#475569',
+    };
     const [text, setText] = useState('');
     const [soundEnabled, toggleSound] = useChatSoundEnabled();
 
@@ -153,11 +166,11 @@ export default function ChatRoomPage() {
                             <MessageCircle style={{ width: '22px', height: '22px', color: 'var(--color-accent-blue)', flexShrink: 0 }} />
                         )}
                         <div className="min-w-0">
-                            <h1 className="truncate" style={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', margin: 0, color: 'var(--color-text-primary)' }}>
+                            <h1 className="truncate" style={{ fontSize: '17px', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
                                 {activeRoom?.listing?.title || t('detail.order_chat') || 'Buyurtma chat'}
                             </h1>
                             {activeRoom?.listing?.game_name && (
-                                <p className="truncate" style={{ margin: 0, fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+                                <p className="truncate" style={{ margin: '2px 0 0 0', fontSize: '13px', fontWeight: 500, color: 'var(--color-text-secondary)' }}>
                                     {activeRoom.listing.game_name}
                                 </p>
                             )}
@@ -203,10 +216,10 @@ export default function ChatRoomPage() {
                 >
                     <AlertTriangle style={{ width: '22px', height: '22px', color: 'var(--color-warning, #d97706)', flexShrink: 0, marginTop: '2px' }} />
                     <div>
-                        <p style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', margin: '0 0 6px 0', fontSize: 'var(--font-size-sm)' }}>
+                        <p style={{ fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 6px 0', fontSize: '14px' }}>
                             {t('detail.chat_safety_title') || 'Firibgarlardan (mashenniklardan) ehtiyot bo\'ling'}
                         </p>
-                        <p style={{ margin: 0, fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', lineHeight: 1.45 }}>
+                        <p style={{ margin: 0, fontSize: '14px', fontWeight: 500, color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
                             {t('detail.chat_safety_warning')}
                         </p>
                     </div>
@@ -225,30 +238,30 @@ export default function ChatRoomPage() {
                     }}
                 >
                     {otherUser && (
-                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)', flexShrink: 0 }}>
+                        <div style={{ padding: '14px 16px', backgroundColor: 'var(--color-bg-primary)', borderBottom: '1px solid var(--color-border-muted)', flexShrink: 0 }}>
                             <Link
                                 to={`/seller/${otherUser.id}`}
                                 state={{ seller: { id: otherUser.id, display_name: otherUser.display_name, name: otherUser.display_name, avatar: otherUser.avatar } }}
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', color: 'inherit' }}
                             >
                                 {resolveImageUrl(otherUser.avatar) ? (
                                     <img
                                         src={resolveImageUrl(otherUser.avatar)}
                                         alt=""
-                                        style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
+                                        style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0 }}
                                     />
                                 ) : (
                                     <div
                                         style={{
-                                            width: '36px',
-                                            height: '36px',
+                                            width: '40px',
+                                            height: '40px',
                                             borderRadius: 'var(--radius-full)',
                                             backgroundColor: 'var(--color-bg-tertiary)',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            fontSize: 'var(--font-size-sm)',
-                                            fontWeight: 'var(--font-weight-semibold)',
+                                            fontSize: '15px',
+                                            fontWeight: 700,
                                             color: 'var(--color-text-secondary)',
                                             flexShrink: 0,
                                         }}
@@ -256,7 +269,7 @@ export default function ChatRoomPage() {
                                         {getDisplayInitial(otherUser.display_name)}
                                     </div>
                                 )}
-                                <span style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)' }}>
+                                <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--color-text-primary)' }}>
                                     {otherUser.display_name || (t('detail.seller') || 'Sotuvchi')}
                                 </span>
                             </Link>
@@ -277,13 +290,13 @@ export default function ChatRoomPage() {
                         }}
                     >
                         {isLoading ? (
-                            <p style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
+                            <p style={{ color: 'var(--color-text-secondary)', fontSize: '15px', fontWeight: 500 }}>
                                 {t('common.loading') || 'Yuklanmoqda...'}
                             </p>
                         ) : messages.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '32px', color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>
-                                <MessageCircle style={{ width: '48px', height: '48px', margin: '0 auto 12px', opacity: 0.5 }} />
-                                <p>{t('detail.no_messages') || 'Xabar yo\'q. Birinchi xabarni yozing.'}</p>
+                            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--color-text-secondary)' }}>
+                                <MessageCircle style={{ width: '56px', height: '56px', margin: '0 auto 16px', opacity: 0.4 }} />
+                                <p style={{ fontSize: '15px', fontWeight: 600 }}>{t('detail.no_messages') || 'Xabar yo\'q. Birinchi xabarni yozing.'}</p>
                             </div>
                         ) : (
                             <>
@@ -310,24 +323,25 @@ export default function ChatRoomPage() {
                                 const showDateSep = msgDate && (!prevDate || msgDate.toDateString() !== prevDate.toDateString());
                                 const today = new Date();
                                 const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+                                const dateLocale = language === 'ru' ? 'ru-RU' : language === 'en' ? 'en-US' : 'uz-UZ';
                                 const dateSepLabel = msgDate
-                                    ? (msgDate.toDateString() === today.toDateString() ? 'Bugun'
-                                      : msgDate.toDateString() === yesterday.toDateString() ? 'Kecha'
-                                      : msgDate.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }))
+                                    ? (msgDate.toDateString() === today.toDateString() ? (t('chat.today') || 'Bugun')
+                                      : msgDate.toDateString() === yesterday.toDateString() ? (t('chat.yesterday') || 'Kecha')
+                                      : msgDate.toLocaleDateString(dateLocale, { day: '2-digit', month: '2-digit', year: 'numeric' }))
                                     : '';
                                 // System message
                                 if (msg.message_type === 'system') {
                                     return (
                                         <div key={msg.id}>
                                             {showDateSep && (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0', padding: '0 4px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '12px 0', padding: '0 4px' }}>
                                                     <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
-                                                    <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', flexShrink: 0, padding: '2px 8px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '999px', border: '1px solid var(--color-border-muted)' }}>{dateSepLabel}</span>
+                                                    <span style={{ fontSize: '12px', fontWeight: 600, color: chatColors.dateSep, flexShrink: 0, padding: '4px 12px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '999px', border: '1px solid var(--color-border-muted)' }}>{dateSepLabel}</span>
                                                     <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
                                                 </div>
                                             )}
                                             <div style={{ textAlign: 'center', padding: '8px 0' }}>
-                                                <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-secondary)', padding: '4px 12px', borderRadius: 'var(--radius-full)', border: '1px solid var(--color-border-muted)' }}>
+                                                <span style={{ fontSize: '13px', fontWeight: 600, color: chatColors.systemMsg, backgroundColor: 'var(--color-bg-secondary)', padding: '6px 14px', borderRadius: 'var(--radius-full)', border: '1px solid var(--color-border-muted)' }}>
                                                     🛡️ {msg.content}
                                                 </span>
                                             </div>
@@ -337,9 +351,9 @@ export default function ChatRoomPage() {
                                 return (
                                     <div key={msg.id}>
                                         {showDateSep && (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '8px 0', padding: '0 4px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '12px 0', padding: '0 4px' }}>
                                                 <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
-                                                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', flexShrink: 0, padding: '2px 8px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '999px', border: '1px solid var(--color-border-muted)' }}>{dateSepLabel}</span>
+                                                <span style={{ fontSize: '12px', fontWeight: 600, color: chatColors.dateSep, flexShrink: 0, padding: '4px 12px', backgroundColor: 'var(--color-bg-secondary)', borderRadius: '999px', border: '1px solid var(--color-border-muted)' }}>{dateSepLabel}</span>
                                                 <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-muted)' }} />
                                             </div>
                                         )}
@@ -348,7 +362,7 @@ export default function ChatRoomPage() {
                                             display: 'flex',
                                             alignItems: 'flex-end',
                                             justifyContent: isMe ? 'flex-end' : 'flex-start',
-                                            gap: '8px',
+                                            gap: '10px',
                                         }}
                                     >
                                         {!isMe &&
@@ -356,21 +370,21 @@ export default function ChatRoomPage() {
                                                 <img
                                                     src={resolveImageUrl(senderAvatar)}
                                                     alt=""
-                                                    style={{ width: '28px', height: '28px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0, alignSelf: 'flex-end' }}
+                                                    style={{ width: '34px', height: '34px', borderRadius: 'var(--radius-full)', objectFit: 'cover', flexShrink: 0, alignSelf: 'flex-end' }}
                                                 />
                                             ) : (
                                                 <div
                                                     style={{
-                                                        width: '28px',
-                                                        height: '28px',
+                                                        width: '34px',
+                                                        height: '34px',
                                                         borderRadius: 'var(--radius-full)',
                                                         backgroundColor: 'var(--color-bg-tertiary)',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        fontSize: 'var(--font-size-xs)',
-                                                        fontWeight: 'var(--font-weight-semibold)',
-                                                        color: 'var(--color-text-muted)',
+                                                        fontSize: '13px',
+                                                        fontWeight: 700,
+                                                        color: 'var(--color-text-secondary)',
                                                         flexShrink: 0,
                                                         alignSelf: 'flex-end',
                                                     }}
@@ -380,35 +394,35 @@ export default function ChatRoomPage() {
                                             ))}
                                         <div style={{ maxWidth: '72%', minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                                             {!isMe && senderName && (
-                                                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginBottom: '3px', paddingLeft: '4px', fontWeight: 600 }}>{senderName}</span>
+                                                <span style={{ fontSize: '13px', color: chatColors.senderName, marginBottom: '4px', paddingLeft: '4px', fontWeight: 700 }}>{senderName}</span>
                                             )}
                                         <div
                                             style={{
-                                                padding: '10px 14px',
+                                                padding: '12px 16px',
                                                 overflowWrap: 'break-word',
                                                 wordBreak: 'break-word',
-                                                boxShadow: '0 1px 2px rgba(0,0,0,0.10)',
+                                                boxShadow: isDark ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
                                                 ...(isMe
                                                     ? {
-                                                        background: 'linear-gradient(135deg, #2563EB, #1d4ed8)',
+                                                        background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
                                                         color: '#ffffff',
-                                                        borderRadius: '18px 18px 4px 18px',
+                                                        borderRadius: '20px 20px 4px 20px',
                                                     }
                                                     : {
-                                                        backgroundColor: 'var(--color-bg-secondary)',
-                                                        color: 'var(--color-text-primary)',
-                                                        border: '1px solid var(--color-border-muted)',
-                                                        borderRadius: '18px 18px 18px 4px',
+                                                        backgroundColor: chatColors.incomingBg,
+                                                        color: chatColors.msgText,
+                                                        border: `1px solid ${chatColors.incomingBorder}`,
+                                                        borderRadius: '20px 20px 20px 4px',
                                                     }),
                                             }}
                                         >
-                                            <p style={{ fontSize: '14px', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'break-word', fontWeight: 400 }}>{msg.content}</p>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginTop: '4px' }}>
-                                                <span style={{ fontSize: '11px', opacity: isMe ? 0.75 : 0.7, color: isMe ? '#fff' : 'var(--color-text-muted)' }}>
+                                            <p style={{ fontSize: '15px', lineHeight: '1.55', margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'break-word', wordBreak: 'break-word', fontWeight: 500 }}>{msg.content}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '5px', marginTop: '5px' }}>
+                                                <span style={{ fontSize: '12px', fontWeight: 500, color: isMe ? 'rgba(255,255,255,0.85)' : chatColors.timestamp }}>
                                                     {msg.created_at ? new Date(msg.created_at).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' }) : ''}
                                                 </span>
                                                 {isMe && (
-                                                    <span style={{ fontSize: '12px', lineHeight: 1, color: msg.is_read ? '#93c5fd' : 'rgba(255,255,255,0.6)' }}>
+                                                    <span style={{ fontSize: '13px', lineHeight: 1, fontWeight: 600, color: msg.is_read ? '#93c5fd' : 'rgba(255,255,255,0.7)' }}>
                                                         {msg.is_read ? '✓✓' : '✓'}
                                                     </span>
                                                 )}
@@ -428,13 +442,13 @@ export default function ChatRoomPage() {
                         onSubmit={handleSend}
                         className="chat-room-form"
                         style={{
-                            padding: '10px 12px',
+                            padding: '12px 14px',
                             borderTop: '1px solid var(--color-border-muted)',
                             backgroundColor: 'var(--color-bg-primary)',
                             flexShrink: 0,
                         }}
                     >
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
                         <textarea
                             value={text}
                             onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
@@ -445,22 +459,23 @@ export default function ChatRoomPage() {
                             style={{
                                 flex: 1,
                                 resize: 'none',
-                                minHeight: '44px',
+                                minHeight: '48px',
                                 maxHeight: '120px',
                                 overflowY: 'auto',
-                                padding: '10px 16px',
-                                borderRadius: '22px',
-                                border: '1.5px solid var(--color-border-default)',
+                                padding: '12px 18px',
+                                borderRadius: '24px',
+                                border: '2px solid var(--color-border-default)',
                                 backgroundColor: 'var(--color-bg-secondary)',
                                 color: 'var(--color-text-primary)',
-                                fontSize: '14px',
+                                fontSize: '15px',
+                                fontWeight: 500,
                                 lineHeight: '1.5',
                                 outline: 'none',
-                                transition: 'border-color 0.15s',
+                                transition: 'border-color 0.15s, box-shadow 0.15s',
                                 fontFamily: 'inherit',
                             }}
-                            onFocus={(e) => { e.target.style.borderColor = '#2563EB'; }}
-                            onBlur={(e) => { e.target.style.borderColor = 'var(--color-border-default)'; }}
+                            onFocus={(e) => { e.target.style.borderColor = '#2563EB'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.15)'; }}
+                            onBlur={(e) => { e.target.style.borderColor = 'var(--color-border-default)'; e.target.style.boxShadow = 'none'; }}
                         />
                         <button
                             type="submit"

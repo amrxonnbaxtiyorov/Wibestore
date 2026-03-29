@@ -294,28 +294,28 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* Quick Stats */}
+            {/* Quick Stats — API dan real ma'lumotlar */}
             <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: '16px' }}>
                 {[
                     {
                         icon: Users,
-                        value: '5,234',
+                        value: (apiStats?.users?.total ?? 0).toLocaleString(),
                         label: 'Jami foydalanuvchilar',
-                        sub: 'Bugun +45 ta yangi',
+                        sub: `Bugun +${apiStats?.users?.new_this_week ?? 0} ta yangi`,
                         color: 'var(--color-accent-blue)',
                     },
                     {
                         icon: Star,
-                        value: '342',
-                        label: 'Premium obunalar',
-                        sub: `Oylik: ${formatPrice(33858000)}`,
+                        value: String(apiStats?.users?.verified ?? 0),
+                        label: 'Tasdiqlangan foydalanuvchilar',
+                        sub: `Oylik: ${formatPrice(Number(apiStats?.transactions?.month_volume ?? 0))}`,
                         color: 'var(--color-premium-gold-light)',
                     },
                     {
                         icon: DollarSign,
-                        value: formatPrice(156000000),
-                        label: 'Oylik daromad',
-                        sub: `Komissiyadan: ${formatPrice(15600000)}`,
+                        value: formatPrice(Number(apiStats?.transactions?.total_volume ?? 0)),
+                        label: 'Umumiy daromad',
+                        sub: `Komissiyadan: ${formatPrice(Number(apiStats?.escrow?.total_commission ?? 0))}`,
                         color: 'var(--color-accent-green)',
                     },
                 ].map((card, idx) => (

@@ -20,19 +20,21 @@ DEBUG = False
 # PRODUCTION SECURITY CHECKS
 # ============================================================
 _raw_secret = os.environ.get("SECRET_KEY", "").strip()
-if _raw_secret in ("", "django-insecure-change-me-in-production"):
-    from django.core.management.utils import get_random_secret_key
-    SECRET_KEY = get_random_secret_key()
-    logger.debug(
-        "SECRET_KEY o'rnatilmagan; vaqtincha random. Railway: Variables → SECRET_KEY. "
-        "Kalit: python -c \"from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())\""
+if not _raw_secret or _raw_secret == "django-insecure-change-me-in-production":
+    raise ValueError(
+        "SECRET_KEY must be set in production. "
+        "Railway: Variables → Add → SECRET_KEY. "
+        "Generate: python -c \"from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())\""
     )
-else:
-    SECRET_KEY = _raw_secret
+SECRET_KEY = _raw_secret
 
-# FERNET_KEY: logni toza qoldirish — ogohlantirish faqat hujjatda (RAILWAY_VARIABLES.md)
-if not os.environ.get("FERNET_KEY", "").strip() or FERNET_KEY == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=":  # noqa: F405
-    pass  # FERNET o'rnatish RAILWAY_VARIABLES.md da
+# FERNET_KEY: encryption uchun (account credentials)
+_fernet_raw = os.environ.get("FERNET_KEY", "").strip()
+if not _fernet_raw or _fernet_raw == "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=":
+    logger.warning(
+        "FERNET_KEY not set in production! Account credentials will be stored without encryption. "
+        "Set it in Railway Variables. Generate: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+    )
 
 # Production da DB: Railway'da Postgres qo'shib, DATABASE_URL yoki DATABASE_PUBLIC_URL o'rnating
 _db_url = (os.environ.get("DATABASE_PUBLIC_URL") or os.environ.get("DATABASE_URL") or "").strip()
@@ -43,6 +45,12 @@ if not _db_url or (_db_host and _db_host in ("localhost", "127.0.0.1", "::1")):
         "Variables set DATABASE_URL (or add Reference: Postgres → DATABASE_PUBLIC_URL). "
         "Do not use localhost in production."
     )
+
+# Database connection pooling and health checks
+DATABASES["default"]["CONN_MAX_AGE"] = 600  # Keep connections 10 minutes  # noqa: F405
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True  # noqa: F405
+DATABASES["default"].setdefault("OPTIONS", {})  # noqa: F405
+DATABASES["default"]["OPTIONS"]["connect_timeout"] = 10  # noqa: F405
 
 # Railway: ALLOWED_HOSTS bo'lmasa .railway.app qo'shiladi (DisallowedHost oldini olish)
 if ".railway.app" not in str(ALLOWED_HOSTS):  # noqa: F405
@@ -83,17 +91,20 @@ CSRF_TRUSTED_ORIGINS = env.list(  # noqa: F405
 if ".wibestore.net" not in str(ALLOWED_HOSTS):  # noqa: F405
     ALLOWED_HOSTS = list(ALLOWED_HOSTS) + [".wibestore.net"]  # noqa: F405
 
-# CORS — wibestore.net domenini ruxsatlarga qo'shish
+# CORS — faqat ruxsat berilgan domenlar (CORS_ALLOW_ALL_ORIGINS = False)
+CORS_ALLOW_ALL_ORIGINS = False
 _default_cors = [
     "https://wibestore.net",
     "https://www.wibestore.net",
     "https://wibestore.uz",
+    "https://www.wibestore.uz",
     "https://frontend-production-76e67.up.railway.app",
 ]
 CORS_ALLOWED_ORIGINS = env.list(  # noqa: F405
     "CORS_ALLOWED_ORIGINS",
     default=_default_cors,
 )
+CORS_ALLOW_CREDENTIALS = True  # noqa: F811
 
 # ============================================================
 # STORAGE (S3-compatible: AWS S3 / Cloudflare R2 / DigitalOcean Spaces)

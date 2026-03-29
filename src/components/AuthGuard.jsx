@@ -27,12 +27,8 @@ const AuthGuard = ({ children }) => {
 };
 
 /**
- * AdminGuard - Защищенный маршрут для администраторов
- * 
- * Usage:
- * <AdminGuard>
- *   <AdminDashboard />
- * </AdminGuard>
+ * AdminGuard - Faqat is_staff=true bo'lgan foydalanuvchilar uchun
+ * Backend JWT token'dagi is_staff claim'ga asoslangan
  */
 export const AdminGuard = ({ children }) => {
     const { user, isLoading, isInitialized } = useAuth();
@@ -43,7 +39,7 @@ export const AdminGuard = ({ children }) => {
     }
 
     if (!user) {
-        return <Navigate to="/admin/login" state={{ from: location }} replace />;
+        return <Navigate to="/amirxon/login" state={{ from: location }} replace />;
     }
 
     if (!user.is_staff) {

@@ -3580,7 +3580,12 @@ p {
   }
 }
 
-/* ---- SettingsPage Mobile ---- */
+/* ---- SettingsPage ---- */
+.settings-sidebar-wrap {
+  width: 240px;
+  flex-shrink: 0;
+}
+
 @media (max-width: 1023px) {
   .settings-sidebar-wrap {
     width: 100% !important;
@@ -3588,26 +3593,29 @@ p {
     max-width: none !important;
   }
 
-  .settings-sidebar nav {
-    flex-direction: row !important;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    gap: 4px !important;
-    padding-bottom: 4px;
-    scrollbar-width: none;
+  .settings-sidebar {
+    overflow: visible !important;
   }
 
-  .settings-sidebar nav::-webkit-scrollbar {
-    display: none;
+  .settings-sidebar nav,
+  .settings-sidebar .settings-nav {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    padding-bottom: 4px;
   }
 
   .settings-sidebar nav button,
-  .settings-sidebar nav a {
+  .settings-sidebar nav a,
+  .settings-sidebar .settings-nav button {
     white-space: nowrap;
     flex-shrink: 0;
+    flex-grow: 1;
     min-height: 40px;
     font-size: var(--font-size-sm) !important;
     padding: 8px 14px !important;
+    text-align: center;
+    justify-content: center;
   }
 }
 

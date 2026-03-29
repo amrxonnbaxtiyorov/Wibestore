@@ -3,10 +3,11 @@ import { useState, useEffect, useMemo } from 'react';
 import {
     Heart, Share2, Shield, Star, MessageCircle, CheckCircle,
     AlertCircle, ChevronLeft, ChevronRight, Copy, Check,
-    Gamepad2, Trophy, Swords, Layers, ArrowLeft, Send, Wallet, X
+    Gamepad2, Trophy, Swords, Layers, ArrowLeft, Send, Wallet, X, Video, ExternalLink
 } from 'lucide-react';
 
 import { useListing, useAddToFavorites, useRemoveFromFavorites, useListings, usePurchaseListing } from '../hooks';
+import apiClient from '../lib/apiClient';
 import { useListingReviews } from '../hooks/useReviews';
 import { resolveImageUrl } from '../lib/displayUtils';
 import ReviewList from '../components/ReviewList';
@@ -648,9 +649,67 @@ const AccountDetailPage = () => {
                     className="grid grid-cols-1 lg:grid-cols-2"
                     style={{ gap: '32px', marginTop: '20px' }}
                 >
-                    {/* ── Left: Images ── */}
+                    {/* ── Left: Images + Video ── */}
                     <div>
                         <ImageCarousel images={images} title={listing.title} noImageText={t('detail.no_image')} imageErrorText={t('detail.image_load_failed')} />
+
+                        {/* Video ko'rish tugmasi */}
+                        {listing.has_video && listing.video_status === 'approved' && (
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const resp = await apiClient.post(`/listings/${listing.id}/video-view/`);
+                                        const link = resp?.data?.deep_link;
+                                        if (link) window.open(link, '_blank');
+                                    } catch {
+                                        // silently fail
+                                    }
+                                }}
+                                style={{
+                                    width: '100%',
+                                    marginTop: '12px',
+                                    padding: '14px 20px',
+                                    borderRadius: 'var(--radius-xl)',
+                                    border: '2px solid var(--color-accent-blue)',
+                                    background: 'linear-gradient(135deg, rgba(37,99,235,0.1), rgba(37,99,235,0.05))',
+                                    color: 'var(--color-accent-blue)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '10px',
+                                    fontWeight: 700,
+                                    fontSize: '15px',
+                                    transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, #2563eb, #1d4ed8)'; e.currentTarget.style.color = '#fff'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(37,99,235,0.1), rgba(37,99,235,0.05))'; e.currentTarget.style.color = 'var(--color-accent-blue)'; }}
+                            >
+                                <Video style={{ width: '22px', height: '22px' }} />
+                                {t('detail.watch_video') || "Videoni ko'rish"}
+                                <ExternalLink style={{ width: '16px', height: '16px', opacity: 0.7 }} />
+                            </button>
+                        )}
+                        {listing.has_video && listing.video_status === 'pending' && (
+                            <div style={{
+                                width: '100%',
+                                marginTop: '12px',
+                                padding: '12px 20px',
+                                borderRadius: 'var(--radius-xl)',
+                                border: '1.5px solid var(--color-warning-border, #f59e0b)',
+                                backgroundColor: 'var(--color-warning-bg, rgba(245,158,11,0.08))',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                color: 'var(--color-warning, #d97706)',
+                            }}>
+                                <Video style={{ width: '18px', height: '18px' }} />
+                                {t('detail.video_pending') || "Video tekshiruvda"}
+                            </div>
+                        )}
                     </div>
 
                     {/* ── Right: Info + Purchase ── */}
@@ -659,11 +718,43 @@ const AccountDetailPage = () => {
                         <div>
                             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '8px' }}>
                                 <div style={{ flex: 1 }}>
-                                    {listing.is_premium && (
-                                        <span className="badge badge-premium" style={{ marginBottom: '8px', display: 'inline-flex' }}>
-                                            ★ Premium
-                                        </span>
-                                    )}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                                        {listing.listing_code && (
+                                            <span
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    padding: '3px 10px',
+                                                    borderRadius: 'var(--radius-md)',
+                                                    backgroundColor: 'var(--color-bg-tertiary)',
+                                                    border: '1px solid var(--color-border-default)',
+                                                    color: 'var(--color-text-accent)',
+                                                    fontSize: '12px',
+                                                    fontWeight: 600,
+                                                    fontFamily: 'monospace',
+                                                    letterSpacing: '0.5px',
+                                                }}
+                                            >
+                                                #{listing.listing_code}
+                                            </span>
+                                        )}
+                                        {listing.listing_type === 'rent' && (
+                                            <span style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                padding: '3px 10px', borderRadius: 'var(--radius-md)',
+                                                background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+                                                color: '#fff', fontSize: '12px', fontWeight: 700,
+                                            }}>
+                                                Arenda
+                                            </span>
+                                        )}
+                                        {listing.is_premium && (
+                                            <span className="badge badge-premium" style={{ display: 'inline-flex' }}>
+                                                ★ Premium
+                                            </span>
+                                        )}
+                                    </div>
                                     <h1 style={{
                                         fontSize: 'var(--font-size-2xl)',
                                         fontWeight: 'var(--font-weight-bold)',
@@ -1008,6 +1099,11 @@ const AccountDetailPage = () => {
                             {relatedListings.map((acc) => (
                                 <AccountCard key={acc.id} account={{
                                     id: acc.id,
+                                    listing_code: acc.listing_code,
+                                    listing_type: acc.listing_type,
+                                    rental_price_per_day: acc.rental_price_per_day,
+                                    rental_period_days: acc.rental_period_days,
+                                    rental_deposit: acc.rental_deposit,
                                     gameId: acc.game?.slug || acc.game?.id || acc.gameId,
                                     gameName: acc.game?.name || acc.gameName,
                                     title: acc.title,

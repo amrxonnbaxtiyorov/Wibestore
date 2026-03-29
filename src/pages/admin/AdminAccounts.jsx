@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Search, Eye, EyeOff, Check, X, Ban, Key, AlertCircle, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Search, Eye, EyeOff, Check, X, Ban, Key, AlertCircle, RefreshCw, ExternalLink } from 'lucide-react';
 import { formatPrice } from '../../data/mockData';
 import {
     useAdminAllListings,
@@ -196,15 +197,30 @@ const AdminAccounts = () => {
                                     <tr key={listing.id}>
                                         <td style={{ color: 'var(--color-text-muted)', fontSize: 'var(--font-size-sm)' }}>#{String(listing.id).slice(0, 8)}</td>
                                         <td>
-                                            <div style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>
+                                            <Link
+                                                to={`/account/${listing.id}`}
+                                                target="_blank"
+                                                style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-accent)', fontSize: 'var(--font-size-sm)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                                title="E'lonni saytda ko'rish"
+                                            >
                                                 {listing.title}
-                                            </div>
+                                                <ExternalLink style={{ width: '12px', height: '12px', opacity: 0.6 }} />
+                                            </Link>
                                             <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '2px' }}>
                                                 Level: {listing.level || '—'} | Rank: {listing.rank || '—'}
                                             </div>
                                         </td>
                                         <td style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>{getGameName(listing)}</td>
-                                        <td style={{ color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)' }}>{getSellerName(listing)}</td>
+                                        <td>
+                                            <Link
+                                                to={`/seller/${listing.seller?.id}`}
+                                                target="_blank"
+                                                style={{ color: 'var(--color-text-primary)', fontSize: 'var(--font-size-sm)', textDecoration: 'none' }}
+                                                title="Sotuvchi profilini ko'rish"
+                                            >
+                                                {getSellerName(listing)}
+                                            </Link>
+                                        </td>
                                         <td style={{ color: 'var(--color-text-accent)', fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)' }}>
                                             {formatPrice(Number(listing.price))}
                                         </td>

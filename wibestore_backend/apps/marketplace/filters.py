@@ -2,20 +2,25 @@
 Marketplace App - Filters
 """
 
+import logging
+
 import django_filters
+from django.db import OperationalError, ProgrammingError
 from django.db.models import Q
 from apps.marketplace.models import Listing
+
+logger = logging.getLogger(__name__)
 
 
 class ListingFilter(django_filters.FilterSet):
     """FilterSet for advanced listing filtering."""
-    
+
     # Search filter
     search = django_filters.CharFilter(
         method='filter_search',
         label='Search'
     )
-    
+
     # Price range filters
     min_price = django_filters.NumberFilter(
         field_name='price',
@@ -27,49 +32,51 @@ class ListingFilter(django_filters.FilterSet):
         lookup_expr='lte',
         label='Max Price'
     )
-    
+
     # Game filter
     game = django_filters.CharFilter(
         field_name='game__slug',
         label='Game Slug'
     )
-    
-    # Category filter (via game's category)
-    category = django_filters.CharFilter(
-        field_name='game__category__slug',
-        label='Category Slug'
-    )
-    
+
     # Status filter
     status = django_filters.ChoiceFilter(
         choices=[
             ('active', 'Active'),
             ('pending', 'Pending'),
             ('sold', 'Sold'),
-            ('reserved', 'Reserved'),
+            ('blocked', 'Blocked'),
+            ('archived', 'Archived'),
+            ('rejected', 'Rejected'),
         ],
         label='Status'
     )
-    
+
+    # Listing type filter (sell / rent)
+    listing_type = django_filters.ChoiceFilter(
+        choices=[('sell', 'Sell'), ('rent', 'Rent')],
+        label='Listing Type',
+    )
+
     # Premium filter
     is_premium = django_filters.BooleanFilter(
         field_name='is_premium',
         label='Premium Only'
     )
-    
+
     # Seller filter
     seller = django_filters.UUIDFilter(
         field_name='seller__id',
         label='Seller ID'
     )
-    
+
     # Level filter
     level = django_filters.CharFilter(
         field_name='level',
         lookup_expr='icontains',
         label='Level'
     )
-    
+
     # Rank filter
     rank = django_filters.CharFilter(
         field_name='rank',
@@ -102,7 +109,7 @@ class ListingFilter(django_filters.FilterSet):
     class Meta:
         model = Listing
         fields = [
-            'search', 'min_price', 'max_price', 'game', 'category',
+            'search', 'listing_type', 'min_price', 'max_price', 'game',
             'status', 'is_premium', 'seller', 'level', 'rank', 'has_warranty', 'ordering',
         ]
 
@@ -110,24 +117,39 @@ class ListingFilter(django_filters.FilterSet):
         if value is True:
             return queryset.filter(warranty_days__gt=0)
         return queryset
-    
+
     def filter_search(self, queryset, name, value):
-        """Filter by search term across multiple fields."""
-        if value:
-            return queryset.filter(
-                Q(title__icontains=value) |
-                Q(description__icontains=value) |
-                Q(game__name__icontains=value) |
-                Q(seller__full_name__icontains=value)
-            )
-        return queryset
+        """Filter by search term across multiple fields including listing_code and level."""
+        if not value:
+            return queryset
+
+        query = (
+            Q(title__icontains=value) |
+            Q(description__icontains=value) |
+            Q(game__name__icontains=value) |
+            Q(seller__full_name__icontains=value) |
+            Q(level__icontains=value) |
+            Q(rank__icontains=value)
+        )
+
+        # Multi-word search: each word matches title independently
+        words = value.split()
+        if len(words) > 1:
+            multi_q = Q()
+            for word in words:
+                multi_q &= Q(title__icontains=word)
+            query |= multi_q
+
+        # listing_code search (safe if column not yet migrated)
+        try:
+            code_qs = queryset.filter(Q(listing_code__iexact=value))
+            if code_qs.exists():
+                return queryset.filter(Q(listing_code__iexact=value) | query)
+        except (OperationalError, ProgrammingError):
+            pass
+
+        return queryset.filter(query)
 
 
 # Alias for views that expect ListingFilterSet
 ListingFilterSet = ListingFilter
-
-
-class ListingBackend(django_filters.rest_framework.backends.DjangoFilterBackend):
-    """Custom filter backend for listings."""
-
-    filterset_class = ListingFilter

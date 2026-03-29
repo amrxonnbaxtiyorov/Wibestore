@@ -3,16 +3,37 @@ WibeStore Backend - Marketplace Models
 Listing, ListingImage, Favorite, View models.
 """
 
+import logging
+
 from django.conf import settings
 from django.db import models
 
-from core.constants import LISTING_STATUS_CHOICES, LOGIN_METHOD_CHOICES
+from core.constants import LISTING_STATUS_CHOICES, LISTING_TYPE_CHOICES, LOGIN_METHOD_CHOICES
 from core.models import BaseModel, BaseSoftDeleteModel
 from core.utils import encrypt_sensitive_data, decrypt_sensitive_data
 
+logger = logging.getLogger("apps.marketplace")
+
 
 class Listing(BaseSoftDeleteModel):
-    """Game account listing for sale."""
+    """Game account listing for sale or rent."""
+
+    listing_type = models.CharField(
+        max_length=10,
+        choices=LISTING_TYPE_CHOICES,
+        default="sell",
+        db_index=True,
+        help_text="sell = sotish, rent = ijarada berish",
+    )
+
+    listing_code = models.CharField(
+        max_length=10,
+        unique=True,
+        db_index=True,
+        null=True,
+        blank=True,
+        help_text="Auto-generated unique listing code (e.g. WB-1001)",
+    )
 
     seller = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -35,8 +56,12 @@ class Listing(BaseSoftDeleteModel):
         max_length=20, choices=LISTING_STATUS_CHOICES, default="pending", db_index=True
     )
     is_premium = models.BooleanField(default=False, db_index=True)
+    is_boosted = models.BooleanField(default=False, db_index=True)
+    boost_count = models.PositiveIntegerField(default=0)
+    boost_until = models.DateTimeField(null=True, blank=True)
     views_count = models.PositiveIntegerField(default=0)
     favorites_count = models.PositiveIntegerField(default=0)
+    seller_ip = models.GenericIPAddressField(null=True, blank=True)
 
     # Warranty (kafolat) — days seller guarantees account
     warranty_days = models.PositiveSmallIntegerField(
@@ -56,6 +81,26 @@ class Listing(BaseSoftDeleteModel):
         help_text="Aksiya tugash vaqti",
     )
 
+    # Rental (arenda) fields
+    rental_period_days = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="Ijara muddati (kun): 1, 3, 7, 14, 30",
+    )
+    rental_price_per_day = models.DecimalField(
+        max_digits=15, decimal_places=2, null=True, blank=True,
+        help_text="Kunlik ijara narxi",
+    )
+    rental_deposit = models.DecimalField(
+        max_digits=15, decimal_places=2, null=True, blank=True,
+        help_text="Kafolat depozit summasi (akkaunt qaytarilmasa ushlanadi)",
+    )
+    # Custom time slots: [{"label": "1 soat", "price": 10000}, {"label": "Kechdan tongacha", "price": 50000}]
+    rental_time_slots = models.JSONField(
+        default=list, blank=True,
+        help_text="Foydalanuvchi belgilagan vaqt/narx variantlari (max 5 ta)",
+    )
+
     # Account details
     login_method = models.CharField(
         max_length=20, choices=LOGIN_METHOD_CHOICES, default="email"
@@ -69,6 +114,31 @@ class Listing(BaseSoftDeleteModel):
     rank = models.CharField(max_length=50, blank=True, default="")
     skins_count = models.PositiveIntegerField(default=0)
     features = models.JSONField(default=list, blank=True)
+
+    # Video (Telegram orqali yuklangan)
+    VIDEO_STATUS_CHOICES = [
+        ("none", "No video"),
+        ("pending", "Pending review"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+    video_file_id = models.CharField(
+        max_length=255, blank=True, default="",
+        help_text="Telegram file_id for uploaded video",
+    )
+    video_upload_token = models.CharField(
+        max_length=64, blank=True, default="",
+        db_index=True,
+        help_text="One-time token for video upload via Telegram bot",
+    )
+    video_status = models.CharField(
+        max_length=20, choices=VIDEO_STATUS_CHOICES, default="none", db_index=True,
+        help_text="Admin moderation status for video",
+    )
+    video_rejected_reason = models.TextField(
+        blank=True, default="",
+        help_text="Reason for video rejection (shown to seller)",
+    )
 
     # Moderation
     moderated_by = models.ForeignKey(
@@ -93,11 +163,88 @@ class Listing(BaseSoftDeleteModel):
             models.Index(fields=["seller", "status"]),
             models.Index(fields=["game", "status", "created_at"]),
             models.Index(fields=["status", "is_premium"]),
+            models.Index(fields=["listing_type", "status"]),
             models.Index(fields=["price"]),
         ]
 
     def __str__(self) -> str:
-        return f"{self.title} ({self.game.name})"
+        code = getattr(self, "listing_code", "") or ""
+        prefix = f"[{code}] " if code else ""
+        return f"{prefix}{self.title} ({self.game.name})"
+
+    @staticmethod
+    def _random_code():
+        """Generate a random unique fallback code (works even if column is NOT NULL)."""
+        import uuid
+        return f"WB-{uuid.uuid4().hex[:6].upper()}"
+
+    def save(self, *args, **kwargs):
+        from django.db import IntegrityError, transaction
+
+        # Generate listing_code if missing
+        if not self.listing_code:
+            try:
+                self.listing_code = self._generate_listing_code()
+            except Exception as e:
+                logger.warning("Failed to generate listing_code: %s", e)
+                self.listing_code = self._random_code()
+
+        # Save with retry on IntegrityError.
+        # Each attempt is wrapped in a savepoint so PostgreSQL can recover
+        # from the aborted-transaction state after an IntegrityError.
+        last_error = None
+        for attempt in range(5):
+            try:
+                with transaction.atomic():
+                    super().save(*args, **kwargs)
+                return  # Success
+            except IntegrityError as e:
+                error_str = str(e).lower()
+                if "listing_code" in error_str or "listings_listing_code" in error_str:
+                    self.listing_code = self._random_code()
+                    last_error = e
+                    logger.warning("Listing save attempt %d failed (listing_code collision), retrying: %s",
+                                   attempt + 1, e)
+                    continue
+                else:
+                    logger.error("Listing save IntegrityError (non listing_code): %s", e)
+                    raise
+
+        # All retries exhausted — final attempt with random code
+        self.listing_code = self._random_code()
+        logger.warning("All listing_code retries exhausted, final attempt with %s", self.listing_code)
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+
+    @staticmethod
+    def _generate_listing_code() -> str:
+        """Generate next sequential listing code like WB-1001, WB-1002, ..."""
+        max_num = 1000
+        try:
+            from django.db import connection
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT listing_code FROM listings "
+                    "WHERE listing_code LIKE 'WB-%%' AND listing_code IS NOT NULL"
+                )
+                rows = cursor.fetchall()
+            for (code,) in rows:
+                if not code:
+                    continue
+                suffix = code.replace("WB-", "")
+                try:
+                    num = int(suffix)
+                    if num > max_num:
+                        max_num = num
+                except (ValueError, TypeError):
+                    pass  # skip random hex codes like WB-A3F1BC
+        except Exception as e:
+            logger.warning("listing_code query failed (falling back to count): %s", e)
+            try:
+                max_num = 1000 + Listing.all_objects.count()
+            except Exception:
+                pass
+        return f"WB-{max_num + 1}"
 
     def set_account_credentials(self, email: str, password: str) -> None:
         """Encrypt and store account credentials."""
@@ -241,6 +388,43 @@ class PromoCodeUse(models.Model):
         return f"{self.promo.code} by {self.user.email}"
 
 
+class ListingPromotion(models.Model):
+    """Track paid promotions for rental listings (ad placement)."""
+
+    id = models.AutoField(primary_key=True)
+    listing = models.ForeignKey(
+        Listing, on_delete=models.CASCADE, related_name="promotions"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="promotions"
+    )
+    hours = models.PositiveIntegerField(help_text="Promotion duration in hours")
+    price_per_hour = models.DecimalField(
+        max_digits=15, decimal_places=2,
+        help_text="Price per hour at time of purchase",
+    )
+    discount_percent = models.PositiveSmallIntegerField(
+        default=0, help_text="Discount applied (e.g. 10, 20, 30)",
+    )
+    total_cost = models.DecimalField(
+        max_digits=15, decimal_places=2, help_text="Total amount charged",
+    )
+    starts_at = models.DateTimeField(help_text="When promotion starts")
+    expires_at = models.DateTimeField(db_index=True, help_text="When promotion expires")
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "listing_promotions"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["listing", "is_active", "expires_at"]),
+        ]
+
+    def __str__(self):
+        return f"Promo: {self.listing.title} — {self.hours}h ({self.total_cost} so'm)"
+
+
 class SavedSearch(models.Model):
     """User's saved search (alert when new listings match)."""
 
@@ -264,3 +448,64 @@ class SavedSearch(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.user.email})"
+
+
+class SpamFilter(models.Model):
+    """Taqiqlangan so'z yoki regex pattern filtri."""
+
+    FILTER_TYPE_CHOICES = [
+        ("word", "Word"),
+        ("regex", "Regex"),
+    ]
+    ACTION_CHOICES = [
+        ("reject", "Reject"),
+        ("flag", "Flag"),
+    ]
+
+    filter_type = models.CharField(max_length=20, choices=FILTER_TYPE_CHOICES, default="word")
+    word = models.CharField(max_length=255, blank=True, default="")
+    pattern = models.CharField(
+        max_length=500, blank=True, default="",
+        help_text="Taqiqlangan so'z yoki regex pattern",
+    )
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES, default="reject")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "spam_filters"
+        ordering = ["-created_at"]
+        verbose_name = "Spam Filter"
+        verbose_name_plural = "Spam Filters"
+
+    def __str__(self) -> str:
+        return f"{self.filter_type}: {self.word or self.pattern}"
+
+
+class PriceWatch(models.Model):
+    """Foydalanuvchi belgilagan narx diapazoni uchun ogohlantirish."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="price_watches",
+    )
+    game = models.ForeignKey(
+        "games.Game",
+        on_delete=models.CASCADE,
+        related_name="price_watches",
+    )
+    min_price = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    max_price = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    last_notified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "price_watches"
+        ordering = ["-created_at"]
+        verbose_name = "Price Watch"
+        verbose_name_plural = "Price Watches"
+
+    def __str__(self) -> str:
+        return f"{self.user.email} watching {self.game.name}"
