@@ -1,8 +1,9 @@
 """
 WibeStore Backend - Payment Webhook Views
-Handle webhooks from payment providers.
+Handle webhooks from payment providers (Google Pay, Visa, Mastercard, Apple Pay).
 """
 
+import json
 import logging
 
 from django.http import JsonResponse
@@ -34,12 +35,10 @@ def _process_webhook_success(order_id: str, provider_transaction_id: str, provid
         transaction.provider_transaction_id = provider_transaction_id
         transaction.save(update_fields=["provider_transaction_id"])
 
-    # complete_deposit handles balance update atomically + is idempotent
     from core.exceptions import BusinessLogicError
     try:
         PaymentService.complete_deposit(transaction)
     except BusinessLogicError:
-        # Already processed — idempotent, log and continue
         logger.info("Webhook (%s): transaction %s already completed (duplicate webhook)", provider_name, transaction.id)
         return
 
@@ -53,20 +52,19 @@ def _process_webhook_success(order_id: str, provider_transaction_id: str, provid
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def payme_webhook(request):
-    """Handle Payme webhooks."""
+def card_webhook(request, provider):
+    """Handle card payment webhooks (Google Pay, Visa, Mastercard, Apple Pay)."""
     try:
-        import json
         payload = json.loads(request.body)
-        signature = request.headers.get("X-Payme-Signature", "")
+        signature = request.headers.get("X-Signature", "")
 
-        provider = get_payment_provider("payme")
-        result = provider.process_webhook(payload, signature)
+        provider_instance = get_payment_provider(provider)
+        result = provider_instance.process_webhook(payload, signature)
 
         if result.status == PaymentStatus.SUCCESS:
-            order_id = payload.get("account", {}).get("order_id")
+            order_id = payload.get("order_id") or payload.get("transaction_id")
             if order_id:
-                _process_webhook_success(order_id, result.transaction_id, "payme")
+                _process_webhook_success(order_id, result.transaction_id, provider)
 
         return JsonResponse({
             "status": result.status.value,
@@ -74,59 +72,5 @@ def payme_webhook(request):
         })
 
     except Exception as e:
-        logger.error("Payme webhook error: %s", e, exc_info=True)
-        return JsonResponse({"error": "webhook processing failed"}, status=500)
-
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def click_webhook(request):
-    """Handle Click webhooks."""
-    try:
-        import json
-        payload = json.loads(request.body)
-        signature = request.headers.get("X-Click-Signature", "")
-
-        provider = get_payment_provider("click")
-        result = provider.process_webhook(payload, signature)
-
-        if result.status == PaymentStatus.SUCCESS:
-            order_id = payload.get("merchant_trans_id")
-            if order_id:
-                _process_webhook_success(order_id, result.transaction_id, "click")
-
-        return JsonResponse({
-            "status": result.status.value,
-            "transaction_id": result.transaction_id,
-        })
-
-    except Exception as e:
-        logger.error("Click webhook error: %s", e, exc_info=True)
-        return JsonResponse({"error": "webhook processing failed"}, status=500)
-
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def paynet_webhook(request):
-    """Handle Paynet webhooks."""
-    try:
-        import json
-        payload = json.loads(request.body)
-        signature = request.headers.get("X-Paynet-Signature", "")
-
-        provider = get_payment_provider("paynet")
-        result = provider.process_webhook(payload, signature)
-
-        if result.status == PaymentStatus.SUCCESS:
-            order_id = payload.get("order_id")
-            if order_id:
-                _process_webhook_success(order_id, result.transaction_id, "paynet")
-
-        return JsonResponse({
-            "status": result.status.value,
-            "transaction_id": result.transaction_id,
-        })
-
-    except Exception as e:
-        logger.error("Paynet webhook error: %s", e, exc_info=True)
+        logger.error("%s webhook error: %s", provider, e, exc_info=True)
         return JsonResponse({"error": "webhook processing failed"}, status=500)

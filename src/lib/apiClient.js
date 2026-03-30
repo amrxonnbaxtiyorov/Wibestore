@@ -24,7 +24,6 @@ const ALLOWED_API_DOMAINS = [
   'wibestore.uz',
   'api.wibestore.uz',
   'railway.app',  // Railway backend
-  'netlify.app',  // Netlify frontend
 ].filter(Boolean);
 
 /**

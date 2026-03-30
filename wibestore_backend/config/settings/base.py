@@ -393,17 +393,6 @@ if not FERNET_KEY:
     FERNET_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="  # Dummy key for development only; never use in production
 
 # ============================================================
-# PAYMENTS
-# ============================================================
-PAYME_MERCHANT_ID = env("PAYME_MERCHANT_ID", default="")
-PAYME_SECRET_KEY = env("PAYME_SECRET_KEY", default="")
-CLICK_SERVICE_ID = env("CLICK_SERVICE_ID", default="")
-CLICK_MERCHANT_ID = env("CLICK_MERCHANT_ID", default="")
-CLICK_SECRET_KEY = env("CLICK_SECRET_KEY", default="")
-PAYNET_MERCHANT_ID = env("PAYNET_MERCHANT_ID", default="")
-PAYNET_SECRET_KEY = env("PAYNET_SECRET_KEY", default="")
-
-# ============================================================
 # STRIPE
 # ============================================================
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
