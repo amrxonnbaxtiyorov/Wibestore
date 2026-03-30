@@ -313,7 +313,17 @@
         "email_same": "New email must be different from current",
         "enter_code": "Enter verification code",
         "sending": "Sending...",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "verified": "Verified",
+        "not_verified": "Not verified",
+        "linked": "Linked",
+        "not_linked": "Not linked",
+        "logout_all": "Sign out of all devices",
+        "logout_all_desc": "All active sessions will be terminated, including this device.",
+        "logout_all_btn": "Sign out",
+        "pwd_weak": "Weak",
+        "pwd_medium": "Medium",
+        "pwd_strong": "Strong"
     },
     "cookie": {
         "banner_label": "Cookie consent",

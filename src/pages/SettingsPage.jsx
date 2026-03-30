@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Settings, User, Lock, Bell, Globe, CreditCard, ArrowDownCircle, ArrowUpCircle, Trash2, Camera, Save, AlertCircle, CheckCircle, Send } from 'lucide-react';
+import { Settings, User, Lock, Bell, Globe, CreditCard, ArrowDownCircle, ArrowUpCircle, Trash2, Camera, Save, AlertCircle, CheckCircle, Send, Eye, EyeOff, ShieldCheck, ShieldAlert, Mail, MessageCircle, Chrome, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import UserAvatar from '../components/UserAvatar';
 import { useLanguage, languages as langList } from '../context/LanguageContext';
@@ -35,6 +35,12 @@ const SettingsPage = () => {
         newPassword: '',
         confirmPassword: ''
     });
+    const [showPasswords, setShowPasswords] = useState({
+        current: false, new: false, confirm: false
+    });
+    const [deletePasswordInput, setDeletePasswordInput] = useState('');
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
 
     const [notifications, setNotifications] = useState({
         telegram: true, push: true, sales: true, messages: true, updates: false
@@ -167,15 +173,52 @@ const SettingsPage = () => {
     };
 
     const handleDeleteAccount = async () => {
-        if (!window.confirm(t('settings.delete_confirm'))) return;
+        if (!deletePasswordInput.trim()) {
+            setMessage({ type: 'error', text: t('settings.fill_all') });
+            return;
+        }
+        setIsSaving(true);
+        setMessage({ type: '', text: '' });
         try {
             const apiClient = (await import('../lib/apiClient')).default;
-            await apiClient.delete('/auth/account/delete/');
-        } catch {
-            // Account o'chirilgan yoki token yaroqsiz — baribir logout qilamiz
+            await apiClient.post('/auth/account/delete/', { password: deletePasswordInput });
+        } catch (err) {
+            const msg = err?.response?.data?.error?.message || err?.response?.data?.detail || t('settings.generic_error');
+            setMessage({ type: 'error', text: msg });
+            setIsSaving(false);
+            return;
         }
+        setShowDeleteModal(false);
         await logout();
         navigate('/');
+    };
+
+    const handleLogoutAllDevices = async () => {
+        setIsLoggingOutAll(true);
+        setMessage({ type: '', text: '' });
+        try {
+            const apiClient = (await import('../lib/apiClient')).default;
+            await apiClient.post('/auth/logout/');
+        } catch {
+            // token allaqachon bekor — baribir logout
+        } finally {
+            setIsLoggingOutAll(false);
+        }
+        await logout();
+        navigate('/login');
+    };
+
+    const getPasswordStrength = (pwd) => {
+        if (!pwd) return { score: 0, label: '', color: '' };
+        let score = 0;
+        if (pwd.length >= 8) score++;
+        if (pwd.length >= 12) score++;
+        if (/[A-Z]/.test(pwd)) score++;
+        if (/[0-9]/.test(pwd)) score++;
+        if (/[^A-Za-z0-9]/.test(pwd)) score++;
+        if (score <= 1) return { score, label: t('settings.pwd_weak') || 'Zaif', color: 'var(--color-error)' };
+        if (score <= 3) return { score, label: t('settings.pwd_medium') || "O'rtacha", color: 'var(--color-warning)' };
+        return { score, label: t('settings.pwd_strong') || 'Kuchli', color: 'var(--color-accent-green)' };
     };
 
     const notificationItems = [
@@ -356,42 +399,184 @@ const SettingsPage = () => {
                                         {t('settings.security')}
                                     </h2>
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                                    {/* Hisob xavfsizligi holati */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '28px' }}>
+                                        {[
+                                            {
+                                                icon: Mail,
+                                                label: 'Email',
+                                                value: user?.email || '—',
+                                                ok: !!user?.is_verified,
+                                                okText: t('settings.verified') || 'Tasdiqlangan',
+                                                failText: t('settings.not_verified') || 'Tasdiqlanmagan',
+                                            },
+                                            {
+                                                icon: MessageCircle,
+                                                label: 'Telegram',
+                                                value: user?.telegram_id ? `ID: ${user.telegram_id}` : t('settings.not_linked') || "Bog'lanmagan",
+                                                ok: !!user?.telegram_id,
+                                                okText: t('settings.linked') || "Bog'langan",
+                                                failText: t('settings.not_linked') || "Bog'lanmagan",
+                                            },
+                                            {
+                                                icon: Chrome,
+                                                label: 'Google',
+                                                value: user?.google_id || user?.social_accounts?.google ? user?.email : t('settings.not_linked') || "Bog'lanmagan",
+                                                ok: !!(user?.google_id || user?.social_accounts?.google),
+                                                okText: t('settings.linked') || "Bog'langan",
+                                                failText: t('settings.not_linked') || "Bog'lanmagan",
+                                            },
+                                        ].map((item) => (
+                                            <div key={item.label} style={{
+                                                padding: '14px',
+                                                borderRadius: 'var(--radius-lg)',
+                                                backgroundColor: item.ok ? 'var(--color-success-bg)' : 'var(--color-bg-secondary)',
+                                                border: `1px solid ${item.ok ? 'var(--color-accent-green)' : 'var(--color-border-muted)'}`,
+                                            }}>
+                                                <div className="flex items-center gap-2" style={{ marginBottom: '6px' }}>
+                                                    <item.icon style={{ width: '14px', height: '14px', color: item.ok ? 'var(--color-accent-green)' : 'var(--color-text-muted)' }} />
+                                                    <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{item.label}</span>
+                                                    {item.ok
+                                                        ? <ShieldCheck style={{ width: '12px', height: '12px', color: 'var(--color-accent-green)', marginLeft: 'auto' }} />
+                                                        : <ShieldAlert style={{ width: '12px', height: '12px', color: 'var(--color-text-muted)', marginLeft: 'auto' }} />
+                                                    }
+                                                </div>
+                                                <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginBottom: '2px', wordBreak: 'break-all' }}>{item.value}</p>
+                                                <p style={{ fontSize: 'var(--font-size-xs)', color: item.ok ? 'var(--color-accent-green)' : 'var(--color-text-muted)', fontWeight: 'var(--font-weight-medium)' }}>
+                                                    {item.ok ? item.okText : item.failText}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Parolni o'zgartirish */}
+                                    <h3 style={{ fontSize: 'var(--font-size-base)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--color-text-primary)', marginBottom: '14px' }}>
+                                        {t('settings.change_password')}
+                                    </h3>
+                                    <form
+                                        onSubmit={(e) => { e.preventDefault(); handlePasswordChange(); }}
+                                        style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}
+                                        autoComplete="on"
+                                    >
+                                        {/* Joriy parol */}
                                         <div>
                                             <label className="input-label">{t('settings.current_password')}</label>
-                                            <input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })} className={inputStyle} autoComplete="current-password" />
+                                            <div style={{ position: 'relative' }}>
+                                                <input
+                                                    type={showPasswords.current ? 'text' : 'password'}
+                                                    value={passwordData.currentPassword}
+                                                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                                                    className={inputStyle}
+                                                    autoComplete="current-password"
+                                                    style={{ paddingRight: '44px' }}
+                                                />
+                                                <button type="button" onClick={() => setShowPasswords(p => ({ ...p, current: !p.current }))}
+                                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: '4px' }}>
+                                                    {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                </button>
+                                            </div>
                                         </div>
+
+                                        {/* Yangi parol */}
                                         <div>
                                             <label className="input-label">{t('settings.new_password')}</label>
-                                            <input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })} className={inputStyle} autoComplete="new-password" />
+                                            <div style={{ position: 'relative' }}>
+                                                <input
+                                                    type={showPasswords.new ? 'text' : 'password'}
+                                                    value={passwordData.newPassword}
+                                                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                                    className={inputStyle}
+                                                    autoComplete="new-password"
+                                                    style={{ paddingRight: '44px' }}
+                                                />
+                                                <button type="button" onClick={() => setShowPasswords(p => ({ ...p, new: !p.new }))}
+                                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: '4px' }}>
+                                                    {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                </button>
+                                            </div>
+                                            {/* Parol kuchi */}
+                                            {passwordData.newPassword && (() => {
+                                                const s = getPasswordStrength(passwordData.newPassword);
+                                                return (
+                                                    <div style={{ marginTop: '8px' }}>
+                                                        <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
+                                                            {[1,2,3,4,5].map(i => (
+                                                                <div key={i} style={{
+                                                                    flex: 1, height: '4px', borderRadius: '2px',
+                                                                    backgroundColor: i <= s.score ? s.color : 'var(--color-border-muted)',
+                                                                    transition: 'background-color 0.2s',
+                                                                }} />
+                                                            ))}
+                                                        </div>
+                                                        <p style={{ fontSize: 'var(--font-size-xs)', color: s.color, fontWeight: 'var(--font-weight-medium)' }}>{s.label}</p>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
+
+                                        {/* Parolni tasdiqlash */}
                                         <div>
                                             <label className="input-label">{t('settings.confirm_password')}</label>
-                                            <input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })} className={inputStyle} autoComplete="new-password" />
-                                        </div>
-                                    </div>
-
-                                    <button onClick={handlePasswordChange} disabled={isSaving} className="btn btn-primary btn-lg">
-                                        <Lock className="w-4 h-4" />
-                                        {isSaving ? t('settings.changing_password') : t('settings.change_password')}
-                                    </button>
-
-                                    {/* 2FA */}
-                                    <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--color-border-muted)' }}>
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h3 style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)' }}>{t('settings.twofa')}</h3>
-                                                <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>{t('settings.twofa_desc')}</p>
+                                            <div style={{ position: 'relative' }}>
+                                                <input
+                                                    type={showPasswords.confirm ? 'text' : 'password'}
+                                                    value={passwordData.confirmPassword}
+                                                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                                    className={inputStyle}
+                                                    autoComplete="new-password"
+                                                    style={{
+                                                        paddingRight: '44px',
+                                                        borderColor: passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword
+                                                            ? 'var(--color-error)' : undefined,
+                                                    }}
+                                                />
+                                                <button type="button" onClick={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))}
+                                                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: '4px' }}>
+                                                    {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                </button>
                                             </div>
-                                            <button className="btn btn-secondary btn-sm">{t('settings.enable')}</button>
+                                            {passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword && (
+                                                <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-error)', marginTop: '4px' }}>{t('settings.passwords_mismatch')}</p>
+                                            )}
+                                        </div>
+
+                                        <button type="submit" disabled={isSaving} className="btn btn-primary btn-lg" style={{ alignSelf: 'flex-start' }}>
+                                            <Lock className="w-4 h-4" />
+                                            {isSaving ? t('settings.changing_password') : t('settings.change_password')}
+                                        </button>
+                                    </form>
+
+                                    {/* Barcha qurilmalardan chiqish */}
+                                    <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--color-border-muted)' }}>
+                                        <div className="flex items-start justify-between" style={{ gap: '16px', flexWrap: 'wrap' }}>
+                                            <div>
+                                                <h3 style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
+                                                    {t('settings.logout_all') || 'Barcha qurilmalardan chiqish'}
+                                                </h3>
+                                                <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>
+                                                    {t('settings.logout_all_desc') || 'Barcha faol sessiyalar yakunlanadi. Joriy qurilmadan ham chiqiladi.'}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={handleLogoutAllDevices}
+                                                disabled={isLoggingOutAll}
+                                                className="btn btn-secondary btn-sm"
+                                                style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
+                                            >
+                                                <LogOut className="w-4 h-4" />
+                                                {isLoggingOutAll ? (t('settings.saving') || 'Yuborilmoqda...') : (t('settings.logout_all_btn') || 'Chiqish')}
+                                            </button>
                                         </div>
                                     </div>
 
-                                    {/* Delete Account */}
-                                    <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid var(--color-border-muted)' }}>
+                                    {/* Xavfli zona */}
+                                    <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--color-border-muted)' }}>
                                         <h3 style={{ fontWeight: 'var(--font-weight-medium)', color: 'var(--color-error)', marginBottom: '8px' }}>{t('settings.danger_zone')}</h3>
                                         <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-secondary)', marginBottom: '16px' }}>{t('settings.delete_warning')}</p>
-                                        <button onClick={handleDeleteAccount} className="btn btn-danger btn-md">
+                                        <button
+                                            onClick={() => { setShowDeleteModal(true); setDeletePasswordInput(''); setMessage({ type: '', text: '' }); }}
+                                            className="btn btn-danger btn-md"
+                                        >
                                             <Trash2 className="w-4 h-4" />
                                             {t('settings.delete_account')}
                                         </button>
@@ -583,6 +768,62 @@ const SettingsPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Hisobni o'chirish modali */}
+            {showDeleteModal && (
+                <div
+                    className="modal-overlay"
+                    onClick={() => setShowDeleteModal(false)}
+                    style={{ zIndex: 1000 }}
+                >
+                    <div
+                        className="modal-container"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ maxWidth: '420px' }}
+                    >
+                        <div style={{ padding: '24px' }}>
+                            <div className="flex items-center gap-3" style={{ marginBottom: '16px' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--color-error-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                    <Trash2 style={{ width: '18px', height: '18px', color: 'var(--color-error)' }} />
+                                </div>
+                                <div>
+                                    <h3 style={{ fontWeight: 'var(--font-weight-bold)', color: 'var(--color-text-primary)', fontSize: 'var(--font-size-base)' }}>{t('settings.delete_account')}</h3>
+                                    <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>{t('settings.delete_confirm')}</p>
+                                </div>
+                            </div>
+
+                            {message.text && (
+                                <div className="flex items-center gap-2" style={{ padding: '10px 14px', borderRadius: 'var(--radius-md)', marginBottom: '14px', backgroundColor: 'var(--color-error-bg)', border: '1px solid var(--color-error)', color: 'var(--color-error)', fontSize: 'var(--font-size-sm)' }}>
+                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                    <span>{message.text}</span>
+                                </div>
+                            )}
+
+                            <form onSubmit={(e) => { e.preventDefault(); handleDeleteAccount(); }}>
+                                <label className="input-label">{t('settings.current_password')}</label>
+                                <input
+                                    type="password"
+                                    value={deletePasswordInput}
+                                    onChange={(e) => setDeletePasswordInput(e.target.value)}
+                                    className="input input-lg"
+                                    autoComplete="current-password"
+                                    placeholder="••••••••"
+                                    style={{ marginBottom: '16px' }}
+                                />
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setShowDeleteModal(false)} className="btn btn-secondary btn-md flex-1" disabled={isSaving}>
+                                        {t('settings.cancel')}
+                                    </button>
+                                    <button type="submit" className="btn btn-danger btn-md flex-1" disabled={isSaving || !deletePasswordInput.trim()}>
+                                        <Trash2 className="w-4 h-4" />
+                                        {isSaving ? t('settings.saving') : t('settings.delete_account')}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

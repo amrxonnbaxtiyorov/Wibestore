@@ -313,7 +313,17 @@
         "email_same": "Yangi email joriy emaildan farq qilishi kerak",
         "enter_code": "Tasdiqlash kodini kiriting",
         "sending": "Yuborilmoqda...",
-        "cancel": "Bekor qilish"
+        "cancel": "Bekor qilish",
+        "verified": "Tasdiqlangan",
+        "not_verified": "Tasdiqlanmagan",
+        "linked": "Bog'langan",
+        "not_linked": "Bog'lanmagan",
+        "logout_all": "Barcha qurilmalardan chiqish",
+        "logout_all_desc": "Barcha faol sessiyalar yakunlanadi. Joriy qurilmadan ham chiqiladi.",
+        "logout_all_btn": "Chiqish",
+        "pwd_weak": "Zaif",
+        "pwd_medium": "O'rtacha",
+        "pwd_strong": "Kuchli"
     },
     "cookie": {
         "banner_label": "Cookie roziligi",
