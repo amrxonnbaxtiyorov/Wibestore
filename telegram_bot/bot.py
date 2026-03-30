@@ -115,6 +115,9 @@ WAITING_PHONE, CONFIRMING = range(2)
     WAITING_TOPUP_AMOUNT,
 ) = range(2, 9)
 
+# Topup to'lov usuli tanlash holati
+WAITING_TOPUP_PAYMENT_METHOD = 9
+
 # Sotuvchi shaxs tasdiqlash bosqichlari
 (
     VERIFY_PASSPORT_FRONT,
@@ -135,6 +138,10 @@ BTN_SUPPORT = "📩 Admin bilan bog'lanish"
 
 # Premium / to'ldirish / chiqarish uchun sozlamalar
 ADMIN_CARD_NUMBER = os.getenv("ADMIN_CARD_NUMBER", "").strip()
+# To'lov kartalari
+HUMO_CARD_NUMBER = os.getenv("HUMO_CARD_NUMBER", "9860080377672458").strip()
+VISA_CARD_NUMBER = os.getenv("VISA_CARD_NUMBER", "").strip()
+RUBL_CARD_NUMBER = os.getenv("RUBL_CARD_NUMBER", "").strip()
 PREMIUM_PRICE_UZS = os.getenv("PREMIUM_PRICE_UZS", "50000")
 PRO_PRICE_UZS = os.getenv("PRO_PRICE_UZS", "100000")
 
@@ -1456,38 +1463,114 @@ async def _cb_premium_payment_method(update: Update, context: ContextTypes.DEFAU
 
 
 async def _cmd_topup(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Xisobni to'ldirish: avval summa, keyin skrinshot so'rash."""
+    """Xisobni to'ldirish: avval to'lov usulini tanlash, keyin summa va chek."""
     telegram_id = update.effective_user.id
     result = await get_telegram_profile_via_api(telegram_id)
     balance = "0"
     if result and result.get("success") and result.get("has_account"):
         balance = result.get("data", {}).get("balance", "0")
-    card_line = f"\n💳 To'lov kartasi: <code>{ADMIN_CARD_NUMBER}</code>" if ADMIN_CARD_NUMBER else ""
 
-    # Arenda reklamadan kelgan prefill summa
+    # Arenda reklamadan kelgan prefill summani saqlab qo'yamiz (usul tanlangach ishlatiladi)
+    prefill_amount = context.user_data.get("topup_prefill_amount")
+
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🏦 Humo karta (UZS)", callback_data="topup_method:humo")],
+        [InlineKeyboardButton("💳 Visa karta (UZS)", callback_data="topup_method:visa")],
+        [InlineKeyboardButton("🇷🇺 Rubl karta", callback_data="topup_method:rubl")],
+        [InlineKeyboardButton("❌ Bekor qilish", callback_data="topup_method:cancel")],
+    ])
+    prefill_line = f"\n🎯 Kerakli summa: <b>{prefill_amount:,} UZS</b>" if prefill_amount else ""
+    await update.message.reply_html(
+        f"💰 <b>Hisobni to'ldirish</b>\n\n"
+        f"Joriy balans: <b>{balance} UZS</b>{prefill_line}\n\n"
+        "Qaysi karta orqali to'laysiz? Pastdagi tugmalardan birini tanlang:",
+        reply_markup=keyboard,
+    )
+    return WAITING_TOPUP_PAYMENT_METHOD
+
+
+async def _cb_topup_payment_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Topup: foydalanuvchi to'lov usulini tanladi — karta raqamini ko'rsatib summa so'rash."""
+    query = update.callback_query
+    await query.answer()
+    data = query.data  # "topup_method:humo" | "topup_method:visa" | "topup_method:rubl" | "topup_method:cancel"
+
+    if data == "topup_method:cancel":
+        await query.edit_message_text("❌ Bekor qilindi. Bosh menyu:")
+        await context.bot.send_message(
+            query.message.chat_id,
+            "Quyidagi tugmalardan birini tanlang:",
+            reply_markup=_get_main_keyboard(),
+        )
+        return WAITING_PHONE
+
+    method = data.replace("topup_method:", "")
+
+    # Karta ma'lumotlarini aniqlash
+    if method == "humo":
+        card_number = HUMO_CARD_NUMBER
+        card_label = "🏦 Humo karta"
+        currency = "UZS (so'm)"
+    elif method == "visa":
+        card_number = VISA_CARD_NUMBER
+        card_label = "💳 Visa karta"
+        currency = "UZS (so'm)"
+    else:  # rubl
+        card_number = RUBL_CARD_NUMBER
+        card_label = "🇷🇺 Rubl karta"
+        currency = "RUB (rubl)"
+
+    if not card_number:
+        await query.edit_message_text(
+            f"❌ {card_label} hozircha faol emas.\n\nBoshqa to'lov usulini tanlang yoki /cancel bosing."
+        )
+        return WAITING_TOPUP_PAYMENT_METHOD
+
+    # To'lov usulini saqlab qo'yamiz
+    context.user_data["topup_method"] = method
+    context.user_data["topup_card_number"] = card_number
+    context.user_data["topup_card_label"] = card_label
+
+    # Prefill summa bormi?
     prefill_amount = context.user_data.pop("topup_prefill_amount", None)
     if prefill_amount and prefill_amount > 0:
         context.user_data["topup_amount"] = prefill_amount
-        await update.message.reply_html(
-            f"💰 <b>Hisobni to'ldirish</b>\n\n"
-            f"Joriy balans: <b>{balance} UZS</b>\n"
-            f"🎯 Arenda reklama uchun kerakli summa: <b>{prefill_amount:,} UZS</b>{card_line}\n\n"
-            f"Kartaga <b>{prefill_amount:,} UZS</b> o'tkazgach, to'lov <b>skrinshot</b>ini yuboring. Admin tekshiradi.\n\n"
-            "❌ Bekor qilish: /cancel"
+        await query.edit_message_text(
+            f"💰 <b>Hisobni to'ldirish</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"To'lov usuli: <b>{card_label}</b>\n"
+            f"Valyuta: <b>{currency}</b>\n\n"
+            f"💳 Karta raqami:\n"
+            f"<code>{card_number}</code>\n\n"
+            f"⚠️ <b>Diqqat!</b> Kartaga pul o'tkazishdan oldin:\n"
+            f"  • Karta raqamini to'liq nusxalab oling\n"
+            f"  • Summa: <b>{prefill_amount:,} {currency.split()[0]}</b>\n"
+            f"  • Izohlarga <b>ismingizni</b> yozing\n\n"
+            f"✅ O'tkazmadan so'ng to'lov <b>chekini</b> yuboring:\n"
+            f"  — Ilova ichidan <b>PDF fayl</b> sifatida ulashing, YOKI\n"
+            f"  — <b>Skrinshot</b> (rasm) tariqasida yuboring\n\n"
+            f"❌ Bekor qilish: /cancel",
+            parse_mode="HTML",
         )
         return WAITING_TOPUP_SCREENSHOT
 
-    await update.message.reply_html(
-        f"💰 <b>Hisobni to'ldirish</b>\n\n"
-        f"Joriy balans: <b>{balance} UZS</b>{card_line}\n\n"
-        "Qancha summa to'lamoqchisiz? Raqamni kiriting (masalan: <code>50000</code>)\n\n"
-        "❌ Bekor qilish: /cancel"
+    await query.edit_message_text(
+        f"💰 <b>Hisobni to'ldirish</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"To'lov usuli: <b>{card_label}</b>\n"
+        f"Valyuta: <b>{currency}</b>\n\n"
+        f"💳 Karta raqami:\n"
+        f"<code>{card_number}</code>\n\n"
+        f"Qancha summa to'lamoqchisiz?\n"
+        f"Raqamni yozing (masalan: <code>50000</code>)\n\n"
+        f"❌ Bekor qilish: /cancel",
+        parse_mode="HTML",
     )
     return WAITING_TOPUP_AMOUNT
 
 
 async def _receive_topup_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Topup summasi qabul qilinadi va skrinshot so'raladi."""
+    """Topup summasi qabul qilinadi va chek so'raladi."""
     text = (update.message.text or "").strip()
     # Menyu tugmalarini ushlash
     if text in (BTN_MY_ACCOUNT, BTN_PREMIUM, BTN_TOPUP, BTN_WITHDRAW):
@@ -1503,12 +1586,24 @@ async def _receive_topup_amount(update: Update, context: ContextTypes.DEFAULT_TY
 
     amount = int(cleaned)
     context.user_data["topup_amount"] = amount
-    card_line = f"\n💳 To'lov kartasi: <code>{ADMIN_CARD_NUMBER}</code>" if ADMIN_CARD_NUMBER else ""
+
+    card_number = context.user_data.get("topup_card_number", ADMIN_CARD_NUMBER)
+    card_label = context.user_data.get("topup_card_label", "💳 Karta")
+    method = context.user_data.get("topup_method", "humo")
+    currency_sym = "RUB" if method == "rubl" else "UZS"
+
     await update.message.reply_html(
-        f"✅ Summa: <b>{amount:,} UZS</b>\n"
-        f"{card_line}\n\n"
-        "Kartaga pul o'tkazgach, to'lov <b>skrinshot</b>ini yuboring. Admin tekshiradi.\n\n"
-        "❌ Bekor qilish: /cancel"
+        f"✅ Summa: <b>{amount:,} {currency_sym}</b>\n\n"
+        f"💳 {card_label} raqami:\n"
+        f"<code>{card_number}</code>\n\n"
+        f"⚠️ <b>Diqqat! To'lov qilishdan oldin:</b>\n"
+        f"  1️⃣ Yuqoridagi karta raqamini nusxalab oling\n"
+        f"  2️⃣ Summani to'g'ri kiriting: <b>{amount:,} {currency_sym}</b>\n"
+        f"  3️⃣ Izohlarga ismingizni yozing\n\n"
+        f"📄 <b>To'lovdan so'ng chekni yuboring:</b>\n"
+        f"  — Ilovangizdan <b>PDF fayl</b> sifatida ulashing, YOKI\n"
+        f"  — <b>Skrinshot</b> (rasm) sifatida yuboring\n\n"
+        f"❌ Bekor qilish: /cancel"
     )
     return WAITING_TOPUP_SCREENSHOT
 
@@ -1691,9 +1786,20 @@ async def _receive_premium_screenshot(update: Update, context: ContextTypes.DEFA
 
 
 async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Hisobni to'ldirish screenshot qabul qilish va adminga Tasdiqlash/Rad etish tugmalari bilan yuborish."""
-    if not update.message.photo:
-        await update.message.reply_text("📸 Iltimos, to'lov skrinshotini (rasm) yuboring.")
+    """Hisobni to'ldirish cheki qabul qilish (rasm yoki PDF) va adminga yuborish."""
+    msg = update.message
+    is_photo = bool(msg.photo)
+    is_pdf = bool(
+        msg.document and msg.document.mime_type == "application/pdf"
+    )
+
+    if not is_photo and not is_pdf:
+        await msg.reply_html(
+            "⚠️ Iltimos, to'lov chekini quyidagi usullardan biri orqali yuboring:\n\n"
+            "  📄 <b>PDF fayl</b> — ilovangizdan «Ulashish» → «Telegram» orqali yuboring\n"
+            "  📸 <b>Skrinshot (rasm)</b> — to'lov cheki ekran tasvirini yuboring\n\n"
+            "❌ Bekor qilish: /cancel"
+        )
         return WAITING_TOPUP_SCREENSHOT
 
     telegram_id = update.effective_user.id
@@ -1701,9 +1807,12 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
     tg_username = f"@{tg_user.username}" if tg_user.username else "—"
     phone_number = context.user_data.get("phone", "—")
     amount = context.user_data.get("topup_amount")
-    amount_str = f"{amount:,} UZS" if amount else "Noma'lum"
+    method = context.user_data.get("topup_method", "humo")
+    card_label = context.user_data.get("topup_card_label", "Karta")
+    currency_sym = "RUB" if method == "rubl" else "UZS"
+    amount_str = f"{amount:,} {currency_sym}" if amount else "Noma'lum"
+    chek_type = "PDF chek" if is_pdf else "Skrinshot"
 
-    # Vaqt — O'zbekiston vaqti (UTC+5)
     import datetime as _dt
     sent_time = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -1719,10 +1828,11 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
         f"🆔 Telegram ID: <code>{telegram_id}</code>\n"
         f"📱 Telegram: <b>{tg_username}</b>\n"
         f"📞 Telefon: <b>{phone_number}</b>\n"
+        f"💳 To'lov usuli: <b>{card_label}</b>\n"
         f"💰 To'lov summasi: <b>{amount_str}</b>\n"
+        f"📎 Chek turi: <b>{chek_type}</b>\n"
         f"⏰ Yuborilgan vaqt: {sent_time}"
     )
-    file_id = update.message.photo[-1].file_id
     keyboard = InlineKeyboardMarkup([[
         InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"topup_approve:{telegram_id}"),
         InlineKeyboardButton("❌ Rad etish", callback_data=f"topup_reject:{telegram_id}"),
@@ -1730,19 +1840,33 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
     sent_msgs = []
     for target in _notification_targets():
         try:
-            msg = await context.bot.send_photo(
-                target, photo=file_id, caption=caption,
-                parse_mode="HTML", reply_markup=keyboard
-            )
-            sent_msgs.append((msg.chat_id, msg.message_id))
+            if is_pdf:
+                msg_sent = await context.bot.send_document(
+                    target, document=msg.document.file_id, caption=caption,
+                    parse_mode="HTML", reply_markup=keyboard
+                )
+            else:
+                msg_sent = await context.bot.send_photo(
+                    target, photo=msg.photo[-1].file_id, caption=caption,
+                    parse_mode="HTML", reply_markup=keyboard
+                )
+            sent_msgs.append((msg_sent.chat_id, msg_sent.message_id))
         except Exception as e:
-            logger.warning("Admin %s ga rasm yuborilmadi: %s", target, e)
+            logger.warning("Admin %s ga chek yuborilmadi: %s", target, e)
     if sent_msgs:
         context.bot_data[f"admin_msgs_topup:{telegram_id}"] = sent_msgs
 
     # Backend ga so'rovni saqlash (DepositRequest)
     if BOT_SECRET_KEY and _AIOHTTP_AVAILABLE:
         try:
+            if is_pdf:
+                file_id = msg.document.file_id
+                fname = msg.document.file_name or "chek.pdf"
+                ftype = "application/pdf"
+            else:
+                file_id = msg.photo[-1].file_id
+                fname = "screenshot.jpg"
+                ftype = "image/jpeg"
             tg_file = await context.bot.get_file(file_id)
             file_bytes = await tg_file.download_as_bytearray()
             url = f"{WEBSITE_URL}/api/v1/payments/telegram/deposit-request/"
@@ -1751,13 +1875,14 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
             form_data.add_field("telegram_id", str(telegram_id))
             form_data.add_field("telegram_username", tg_user.username or "")
             form_data.add_field("phone_number", context.user_data.get("phone", ""))
+            form_data.add_field("payment_method", method)
             if amount:
                 form_data.add_field("amount", str(amount))
             form_data.add_field(
                 "screenshot",
                 bytes(file_bytes),
-                filename="screenshot.jpg",
-                content_type="image/jpeg",
+                filename=fname,
+                content_type=ftype,
             )
             async with _aiohttp.ClientSession() as session:
                 async with session.post(
@@ -1770,8 +1895,13 @@ async def _receive_topup_screenshot(update: Update, context: ContextTypes.DEFAUL
             logger.warning("DepositRequest backend ga saqlanmadi: %s", e)
 
     context.user_data.pop("topup_amount", None)
-    await update.message.reply_html(
-        "✅ Skrinshot qabul qilindi. Admin tekshiradi va balans yangilanadi.",
+    context.user_data.pop("topup_method", None)
+    context.user_data.pop("topup_card_number", None)
+    context.user_data.pop("topup_card_label", None)
+    await msg.reply_html(
+        "✅ <b>Chek qabul qilindi!</b>\n\n"
+        "Admin tekshiradi va tasdiqlagach balansingiz yangilanadi.\n"
+        "Odatda 5–30 daqiqa ichida tasdiqlashadi.",
         reply_markup=_get_main_keyboard(),
     )
     return WAITING_PHONE
@@ -4704,6 +4834,11 @@ def main():
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
                 CommandHandler('cancel', _cancel_to_menu),
             ],
+            WAITING_TOPUP_PAYMENT_METHOD: [
+                CallbackQueryHandler(_cb_topup_payment_method, pattern=r'^topup_method:'),
+                MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
+                CommandHandler('cancel', _cancel_to_menu),
+            ],
             WAITING_TOPUP_AMOUNT: [
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, _receive_topup_amount),
@@ -4711,6 +4846,7 @@ def main():
             ],
             WAITING_TOPUP_SCREENSHOT: [
                 MessageHandler(filters.PHOTO, _receive_topup_screenshot),
+                MessageHandler(filters.Document.PDF, _receive_topup_screenshot),
                 MessageHandler(_menu_buttons_filter, _fallback_menu_buttons),
                 CommandHandler('cancel', _cancel_to_menu),
             ],
