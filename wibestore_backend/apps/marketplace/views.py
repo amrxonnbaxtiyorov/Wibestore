@@ -78,11 +78,22 @@ class ListingListCreateView(generics.ListCreateAPIView):
         return ListingListSerializer
 
     def get_queryset(self):
+        from django.db.models import Exists, OuterRef
+        from .models import Favorite
         qs = Listing.objects.filter(status="active")
         # Defer listing_code if column not yet migrated
         if not _listing_code_exists():
             qs = qs.defer("listing_code")
-        return qs.select_related("game", "seller").prefetch_related("images")
+        qs = qs.select_related("game", "seller").prefetch_related("images")
+        # Annotate is_favorited once for all listings (avoids N+1 per-row query)
+        user = self.request.user
+        if user.is_authenticated:
+            qs = qs.annotate(
+                _is_favorited=Exists(
+                    Favorite.objects.filter(user=user, listing=OuterRef("pk"))
+                )
+            )
+        return qs
 
     def create(self, request, *args, **kwargs):
         try:

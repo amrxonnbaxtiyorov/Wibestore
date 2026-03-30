@@ -87,7 +87,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 секунд
+  timeout: 15000, // 15 soniya (mobil foydalanuvchilar uchun optimallashtirildi)
 });
 
 // Флаг для предотвращения множественных refresh запросов

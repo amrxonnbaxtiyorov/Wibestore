@@ -104,6 +104,10 @@ class ListingSerializer(serializers.ModelSerializer):
         return getattr(obj, "listing_code", None) or None
 
     def get_is_favorited(self, obj) -> bool:
+        # Use pre-annotated value from queryset (avoids N+1 query per listing)
+        if hasattr(obj, "_is_favorited"):
+            return obj._is_favorited
+        # Fallback for detail views (single object, no annotation)
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             return Favorite.objects.filter(user=request.user, listing=obj).exists()
@@ -280,6 +284,10 @@ class ListingListSerializer(serializers.ModelSerializer):
         return getattr(obj, "listing_code", None) or None
 
     def get_is_favorited(self, obj) -> bool:
+        # Use pre-annotated value from queryset (avoids N+1 query per listing)
+        if hasattr(obj, "_is_favorited"):
+            return obj._is_favorited
+        # Fallback for detail views (single object, no annotation)
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             return Favorite.objects.filter(user=request.user, listing=obj).exists()

@@ -254,6 +254,11 @@ class Listing(BaseSoftDeleteModel):
                 pass
         return f"WB-{max_num + 1}"
 
+    def soft_delete(self) -> None:
+        """Soft-delete listing and hard-delete its images (no soft-delete on ListingImage)."""
+        super().soft_delete()
+        self.images.all().delete()
+
     def set_account_credentials(self, email: str, password: str) -> None:
         """Encrypt and store account credentials."""
         self.account_email = encrypt_sensitive_data(email)

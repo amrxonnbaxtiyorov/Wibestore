@@ -72,7 +72,8 @@ export const useChatMessages = (chatId) => {
             if (lastPage?.next) {
                 try {
                     const url = new URL(lastPage.next);
-                    return url.searchParams.get('page') || undefined;
+                    const page = url.searchParams.get('page');
+                    return page ? Number(page) : undefined;
                 } catch {
                     return undefined;
                 }
@@ -151,7 +152,7 @@ export const useSendMessage = (chatId) => {
             }
 
             const optimisticMessage = {
-                id: `optimistic-${Date.now()}`,
+                id: `optimistic-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
                 content: String(text ?? '').trim(),
                 created_at: new Date().toISOString(),
                 sender: currentUser ? {

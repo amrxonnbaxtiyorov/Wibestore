@@ -41,6 +41,11 @@ class ChatConsumer(AsyncJsonWebSocketConsumer):
         message_type = content.get("type", "chat.message")
         message_content = content.get("content", "")
 
+        # Heartbeat: client sends {"type": "ping"} → server responds {"type": "pong"}
+        if message_type == "ping":
+            await self.send_json({"type": "pong"})
+            return
+
         if message_type == "chat.message" and message_content:
             # Save message to database
             message_data = await self.save_message(message_content)

@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 export const useWebSocket = (url, options = {}) => {
     const wsRef = useRef(null);
     const reconnectTimeoutRef = useRef(null);
+    const heartbeatIntervalRef = useRef(null);
     const retryCountRef = useRef(0);
     const mountedRef = useRef(true);
     const [isConnected, setIsConnected] = useState(false);
@@ -23,6 +24,7 @@ export const useWebSocket = (url, options = {}) => {
         reconnectInterval = 1000,
         maxReconnectAttempts = 6,
         protocols = [],
+        heartbeatInterval = 30000, // Send ping every 30s to detect dead connections
     } = options;
 
     // Store callbacks in refs to avoid stale closures and dependency changes
@@ -72,6 +74,13 @@ export const useWebSocket = (url, options = {}) => {
                 setRetryCount(0);
                 if (onOpenRef.current) onOpenRef.current(event);
                 if (import.meta.env.DEV) console.log('[WebSocket] Connected:', url);
+                // Start heartbeat ping to detect dead connections
+                if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
+                heartbeatIntervalRef.current = setInterval(() => {
+                    if (wsRef.current?.readyState === WebSocket.OPEN) {
+                        wsRef.current.send(JSON.stringify({ type: 'ping' }));
+                    }
+                }, heartbeatInterval);
             };
 
             wsRef.current.onmessage = (event) => {
@@ -89,6 +98,11 @@ export const useWebSocket = (url, options = {}) => {
                 if (!mountedRef.current) return;
                 setReadyState(WebSocket.CLOSED);
                 setIsConnected(false);
+                // Stop heartbeat when connection closes
+                if (heartbeatIntervalRef.current) {
+                    clearInterval(heartbeatIntervalRef.current);
+                    heartbeatIntervalRef.current = null;
+                }
                 if (onCloseRef.current) onCloseRef.current(event);
                 if (import.meta.env.DEV) console.log('[WebSocket] Disconnected:', url);
 
@@ -130,6 +144,10 @@ export const useWebSocket = (url, options = {}) => {
         if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current);
             reconnectTimeoutRef.current = null;
+        }
+        if (heartbeatIntervalRef.current) {
+            clearInterval(heartbeatIntervalRef.current);
+            heartbeatIntervalRef.current = null;
         }
 
         if (wsRef.current) {

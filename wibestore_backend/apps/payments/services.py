@@ -74,20 +74,27 @@ class PaymentService:
     @staticmethod
     @db_transaction.atomic
     def complete_deposit(transaction: Transaction) -> Transaction:
-        """Complete a deposit (called by webhook)."""
+        """Complete a deposit (called by webhook). Idempotent — safe for duplicate webhooks."""
+        from django.contrib.auth import get_user_model
+
+        # Re-fetch with row lock to prevent concurrent duplicate webhook processing
+        transaction = Transaction.objects.select_for_update().get(pk=transaction.pk)
         if transaction.status != "pending":
-            raise BusinessLogicError("Transaction is not in pending state.")
+            # Already processed — return as-is (idempotent)
+            logger.info("Deposit already processed (idempotent): %s", transaction.id)
+            return transaction
 
         transaction.status = "completed"
         transaction.processed_at = timezone.now()
         transaction.save(update_fields=["status", "processed_at"])
 
-        # Add to user balance
-        user = transaction.user
+        # Lock user row before updating balance to prevent race condition
+        User = get_user_model()
+        user = User.objects.select_for_update().get(pk=transaction.user_id)
         user.balance += transaction.amount
         user.save(update_fields=["balance"])
 
-        logger.info("Deposit completed: %s", transaction.id)
+        logger.info("Deposit completed: %s, user=%s, amount=%s", transaction.id, user.email, transaction.amount)
         return transaction
 
 
