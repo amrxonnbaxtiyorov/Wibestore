@@ -90,7 +90,7 @@ def calculate_daily_statistics():
             'new_reviews_today': new_reviews_today,
         }
         
-        logger.info(f"Daily statistics calculated: {stats}")
+        logger.info("Daily statistics calculated: %s", stats)
         
         # Here you could save to a DailyStatistics model if needed
         # For now, just log the statistics
@@ -98,34 +98,45 @@ def calculate_daily_statistics():
         return stats
         
     except Exception as e:
-        logger.error(f"Error calculating daily statistics: {e}")
+        logger.error("Error calculating daily statistics: %s", e, exc_info=True)
         raise
 
 
 @shared_task
 def cleanup_old_data():
-    """Clean up old soft-deleted data."""
+    """Permanently delete soft-deleted listings older than 30 days and old notifications."""
     from datetime import timedelta
-    
+
     days_to_keep = 30
     cutoff_date = timezone.now() - timedelta(days=days_to_keep)
-    
-    # Clean up soft-deleted listings
-    deleted_listings = Listing.objects.filter(
-        deleted_at__lt=cutoff_date
-    ).count()
-    
-    # Clean up old notifications
+
+    # Hard-delete soft-deleted listings that passed retention window
+    # (images were already removed by Listing.soft_delete())
+    deleted_listings_qs = Listing.all_objects.filter(
+        deleted_at__isnull=False,
+        deleted_at__lt=cutoff_date,
+    )
+    deleted_listings_count = deleted_listings_qs.count()
+    deleted_listings_qs.delete()
+
+    # Hard-delete old notifications past retention window
     from apps.notifications.models import Notification
-    old_notifications = Notification.objects.filter(
-        created_at__lt=cutoff_date
-    ).count()
-    
-    logger.info(f"Cleaned up {deleted_listings} old listings and {old_notifications} old notifications")
-    
+    old_notifications_qs = Notification.objects.filter(
+        created_at__lt=cutoff_date,
+        is_read=True,
+    )
+    old_notifications_count = old_notifications_qs.count()
+    old_notifications_qs.delete()
+
+    logger.info(
+        "cleanup_old_data: deleted %d old listings and %d old notifications",
+        deleted_listings_count,
+        old_notifications_count,
+    )
+
     return {
-        'deleted_listings': deleted_listings,
-        'deleted_notifications': old_notifications,
+        'deleted_listings': deleted_listings_count,
+        'deleted_notifications': old_notifications_count,
     }
 
 
@@ -150,6 +161,6 @@ def check_premium_expirations():
             message=f"Sizning {subscription.plan.name} obunangiz 3 kundan so'ng yakunlanadi.",
         )
         
-        logger.info(f"Premium expiration notification sent to user {subscription.user.id}")
+        logger.info("Premium expiration notification sent to user %s", subscription.user.id)
     
     return {'expiring_count': expiring_soon.count()}

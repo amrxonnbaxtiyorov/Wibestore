@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import uz from '../locales/uz.json';
 import ru from '../locales/ru.json';
 import en from '../locales/en.json';
@@ -37,6 +37,11 @@ export const LanguageProvider = ({ children }) => {
         setLanguageState(lang);
         localStorage.setItem('wibeLanguage', lang);
     }, []);
+
+    // Sync <html lang="..."> attribute so browsers/SEO crawlers know the page language
+    useEffect(() => {
+        document.documentElement.lang = language;
+    }, [language]);
 
     // Helper function to get nested translation by dot-path
     // Returns undefined (not the key) when not found, so `t('x') || 'fallback'` works

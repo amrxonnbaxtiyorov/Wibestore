@@ -1,19 +1,15 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import apiClient, { setTokens, getStoredTokens, removeTokens } from '../lib/apiClient';
 import { createPublicClient } from '../lib/apiClient';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+import queryClient from '../lib/reactQuery';
+import { resolveImageUrl } from '../lib/displayUtils';
 
 /** API dan kelgan user obyektini frontend uchun normalizatsiya: name (ism), avatar (to'liq URL) */
 function normalizeUser(data) {
     if (!data) return null;
     const name = data.display_name ?? data.full_name ?? data.name ?? data.username ?? ((data.email ? data.email.split('@')[0] : '') || 'User');
-    let avatar = data.avatar ?? null;
-    if (avatar && typeof avatar === 'string' && avatar.startsWith('/') && !avatar.startsWith('//')) {
-        const origin = typeof window !== 'undefined' ? window.location.origin : '';
-        const apiOrigin = API_BASE_URL.startsWith('http') ? new URL(API_BASE_URL).origin : origin;
-        avatar = `${apiOrigin}${avatar}`;
-    }
+    // Use shared resolveImageUrl so avatar URL logic is consistent across the app
+    const avatar = resolveImageUrl(data.avatar ?? null);
     return { ...data, name, avatar };
 }
 
@@ -183,8 +179,11 @@ export const AuthProvider = ({ children }) => {
     const refreshUser = useCallback(async () => {
         try {
             const { data } = await apiClient.get('/auth/me/');
-            setUser(normalizeUser(data));
-            return normalizeUser(data);
+            const normalized = normalizeUser(data);
+            setUser(normalized);
+            if (normalized) localStorage.setItem('wibeUser', JSON.stringify(normalized));
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            return normalized;
         } catch (error) {
             console.error('[Auth] Failed to refresh user:', error);
             throw error;
@@ -194,11 +193,13 @@ export const AuthProvider = ({ children }) => {
     // Update профиля
     const updateProfile = async (updates) => {
         try {
-            const isFormData = updates instanceof FormData;
-            const config = isFormData ? {} : {};
-            const { data } = await apiClient.patch('/auth/me/', updates, config);
-            setUser(normalizeUser(data));
-            return normalizeUser(data);
+            const { data } = await apiClient.patch('/auth/me/', updates);
+            const normalized = normalizeUser(data);
+            setUser(normalized);
+            if (normalized) localStorage.setItem('wibeUser', JSON.stringify(normalized));
+            // Sync React Query profile cache so useProfile() returns fresh data
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            return normalized;
         } catch (error) {
             console.error('[Auth] Profile update failed:', error);
             throw error.response?.data || new Error('Profile update failed');

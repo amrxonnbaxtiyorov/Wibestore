@@ -91,9 +91,18 @@ const RentPage = () => {
 
     // Time slots management
     const addTimeSlot = () => {
-        if (formData.timeSlots.length < MAX_TIME_SLOTS) {
-            setFormData(prev => ({ ...prev, timeSlots: [...prev.timeSlots, { label: '', price: '' }] }));
+        if (formData.timeSlots.length >= MAX_TIME_SLOTS) return;
+        // Require all existing slots to be filled before adding another
+        const lastSlot = formData.timeSlots[formData.timeSlots.length - 1];
+        if (!lastSlot.label.trim() || !lastSlot.price) {
+            setErrors(prev => ({
+                ...prev,
+                [`slot_label_${formData.timeSlots.length - 1}`]: !lastSlot.label.trim() ? 'Vaqtni kiriting' : undefined,
+                [`slot_price_${formData.timeSlots.length - 1}`]: !lastSlot.price ? 'Narxni kiriting' : undefined,
+            }));
+            return;
         }
+        setFormData(prev => ({ ...prev, timeSlots: [...prev.timeSlots, { label: '', price: '' }] }));
     };
     const removeTimeSlot = (index) => {
         if (formData.timeSlots.length > 1) {

@@ -435,6 +435,13 @@ STRIPE_CANCEL_URL = env(
 )
 
 # ============================================================
+# HEALTH CHECK RATE LIMITS (requests per window)
+# ============================================================
+HEALTH_CHECK_RATE_LIMIT = env.int("HEALTH_CHECK_RATE_LIMIT", default=60)        # /health/ per minute
+HEALTH_DETAILED_RATE_LIMIT = env.int("HEALTH_DETAILED_RATE_LIMIT", default=10)  # /health/detailed/ per minute
+STORAGE_CHECK_RATE_LIMIT = env.int("STORAGE_CHECK_RATE_LIMIT", default=10)       # /health/storage/ per minute
+
+# ============================================================
 # LOGGING
 # ============================================================
 LOG_DIR = BASE_DIR / "logs"
