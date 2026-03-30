@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Upload, X, Plus, DollarSign, Image, FileText, Tag, Shield, AlertCircle, CheckCircle, Search, ArrowLeft, Send, Loader2, Video, ExternalLink } from 'lucide-react';
+import { Upload, X, Plus, DollarSign, Image, FileText, Tag, Shield, AlertCircle, CheckCircle, Search, ArrowLeft, Send, Loader2, Video, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
@@ -43,6 +43,7 @@ const SellPage = () => {
     const [createdListingId, setCreatedListingId] = useState(null);
     const [showGameModal, setShowGameModal] = useState(false);
     const [modalGameSearch, setModalGameSearch] = useState('');
+    const [showAccountPassword, setShowAccountPassword] = useState(false);
     
     // API hooks
     const { mutate: createListing, isPending: _isCreating } = useCreateListing();
@@ -124,8 +125,18 @@ const SellPage = () => {
             if (!formData.description.trim()) newErrors.description = t('sell.err_enter_description') || 'Tavsif kiriting';
         }
         if (stepNum === 3) {
-            if (!formData.accountEmail.trim()) newErrors.accountEmail = t('sell.err_enter_account_email') || 'Akkaunt emailini kiriting';
-            if (!formData.accountPassword.trim()) newErrors.accountPassword = t('sell.err_enter_account_password') || 'Akkaunt parolini kiriting';
+            const emailVal = formData.accountEmail.trim().toLowerCase();
+            if (!emailVal) {
+                newErrors.accountEmail = t('sell.err_enter_account_email') || 'Akkaunt emailini kiriting';
+            } else if (!emailVal.endsWith('@gmail.com') && !emailVal.endsWith('@mail.com')) {
+                newErrors.accountEmail = t('sell.err_invalid_account_email') || 'Login @gmail.com yoki @mail.com bilan tugashi kerak';
+            }
+            const pwdVal = formData.accountPassword.trim();
+            if (!pwdVal) {
+                newErrors.accountPassword = t('sell.err_enter_account_password') || 'Akkaunt parolini kiriting';
+            } else if (pwdVal.length < 8) {
+                newErrors.accountPassword = t('sell.err_password_too_short') || "Parol kamida 8 ta belgidan iborat bo'lishi kerak";
+            }
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -150,8 +161,18 @@ const SellPage = () => {
         if (!formData.title?.trim()) allErrors.title = t('sell.err_enter_title') || 'Sarlavha kiriting';
         if (!formData.price || formData.price <= 0) allErrors.price = t('sell.err_enter_price') || 'Narxni kiriting';
         if (!formData.description?.trim()) allErrors.description = t('sell.err_enter_description') || 'Tavsif kiriting';
-        if (!formData.accountEmail?.trim()) allErrors.accountEmail = t('sell.err_enter_account_email') || 'Akkaunt emailini kiriting';
-        if (!formData.accountPassword?.trim()) allErrors.accountPassword = t('sell.err_enter_account_password') || 'Akkaunt parolini kiriting';
+        const emailVal = (formData.accountEmail || '').trim().toLowerCase();
+        if (!emailVal) {
+            allErrors.accountEmail = t('sell.err_enter_account_email') || 'Akkaunt emailini kiriting';
+        } else if (!emailVal.endsWith('@gmail.com') && !emailVal.endsWith('@mail.com')) {
+            allErrors.accountEmail = t('sell.err_invalid_account_email') || 'Login @gmail.com yoki @mail.com bilan tugashi kerak';
+        }
+        const pwdVal = (formData.accountPassword || '').trim();
+        if (!pwdVal) {
+            allErrors.accountPassword = t('sell.err_enter_account_password') || 'Akkaunt parolini kiriting';
+        } else if (pwdVal.length < 8) {
+            allErrors.accountPassword = t('sell.err_password_too_short') || "Parol kamida 8 ta belgidan iborat bo'lishi kerak";
+        }
         if (Object.keys(allErrors).length > 0) {
             setErrors(allErrors);
             if (allErrors.gameId || allErrors.title || allErrors.price) setStep(1);
@@ -788,19 +809,42 @@ title: t('common.error') || 'Xatolik',
                                 {/* Account Email */}
                                 <div style={{ marginBottom: '16px' }}>
                                     <label className="input-label">{t('sell.account_email_label')}</label>
-                                    <input type="text" value={formData.accountEmail}
+                                    <input type="email" value={formData.accountEmail}
                                         onChange={(e) => setFormData({ ...formData, accountEmail: e.target.value })}
-                                        placeholder="akkaunt@email.com" className="input input-lg" />
-                                    {errors.accountEmail && <p style={errorStyle}>{errors.accountEmail}</p>}
+                                        placeholder="example@gmail.com" className="input input-lg"
+                                        autoComplete="off" />
+                                    {errors.accountEmail
+                                        ? <p style={errorStyle}>{errors.accountEmail}</p>
+                                        : <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                                            {t('sell.email_domain_hint') || 'Faqat @gmail.com yoki @mail.com'}
+                                          </p>
+                                    }
                                 </div>
 
                                 {/* Account Password */}
                                 <div style={{ marginBottom: '16px' }}>
                                     <label className="input-label">{t('sell.account_password_label')}</label>
-                                    <input type="password" value={formData.accountPassword}
-                                        onChange={(e) => setFormData({ ...formData, accountPassword: e.target.value })}
-                                        placeholder="••••••••" className="input input-lg" />
-                                    {errors.accountPassword && <p style={errorStyle}>{errors.accountPassword}</p>}
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type={showAccountPassword ? 'text' : 'password'}
+                                            value={formData.accountPassword}
+                                            onChange={(e) => setFormData({ ...formData, accountPassword: e.target.value })}
+                                            placeholder="••••••••" className="input input-lg"
+                                            autoComplete="off"
+                                            style={{ paddingRight: '44px' }}
+                                        />
+                                        <button type="button"
+                                            onClick={() => setShowAccountPassword(p => !p)}
+                                            style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: '4px' }}>
+                                            {showAccountPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                    </div>
+                                    {errors.accountPassword
+                                        ? <p style={errorStyle}>{errors.accountPassword}</p>
+                                        : <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                                            {t('sell.password_min_hint') || "Kamida 8 ta belgi"}
+                                          </p>
+                                    }
                                 </div>
 
                                 {/* Additional Info */}

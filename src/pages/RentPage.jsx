@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Upload, X, Plus, Image, FileText, Shield, AlertCircle, CheckCircle, Search, ArrowLeft, Loader2, Key, Clock, Wallet, Trash2 } from 'lucide-react';
+import { Upload, X, Plus, Image, FileText, Shield, AlertCircle, CheckCircle, Search, ArrowLeft, Loader2, Key, Clock, Wallet, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
@@ -39,6 +39,7 @@ const RentPage = () => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [showAccountPassword, setShowAccountPassword] = useState(false);
     const [showGameModal, setShowGameModal] = useState(false);
     const [modalGameSearch, setModalGameSearch] = useState('');
     const [imageFiles, setImageFiles] = useState([]);
@@ -141,8 +142,18 @@ const RentPage = () => {
             if (!formData.description.trim()) newErrors.description = 'Tavsif kiriting';
         }
         if (stepNum === 3) {
-            if (!formData.accountEmail.trim()) newErrors.accountEmail = 'Akkaunt emailini kiriting';
-            if (!formData.accountPassword.trim()) newErrors.accountPassword = 'Akkaunt parolini kiriting';
+            const emailVal = formData.accountEmail.trim().toLowerCase();
+            if (!emailVal) {
+                newErrors.accountEmail = 'Akkaunt emailini kiriting';
+            } else if (!emailVal.endsWith('@gmail.com') && !emailVal.endsWith('@mail.com')) {
+                newErrors.accountEmail = 'Login @gmail.com yoki @mail.com bilan tugashi kerak';
+            }
+            const pwdVal = formData.accountPassword.trim();
+            if (!pwdVal) {
+                newErrors.accountPassword = 'Akkaunt parolini kiriting';
+            } else if (pwdVal.length < 8) {
+                newErrors.accountPassword = "Parol kamida 8 ta belgidan iborat bo'lishi kerak";
+            }
         }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -613,14 +624,33 @@ const RentPage = () => {
 
                             <label style={{ display: 'block', marginBottom: '16px' }}>
                                 <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>Akkaunt email/login *</span>
-                                <input type="text" value={formData.accountEmail} onChange={e => setFormData({ ...formData, accountEmail: e.target.value })} className="input input-lg" style={{ width: '100%' }} />
-                                {errors.accountEmail && <p style={errorStyle}>{errors.accountEmail}</p>}
+                                <input type="email" value={formData.accountEmail} onChange={e => setFormData({ ...formData, accountEmail: e.target.value })} className="input input-lg" style={{ width: '100%' }} placeholder="example@gmail.com" autoComplete="off" />
+                                {errors.accountEmail
+                                    ? <p style={errorStyle}>{errors.accountEmail}</p>
+                                    : <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '4px' }}>Faqat @gmail.com yoki @mail.com</p>
+                                }
                             </label>
 
                             <label style={{ display: 'block', marginBottom: '16px' }}>
                                 <span style={{ display: 'block', fontSize: 'var(--font-size-sm)', fontWeight: 600, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>Akkaunt paroli *</span>
-                                <input type="password" value={formData.accountPassword} onChange={e => setFormData({ ...formData, accountPassword: e.target.value })} className="input input-lg" style={{ width: '100%' }} />
-                                {errors.accountPassword && <p style={errorStyle}>{errors.accountPassword}</p>}
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type={showAccountPassword ? 'text' : 'password'}
+                                        value={formData.accountPassword}
+                                        onChange={e => setFormData({ ...formData, accountPassword: e.target.value })}
+                                        className="input input-lg" style={{ width: '100%', paddingRight: '44px' }}
+                                        placeholder="••••••••" autoComplete="off"
+                                    />
+                                    <button type="button"
+                                        onClick={() => setShowAccountPassword(p => !p)}
+                                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', padding: '4px' }}>
+                                        {showAccountPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                                {errors.accountPassword
+                                    ? <p style={errorStyle}>{errors.accountPassword}</p>
+                                    : <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)', marginTop: '4px' }}>Kamida 8 ta belgi</p>
+                                }
                             </label>
 
                             <label style={{ display: 'block', marginBottom: '24px' }}>
