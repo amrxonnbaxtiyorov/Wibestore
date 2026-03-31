@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
     Search, Key, Clock, Wallet, Plus, X, ChevronRight,
     Sparkles, TrendingUp, ArrowUpRight, Loader2, AlertCircle,
@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useToast } from '../components/ToastProvider';
 import { useGames, useProfile, useSEO } from '../hooks';
-import { useRentalListings, usePromotionCalculate, useCreatePromotion, useMyPromotions } from '../hooks/useRentals';
+import { useRentalListings, usePromotionCalculate, useCreatePromotion } from '../hooks/useRentals';
 import AccountCard from '../components/AccountCard';
 import { SkeletonGrid } from '../components/SkeletonLoader';
 import { PageHeader } from '../components/ui';
@@ -31,11 +31,10 @@ function calcTotalCost(hours) {
 
 // ==================== PROMOTION MODAL ====================
 const PromotionModal = ({ listing, onClose }) => {
-    const { t } = useLanguage();
     const { addToast } = useToast();
     const [hours, setHours] = useState(1);
     const { data: profile } = useProfile();
-    const { data: calcData, isLoading: calcLoading } = usePromotionCalculate(hours);
+    const { data: calcData } = usePromotionCalculate(hours);
     const createPromotion = useCreatePromotion();
 
     const balance = profile?.balance ?? profile?.data?.balance ?? 0;
@@ -334,10 +333,8 @@ const GameCard = ({ game, isSelected, onClick, rentalCount }) => {
 
 // ==================== MAIN PAGE ====================
 const RentalBrowsePage = () => {
-    const navigate = useNavigate();
     const { isAuthenticated, user } = useAuth();
     const { t } = useLanguage();
-    const { addToast } = useToast();
     const [searchParams, setSearchParams] = useSearchParams();
 
     useSEO({
@@ -369,7 +366,7 @@ const RentalBrowsePage = () => {
         return () => clearTimeout(timer);
     }, [searchQuery, selectedGame, setSearchParams]);
 
-    const { data: gamesData, isLoading: gamesLoading } = useGames();
+    const { data: gamesData } = useGames();
     const { data, isLoading, isFetching, fetchNextPage, hasNextPage } = useRentalListings({
         ...(selectedGame !== 'all' && { game: selectedGame }),
         ...(searchQuery.trim() && { search: searchQuery.trim() }),

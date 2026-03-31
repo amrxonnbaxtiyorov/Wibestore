@@ -626,7 +626,9 @@ export function useAdminExport() {
       if (response.status >= 400) {
         const text = await response.data.text()
         let msg = 'Export failed'
-        try { msg = JSON.parse(text).error || msg } catch {}
+        try { msg = JSON.parse(text).error || msg } catch (parseErr) {
+          if (import.meta.env.DEV) console.warn('[AdminExport] Failed to parse error response:', parseErr);
+        }
         throw new Error(msg)
       }
       // Download file

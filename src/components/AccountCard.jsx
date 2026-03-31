@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Crown, Heart, Gem, Hash } from 'lucide-react';
 import { formatPrice } from '../data/mockData';
@@ -37,8 +37,9 @@ const AccountCard = ({ account, featured = false }) => {
         });
     };
 
+    const fallbackId = useId();
     // Fallback for missing data
-    const accountId = account.id || (typeof crypto !== 'undefined' && crypto.randomUUID?.()) || Math.random().toString(36).slice(2);
+    const accountId = account.id || fallbackId;
     const accountTitle = account.title || t('common.untitled_account');
     const accountPrice = account.price || 0;
     const accountGameName = account.gameName || account.game?.name || account.game_name || t('common.unknown_game');
@@ -57,8 +58,6 @@ const AccountCard = ({ account, featured = false }) => {
     const listingType = account.listing_type || 'sell';
     const isRental = listingType === 'rent';
     const rentalPricePerDay = account.rental_price_per_day ? Number(account.rental_price_per_day) : null;
-    const rentalPeriodDays = account.rental_period_days ?? null;
-    const rentalDeposit = account.rental_deposit ? Number(account.rental_deposit) : null;
     const warrantyDays = account.warranty_days ?? 0;
     const salePercent = account.sale_percent ?? 0;
     const saleEndsAt = account.sale_ends_at ? new Date(account.sale_ends_at) : null;

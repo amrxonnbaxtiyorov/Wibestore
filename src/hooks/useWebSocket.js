@@ -27,16 +27,18 @@ export const useWebSocket = (url, options = {}) => {
         heartbeatInterval = 30000, // Send ping every 30s to detect dead connections
     } = options;
 
-    // Store callbacks in refs to avoid stale closures and dependency changes
+    // Store callbacks and mutable options in refs to avoid stale closures and dependency changes
     const onOpenRef = useRef(onOpen);
     const onMessageRef = useRef(onMessage);
     const onCloseRef = useRef(onClose);
     const onErrorRef = useRef(onError);
+    const heartbeatIntervalValueRef = useRef(heartbeatInterval);
 
     useEffect(() => { onOpenRef.current = onOpen; }, [onOpen]);
     useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
     useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
     useEffect(() => { onErrorRef.current = onError; }, [onError]);
+    useEffect(() => { heartbeatIntervalValueRef.current = heartbeatInterval; }, [heartbeatInterval]);
 
     // Get auth token for WebSocket authentication
     const getAuthToken = useCallback(() => {
@@ -80,7 +82,7 @@ export const useWebSocket = (url, options = {}) => {
                     if (wsRef.current?.readyState === WebSocket.OPEN) {
                         wsRef.current.send(JSON.stringify({ type: 'ping' }));
                     }
-                }, heartbeatInterval);
+                }, heartbeatIntervalValueRef.current);
             };
 
             wsRef.current.onmessage = (event) => {

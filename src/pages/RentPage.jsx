@@ -7,7 +7,6 @@ import { useToast } from '../components/ToastProvider';
 import { useCreateListing, useGames, useSEO } from '../hooks';
 import apiClient from '../lib/apiClient';
 import { resolveImageUrl } from '../lib/displayUtils';
-import { formatPrice } from '../data/mockData';
 import SellerRulesQuiz from '../components/SellerRulesQuiz';
 
 function getTopGamesForRent(apiGames) {

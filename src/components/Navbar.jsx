@@ -47,12 +47,14 @@ const Navbar = () => {
     // Balance pulse animation when balance changes
     useEffect(() => {
         const currentBalance = profileData?.balance;
-        if (currentBalance !== undefined && prevBalanceRef.current !== null && currentBalance !== prevBalanceRef.current) {
+        if (currentBalance === undefined) return;
+        if (prevBalanceRef.current !== null && currentBalance !== prevBalanceRef.current) {
+            prevBalanceRef.current = currentBalance;
             setBalancePulse(true);
             const timer = setTimeout(() => setBalancePulse(false), 650);
             return () => clearTimeout(timer);
         }
-        if (currentBalance !== undefined) prevBalanceRef.current = currentBalance;
+        prevBalanceRef.current = currentBalance;
     }, [profileData?.balance]);
 
     // Close dropdowns on outside click or Escape
