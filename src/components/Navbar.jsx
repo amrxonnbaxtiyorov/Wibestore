@@ -50,9 +50,12 @@ const Navbar = () => {
         if (currentBalance === undefined) return;
         if (prevBalanceRef.current !== null && currentBalance !== prevBalanceRef.current) {
             prevBalanceRef.current = currentBalance;
-            setBalancePulse(true);
-            const timer = setTimeout(() => setBalancePulse(false), 650);
-            return () => clearTimeout(timer);
+            const onTimer = setTimeout(() => setBalancePulse(true), 0);
+            const offTimer = setTimeout(() => setBalancePulse(false), 650);
+            return () => {
+                clearTimeout(onTimer);
+                clearTimeout(offTimer);
+            };
         }
         prevBalanceRef.current = currentBalance;
     }, [profileData?.balance]);

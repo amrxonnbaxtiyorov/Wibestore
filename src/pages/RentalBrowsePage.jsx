@@ -374,8 +374,10 @@ const RentalBrowsePage = () => {
 
     const rawGames = gamesData?.results ?? gamesData ?? [];
     const games = Array.isArray(rawGames) ? rawGames.filter(Boolean) : [];
-    const rawListings = data?.pages?.flatMap(page => page?.results ?? []) ?? [];
-    const allListings = Array.isArray(rawListings) ? rawListings.filter(Boolean) : [];
+    const allListings = useMemo(() => {
+        const raw = data?.pages?.flatMap(page => page?.results ?? []) ?? [];
+        return Array.isArray(raw) ? raw.filter(Boolean) : [];
+    }, [data?.pages]);
 
     // Group listings by game for counts
     const rentalCountByGame = useMemo(() => {

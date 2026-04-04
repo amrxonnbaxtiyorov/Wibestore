@@ -4,7 +4,7 @@ import apiClient from '../lib/apiClient';
 /**
  * Hook для получения данных профиля текущего пользователя
  */
-export const useProfile = () => {
+export const useProfile = (options = {}) => {
     return useQuery({
         queryKey: ['profile'],
         queryFn: async () => {
@@ -19,6 +19,7 @@ export const useProfile = () => {
             }
             return failureCount < 3;
         },
+        ...options,
     });
 };
 

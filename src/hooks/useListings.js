@@ -206,22 +206,6 @@ export const useTrackView = () => {
     });
 };
 
-export default {
-    useListings,
-    useListing,
-    useCreateListing,
-    useUpdateListing,
-    useDeleteListing,
-    useAddToFavorites,
-    useRemoveFromFavorites,
-    useTrackView,
-    useApplyPromo,
-    useRequestVideoUpload,
-    useVideoStatus,
-    useRequestVideoView,
-};
-
-
 /**
  * Video yuklash uchun Telegram deep link olish
  */
@@ -259,4 +243,19 @@ export const useRequestVideoView = () => {
             return data;
         },
     });
+};
+
+export default {
+    useListings,
+    useListing,
+    useCreateListing,
+    useUpdateListing,
+    useDeleteListing,
+    useAddToFavorites,
+    useRemoveFromFavorites,
+    useTrackView,
+    useApplyPromo,
+    useRequestVideoUpload,
+    useVideoStatus,
+    useRequestVideoView,
 };
