@@ -61,6 +61,7 @@ RUN rm -f /etc/nginx/conf.d/default.conf
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 80
+# Railway PORT env var orqali dinamik port beradi — hardcoded 80 kerak emas.
+# entrypoint.sh: export PORT="${PORT:-80}" && nginx listen $PORT
 
 CMD ["/entrypoint.sh"]

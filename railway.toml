@@ -1,0 +1,15 @@
+# ============================================================
+# WibeStore Frontend — Railway deployment config
+# ============================================================
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Railway injects PORT; entrypoint.sh reads it and passes to nginx
+startCommand = "/entrypoint.sh"
+healthcheckPath = "/"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
